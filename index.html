@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinApp — Finanzas personales simples</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Outfit:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+  <header class="nav" id="nav">
+    <a href="#inicio" class="logo" aria-label="FinApp inicio">
+      <span class="logo-fin">Fin</span><span class="logo-app">App</span>
+    </a>
+    <div class="nav-actions">
+      <button type="button" class="btn-text" data-open-auth="login">Iniciar sesión</button>
+      <button type="button" class="btn btn-primary btn-sm" data-open-auth="register">
+        Registrarse
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <p class="badge">Finanzas personales simples</p>
+        <h1 class="hero-title">
+          Controla tu dinero,<br />
+          <em>decide tu futuro</em>
+        </h1>
+        <p class="hero-sub">
+          Registra ahorros, gastos, ingresos y movimientos varios en un solo lugar.<br />
+          Sin complicaciones, sin costos ocultos.
+        </p>
+        <div class="hero-ctas">
+          <button type="button" class="btn btn-primary" data-open-auth="register">
+            Crear cuenta gratis
+            <span aria-hidden="true">→</span>
+          </button>
+          <a class="btn btn-outline" href="#funciones">Ver funciones</a>
+        </div>
+
+        <article class="dashboard-card glass">
+          <p class="dashboard-label">Resumen — Septiembre 2026</p>
+          <div class="dashboard-grid">
+            <div class="dash-cell">
+              <span>Ingresos</span>
+              <strong class="amount-income">$ 3,200</strong>
+            </div>
+            <div class="dash-cell">
+              <span>Gastos</span>
+              <strong class="amount-expense">$ 1,480</strong>
+            </div>
+            <div class="dash-cell">
+              <span>Ahorro</span>
+              <strong class="amount-save">$ 900</strong>
+            </div>
+            <div class="dash-cell">
+              <span>Otro</span>
+              <strong class="amount-other">$ 120</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Métricas">
+      <div class="stats-grid reveal-stagger">
+        <div>
+          <strong>12 k+</strong>
+          <span>Usuarios activos</span>
+        </div>
+        <div>
+          <strong>98 %</strong>
+          <span>Satisfacción</span>
+        </div>
+        <div>
+          <strong>$2.4 M</strong>
+          <span>Gestionados</span>
+        </div>
+        <div>
+          <strong>0 costo</strong>
+          <span>Para empezar</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="funciones">
+      <div class="section-inner">
+        <p class="eyebrow">Funcionalidades</p>
+        <h2 class="reveal">Todo lo que necesitas,<br />nada que no uses</h2>
+        <div class="feature-grid reveal-stagger">
+          <article class="feature-card">
+            <div class="icon-wrap icon-mint" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="8" r="3.2" />
+                <path d="M5 19c1.2-3.2 3.6-5 7-5s5.8 1.8 7 5" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3>Registro personal</h3>
+            <p>
+              Crea tu perfil con nombre, correo y contraseña. Accede desde cualquier dispositivo
+              de forma segura.
+            </p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap icon-green" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3>Ahorro</h3>
+            <p>
+              Registra lo que reservas cada mes y visualiza tu progreso hacia tus metas de
+              ahorro.
+            </p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap icon-red" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M5 12h14" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3>Gastos</h3>
+            <p>
+              Controla cada salida de dinero: comida, transporte, entretenimiento y más
+              categorías.
+            </p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap icon-blue" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 16l5-6 4 3 7-8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <h3>Ingresos</h3>
+            <p>
+              Anota tu sueldo, freelances o cualquier entrada de dinero para tener el panorama
+              completo.
+            </p>
+          </article>
+          <article class="feature-card">
+            <div class="icon-wrap icon-violet" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="8" />
+                <path d="M12 8v4l2.5 1.5" stroke-linecap="round" />
+              </svg>
+            </div>
+            <h3>Otro</h3>
+            <p>
+              Categoría flexible para préstamos, reembolsos, regalos o cualquier movimiento
+              atípico.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="how" id="como-funciona">
+      <div class="section-inner">
+        <p class="eyebrow">Cómo funciona</p>
+        <h2 class="reveal-left">Tres pasos. Cero ruido.</h2>
+        <div class="steps reveal-stagger">
+          <article class="step">
+            <span class="step-num" aria-hidden="true">01</span>
+            <h3>Crea tu cuenta</h3>
+            <p>Nombre, correo y contraseña. En menos de un minuto estás dentro.</p>
+          </article>
+          <article class="step">
+            <span class="step-num" aria-hidden="true">02</span>
+            <h3>Registra movimientos</h3>
+            <p>Ingresos, gastos, ahorro u otro. Todo queda en un mismo lugar.</p>
+          </article>
+          <article class="step">
+            <span class="step-num" aria-hidden="true">03</span>
+            <h3>Mira el panorama</h3>
+            <p>El resumen mensual te muestra hacia dónde va tu dinero, sin hojas de cálculo.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-final">
+      <div class="cta-grid" aria-hidden="true"></div>
+      <div class="cta-inner reveal">
+        <h2>Empieza a decidir<br /><em>con claridad</em></h2>
+        <p>FinApp es gratis para empezar. Sin costos ocultos, sin complicaciones.</p>
+        <button type="button" class="btn btn-primary" data-open-auth="register">
+          Crear cuenta gratis
+          <span aria-hidden="true">→</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a href="#inicio" class="logo">
+      <span class="logo-fin">Fin</span><span class="logo-app">App</span>
+    </a>
+    <p>© 2026 FinApp. Finanzas personales simples.</p>
+  </footer>
+
+  <div class="modal-backdrop" id="auth-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <button type="button" class="modal-close" id="auth-close" aria-label="Cerrar">×</button>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab is-active" role="tab" aria-selected="true" data-tab="login">
+          Iniciar sesión
+        </button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="register">
+          Registrarse
+        </button>
+      </div>
+      <h2 id="auth-title" class="visually-hidden">Autenticación</h2>
+
+      <form class="auth-form is-active" id="form-login" data-panel="login">
+        <label>
+          Correo
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        <p class="form-note" hidden></p>
+      </form>
+
+      <form class="auth-form" id="form-register" data-panel="register">
+        <label>
+          Nombre
+          <input type="text" name="name" autocomplete="name" required />
+        </label>
+        <label>
+          Correo
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" autocomplete="new-password" required minlength="6" />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Crear cuenta</button>
+        <p class="form-note" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+
+</html>
