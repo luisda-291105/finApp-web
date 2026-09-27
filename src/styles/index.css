@@ -1,5 +1,5 @@
 /**
- * @uso        Import Tailwind v4 + tokens de diseño Fluid Glass
+ * @uso        Configuración de Tailwind v4, tokens @theme y utilidades Fluid Glass
  * @funciones  N/A (CSS)
  * @datos      N/A
  * @eventos    N/A
@@ -8,46 +8,105 @@
  */
 @import "tailwindcss";
 
-/* Tokens formales Fluid Glass (fuente única de verdad para la paleta) */
 @theme {
-  --color-bg-start: #05070a;
-  --color-bg-mid: #0d1b2a;
-  --color-bg-end: #0a2e23;
+  --font-display: "Fraunces", serif;
+  --font-body: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
 
-  --color-glass-bg: rgba(255, 255, 255, 0.08);
-  --color-glass-border: rgba(255, 255, 255, 0.18);
+  --color-bg-dark: #0f1117;
+  --color-bg-dark-mid: #1a3a2e;
+  --color-bg-dark-end: #1a7a5e;
 
-  --color-accent-primary: #34d399;
-  --color-accent-mint: #6ee7c0;
-  --color-accent-secondary: #60a5fa;
+  --color-bg-cream: #f7f6f2;
+  --color-emerald-primary: #1a7a5e;
+  --color-emerald-hover: #15634c;
+  --color-mint-accent: #6ee7c0;
+  --color-slate-text: #5a6475;
+  --color-border-line: #e0ddd8;
 
-  --color-text: #f5f7fa;
-  --color-text-secondary: rgba(255, 255, 255, 0.65);
+  --color-cat-income: #60a5fa;
+  --color-cat-expense: #f87171;
+  --color-cat-savings: #6ee7c0;
+  --color-cat-other: #c084fc;
 
   --radius-glass: 24px;
-  --blur-glass: 24px;
 }
 
 :root {
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --accent-primary: #34d399;
-  --accent-mint: #6ee7c0;
-  --accent-secondary: #60a5fa;
-  --text-secondary: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-body);
 }
 
-.glass {
-  background: var(--glass-bg);
+/* Grilla técnica del Hero */
+.hero-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* Tarjeta Fluid Glass Hero con highlight superior */
+.glass-hero {
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 20px 40px -15px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-glass);
 }
 
+/* Tarjetas de Features con estilo sutil y esquinas suaves */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(224, 221, 216, 0.8);
+  border-radius: var(--radius-glass);
+  box-shadow: 0 4px 20px -2px rgba(15, 17, 23, 0.04);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -4px rgba(26, 122, 94, 0.12);
+}
+
+/* Fallback si el navegador no soporta backdrop-filter */
 @supports not (backdrop-filter: blur(1px)) {
-  .glass {
-    background: rgba(20, 25, 30, 0.85);
+  .glass-hero {
+    background: rgba(15, 17, 23, 0.88);
   }
 }
+
+/* Animaciones con IntersectionObserver */
+.reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-left.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-stagger.revealed > *:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 90ms; }
+.reveal-stagger.revealed > *:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 180ms; }
+.reveal-stagger.revealed > *:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 270ms; }
+.reveal-stagger.revealed > *:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 360ms; }
+.reveal-stagger.revealed > *:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 450ms; }
