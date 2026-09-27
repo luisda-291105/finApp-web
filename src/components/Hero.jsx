@@ -20,7 +20,7 @@ export default function Hero({ alAbrirAuth }) {
   return (
     <section
       id="inicio"
-      className="relative overflow-hidden bg-gradient-to-b from-[#0f1117] via-[#142820] to-[#12362b] pt-16 pb-24 px-6 text-center"
+      className="relative overflow-hidden bg-gradient-to-b from-[#0f1117] via-[#142820] to-[#12362b] pt-28 md:pt-32 pb-24 px-6 text-center"
     >
       {/* Capa de grilla técnica de fondo */}
       <div className="hero-grid absolute inset-0 pointer-events-none opacity-40" aria-hidden="true" />
