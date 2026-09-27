@@ -1,0 +1,53 @@
+/**
+ * @uso        Import Tailwind v4 + tokens de diseño Fluid Glass
+ * @funciones  N/A (CSS)
+ * @datos      N/A
+ * @eventos    N/A
+ * @estados    N/A
+ * @usadoPor   main.jsx
+ */
+@import "tailwindcss";
+
+/* Tokens formales Fluid Glass (fuente única de verdad para la paleta) */
+@theme {
+  --color-bg-start: #05070a;
+  --color-bg-mid: #0d1b2a;
+  --color-bg-end: #0a2e23;
+
+  --color-glass-bg: rgba(255, 255, 255, 0.08);
+  --color-glass-border: rgba(255, 255, 255, 0.18);
+
+  --color-accent-primary: #34d399;
+  --color-accent-mint: #6ee7c0;
+  --color-accent-secondary: #60a5fa;
+
+  --color-text: #f5f7fa;
+  --color-text-secondary: rgba(255, 255, 255, 0.65);
+
+  --radius-glass: 24px;
+  --blur-glass: 24px;
+}
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --accent-primary: #34d399;
+  --accent-mint: #6ee7c0;
+  --accent-secondary: #60a5fa;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background: rgba(20, 25, 30, 0.85);
+  }
+}
