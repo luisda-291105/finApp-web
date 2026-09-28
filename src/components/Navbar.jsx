@@ -7,6 +7,7 @@
  * @usadoPor   App.jsx
  */
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 /**
  * Navbar
@@ -37,7 +38,7 @@ export default function Navbar({ alAbrirAuth }) {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logotipo FinApp */}
-        <a href="#inicio" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
+        <Link to="/" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
           <span className="text-[#1a7a5e]">Fin</span>
           <span
             className={`transition-colors duration-400 ${
@@ -46,7 +47,7 @@ export default function Navbar({ alAbrirAuth }) {
           >
             App
           </span>
-        </a>
+        </Link>
 
         {/* Acciones de autenticación */}
         <div className="flex items-center gap-4">

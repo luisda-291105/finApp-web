@@ -1,12 +1,16 @@
 /**
- * @uso        Componente raíz que orquesta la landing page de FinApp y el estado del modal
+ * @uso        Define las rutas públicas y protegidas de FinApp
  * @funciones  App()
- * @datos      N/A
- * @eventos    Apertura y cierre del modal de autenticación
- * @estados    modalAbierto (boolean), modoAuth ('login' | 'registro')
+ * @datos      Usa el estado de trial desde la configuración
+ * @eventos    Navegación entre login, landing y dashboard
+ * @estados    N/A
  * @usadoPor   main.jsx
  */
 import { useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { TRIAL_ACTIVO } from "./config/app.config";
+import Dashboard from "./components/Dashboard";
+import LoginPage from "./components/LoginPage";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import StatsBar from "./components/StatsBar";
@@ -18,9 +22,9 @@ import AuthModal from "./components/AuthModal";
 
 /**
  * App
- * Componente principal que estructura todas las secciones de la aplicación.
+ * Renderiza la vista de landing conservada en /inicio.
  */
-export default function App() {
+function LandingPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState("registro");
 
@@ -75,5 +79,90 @@ export default function App() {
         ?
       </button>
     </div>
+  );
+}
+
+/**
+ * App
+ * Registra las rutas de acceso y la jerarquía de secciones del dashboard.
+ */
+export default function App() {
+  return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <Navigate to={TRIAL_ACTIVO ? "/dashboard" : "/login"} replace />
+        }
+      />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/inicio" element={<LandingPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          TRIAL_ACTIVO ? <Dashboard /> : <Navigate to="/login" replace />
+        }
+      >
+        <Route index element={<DashboardSection seccion="inicio" />} />
+        <Route
+          path="transacciones"
+          element={<DashboardSection seccion="transacciones" />}
+        />
+        <Route
+          path="tarjetas"
+          element={<DashboardSection seccion="tarjetas" />}
+        />
+        <Route
+          path="configuracion"
+          element={<DashboardSection seccion="configuracion" />}
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function DashboardSection({ seccion }) {
+  const titulos = {
+    inicio: "Tu dinero, en equilibrio.",
+    transacciones: "Transacciones",
+    tarjetas: "Tus tarjetas",
+    configuracion: "Configuración",
+  };
+
+  return (
+    <section aria-labelledby="dashboard-title" className="space-y-6">
+      <div>
+        <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
+        <h1 id="dashboard-title" className="mt-2 font-display text-3xl text-bg-dark">
+          {titulos[seccion]}
+        </h1>
+      </div>
+      {seccion === "inicio" ? (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <article className="glass-card p-5">
+            <p className="text-sm text-slate-text">Balance disponible</p>
+            <p className="mt-3 text-2xl font-semibold text-bg-dark">$12,480.50</p>
+          </article>
+          <article className="glass-card p-5">
+            <p className="text-sm text-slate-text">Ingresos del mes</p>
+            <p className="mt-3 text-2xl font-semibold text-emerald-primary">$4,250.00</p>
+          </article>
+          <article className="glass-card p-5">
+            <p className="text-sm text-slate-text">Gastos del mes</p>
+            <p className="mt-3 text-2xl font-semibold text-bg-dark">$1,820.75</p>
+          </article>
+        </div>
+      ) : (
+        <div className="glass-card p-6">
+          <p className="text-slate-text">
+            {seccion === "transacciones" && "Consulta y organiza tus movimientos recientes."}
+            {seccion === "tarjetas" && "Administra tus tarjetas y revisa sus saldos."}
+            {seccion === "configuracion" && "Ajusta tus preferencias de cuenta y seguridad."}
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
