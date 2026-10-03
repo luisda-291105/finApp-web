@@ -33,7 +33,7 @@
 - Animaciones solo CSS + IntersectionObserver (sin libs externas)
 
 ## Testing
-- Tests junto al componente (`*.test.jsx`)
+- Tests junto al código probado (`*.test.jsx` para componentes JSX, `*.test.js` para hooks JS)
 - Usar `MemoryRouter` para rutas
 - `TRIAL_ACTIVO = true` — dashboard accesible sin login
 

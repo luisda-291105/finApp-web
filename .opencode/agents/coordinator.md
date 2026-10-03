@@ -61,8 +61,8 @@ Los subagentes NO ven esta conversación. En cada llamada pásales todo lo que n
 - Confirma que consulten `MEMORY.md` al empezar y que implementer la actualice al cerrar
   cada tarea validada, con estado y decisiones relevantes.
 - Usa `AGENTS.md` y `package.json` como fuente de verdad para arquitectura y validación.
-  No apliques `doc/constitution.md` hasta que el usuario confirme que su contenido está
-  corregido.
+- Asegúrate de que planner, implementer y reviewer consulten `doc/constitution.md` y las
+  reglas pertinentes de `.agents/rules/rules.md`.
 ## Reglas
 - Nunca te saltes una aprobación del usuario (spec, y plan con tareas).
 - No resuelvas tú las dudas: pregunta al usuario.
