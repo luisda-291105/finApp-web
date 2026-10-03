@@ -1,42 +1,45 @@
 # MEMORY.md — FinApp
 
-## Proyecto
-- App de finanzas personales (landing + dashboard)
-- Stack: React 18 + Vite 5 + Tailwind CSS v4 + React Router 6
-- Tests: Vitest + Testing Library (jsdom)
-- Estilo: Fluid Glass (glassmorphism tipo visionOS)
+Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 
-## Comandos
-- `npm run dev` — desarrollo
-- `npm run build` — producción
-- `npm test` — todos los tests
-- `npx vitest run <archivo>` — un solo test
+## Estado actual
+- App React de finanzas personales con landing, login/modal y dashboard de demostración.
+- Stack activo: React 18, Vite 5, Tailwind CSS v4 y React Router 6.
+- Rutas: `/inicio`, `/login` y `/dashboard` con secciones de inicio, transacciones,
+  tarjetas y configuración. `/` redirige según `TRIAL_ACTIVO`.
+- `TRIAL_ACTIVO = true`: el dashboard está abierto como demo, no hay autenticación real.
+- El dashboard muestra importes de ejemplo; no hay persistencia financiera en `src/`.
+- `AuthModal` usa endpoints centralizados, pero el backend no está listo; el fallback
+  actual muestra mensajes demo y no confirma persistencia real.
+- Pruebas: Vitest + Testing Library en jsdom; 5 archivos de test cubren rutas,
+  componentes y `useReveal`.
 
-## Estructura
-- `src/components/` — componentes React
-- `src/config/` — `api.config.js` (endpoints), `app.config.js` (feature flags)
-- `src/hooks/` — `useReveal` (IntersectionObserver)
-- `src/styles/index.css` — tokens `@theme` + utilidades Fluid Glass
+## Decisiones (y por qué)
+- Endpoints centralizados en `src/config/api.config.js`: permite configurar la base URL
+  y evita distribuir rutas del backend por la interfaz.
+- `TRIAL_ACTIVO` en `src/config/app.config.js`: habilita revisar el dashboard sin login
+  mientras se desarrolla la integración de autenticación.
+- Tokens de color y utilidades compartidas en `src/styles/index.css`: mantienen una
+  fuente visual común para Fluid Glass.
+- Pruebas junto al código y `MemoryRouter` para rutas: coincide con la estructura actual
+  y permite comprobar la navegación sin servidor.
+- Especificaciones y cambios deben respetar el alcance aprobado; consultar
+  `doc/constitution.md`, `AGENTS.md` y `.agents/rules/rules.md`.
 
-## Convenciones
-- Todo en español (nombres, props, eventos, commits)
-- Header JSDoc obligatorio por archivo (ver `.agents/file-header-template.md`)
-- Paleta/tokens solo en `src/styles/index.css` — prohibido hardcodear hex
-- Endpoints solo en `src/config/api.config.js` — prohibido hardcodear en componentes
-- Commits: mensaje corto, imperativo, en español
+## Aprendizajes y errores a evitar
+- No tratar FinApp como una app estática ni usar `node --test`: el proyecto usa React,
+  Vite y `npm test` (Vitest).
+- No presentar cifras, login ni mensajes de éxito del fallback como datos guardados u
+  operaciones reales; verificar backend y persistencia antes de afirmarlo.
+- No añadir colores hexadecimales a JSX/JS: existen literales heredados, pero los nuevos
+  estilos deben usar tokens de `src/styles/index.css`.
+- No añadir librerías de animación; las animaciones siguen CSS y APIs nativas.
+- Los límites Fluid Glass de capas y blobs son reglas manuales; no hay pruebas
+  automáticas dedicadas que deban darse por ejecutadas.
 
-## Restricciones Fluid Glass
-- Máximo 3 capas de vidrio por vista
-- Máximo 2 blobs de color por viewport
-- border-radius 20–28px, sin bordes cuadrados
-- Contraste AA obligatorio sobre fondos translúcidos
-- Animaciones solo CSS + IntersectionObserver (sin libs externas)
-
-## Testing
-- Tests junto al código probado (`*.test.jsx` para componentes JSX, `*.test.js` para hooks JS)
-- Usar `MemoryRouter` para rutas
-- `TRIAL_ACTIVO = true` — dashboard accesible sin login
-
-## Reglas completas
-- `.agents/rules/rules.md` — reglas de diseño y arquitectura
-- `.agents/response-rules.md` — proceso plan → terminal → commit
+## Próximos pasos
+- Conectar autenticación y datos financieros a un backend operativo; definir antes
+  contratos, manejo de errores, seguridad y persistencia.
+- Sustituir progresivamente cifras de demostración por datos reales cuando exista API.
+- Añadir cobertura para flujos de autenticación y casos de error al implementar el
+  backend; considerar pruebas verificables para límites de diseño.
