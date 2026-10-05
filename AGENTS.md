@@ -13,8 +13,8 @@ trabajo y respuesta está en [`.agents/response-rules.md`](.agents/response-rule
 - `npm run build` — build de producción.
 - `npm test` — suite completa (`vitest run`).
 - `npx vitest run <ruta>` — pruebas de una ruta concreta.
-- No se usan librerías externas de animación; se usan CSS y APIs nativas como
-  `IntersectionObserver`.
+- Para scroll-reveal se usan CSS y `IntersectionObserver`; Framer Motion (instalado)
+  se reserva para hover/tap, modales, `layoutId` y contadores.
 
 ## Estructura actual
 
