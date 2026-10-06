@@ -15,7 +15,7 @@ import { useReveal } from "../hooks/useReveal";
  * @param {(modo: 'login' | 'registro') => void} props.alAbrirAuth - Callback para abrir modal
  */
 export default function Hero({ alAbrirAuth }) {
-  const { ref, visible } = useReveal({ threshold: 0.1 });
+  const { ref, visible } = useReveal();
 
   return (
     <section

@@ -64,49 +64,89 @@
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.glass-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 32px -4px rgba(26, 122, 94, 0.12);
+@media (hover: hover) {
+  .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px -4px rgba(26, 122, 94, 0.12);
+  }
 }
 
 /* Fallback si el navegador no soporta backdrop-filter */
-@supports not (backdrop-filter: blur(1px)) {
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-hero {
     background: rgba(15, 17, 23, 0.88);
   }
 }
 
-/* Animaciones con IntersectionObserver */
-.reveal {
+/* Transparencia reducida: fondo semisólido y sin backdrop-filter */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-hero {
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Movimiento reducido: contenido visible sin transformaciones ni transiciones */
+@media (prefers-reduced-motion: reduce) {
+  html.js .reveal,
+  html.js .reveal-left,
+  html.js .reveal-stagger > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Blur reducido en pantallas pequeñas para preservar rendimiento */
+@media (max-width: 640px) {
+  .glass-hero {
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+  }
+}
+
+/* Animaciones con IntersectionObserver: visibles por defecto; solo se ocultan
+   cuando hay JS activo (clase `js` en <html>), para no esconder contenido sin JS */
+.js .reveal {
   opacity: 0;
   transform: translateY(36px);
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal.revealed {
+.js .reveal.revealed {
   opacity: 1;
   transform: translateY(0);
 }
 
-.reveal-left {
+.js .reveal-left {
   opacity: 0;
   transform: translateX(-40px);
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal-left.revealed {
+.js .reveal-left.revealed {
   opacity: 1;
   transform: translateX(0);
 }
 
-.reveal-stagger > * {
+.js .reveal-stagger > * {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal-stagger.revealed > *:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 90ms; }
-.reveal-stagger.revealed > *:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 180ms; }
-.reveal-stagger.revealed > *:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 270ms; }
-.reveal-stagger.revealed > *:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 360ms; }
-.reveal-stagger.revealed > *:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 450ms; }
+.js .reveal-stagger.revealed > * { opacity: 1; transform: translateY(0); transition-delay: calc(var(--i, 0) * 90ms); }
+
+/* Foco visible en interactivos con superficies Glass, con tokens del tema */
+.glass-hero :is(a, button, [role="button"], input, select, textarea):focus-visible,
+.glass-hero:is(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-mint-accent) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.glass-card :is(a, button, [role="button"], input, select, textarea):focus-visible,
+.glass-card:is(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-emerald-primary) 40%, transparent);
+  outline-offset: 2px;
+}

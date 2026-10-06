@@ -15,7 +15,7 @@ import { useReveal } from "../hooks/useReveal";
  * @param {(modo: 'login' | 'registro') => void} props.alAbrirAuth
  */
 export default function CtaSection({ alAbrirAuth }) {
-  const { ref, visible } = useReveal({ threshold: 0.2 });
+  const { ref, visible } = useReveal();
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#12362b] to-[#0f1117] py-24 px-6 text-center text-white">

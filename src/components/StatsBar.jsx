@@ -20,7 +20,7 @@ const METRICAS = [
  * Muestra 4 métricas destacadas de la plataforma en franja esmeralda.
  */
 export default function StatsBar() {
-  const { ref, visible } = useReveal({ threshold: 0.2 });
+  const { ref, visible } = useReveal();
 
   return (
     <section className="bg-[#1a7a5e] text-white py-12 px-6 border-y border-[#15634c]">

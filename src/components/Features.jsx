@@ -81,7 +81,7 @@ const FUNCIONALIDADES = [
  * Muestra el catálogo de módulos de finanzas personales sobre fondo crema.
  */
 export default function Features() {
-  const { ref, visible } = useReveal({ threshold: 0.1 });
+  const { ref, visible } = useReveal();
 
   return (
     <section id="funcionalidades" className="bg-[#f7f6f2] py-24 px-6 border-b border-[#e0ddd8]/60">

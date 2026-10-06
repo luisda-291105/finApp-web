@@ -31,7 +31,7 @@ const PASOS = [
  * Explica en 3 pasos simples el funcionamiento de FinApp.
  */
 export default function HowItWorks() {
-  const { ref, visible } = useReveal({ threshold: 0.15 });
+  const { ref, visible } = useReveal();
 
   return (
     <section className="bg-white py-24 px-6 border-b border-[#e0ddd8]/60">
