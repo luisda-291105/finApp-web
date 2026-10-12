@@ -11,8 +11,8 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 - El dashboard muestra importes de ejemplo; no hay persistencia financiera en `src/`.
 - `AuthModal` usa endpoints centralizados, pero el backend no está listo; el fallback
   actual muestra mensajes demo y no confirma persistencia real.
-- Pruebas: Vitest + Testing Library en jsdom; 6 archivos de test cubren rutas,
-  componentes, `useReveal` y reglas de `index.css`.
+- Pruebas: Vitest + Testing Library en jsdom; 7 archivos de test cubren rutas,
+  componentes (incluido `PanelTarjetas`), `useReveal` y reglas de `index.css`.
 - RF6 (tarea 1 de spec 001): `useReveal` inicializa por defecto con
   `threshold: 0.15` y `rootMargin: "0px 0px -8% 0px"`; Hero, StatsBar,
   Features, HowItWorks y CtaSection ya no sobreescriben opciones.
@@ -83,6 +83,19 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
   `TRIAL_ACTIVO = true` (a `/login` en caso contrario). `npm test` (33) y
   `npm run build` en verde. Validación visual no realizada. RF7 no se tocó;
   su alcance quedó solo CSS para `--i`.
+- Spec 002 (bloque tarjetas, tareas 1-7): nuevo componente puro
+  `src/components/PanelTarjetas.jsx` con `tarjetasDemo` interno (3 tarjetas
+  demo: nombre, "•••• XXXX" y saldo ficticio en formato `$X,XXX.XX`) y la
+  nota exacta "Datos de demostración" bajo el grid; `DashboardSection` lo
+  renderiza en `/dashboard/tarjetas` y el placeholder ya no aparece
+  (RF1-RF5). Cobertura RF6: `PanelTarjetas.test.jsx` (3 pruebas) + 5 pruebas
+  de ruta en `App.test.jsx` (incluida la ausencia del placeholder).
+  Validaciones: `npm test` (41 tests, 7 archivos) y `npm run build` en verde;
+  revisión visual con Firefox headless pass en escritorio (3 columnas) y
+  móvil < 640px (1 columna); pendiente hover interactivo y
+  `prefers-reduced-transparency` (sin CSS nuevo que evaluar). Los commits se
+  limitaron al código y a esta memoria; la carpeta
+  `specs/002-bloque-tarjetas/` sigue sin commitear.
 
 ## Decisiones (y por qué)
 - Endpoints centralizados en `src/config/api.config.js`: permite configurar la base URL
