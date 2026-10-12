@@ -19,6 +19,7 @@ import HowItWorks from "./components/HowItWorks";
 import CtaSection from "./components/CtaSection";
 import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
+import PanelTarjetas from "./components/PanelTarjetas";
 
 /**
  * App
@@ -154,11 +155,12 @@ function DashboardSection({ seccion }) {
             <p className="mt-3 text-2xl font-semibold text-bg-dark">$1,820.75</p>
           </article>
         </div>
+      ) : seccion === "tarjetas" ? (
+        <PanelTarjetas />
       ) : (
         <div className="glass-card p-6">
           <p className="text-slate-text">
             {seccion === "transacciones" && "Consulta y organiza tus movimientos recientes."}
-            {seccion === "tarjetas" && "Administra tus tarjetas y revisa sus saldos."}
             {seccion === "configuracion" && "Ajusta tus preferencias de cuenta y seguridad."}
           </p>
         </div>

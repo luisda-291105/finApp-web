@@ -1,12 +1,12 @@
 /**
- * @uso        Comprueba las rutas públicas y el acceso de prueba al dashboard
- * @funciones  Pruebas de raíz, login y subrutas
+ * @uso        Comprueba las rutas públicas, el acceso de prueba y el bloque de tarjetas
+ * @funciones  Pruebas de raíz, login, subrutas y sección tarjetas
  * @datos      Renderiza App con ubicaciones de MemoryRouter
  * @eventos    Navegación inicial
  * @estados    N/A
  * @usadoPor   vitest (npm run test)
  */
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
@@ -20,6 +20,12 @@ function renderRuta(ruta) {
     </MemoryRouter>
   );
 }
+
+const tarjetasEsperadas = [
+  { nombre: "Tarjeta Oro", enmascarado: "•••• 4242", saldo: "$2,340.00" },
+  { nombre: "Tarjeta Platino", enmascarado: "•••• 5300", saldo: "$980.25" },
+  { nombre: "Débito Nómina", enmascarado: "•••• 7841", saldo: "$5,120.75" },
+];
 
 describe("rutas de la aplicación", () => {
   it("redirige la raíz al dashboard durante el trial", () => {
@@ -46,5 +52,56 @@ describe("rutas de la aplicación", () => {
     renderRuta("/dashboard/transacciones");
 
     expect(screen.getByRole("heading", { name: "Transacciones" })).toBeDefined();
+  });
+
+  it("muestra el bloque de tarjetas demo en la sección tarjetas", () => {
+    const { container } = renderRuta("/dashboard/tarjetas");
+
+    expect(screen.getByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
+
+    const tarjetas = container.querySelectorAll("article.glass-card");
+    expect(tarjetas).toHaveLength(3);
+
+    tarjetasEsperadas.forEach(({ nombre, enmascarado, saldo }, indice) => {
+      const tarjeta = tarjetas[indice];
+
+      expect(within(tarjeta).getByText(nombre)).toBeDefined();
+      expect(within(tarjeta).getByText(enmascarado)).toBeDefined();
+      expect(within(tarjeta).getByText(saldo)).toBeDefined();
+    });
+
+    expect(screen.getByText("Datos de demostración")).toBeDefined();
+  });
+
+  it("no muestra el placeholder en la sección tarjetas", () => {
+    renderRuta("/dashboard/tarjetas");
+
+    expect(
+      screen.queryByText("Administra tus tarjetas y revisa sus saldos.")
+    ).toBeNull();
+  });
+
+  it("conserva las tres cifras en la sección inicio", () => {
+    renderRuta("/dashboard");
+
+    expect(screen.getByText("Balance disponible")).toBeDefined();
+    expect(screen.getByText("Ingresos del mes")).toBeDefined();
+    expect(screen.getByText("Gastos del mes")).toBeDefined();
+  });
+
+  it("conserva el placeholder en transacciones", () => {
+    renderRuta("/dashboard/transacciones");
+
+    expect(
+      screen.getByText("Consulta y organiza tus movimientos recientes.")
+    ).toBeDefined();
+  });
+
+  it("conserva el placeholder en configuración", () => {
+    renderRuta("/dashboard/configuracion");
+
+    expect(
+      screen.getByText("Ajusta tus preferencias de cuenta y seguridad.")
+    ).toBeDefined();
   });
 });
