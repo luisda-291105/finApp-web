@@ -40,9 +40,9 @@ El estado del **modal** (`tarjetaActiva: tarjetaDemo | null`) vive en
 - Fuente de datos: nuevo módulo `src/data/tarjetasDemo.js` (ver abajo) con las
   5 tarjetas y sus movimientos de octubre 2026.
 - Renderiza:
-  - `<AcordeonTarjetas tarjetas={tarjetas} onAbrirTarjeta={abrirModal} />`
+  - `<AcordeonTarjetas tarjetas={tarjetas} onSeleccionarTarjeta={abrirModal} />`
     (solo móvil por clases).
-  - `<GridTarjetas tarjetas={tarjetas} onAbrirTarjeta={abrirModal} />` (sm+).
+  - `<GridTarjetas tarjetas={tarjetas} onSeleccionarTarjeta={abrirModal} />` (sm+).
   - `<ModalTarjeta tarjeta={tarjetaActiva} onCerrar={cerrarModal} />`.
   - La nota "Datos de demostración" (se conserva).
 - Expone el elemento activador al cerrar el modal para devolver el foco
@@ -62,11 +62,11 @@ El estado del **modal** (`tarjetaActiva: tarjetaDemo | null`) vive en
 - Interacción (RF5):
   - Clic/toque sobre encabezado de ítem **colapsado** → expande ese ítem
     (colapsando el anterior).
-  - Clic/toque sobre **la tarjeta ya expandida** → `onAbrirTarjeta(tarjeta)`.
-  - Encabezado del ítem expandido: al tocarlo de nuevo también abre el modal
-    (es el "segundo toque" del gesto natural) — verificado con el criterio de
-    la spec: "primer toque expande, segundo toque abre modal" sobre encabezado
-    o tarjeta.
+  - Clic/toque sobre **la tarjeta ya expandida** → `onSeleccionarTarjeta(tarjeta)`.
+  - Encabezado del ítem expandido: al tocarlo de nuevo hace toggle (colapsa/
+    reexpande el ítem); NO abre el modal. El modal solo se abre tocando la
+    tarjeta expandida — criterio de la spec: "primer toque expande (encabezado
+    o tarjeta colapsada), segundo toque sobre la tarjeta expandida abre modal".
   - Teclado: Enter/Espacio sobre el encabezado togglea expansión; sobre la
     tarjeta expandida abre el modal (la tarjeta interna es clickeable vía
     wrapper `role="button"`, ya que `MiTarjetaVirtual` con flip deshabilitado
@@ -81,7 +81,7 @@ El estado del **modal** (`tarjetaActiva: tarjetaDemo | null`) vive en
 - Contenedor `hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-4`.
 - Cada celda: wrapper `role="button" tabIndex={0}` con `aria-label`
   (p. ej. "Ver detalle de la tarjeta de {titular}") que al primer clic/tap o
-  Enter/Espacio llama a `onAbrirTarjeta(tarjeta)` (RF3, RF6).
+  Enter/Espacio llama a `onSeleccionarTarjeta(tarjeta)` (RF3, RF6).
 - Dentro, `MiTarjetaVirtual` con `modo="vista"` (flip deshabilitado).
 
 ### 4. `src/components/ModalTarjeta.jsx` (nuevo)
