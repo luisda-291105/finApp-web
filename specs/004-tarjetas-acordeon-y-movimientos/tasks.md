@@ -123,7 +123,7 @@ doble toque y semántica ARIA.
 
 ---
 
-## Tarea 6 — ModalTarjeta accesible
+## Tarea 6 — ModalTarjeta accesible ✅
 
 **Objetivo.** Modal con `role="dialog"`, focus trap, Esc, backdrop, tarjeta
 con flip y log integrado. (Puede desarrollarse en paralelo a tareas 4–5, pero

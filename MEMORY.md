@@ -1,5 +1,26 @@
 # MEMORY.md — FinApp
 
+- Spec 004, T6 completa: nuevo `src/components/ModalTarjeta.jsx` (modal de
+  detalle de tarjeta). Props `tarjeta` (objeto del fixture o `null` = cerrado,
+  no renderiza) y `onCerrar()`. `role="dialog"` + `aria-modal="true"` +
+  `aria-labelledby` al `<h2>` "Tarjeta de {titular}"; dentro: `MiTarjetaVirtual`
+  con flip habilitado (sin `flipDeshabilitado`), `<dl>` con titular/número
+  enmascarado/expiración/entidad y `LogMovimientos` alimentado desde
+  `MOVIMIENTOS_DEMO[tarjeta.id]`. Focus trap manual con Tab/Shift+Tab (selector
+  de focoables propio), foco inicial en el botón "Cerrar detalle de tarjeta",
+  Esc y clic en backdrop cierran (panel con stopPropagation), scroll del body
+  bloqueado mientras está abierto. **Retorno del foco: lo gestiona el propio
+  modal** (guarda `document.activeElement` al abrir y lo restaura en el cleanup
+  del efecto); T7 NO necesita refs/callbacks extra para el foco. Animación
+  fade/escala con `AnimatePresence` interno, duración 0 con `useReducedMotion`.
+  Backdrop `bg-bg-dark/60` + `backdrop-blur-sm`, panel `glass-card`, z-50; sin
+  hex nuevos. TDD: 11 pruebas fallaron antes (import inexistente).
+  Aprendizaje: el mock de `framer-motion` (`motion.div` trivial) debe usar
+  `React.forwardRef` cuando el componente bajo prueba pasa `ref` (p. ej. para el
+  focus trap); sin forwardRef el ref llega `null` y el foco/trap fallan en jsdom.
+  Validaciones: focalizadas (11), `npm test` (92, 12 archivos) y
+  `npm run build` en verde. Validación visual no realizada (sin navegador).
+
 - Spec 004, T4 completa: nuevo `src/components/AcordeonTarjetas.jsx` (layout
   móvil `< sm`). Contenedor `role="list"` con clase `sm:hidden`; acordeón
   exclusivo con estado `indiceExpandido` (inicial 0, primera expandida);
