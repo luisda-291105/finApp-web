@@ -149,7 +149,7 @@ se cierra después de ellas.)
 
 ---
 
-## Tarea 7 — Refactor de PanelTarjetas e integración de ruta
+## Tarea 7 — Refactor de PanelTarjetas e integración de ruta ✅
 
 **Objetivo.** Fusionar las tres secciones actuales en el conjunto fluido,
 conectar acordeón/grid con el modal, mantener la nota demo y devolver el foco

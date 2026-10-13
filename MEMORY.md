@@ -1,5 +1,31 @@
 # MEMORY.md — FinApp
 
+- Spec 004, T7 completa: refactor total de `PanelTarjetas.jsx`. Eliminadas las
+  tres secciones antiguas ("Mi Tarjeta Virtual" destacada, "Ejemplos de diseño"
+  y "Tus otras tarjetas") y las constantes internas `tarjetasDemo`/
+  `ejemplosDiseno` hardcodeadas. Ahora usa `TARJETAS_DEMO` (5 tarjetas del
+  fixture oct 2026) como fuente única y compone: `AcordeonTarjetas`
+  (`sm:hidden`), `GridTarjetas` (`hidden sm:grid sm:grid-cols-3
+  lg:grid-cols-5`) — doble render por breakpoints solo CSS, cero matchMedia en
+  JS — y `ModalTarjeta`. Estado local único `tarjetaActiva` (`useState(null)`);
+  ambos layouts reciben `onSeleccionarTarjeta={setTarjetaActiva}`; cierre con
+  `setTarjetaActiva(null)` y el retorno del foco al activador lo gestiona el
+  propio modal en su cleanup (guarda `document.activeElement` al abrir). Se
+  conserva la nota "Datos de demostración". Sin hex nuevos, solo tokens, header
+  actualizado. TDD: 12 pruebas nuevas reescritas en `PanelTarjetas.test.jsx`
+  (integración: clases de breakpoint, 5 tarjetas por presentación, ausencia de
+  secciones viejas, abrir modal desde grid/acordeón con log del fixture, cierre
+  por botón/Esc/backdrop con retorno de foco, estado vacío para tarjeta-azul-2,
+  modal cerrado al inicio y solo uno abierto) y la prueba de ruta en
+  `App.test.jsx` reescrita (ya no usa `section:nth-of-type(3)`; verifica
+  acordeón+grid por clases, los 5 titulares del fixture y la nota, y que las
+  secciones antiguas no existen). Los 11 fallos iniciales TDD fueron sobre la
+  versión vieja. Aprendizaje: `MiTarjetaVirtual` ya expone `role="region"`, así
+  que para contar paneles del acordeón hay que consultar `[id^='panel-tarjeta-']`
+  en lugar de `getAllByRole("region")`. Validaciones: focalizadas (21 en 2
+  archivos), `npm test` (97, 12 archivos) y `npm run build` en verde. Validación
+  visual Fluid Glass no realizada (sin navegador disponible).
+
 - Spec 004, T6 completa: nuevo `src/components/ModalTarjeta.jsx` (modal de
   detalle de tarjeta). Props `tarjeta` (objeto del fixture o `null` = cerrado,
   no renderiza) y `onCerrar()`. `role="dialog"` + `aria-modal="true"` +

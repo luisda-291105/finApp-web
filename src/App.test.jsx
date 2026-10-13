@@ -21,10 +21,12 @@ function renderRuta(ruta) {
   );
 }
 
-const tarjetasEsperadas = [
-  { nombre: "Tarjeta Oro", enmascarado: "•••• 4242", saldo: "$2,340.00" },
-  { nombre: "Tarjeta Platino", enmascarado: "•••• 5300", saldo: "$980.25" },
-  { nombre: "Débito Nómina", enmascarado: "•••• 7841", saldo: "$5,120.75" },
+const TITULARES_FIXTURE = [
+  "MARÍA GARCÍA",
+  "ANA MARTÍNEZ",
+  "CARLOS RUIZ",
+  "LUCÍA FERNÁNDEZ",
+  "DIEGO TORRES",
 ];
 
 describe("rutas de la aplicación", () => {
@@ -54,34 +56,35 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByRole("heading", { name: "Transacciones" })).toBeDefined();
   });
 
-  it("muestra la tarjeta virtual principal y el bloque de tarjetas demo en la sección tarjetas", () => {
-    const { container } = renderRuta("/dashboard/tarjetas");
+  it("muestra el conjunto fluido de tarjetas demo en la sección tarjetas (spec 004)", () => {
+    renderRuta("/dashboard/tarjetas");
 
     expect(screen.getByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
 
-    // Verificar MiTarjetaVirtual principal (scopeando al frente via testid)
-    const frente = container.querySelector("[data-testid='tarjeta-frente']");
-    if (frente) {
-      expect(within(frente).getByText("MARÍA GARCÍA")).toBeDefined();
-      expect(within(frente).getByText("4242 4242 4242 4242")).toBeDefined();
-      expect(within(frente).getByText("12/28")).toBeDefined();
-      expect(within(frente).getByText("FinApp")).toBeDefined();
-    }
+    // Doble render por breakpoints: acordeón móvil + grid tablet/escritorio
+    const listas = screen.getAllByRole("list", { name: "Tarjetas de demostración" });
+    const acordeon = listas.find((el) => el.className.includes("sm:hidden"));
+    const grid = listas.find(
+      (el) => el.className.includes("hidden") && el.className.includes("sm:grid")
+    );
+    expect(acordeon).toBeTruthy();
+    expect(grid).toBeTruthy();
 
-    // Verificar grid de 3 tarjetas demo (article.glass-card en la segunda section)
-    const tarjetas = container.querySelectorAll("section:nth-of-type(3) article.glass-card");
-    expect(tarjetas).toHaveLength(3);
-
-    tarjetasEsperadas.forEach(({ nombre, enmascarado, saldo }, indice) => {
-      const tarjeta = tarjetas[indice];
-
-      expect(within(tarjeta).getByText(nombre)).toBeDefined();
-      expect(within(tarjeta).getByText(enmascarado)).toBeDefined();
-      expect(within(tarjeta).getByText(saldo)).toBeDefined();
+    // Las 5 tarjetas del fixture accesibles desde el grid
+    TITULARES_FIXTURE.forEach((titular) => {
+      expect(
+        within(grid).getByRole("button", {
+          name: `Ver detalle de la tarjeta de ${titular}`,
+        })
+      ).toBeTruthy();
     });
 
+    // Secciones antiguas eliminadas
+    expect(screen.queryByText("Ejemplos de diseño")).toBeNull();
+    expect(screen.queryByText("Tus otras tarjetas")).toBeNull();
+    expect(screen.queryByText("Tarjeta Oro")).toBeNull();
+
     expect(screen.getByText("Datos de demostración")).toBeDefined();
-    expect(screen.getByText("Tus otras tarjetas")).toBeDefined();
   });
 
   it("no muestra el placeholder en la sección tarjetas", () => {
