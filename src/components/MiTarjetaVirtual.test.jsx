@@ -190,4 +190,75 @@ describe("MiTarjetaVirtual", () => {
     const estadoInicial = screen.getByText("Mostrando frente de la tarjeta virtual");
     expect(estadoInicial).toBeDefined();
   });
+
+  describe("flipDeshabilitado", () => {
+    it("no gira la tarjeta con click", async () => {
+      const user = userEvent.setup();
+      render(<MiTarjetaVirtual {...propsDefault} flipDeshabilitado />);
+
+      const frente = screen.getByTestId("tarjeta-frente");
+      await user.click(frente);
+
+      // El aria-label interactivo no existe y la etiqueta sr-only sigue en "frente"
+      expect(screen.queryByRole("button")).toBeNull();
+      expect(screen.getByText("Mostrando frente de la tarjeta virtual")).toBeDefined();
+      expect(screen.queryByText("Mostrando reverso de la tarjeta con CVV")).toBeNull();
+      // El reverso permanece inaccesible
+      expect(screen.getByText("CVV").closest("[aria-hidden]").getAttribute("aria-hidden")).toBe("true");
+    });
+
+    it("no gira la tarjeta con teclado (Enter/Espacio) ni gestiona focus", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<MiTarjetaVirtual {...propsDefault} flipDeshabilitado />);
+
+      // No hay elemento enfocable dentro de la tarjeta: Tab no entra
+      await user.tab();
+      expect(container.contains(document.activeElement)).toBe(false);
+
+      await user.keyboard("{Enter}");
+      await user.keyboard(" ");
+      expect(screen.getByText("Mostrando frente de la tarjeta virtual")).toBeDefined();
+      expect(screen.queryByText("Mostrando reverso de la tarjeta con CVV")).toBeNull();
+    });
+
+    it("no expone role=button, tabIndex ni aria-pressed en la cara de la tarjeta", () => {
+      render(<MiTarjetaVirtual {...propsDefault} flipDeshabilitado />);
+
+      expect(screen.queryByRole("button")).toBeNull();
+      const frente = screen.getByTestId("tarjeta-frente");
+      const cara = frente.parentElement;
+      expect(cara.getAttribute("role")).toBeNull();
+      expect(cara.getAttribute("tabindex")).toBeNull();
+      expect(cara.getAttribute("aria-pressed")).toBeNull();
+    });
+
+    it("no muestra la pill 'Toca para ver CVV'", () => {
+      render(<MiTarjetaVirtual {...propsDefault} flipDeshabilitado />);
+
+      expect(screen.queryByText("Toca para ver CVV")).toBeNull();
+    });
+
+    it("sigue mostrando el frente con todos los datos", () => {
+      const { container } = render(<MiTarjetaVirtual {...propsDefault} flipDeshabilitado />);
+
+      expect(container.querySelector("[data-testid='chip-emv']")).not.toBeNull();
+      expect(screen.getByText("4242 4242 4242 4242")).toBeDefined();
+      expect(screen.getByText("MARÍA GARCÍA")).toBeDefined();
+      expect(screen.getByText("12/28")).toBeDefined();
+      expect(container.querySelector("[data-testid='acento-mint']")).not.toBeNull();
+      // Etiqueta sr-only siempre de frente
+      expect(screen.getByText("Mostrando frente de la tarjeta virtual")).toBeDefined();
+    });
+
+    it("no dispara onFlip al interactuar", async () => {
+      const onFlip = vi.fn();
+      const user = userEvent.setup();
+      render(<MiTarjetaVirtual {...propsDefault} flipDeshabilitado onFlip={onFlip} />);
+
+      await user.click(screen.getByTestId("tarjeta-frente"));
+      await new Promise((r) => setTimeout(r, 650));
+
+      expect(onFlip).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -3,7 +3,9 @@
  * @funciones  MiTarjetaVirtual()
  * @datos      Recibe datos de la tarjeta: titular, número, expiración, CVV, entidad, colorTema
  * @eventos    onFlip (opcional) - se dispara al completar la animación de giro
- * @estados    volteada (boolean) - indica si se muestra el reverso
+ * @estados    volteada (boolean) - indica si se muestra el reverso;
+ *             flipDeshabilitado (prop boolean, default false) - modo solo-vista: sin flip,
+ *             sin rol/teclado interactivos y sin pill "Toca para ver CVV" (para grid/acordeón)
  * @usadoPor   PanelTarjetas
  */
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -18,6 +20,8 @@ import { motion, useReducedMotion } from "framer-motion";
  * - Click/tap/teclado: animación flip 3D suave (600ms, easing marca)
  * - Variaciones de color via tokens: azul (default), menta, morado
  * - Accesibilidad completa: role=button, tabindex, aria-label dinámico, aria-pressed, foco visible, prefers-reduced-motion
+ * - Modo solo-vista (`flipDeshabilitado`): contenedor presentacional sin flip, pensado
+ *   para reutilizar el frente dentro de un wrapper interactivo padre (grid/acordeón)
  */
 export default function MiTarjetaVirtual({
   titular = "MARÍA GARCÍA",
@@ -28,6 +32,7 @@ export default function MiTarjetaVirtual({
   colorTema = "azul", // 'azul' | 'menta' | 'morado'
   className = "",
   onFlip,
+  flipDeshabilitado = false,
 }) {
   const [volteada, setVolteada] = useState(false);
   const reducirMovimiento = useReducedMotion();
@@ -64,19 +69,19 @@ export default function MiTarjetaVirtual({
     azul: {
       gradiente: "from-cat-income via-cat-income/85 to-cat-income/70",
       chip: "bg-slate-300",
-      texto: "text-white",
+      texto: "text-black",
       acento: "text-mint-accent",
     },
     menta: {
       gradiente: "from-emerald-primary via-emerald-hover to-emerald-primary/80",
       chip: "bg-emerald-primary/30",
-      texto: "text-white",
+      texto: "text-black",
       acento: "text-emerald-primary",
     },
     morado: {
       gradiente: "from-cat-other via-cat-other/85 to-cat-other/70",
       chip: "bg-purple-200",
-      texto: "text-white",
+      texto: "text-black",
       acento: "text-cat-other",
     },
   };
@@ -99,18 +104,20 @@ export default function MiTarjetaVirtual({
   return (
     <div className={className} style={{ perspective: "1000px" }} role="region" aria-label="Tarjeta virtual interactiva">
       <motion.div
-        role="button"
-        tabIndex={0}
-        aria-label={volteada ? "Ver frente de la tarjeta virtual" : "Ver reverso de la tarjeta virtual (CVV)"}
-        aria-pressed={volteada}
-        onClick={manejarClick}
-        onKeyDown={manejarTeclado}
-        className="group relative w-full max-w-xs mx-auto aspect-[8/5] cursor-pointer glass-card"
+        {...(!flipDeshabilitado && {
+          role: "button",
+          tabIndex: 0,
+          "aria-pressed": volteada,
+          onClick: manejarClick,
+          onKeyDown: manejarTeclado,
+        })}
+        aria-label={flipDeshabilitado ? undefined : volteada ? "Ver frente de la tarjeta virtual" : "Ver reverso de la tarjeta virtual (CVV)"}
+        className={`group relative w-full max-w-xs mx-auto aspect-[8/5] glass-card${flipDeshabilitado ? "" : " cursor-pointer"}`}
         style={{ transformStyle: "preserve-3d" }}
         animate={{ rotateY: volteada ? 180 : 0 }}
         transition={transitionConfig}
         whileHover={hoverConfig}
-        whileTap={{ scale: 0.99 }}
+        whileTap={flipDeshabilitado ? undefined : { scale: 0.99 }}
         // Framer Motion respeta automáticamente (hover: hover) para whileHover
       >
         {/* FRENTE DE LA TARJETA */}
@@ -201,8 +208,10 @@ export default function MiTarjetaVirtual({
         </div>
 
         {/* Indicador visual "Toca para girar" - solo en hover/focus escritorio
-            (la clase `group` está en el motion.div para que group-hover funcione) */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+            (la clase `group` está en el motion.div para que group-hover funcione).
+            No se renderiza en modo solo-vista (flipDeshabilitado). */}
+        {!flipDeshabilitado && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
           <motion.div
             className="opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 bg-bg-dark/80 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
             animate={reducirMovimiento ? {} : { y: [0, -4, 0] }}
@@ -214,7 +223,8 @@ export default function MiTarjetaVirtual({
             </svg>
             Toca para ver CVV
           </motion.div>
-        </div>
+          </div>
+        )}
       </motion.div>
 
       {/* Etiqueta de estado para lectores de pantalla */}
