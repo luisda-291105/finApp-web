@@ -1,5 +1,26 @@
 # MEMORY.md — FinApp
 
+- Spec 004, T4 completa: nuevo `src/components/AcordeonTarjetas.jsx` (layout
+  móvil `< sm`). Contenedor `role="list"` con clase `sm:hidden`; acordeón
+  exclusivo con estado `indiceExpandido` (inicial 0, primera expandida);
+  encabezados `<button aria-expanded aria-controls>` con titular + "•••• XXXX"
+  y chevron; solo se monta el panel expandido (`role="region"` +
+  `aria-labelledby`, sin hijos interactivos ocultos). Gesto: tocar encabezado
+  colapsado expande (y colapsa la anterior), tocar encabezado expandido lo
+  colapsa (toggle, sin abrir modal — decisión distinta al borrador del plan que
+  abría modal también desde el encabezado), y toque/Enter/Espacio sobre la
+  tarjeta ya expandida (wrapper `role="button"` con
+  `aria-label="Ver detalle de la tarjeta de {titular}"`) invoca
+  `onSeleccionarTarjeta(tarjeta)`. Prop nombrada `onSeleccionarTarjeta` (no
+  `onAbrirTarjeta` del plan; orquestador de T4 lo fijó así — T7 deberá usar
+  ese nombre). Panel con `MiTarjetaVirtual` `flipDeshabilitado`; animación de
+  altura/opacidad con `motion.div` (duration 0 con `useReducedMotion`). TDD:
+  test primero falló (componente inexistente); 8 pruebas nuevas en
+  `AcordeonTarjetas.test.jsx` (detalle: las queries por titular del encabezado
+  deben incluir "••••" para no colisionar con el aria-label del wrapper).
+  Validaciones: focalizadas (8), `npm test` (75, 10 archivos) y
+  `npm run build` en verde. Validación visual no realizada (sin navegador).
+
 - Spec 004, correcciones ronda 2 (T3): revert real de `PanelTarjetas.jsx` y
   `tarjetasDemo.js` a HEAD (`git checkout HEAD --`); la ronda anterior no se
   había aplicado (PanelTarjetas tenía slice(0,3) de TARJETAS_DEMO y el fixture

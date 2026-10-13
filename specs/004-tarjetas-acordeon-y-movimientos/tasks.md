@@ -78,7 +78,7 @@ y estado vacío.
 
 ---
 
-## Tarea 4 — AcordeonTarjetas (móvil)
+## Tarea 4 — AcordeonTarjetas (móvil) ✅
 
 **Objetivo.** Acordeón vertical exclusivo, visible solo `<640px`, con gesto de
 doble toque y semántica ARIA.
