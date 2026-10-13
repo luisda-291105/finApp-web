@@ -126,3 +126,82 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 - Sustituir progresivamente cifras de demostración por datos reales cuando exista API.
 - Añadir cobertura para flujos de autenticación y casos de error al implementar el
   backend; considerar pruebas verificables para límites de diseño.
+
+---
+### Spec 003 — Mi Tarjeta Virtual (completada)
+- Componente `src/components/MiTarjetaVirtual.jsx` con flip 3D (600ms, easing marca),
+  hover elevación solo escritorio (`whileHover` + `@media (hover: hover)` via Framer
+  Motion), click/teclado (Enter/Espacio) toggle frente/reverso con CVV.
+- Props: `titular`, `numero`, `expiracion`, `cvv`, `entidad`, `colorTema` (azul/menta/morado),
+  `onFlip` callback tras animación. Accesibilidad: `role=button`, `tabIndex=0`,
+  `aria-label` dinámico, `aria-pressed`, foco visible (hereda `.glass-card:focus-visible`),
+  `prefers-reduced-motion` via `useReducedMotion()`.
+- Colores solo tokens (`mint-accent`, `emerald-primary`, `cat-income`, `cat-other`,
+  `slate-text`, `bg-dark`, `bg-cream`, `border-line`, `radius-glass`, `font-display`,
+  `font-body`, `font-mono`, `tabular-nums`); gradientes via clases Tailwind
+  mapeadas a `@theme` (`from-cat-income`, `from-emerald-primary`, `from-cat-other`).
+- Integrado en `PanelTarjetas` como tarjeta principal destacada (`max-w-xs`) antes del
+  grid de 3 tarjetas demo (spec 002), con `reveal` y `reveal-stagger` respectivamente.
+- Tests: `MiTarjetaVirtual.test.jsx` (7 pruebas: render, flip click/teclado, callback,
+  colorTema, a11y, reduced-motion), `PanelTarjetas.test.jsx` (5 pruebas), `App.test.jsx`
+  (9 pruebas incl. ruta `/dashboard/tarjetas` con MiTarjetaVirtual + grid + nota).
+- `npm test` (50 tests, 8 archivos) y `npm run build` en verde.
+- Revisión visual: pendiente (sin navegador disponible).
+- Decisión: Framer Motion para interacciones (hover/tap/flip) permitido por skills;
+  no para scroll-reveal. `glass-card` como base del contenedor flip; gradiente interno
+  para realismo de tarjeta bancaria sin añadir superficies translúcidas (cumple límites
+  Fluid Glass).
+- Corrección de 5 hallazgos en MiTarjetaVirtual (2026-10-12, spec 003):
+  1. Altura: `aspect-[8/5]` en el motion.div interactivo (con `min-h-[200px]` como
+     respaldo) para evitar el colapso a altura 0 con caras `absolute inset-0`.
+  2. Indicador "Toca para ver CVV": clase `group` movida al motion.div interactivo;
+     el overlay conserva solo `pointer-events-none`.
+  3. `onFlip`: refactor a `useEffect` sobre `volteada` con setTimeout(600) y ref de
+     montaje; ya no hay efectos secundarios dentro del updater (duplicación
+     StrictMode). Prueba nueva verifica una sola llamada por giro en StrictMode.
+  4. Centrado móvil: `mx-auto` junto a `max-w-xs` en el contenedor de la tarjeta.
+  5. Temas (RF7) homologados a tokens de index.css: azul usa variantes con opacidad
+     de `cat-income`, morado de `cat-other` y menta
+     `from-emerald-primary via-emerald-hover to-emerald-primary/80`. Sin hex nuevos.
+  Validaciones: tests focalizados (13), `npm test` (51, 8 archivos) y `npm run build`
+  en verde. Validación visual no realizada (sin navegador disponible).
+- Corrección ronda 2 tras revisión (2026-10-12, spec 003):
+  1. `onFlip`: la guardia de ref booleano fallaba con el doble setup de StrictMode;
+     ahora se guarda el valor anterior de `volteada` y solo dispara cuando
+     `prev !== actual`. Pruebas nuevas: no se dispara al montar en StrictMode
+     (timers avanzados) y se dispara en cada giro (true/false).
+  2. Eliminadas reglas manuales redundantes `.bg-bg-dark` y `.bg-bg-dark/80` de
+     `index.css`; Tailwind v4 genera ambas desde `@theme --color-bg-dark`
+     (verificado en dist: `color-mix(in oklab, var(--color-bg-dark) 80%, transparent)`).
+  3. Resuelta contradicción spec↔código: eliminadas `.perspective-1000` y
+     `.backface-hidden` del CSS; perspectiva ahora inline en el wrapper
+     (`style={{ perspective: "1000px" }}`), backfaceVisibility ya era inline.
+  4. Pill "Toca para ver CVV": `focus-within:opacity-100` sustituido por
+     `group-focus-visible:opacity-100` (visibilidad con teclado respecto al
+     botón enfocado).
+  5. Salto de línea final añadido en PanelTarjetas.jsx y su test; bloque de
+     spec 003 en MEMORY.md reconciliado: gradientes reales son
+     `from-cat-income via-cat-income/85 to-cat-income/70` (azul),
+     `from-emerald-primary via-emerald-hover to-emerald-primary/80` (menta) y
+     `from-cat-other via-cat-other/85 to-cat-other/70` (morado); nunca hubo
+     `from-blue-600`/`from-purple-600` en el código final.
+  Validaciones: tests focalizados (15), `npm test` (53, 8 archivos) y
+  `npm run build` en verde. Validación visual no realizada (sin navegador).
+- Cambio pequeño (2026-10-12, spec 003 simplificada): "tarjetas de ejemplo" en
+  `PanelTarjetas`. Nueva sección "Ejemplos de diseño" (con nota "Variaciones de
+  diseño de la tarjeta virtual") entre la tarjeta principal (azul, MARÍA GARCÍA)
+  y "Tus otras tarjetas": grid `gap-6 sm:grid-cols-2` con dos `MiTarjetaVirtual`
+  (menta con ANA MARTÍNEZ, morado con CARLOS RUIZ; datos ficticios distintos).
+  Sin blobs ni superficies extra ni hex nuevos; ejemplos instancias puras del
+  componente (flip funcional). TDD: 2 pruebas nuevas en `PanelTarjetas.test.jsx`
+  (fallaron antes), y selectores `section:nth-of-type` ajustados de 2 a 3 en
+  `PanelTarjetas.test.jsx` y `App.test.jsx` (el grid demo es ahora la 3.ª
+  sección). Validaciones: focalizadas (17), `npm test` (55, 8 archivos) y
+  `npm run build` en verde. Validación visual no realizada (sin navegador).
+- Fix bug (2026-10-12, spec 003): `PanelTarjetas` usaba `reveal`/`reveal-stagger`
+  sin `useReveal`, dejando todas las tarjetas invisibles con JS activo. Eliminadas
+  esas clases de las tres `<section>` y el `style={{ "--i": index }}` del grid
+  demo; secciones visibles por defecto (scroll-reveal fuera de alcance en spec
+  003). Tests no referenciaban reveal; sin cambios en pruebas. Validaciones:
+  focalizadas (16), `npm test` (55, 8 archivos) y `npm run build` en verde.
+  Validación visual no realizada (sin navegador).

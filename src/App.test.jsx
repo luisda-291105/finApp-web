@@ -54,12 +54,22 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByRole("heading", { name: "Transacciones" })).toBeDefined();
   });
 
-  it("muestra el bloque de tarjetas demo en la sección tarjetas", () => {
+  it("muestra la tarjeta virtual principal y el bloque de tarjetas demo en la sección tarjetas", () => {
     const { container } = renderRuta("/dashboard/tarjetas");
 
     expect(screen.getByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
 
-    const tarjetas = container.querySelectorAll("article.glass-card");
+    // Verificar MiTarjetaVirtual principal (scopeando al frente via testid)
+    const frente = container.querySelector("[data-testid='tarjeta-frente']");
+    if (frente) {
+      expect(within(frente).getByText("MARÍA GARCÍA")).toBeDefined();
+      expect(within(frente).getByText("4242 4242 4242 4242")).toBeDefined();
+      expect(within(frente).getByText("12/28")).toBeDefined();
+      expect(within(frente).getByText("FinApp")).toBeDefined();
+    }
+
+    // Verificar grid de 3 tarjetas demo (article.glass-card en la segunda section)
+    const tarjetas = container.querySelectorAll("section:nth-of-type(3) article.glass-card");
     expect(tarjetas).toHaveLength(3);
 
     tarjetasEsperadas.forEach(({ nombre, enmascarado, saldo }, indice) => {
@@ -71,6 +81,7 @@ describe("rutas de la aplicación", () => {
     });
 
     expect(screen.getByText("Datos de demostración")).toBeDefined();
+    expect(screen.getByText("Tus otras tarjetas")).toBeDefined();
   });
 
   it("no muestra el placeholder en la sección tarjetas", () => {
