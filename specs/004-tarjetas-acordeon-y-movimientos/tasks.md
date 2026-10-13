@@ -6,7 +6,7 @@ tests focalizados (`npx vitest run <ruta>`), `npm test` y `npm run build`.
 
 ---
 
-## Tarea 1 — Aprobar spec y datos demo
+## Tarea 1 — Aprobar spec y datos demo ✅
 
 **Objetivo.** Marcar la spec como aprobada y crear la fuente de datos
 estáticos de demostración (5 tarjetas + movimientos fijos de octubre 2026).
@@ -179,7 +179,7 @@ al activador. Actualizar tests de ruta.
 
 ---
 
-## Tarea 8 — Cierre: MEMORY.md y revisión final
+## Tarea 8 — Cierre: MEMORY.md y revisión final ✅
 
 **Objetivo.** Documentar la spec 004 en la memoria del proyecto y cerrar
 validaciones globales.

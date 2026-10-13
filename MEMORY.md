@@ -1,5 +1,30 @@
 # MEMORY.md — FinApp
 
+- Spec 004, T8 completa (cierre, 2026-10-12): spec 004 FINALIZADA (T1–T8).
+  Resumen final: panel de tarjetas = conjunto fluido con **5 tarjetas** del
+  fixture `src/data/tarjetasDemo.js` (datos fijos **octubre 2026**,
+  `PERIODO_DEMO = { anio: 2026, mes: 10 }`); componentes nuevos
+  `LogMovimientos`, `AcordeonTarjetas` (móvil, `sm:hidden`, acordeón exclusivo,
+  encabezado expandido = toggle, el modal solo abre tocando la tarjeta
+  expandida), `GridTarjetas` (`hidden sm:grid sm:grid-cols-3 lg:grid-cols-5`)
+  y `ModalTarjeta` (dialog accesible, focus trap, Esc/backdrop, **flip 3D solo
+  dentro del modal**; en el conjunto se usa la prop `flipDeshabilitado`).
+  Decisiones clave: **doble render por breakpoints solo CSS, cero matchMedia
+  en JS**; **retorno de foco al activador gestionado por el propio modal en el
+  cleanup del efecto** (guarda `document.activeElement` al abrir); estado
+  único `tarjetaActiva` en `PanelTarjetas`. En T8 se detectó una modificación
+  suelta sin commitear en `GridTarjetas.jsx` (clases `sm:grid-cols-1
+  md:grid-cols-2 lg:grid-cols-3`, sin autor ni registro) que rompía 2 tests:
+  revertida con `git checkout HEAD --` para restaurar el estado del plan
+  aprobado (no se commiteó nada de código). Docs: plan.md alineado
+  (`onSeleccionarTarjeta`, encabezado toggle) en commit propio; notas "superada
+  por spec 004 (solo presentación del panel; RF de datos/a11y vigentes)"
+  añadidas a specs 002 y 003; títulos marcados ✅ en tasks.md. Validaciones
+  finales reales: `npm test` **97/97 en 12 archivos** y `npm run build` en
+  verde. **Pendiente honesto: validación visual Fluid Glass en navegador NO
+  realizada** (sin navegador disponible en el entorno).
+
+
 - Spec 004, T7 completa: refactor total de `PanelTarjetas.jsx`. Eliminadas las
   tres secciones antiguas ("Mi Tarjeta Virtual" destacada, "Ejemplos de diseño"
   y "Tus otras tarjetas") y las constantes internas `tarjetasDemo`/

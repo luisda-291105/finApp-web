@@ -2,6 +2,14 @@
 
 `Estado: implementada`
 
+> Nota de estado (2026-10-12): la presentación de esta spec en el panel de
+> tarjetas (tarjeta principal destacada y sección "Ejemplos de diseño") fue
+> superada por la spec 004 (`specs/004-tarjetas-acordeon-y-movimientos/`), que
+> reorganizó el panel como conjunto fluido acordeón/grid + modal. El
+> componente `MiTarjetaVirtual` se reutiliza íntegro (con flip en el modal,
+> sin flip vía prop `flipDeshabilitado` en el conjunto); sus RF de componente,
+> datos y accesibilidad siguen vigentes.
+>
 > Nota: spec simplificada el 2026-10-12 tras su implementación y corrección de
 > hallazgos. El material retirado (detalles resueltos, redundancias y notas de
 > contexto) se conserva en `todo.md` de esta misma carpeta.

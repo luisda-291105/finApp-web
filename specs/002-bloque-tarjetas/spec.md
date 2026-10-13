@@ -2,6 +2,13 @@
 
 `Estado: en revisión`
 
+> Nota de estado (2026-10-12): la presentación del panel de tarjetas de esta
+> spec (grid simple de 3 tarjetas, "Tus otras tarjetas") fue superada por la
+> spec 004 (`specs/004-tarjetas-acordeon-y-movimientos/`), que la reorganizó
+> como conjunto fluido acordeón/grid de 5 tarjetas + modal. La nota "Datos de
+> demostración" se conserva. Los RF de datos y accesibilidad de esta spec
+> siguen vigentes.
+
 ## Propósito
 
 Sustituir el texto de marcador de la sección "tarjetas" del dashboard
