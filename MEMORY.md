@@ -264,3 +264,15 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
   003). Tests no referenciaban reveal; sin cambios en pruebas. Validaciones:
   focalizadas (16), `npm test` (55, 8 archivos) y `npm run build` en verde.
   Validación visual no realizada (sin navegador).
+- Spec 004 T5 (2026-10-12): nuevo `GridTarjetas` (tablet/escritorio) con doble
+  render por clases (`hidden sm:grid sm:grid-cols-3 lg:grid-cols-5`, gap-4).
+  Cada celda: wrapper accesible `role="button"` + `tabIndex` + aria-label
+  "Ver detalle de la tarjeta de {titular}" con foco visible via tokens
+  (`focus-visible:ring-2 ring-emerald-primary`); dentro, `MiTarjetaVirtual`
+  con `flipDeshabilitado` (frente completo, sin flip/pill). Primer gesto
+  (clic/Enter/Espacio) dispara `onSeleccionarTarjeta(tarjeta)` (modal en T6/T7).
+  Aprendizaje: el proyecto no carga jest-dom; usar `toBeTruthy`/`className`
+  en lugar de `toBeInTheDocument`/`toHaveClass`. TDD: 6 pruebas fallaron antes
+  (import inexistente y luego matchers), 6/6 en verde tras implementar.
+  Validaciones: focalizadas (6), `npm test` (81, 11 archivos) y `npm run build`
+  en verde. Validación visual no realizada (sin navegador).

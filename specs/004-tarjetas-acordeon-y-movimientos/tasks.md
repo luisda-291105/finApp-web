@@ -94,7 +94,7 @@ doble toque y semántica ARIA.
   cada encabezado es `button` con `aria-expanded` y `aria-controls` ↔ panel
   con `id`; paneles colapsados no montan contenido interactivo.
 - user-event: clic en encabezado colapsado expande y colapsa la anterior
-  (exclusivo); clic sobre la tarjeta ya expandida dispara `onAbrirTarjeta`
+  (exclusivo); clic sobre la tarjeta ya expandida dispara `onSeleccionarTarjeta`
   con la tarjeta correcta; `MiTarjetaVirtual` interno usa
   `flipDeshabilitado`.
 - Test con `useReducedMotion` mockeado a `true`: expansión sin animación.
@@ -102,7 +102,7 @@ doble toque y semántica ARIA.
 
 ---
 
-## Tarea 5 — GridTarjetas (tablet/desktop)
+## Tarea 5 — GridTarjetas (tablet/desktop) ✅
 
 **Objetivo.** Grid responsivo de 3/5 columnas, un solo gesto abre el modal.
 
@@ -118,7 +118,7 @@ doble toque y semántica ARIA.
   `MiTarjetaVirtual` en `flipDeshabilitado`.
 - Cada celda es activable con un clic, Enter o Espacio (wrapper
   `role="button"` con `aria-label` identificativo) y llama a
-  `onAbrirTarjeta(tarjeta)` exactamente una vez por gesto.
+  `onSeleccionarTarjeta(tarjeta)` exactamente una vez por gesto.
 - Focalizadas, `npm test` y `npm run build` en verde.
 
 ---
