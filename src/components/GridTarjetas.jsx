@@ -20,7 +20,7 @@ import MiTarjetaVirtual from "./MiTarjetaVirtual";
 export default function GridTarjetas({ tarjetas, onSeleccionarTarjeta }) {
   return (
     <div
-      className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-4 items-start"
+      className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start"
       role="list"
       aria-label="Tarjetas de demostración"
     >

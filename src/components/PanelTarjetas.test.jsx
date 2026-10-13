@@ -68,8 +68,8 @@ describe("PanelTarjetas (spec 004)", () => {
       expect(acordeon.className).toContain("sm:hidden");
       expect(grid.className).toContain("hidden");
       expect(grid.className).toContain("sm:grid");
-      expect(grid.className).toContain("sm:grid-cols-3");
-      expect(grid.className).toContain("lg:grid-cols-5");
+      expect(grid.className).toContain("sm:grid-cols-2");
+      expect(grid.className).toContain("lg:grid-cols-3");
     });
 
     it("muestra las 5 tarjetas del fixture en cada presentación", () => {
