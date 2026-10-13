@@ -1,5 +1,43 @@
 # MEMORY.md — FinApp
 
+- Spec 004, correcciones ronda 2 (T3): revert real de `PanelTarjetas.jsx` y
+  `tarjetasDemo.js` a HEAD (`git checkout HEAD --`); la ronda anterior no se
+  había aplicado (PanelTarjetas tenía slice(0,3) de TARJETAS_DEMO y el fixture
+  2 tarjetas duplicadas incoherentes `tarjeta-menta-2/3`). Fixture vuelve a 5
+  tarjetas (`grep -c colorTema` = 5). Se aclaró el staging: `LogMovimientos.jsx`
+  y su test NO estaban en el commit a3573b4 (figuraban untracked); commit
+  aparte c085bd1. Validaciones: focalizadas (16), `npm test` (67, 9 archivos),
+  `npm run build` en verde. `MiTarjetaVirtual.jsx` sin cambios.
+
+- Spec 004, T3 completa: `MiTarjetaVirtual` acepta `flipDeshabilitado` (boolean,
+  default `false`). En modo solo-vista la cara no expone `role="button"`,
+  `tabIndex`, `aria-pressed` ni handlers (props interactivas esparcidas con
+  spread condicional sobre el `motion.div`), no renderiza la pill "Toca para
+  ver CVV", quita `whileTap`/`cursor-pointer` y `volteada` nunca commuta
+  (reverso inaccesible); frente intacto y `useReducedMotion` respetado igual
+  que antes. TDD: 6 pruebas nuevas en `MiTarjetaVirtual.test.jsx` (fallaron
+  antes; las 10+ existentes de spec 003 sin modificar). Validaciones:
+  focalizadas (16), `npm test` (67, 9 archivos) y `npm run build` en verde.
+  Pendiente uso desde AcordeonTarjetas/GridTarjetas (T4/T5).
+
+- Spec 004, T2 completa: nuevo `src/components/LogMovimientos.jsx` (log de
+  movimientos de una tarjeta; ordena descendente por fecha ISO lexicográfica,
+  helper exportado `formatearFechaCorta(fechaISO)` con mapa de meses en español
+  sin Intl, montos con signo explícito y `tabular-nums`, tokens
+  `text-cat-income`/`text-cat-expense`, estado vacío "Sin movimientos este mes"
+  para `[]`/undefined). TDD con `LogMovimientos.test.jsx` (6 pruebas); el
+  proyecto no tiene jest-dom configurado: se usan matchers Chai
+  (`toBeDefined`, `toBeNull`, `classList.contains`). Validaciones: focalizadas
+  (6), `npm test` (61, 9 archivos) y `npm run build` en verde.
+
+- Spec 004 (tarjetas acordeón y movimientos): spec aprobada. T1 completa: añadido
+  `src/data/tarjetasDemo.js` con `TARJETAS_DEMO` (5 tarjetas: azul MARÍA GARCÍA,
+  menta ANA MARTÍNEZ, morado CARLOS RUIZ + 2 nuevas ficticias), `MOVIMIENTOS_DEMO`
+  (fechas fijas octubre 2026 en ISO "2026-10-DD", signos mezclados, tarjeta-azul-2 sin movimientos para
+  estado vacío) y `PERIODO_DEMO = { anio: 2026, mes: 10 }`. Sin cambios en
+  componentes. Pendientes tareas 2–8 (LogMovimientos, flipDeshabilitado, acordeón,
+  grid, modal, integración, cierre).
+
 Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 
 ## Estado actual
