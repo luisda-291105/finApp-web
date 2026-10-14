@@ -1,20 +1,20 @@
 /**
- * @uso        Presenta el inicio de sesión en una ruta propia
- * @funciones  LoginPage()
+ * @uso        Página de inicio de sesión en una ruta propia
+ * @funciones  PaginaLogin()
  * @datos      Abre AuthModal en modo login
- * @eventos    Cierre o acceso demo navega al dashboard durante el trial
+ * @eventos    Cierre o acceso demo navega a /dashboard durante el trial; sin trial navega a /
  * @estados    N/A
- * @usadoPor   App.jsx
+ * @usadoPor   App.jsx (ruta /login)
  */
 import { useNavigate } from "react-router-dom";
 import { TRIAL_ACTIVO } from "../config/app.config";
-import AuthModal from "./AuthModal";
+import AuthModal from "../components/AuthModal";
 
 /**
- * LoginPage
+ * PaginaLogin
  * Reutiliza el formulario de autenticación existente como vista de ruta.
  */
-export default function LoginPage() {
+export default function PaginaLogin() {
   const navigate = useNavigate();
 
   return (
@@ -26,7 +26,7 @@ export default function LoginPage() {
       <AuthModal
         abierto
         modoInicial="login"
-        alCerrar={() => navigate(TRIAL_ACTIVO ? "/dashboard" : "/inicio")}
+        alCerrar={() => navigate(TRIAL_ACTIVO ? "/dashboard" : "/")}
       />
     </main>
   );

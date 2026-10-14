@@ -4,6 +4,6 @@
  * @datos      Valores de configuración en tiempo de compilación
  * @eventos    N/A
  * @estados    TRIAL_ACTIVO controla la protección de rutas
- * @usadoPor   App.jsx, LoginPage.jsx
+ * @usadoPor   App.jsx, PaginaLogin.jsx
  */
 export const TRIAL_ACTIVO = true;

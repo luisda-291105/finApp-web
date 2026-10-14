@@ -1,10 +1,10 @@
 /**
- * @uso        Layout navegable para el panel de control FinApp
- * @funciones  Dashboard()
+ * @uso        Layout del panel de control FinApp: sidebar con navegación y cabecera
+ * @funciones  PaginaDashboard()
  * @datos      Renderiza la ruta hija mediante Outlet
  * @eventos    Navegación entre secciones del panel
  * @estados    N/A
- * @usadoPor   App.jsx
+ * @usadoPor   App.jsx (ruta /dashboard)
  */
 import { NavLink, Outlet } from "react-router-dom";
 
@@ -16,10 +16,10 @@ const secciones = [
 ];
 
 /**
- * Dashboard
+ * PaginaDashboard
  * Proporciona navegación persistente y el contenedor del contenido interno.
  */
-export default function Dashboard() {
+export default function PaginaDashboard() {
   return (
     <div className="min-h-screen bg-bg-cream text-bg-dark md:grid md:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="bg-bg-dark px-5 py-6 text-white md:min-h-screen md:px-6">

@@ -1,5 +1,120 @@
 # MEMORY.md — FinApp
 
+- Spec 005 (arquitectura, capa de páginas) FINALIZADA (cierre, 2026-10-13):
+  T1–T7 completadas. Creada la capa `src/pages/` (`PaginaInicio`,
+  `PaginaLogin`, `PaginaDashboard` y las cuatro páginas de sección, más
+  `PanelTarjetas` + su test como excepción documentada por decisión del
+  usuario); `src/components/LoginPage.jsx`, `Dashboard.jsx` y
+  `PanelTarjetas.jsx` eliminados tras la migración (move-no-duplication);
+  `App.jsx` quedó como capa de rutas pura. Mapa final: `/` = landing
+  siempre, `/inicio` → `/` (alias eliminado), `/login` (cierre sin trial →
+  `/`), `/dashboard/*` con guardia `TRIAL_ACTIVO`, `*` → `/`. Decisiones
+  clave: **hex heredados de la landing conservados tal cual** en
+  `PaginaInicio.jsx` (deuda técnica fuera de alcance); **corrección de
+  `GridTarjetas.test.jsx` a `sm:grid-cols-2 lg:grid-cols-3`** (el código de
+  HEAD era la fuente de verdad; el registro viejo de cols-3/5 en MEMORY era
+  erróneo); TDD en T5 (test de raíz en rojo antes de implementar). Sección
+  "Estado actual" actualizada a la nueva arquitectura y mapa de rutas.
+  Validaciones finales: `npm test` **98/98 en 12 archivos** y
+  `npm run build` en verde. Validación visual en navegador: **no realizada**
+  (sin cambios visuales; sin navegador disponible). Sin commit ni staging en
+  todo el flujo (a petición del orquestador).
+
+- Spec 005, T6 completa (2026-10-13): `src/components/Navbar.test.jsx`
+  actualizado, `initialEntries={["/inicio"]}` → `["/"]` (alias eliminado en
+  T5). Verificado: el resto del test no depende de `/inicio` (el enlace del
+  logo ya apuntaba a `/`, línea del href intacta) y ningún componente cita
+  `/inicio` (grep: solo queda en la redirección de `App.jsx` y en los tests
+  que la ejercitan). Validaciones: focalizada (2/2), `npm test` (98/98, 12
+  archivos) y `npm run build` en verde. Validación visual no realizada (sin
+  cambios visuales; sin navegador). Sin commit ni staging.
+
+- Spec 005, T5 completa (2026-10-13): creada `src/pages/PaginaInicio.jsx`
+  extrayendo `LandingPage` de `App.jsx` (estado `modalAbierto`/`modoAuth`,
+  manejadores y botón flotante "?" intactos; **hex heredados conservados tal
+  cual** por decisión del usuario, limpieza a tokens fuera de alcance).
+  Header JSDoc nuevo según plantilla. `App.jsx` reescrito como capa de rutas
+  pura (imports de páginas + `Routes`/`Route`/`Navigate` + guardia
+  `TRIAL_ACTIVO` en `/dashboard`; sin `LandingPage` ni `DashboardSection`,
+  comentario obsoleto que citaba `/inicio` eliminado; header actualizado).
+  Mapa final: `/` → PaginaInicio siempre; `/inicio` → `<Navigate to="/"
+  replace />`; `/login`; `/dashboard/*` con guardia intacta; `*` → `/`.
+  TDD: test de raíz reescrito ("muestra siempre la landing...") **falló
+  primero** (raíz aún redirigía a /dashboard), verde tras implementar; test
+  nuevo de `/inicio` → landing. `grep -rn '"/inicio"' src` solo en la
+  redirección de `App.jsx` (y tests que la ejercitan; `Navbar.test.jsx` es
+  T6, no tocado). Validaciones: `src/App.test.jsx` (10/10), `npm test`
+  **98/98 en 12 archivos** y `npm run build` en verde. Validación visual no
+  realizada (sin cambios visuales; sin navegador). Sin commit ni staging.
+
+- Spec 005, T4 completa (2026-10-13): `src/components/LoginPage.jsx` movido a
+  `src/pages/PaginaLogin.jsx` (export renombrado; header JSDoc actualizado,
+  `@usadoPor App.jsx (ruta /login)`; import de `AuthModal` ajustado a
+  `../components/AuthModal`). RF-03: `alCerrar` sin trial ahora navega a `/`
+  (antes `/inicio`, alias a eliminar en T5); con `TRIAL_ACTIVO` sigue yendo a
+  `/dashboard`. `App.jsx` importa `./pages/PaginaLogin`; original eliminado
+  y `@usadoPor` de `src/config/app.config.js` actualizado a
+  `PaginaLogin.jsx`. `grep -rn '"/inicio"' src` solo encuentra la ruta alias
+  de `App.jsx` (T5) y `Navbar.test.jsx` (`initialEntries`, T6, no tocado);
+  ningún test de App/login referenciaba `/inicio`. Validaciones: focalizada
+  `src/App.test.jsx` (9/9), `npm test` (97/97, 12 archivos) y
+  `npm run build` en verde. Validación visual no realizada (sin cambios
+  visuales; sin navegador). Sin commit ni staging.
+
+- Spec 005, T3 completa (2026-10-13): `src/components/Dashboard.jsx` movido a
+  `src/pages/PaginaDashboard.jsx` renombrando el export a `PaginaDashboard`
+  (struct/type sin cambios internos; header JSDoc actualizado con
+  `@usadoPor App.jsx (ruta /dashboard)`). `App.jsx` importa
+  `./pages/PaginaDashboard` para la ruta padre `/dashboard`; original
+  eliminado. `grep -r "components/Dashboard" src` sin resultados.
+  Validaciones: focalizadas `src/App.test.jsx` + `src/pages` (21/21),
+  `npm test` (97/97, 12 archivos) y `npm run build` en verde. Validación
+  visual no realizada (sin cambios visuales; sin navegador). Sin commit ni
+  staging.
+
+- Spec 005, T2 completa (2026-10-13): creadas las cuatro páginas de sección
+  del dashboard en `src/pages/` (`PaginaDashboardInicio`,
+  `PaginaDashboardTransacciones`, `PaginaDashboardTarjetas` — compone
+  `./PanelTarjetas` — y `PaginaDashboardConfiguracion`), cada una con header
+  JSDoc según plantilla y conservando exactos el bloque "FinApp / Panel", el
+  `<h1 id="dashboard-title">` con `aria-labelledby` y los
+  títulos/contenidos ("Tu dinero, en equilibrio." + tres tarjetas de cifras
+  idénticas, placeholders de transacciones y configuración). `App.jsx`: las
+  cuatro subrutas apuntan a las páginas, `DashboardSection` eliminado junto
+  con el import directo de `PanelTarjetas` (aún conserva `LandingPage`
+  embebida, pendiente de T5). `@usadoPor` de `PanelTarjetas.jsx` actualizado
+  a `PaginaDashboardTarjetas` (nota transitoria retirada). Cero cambios
+  visuales/funcionales. Validaciones: focalizadas `src/pages` +
+  `src/App.test.jsx` (21/21), `npm test` (97/97, 12 archivos) y
+  `npm run build` en verde. Validación visual no realizada (sin cambios
+  visuales; sin navegador). Sin commit ni staging.
+
+- Spec 005, T1 completa (2026-10-13): `PanelTarjetas.jsx` y
+  `PanelTarjetas.test.jsx` movidos de `src/components/` a `src/pages/`
+  (excepción documentada a la regla pages↔components, decisión del usuario).
+  Imports del componente ajustados a `../components/AcordeonTarjetas`,
+  `../components/GridTarjetas`, `../components/ModalTarjeta` (el de
+  `../data/tarjetasDemo` y los del test quedaban válidos); header JSDoc
+  actualizado (`@usadoPor PaginaDashboardTarjetas ... hoy App.jsx/DashboardSection,
+  spec 005 T2`); test exento de header (RF-10). `App.jsx` importa ahora
+  `./pages/PanelTarjetas`; originales eliminados. Sin cambios de
+  comportamiento ni visuales. Validaciones: focalizada
+  (12/12 en `src/pages/PanelTarjetas.test.jsx`) y `npm run build` en verde.
+  **`npm test` NO en verde por fallo PREEXISTENTE en HEAD** (verificado con
+  stash: falla también sin los cambios de T1): `GridTarjetas.test.jsx`
+  espera `sm:grid-cols-3 lg:grid-cols-5` pero `GridTarjetas.jsx` en HEAD dice
+  `sm:grid-cols-2 lg:grid-cols-3` (y `PanelTarjetas.test.jsx` espera 2/3, así
+  que hay contradicción entre tests heredada de spec 004 T8). Fuera de
+  alcance de T1; pendiente de decisión (probable restauración de cols-3/5
+  en `GridTarjetas.jsx` y sus tests dependientes). Validación visual no
+  realizada (sin navegador). Cambios sin commit ni staging, en working tree.
+  Resolución (misma sesión, aprobada por el orquestador): la fuente de verdad
+  es el código de HEAD (`sm:grid-cols-2 lg:grid-cols-3`); se corrigió
+  `GridTarjetas.test.jsx` para esperar 2/3 y aserción/título actualizados.
+  Con ello `npm test` queda **97/97 en 12 archivos** (corrige el registro
+  de MEMORY de spec 004 T8, que afirmaba cols-3/5 como estado del plan: el
+  valor real aprobado es 2/3, coherente con `PanelTarjetas.test.jsx`).
+
 - Spec 004, T8 completa (cierre, 2026-10-12): spec 004 FINALIZADA (T1–T8).
   Resumen final: panel de tarjetas = conjunto fluido con **5 tarjetas** del
   fixture `src/data/tarjetasDemo.js` (datos fijos **octubre 2026**,
@@ -134,16 +249,26 @@
 Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 
 ## Estado actual
-- App React de finanzas personales con landing, login/modal y dashboard de demostración.
+- App React de finanzas personales con landing, login y dashboard de demostración.
 - Stack activo: React 18, Vite 5, Tailwind CSS v4 y React Router 6.
-- Rutas: `/inicio`, `/login` y `/dashboard` con secciones de inicio, transacciones,
-  tarjetas y configuración. `/` redirige según `TRIAL_ACTIVO`.
+- Arquitectura (spec 005): capa de páginas en `src/pages/` (`PaginaInicio`,
+  `PaginaLogin`, `PaginaDashboard` como layout con `<Outlet />`,
+  `PaginaDashboardInicio/Transacciones/Tarjetas/Configuracion` y
+  `PanelTarjetas` — este último en pages/ por decisión del usuario,
+  excepción documentada). `App.jsx` es capa de rutas pura (sin composición
+  de vistas). Las piezas reutilizables viven en `src/components/`
+  (ya no existen `LoginPage`/`Dashboard`/`PanelTarjetas` allí).
+- Mapa de rutas: `/` = landing siempre (sin redirección por trial);
+  `/inicio` → `<Navigate to="/" replace />` (alias eliminado); `/login`;
+  `/dashboard/*` con guardia (`TRIAL_ACTIVO = false` → `/login`); 
+  subrutas inicio/transacciones/tarjetas/configuracion; `*` → `/`.
 - `TRIAL_ACTIVO = true`: el dashboard está abierto como demo, no hay autenticación real.
 - El dashboard muestra importes de ejemplo; no hay persistencia financiera en `src/`.
 - `AuthModal` usa endpoints centralizados, pero el backend no está listo; el fallback
   actual muestra mensajes demo y no confirma persistencia real.
-- Pruebas: Vitest + Testing Library en jsdom; 7 archivos de test cubren rutas,
-  componentes (incluido `PanelTarjetas`), `useReveal` y reglas de `index.css`.
+- Pruebas: Vitest + Testing Library en jsdom; 12 archivos de test cubren rutas
+  (`App.test.jsx`), componentes y páginas (incluido `PanelTarjetas` en
+  `src/pages/`), `useReveal` y reglas de `index.css`. Suite: 98/98.
 - RF6 (tarea 1 de spec 001): `useReveal` inicializa por defecto con
   `threshold: 0.15` y `rootMargin: "0px 0px -8% 0px"`; Hero, StatsBar,
   Features, HowItWorks y CtaSection ya no sobreescriben opciones.

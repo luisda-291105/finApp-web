@@ -24,12 +24,12 @@ describe("GridTarjetas (tablet/desktop)", () => {
     expect(controles).toHaveLength(5);
   });
 
-  it("el contenedor usa doble render por clases: hidden sm:grid sm:grid-cols-3 lg:grid-cols-5", () => {
+  it("el contenedor usa doble render por clases: hidden sm:grid sm:grid-cols-2 lg:grid-cols-3", () => {
     const { container } = render(
       <GridTarjetas tarjetas={TARJETAS_DEMO} onSeleccionarTarjeta={vi.fn()} />
     );
     const grid = container.firstChild;
-    for (const clase of ["hidden", "sm:grid", "sm:grid-cols-3", "lg:grid-cols-5"]) {
+    for (const clase of ["hidden", "sm:grid", "sm:grid-cols-2", "lg:grid-cols-3"]) {
       expect(grid.className).toContain(clase);
     }
   });

@@ -30,11 +30,22 @@ const TITULARES_FIXTURE = [
 ];
 
 describe("rutas de la aplicación", () => {
-  it("redirige la raíz al dashboard durante el trial", () => {
+  it("muestra siempre la landing en la raíz, con independencia del trial", () => {
     renderRuta("/");
 
-    expect(screen.getByRole("heading", { name: "Tu dinero, en equilibrio." })).toBeDefined();
-    expect(screen.getByText("Balance disponible")).toBeDefined();
+    expect(
+      screen.getByRole("heading", { name: /Controla tu dinero/ })
+    ).toBeDefined();
+    // Es la landing (PaginaInicio), no el dashboard
+    expect(screen.queryByRole("heading", { name: "Tu dinero, en equilibrio." })).toBeNull();
+  });
+
+  it("redirige /inicio a la landing (/)", () => {
+    renderRuta("/inicio");
+
+    expect(
+      screen.getByRole("heading", { name: /Controla tu dinero/ })
+    ).toBeDefined();
   });
 
   it("muestra el login en su ruta directa", () => {

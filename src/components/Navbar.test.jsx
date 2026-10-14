@@ -14,7 +14,7 @@ import Navbar from "./Navbar";
 describe("Navbar", () => {
   it("renderiza logotipo FinApp y botones de accion", () => {
     render(
-      <MemoryRouter initialEntries={["/inicio"]}>
+      <MemoryRouter initialEntries={["/"]}>
         <Navbar alAbrirAuth={vi.fn()} />
       </MemoryRouter>
     );
