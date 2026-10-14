@@ -384,6 +384,58 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
   backend; considerar pruebas verificables para límites de diseño.
 
 ---
+### Spec 006 — Capa layout y componentes reutilizables (en curso)
+
+- Spec 006, T1 completa (2026-10-14): creados los 6 directorios base de la arquitectura
+  atómica/molecular: `src/components/ui/`, `src/components/layout/`,
+  `src/components/domain/landing/`, `src/components/domain/modales/`,
+  `src/components/domain/dashboard/` y `src/layout/`. Verificación: `ls -la
+  src/components/ src/layout/` confirma los 6 directorios; `npm run build` pasa en
+  verde (estructura vacía no rompe build). RF cubiertos: RF-01, RF-04. Sin commit
+  ni staging.
+
+- Spec 006, T2 completa (2026-10-14): `Navbar.jsx` → `Header.jsx` y `Footer.jsx` movidos a
+  `src/components/layout/`. `Navbar.test.jsx` → `Header.test.jsx` (actualizado
+  import y `describe("Header")`). `PaginaInicio.jsx` actualiza imports a las nuevas
+  rutas y usa `<Header />`. Archivos antiguos eliminados. Validaciones: test
+  focalizado `src/components/layout/Header.test.jsx` (2/2), `npm test` **98/98 en
+  12 archivos**, `npm run build` en verde, `grep -r "components/Navbar" src/`
+  sin resultados, `grep -r "components/Footer" src/` solo nueva ruta. RF cubiertos:
+  RF-02, RF-08. Sin commit ni staging.
+
+- Spec 006, T3 completa (2026-10-14): 5 componentes de landing movidos a
+  `src/components/domain/landing/` (`Hero.jsx`, `StatsBar.jsx`, `Features.jsx`,
+  `HowItWorks.jsx`, `CtaSection.jsx`). Headers JSDoc actualizados: `@usadoPor`
+  ahora apunta a `LandingLayout` en los 5 archivos. `PaginaInicio.jsx` actualiza
+  imports a las nuevas rutas; tests `Hero.test.jsx` y `Features.test.jsx`
+  actualizan imports a la nueva ubicación. Archivos antiguos eliminados.
+  Validaciones: `npm run build` verde, `npm test` **98/98 en 12 archivos**,
+  `grep -r "components/Hero|components/StatsBar|components/Features|components/HowItWorks|components/CtaSection" src/` sin resultados (cero referencias a rutas antiguas), headers JSDoc verificados. RF cubiertos: RF-01, RF-08. Sin commit ni staging.
+
+- Spec 006, T4 completa (2026-10-14): 2 componentes de modales movidos a
+  `src/components/domain/modales/` (`AuthModal.jsx`, `ModalTarjeta.jsx`). Headers
+  JSDoc actualizados: `AuthModal @usadoPor PaginaInicio, PaginaLogin`; `ModalTarjeta
+  @usadoPor PanelTarjetas`. Imports actualizados en `PaginaInicio.jsx`,
+  `PaginaLogin.jsx`, `PanelTarjetas.jsx` y `ModalTarjeta.test.jsx` a las nuevas
+  rutas. Archivos antiguos eliminados. Validaciones: `npm run build` verde,
+  `npm test` **98/98 en 12 archivos**, `grep -r "components/AuthModal|components/ModalTarjeta" src/` sin resultados (cero referencias a rutas antiguas en `components/`), headers JSDoc verificados. RF cubiertos: RF-01, RF-08. Sin commit ni staging.
+
+- Spec 006, T5 completa (2026-10-14): 4 componentes de dashboard movidos a
+  `src/components/domain/dashboard/` (`AcordeonTarjetas.jsx`, `GridTarjetas.jsx`,
+  `MiTarjetaVirtual.jsx`, `LogMovimientos.jsx`). Headers JSDoc actualizados:
+  `AcordeonTarjetas @usadoPor PanelTarjetas`; `GridTarjetas @usadoPor PanelTarjetas`;
+  `MiTarjetaVirtual @usadoPor AcordeonTarjetas, GridTarjetas, ModalTarjeta`;
+  `LogMovimientos @usadoPor ModalTarjeta`. Tests correspondientes movidos a la misma
+  carpeta con imports corregidos a `../../../data/tarjetasDemo`. Imports actualizados
+  en `PanelTarjetas.jsx` (`../components/domain/dashboard/...`) y en
+  `ModalTarjeta.jsx` (`../dashboard/...`). Archivos antiguos eliminados.
+  Validaciones: `npm run build` verde, `npm test` **98/98 en 12 archivos**,
+  `grep -r "components/AcordeonTarjetas|components/GridTarjetas|components/MiTarjetaVirtual|components/LogMovimientos" src/` sin resultados (cero referencias a rutas antiguas), headers JSDoc verificados. RF cubiertos: RF-01, RF-08. Sin commit ni staging.
+
+- Spec 006, T6 completa (2026-10-14): creado `src/components/ui/Card.jsx` (átomo UI).
+  Props: `children` (obligatorio), `className` (string, default `""`), `como` (string|componente, default `"div"`). Renderiza `<Tag className={"glass-card " + className}>{children}</Tag>`. Header JSDoc según plantilla. Sin interacción, sin animación, sin hex, solo `.glass-card` + `className`. Validaciones: `npm run build` verde, `npm test` **98/98 en 12 archivos**. RF cubierto: RF-03. Sin commit ni staging.
+
+---
 ### Spec 003 — Mi Tarjeta Virtual (completada)
 - Componente `src/components/MiTarjetaVirtual.jsx` con flip 3D (600ms, easing marca),
   hover elevación solo escritorio (`whileHover` + `@media (hover: hover)` via Framer
@@ -473,3 +525,74 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
   (import inexistente y luego matchers), 6/6 en verde tras implementar.
   Validaciones: focalizadas (6), `npm test` (81, 11 archivos) y `npm run build`
   en verde. Validación visual no realizada (sin navegador).
+
+- Spec 006, T7 completa (2026-10-14): creados `src/components/layout/Container.jsx` y `src/components/layout/Sidebar.jsx` (moléculas layout).
+   - `Container`: `<div className="mx-auto max-w-6xl px-4">{children}</div>` (clases exactas que usan las páginas, verificado en `PaginaDashboard.jsx` línea 72). Header JSDoc: `@usadoPor LandingLayout, DashboardLayout, páginas que necesiten contenedor estándar`.
+   - `Sidebar`: placeholder mínimo `<aside />` para navegación responsive futura. Header JSDoc: `@usadoPor DashboardLayout (esqueleto)`.
+   Validaciones: `npm run build` verde, `npm test` **98/98 en 12 archivos**. RF cubiertos: RF-01, RF-04 (parte). Sin commit ni staging.
+
+- Spec 006, T8 completa (2026-10-14): creado `src/layout/LandingLayout.jsx` (organismo que compone la landing completa).
+   - Compone 7 componentes hijos: `Header` (`components/layout/`), `Hero`, `StatsBar`, `Features`, `HowItWorks`, `CtaSection` (`components/domain/landing/`), `Footer` (`components/layout/`).
+   - Recibe `alAbrirAuth` (callback para Header, Hero, CtaSection) y `children` opcional (AuthModal, botón flotante de ayuda).
+   - Header JSDoc según plantilla: `@usadoPor PaginaInicio`.
+   - Estructura: `div.min-h-screen` → `Header` + `main.flex-1` (Hero, StatsBar, Features, HowItWorks, CtaSection) + `Footer` + `{children}`.
+   Validaciones: `npm run build` verde, `npm test` **98/98 en 12 archivos**, compone correctamente los 7 componentes. RF cubiertos: RF-04, RF-06 (parte). Sin commit ni staging.
+
+- Spec 006, T9 completa (2026-10-14): creados `src/layout/DashboardLayout.jsx` (esqueleto) y `src/layout/AuthLayout.jsx`.
+   - `DashboardLayout`: compone `Header` (`components/layout/`), `Sidebar` (`components/layout/`, placeholder), `Container` (`components/layout/`), `main{Outlet}`. Estructura exacta: `<div className="min-h-screen bg-bg-cream text-bg-dark md:grid md:grid-cols-[240px_minmax(0,1fr)]">` con `Sidebar` en `<aside className="hidden md:block">`, `Header` + `Container` + `main{Outlet}` en área principal (`md:col-start-2`). Header JSDoc: `@usadoPor PaginaDashboardInicio, PaginaDashboardTransacciones, PaginaDashboardTarjetas, PaginaDashboardConfiguracion`. Importa `Outlet` de `react-router-dom` para que subrutas funcionen sin cambios.
+   - `AuthLayout`: chrome mínimo, centra `children` vertical/horizontal, fondo `bg-bg-dark`, sin Header/Footer. Estructura: `<main className="grid min-h-screen place-items-center bg-bg-dark px-5">{children}</main>`. Header JSDoc: `@usadoPor PaginaLogin`.
+   Validaciones: `npm run build` **verde**, `npm test` **98/98 en 12 archivos**. RF cubierto: RF-04. Sin commit ni staging.
+
+- Spec 006, T10 completa (2026-10-14): `src/pages/PaginaInicio.jsx` refactorizado para usar `LandingLayout`.
+   - Eliminados imports directos de `Header`, `Hero`, `StatsBar`, `Features`, `HowItWorks`, `CtaSection`, `Footer`.
+   - Importa `LandingLayout` desde `../layout/LandingLayout` y `AuthModal` desde `../components/domain/modales/AuthModal`.
+   - Renderiza `<LandingLayout alAbrirAuth={manejarAbrirAuth}>` envolviendo `AuthModal` y botón flotante "?" como `children`.
+   - Header JSDoc actualizado: `@usadoPor App.jsx (ruta /)`, `@funciones` actualizado a `PaginaInicio()`, `@datos`/`@eventos`/`@estados` reflejan el nuevo uso de `LandingLayout`.
+   Validaciones: `npx vitest run src/App.test.jsx` (10/10 pass, ruta `/`), `npm test` **98/98 en 12 archivos**, `npm run build` verde, `grep` confirma cero referencias a componentes sueltos en `PaginaInicio.jsx`. RF cubiertos: RF-06, RF-08. Sin commit ni staging.
+
+- Spec 006, T11 completa (2026-10-14): Refactorización de páginas de dashboard para usar `DashboardLayout`.
+   - **Eliminado** `src/pages/PaginaDashboard.jsx` (layout antiguo con sidebar hardcodeada).
+   - `src/App.jsx`: importado `DashboardLayout` desde `./layout/DashboardLayout`; ruta `/dashboard` ahora usa `element={<DashboardLayout />}` en lugar de `<PaginaDashboard />` (guardia `TRIAL_ACTIVO` intacta).
+   - `src/pages/PaginaDashboardInicio.jsx`: header JSDoc actualizado: `@usadoPor App.jsx (ruta /dashboard)`.
+   - Las 4 páginas de sección (`PaginaDashboardTransacciones`, `PaginaDashboardTarjetas`, `PaginaDashboardConfiguracion`) **no cambian** — funcionan vía `<Outlet />` anidado en `DashboardLayout` (Opción A del plan).
+   Validaciones: `npx vitest run src/App.test.jsx` **10/10 pass (todas las rutas dashboard)**, `npm test` **98/98 en 12 archivos**, `npm run build` **verde**, `PaginaDashboard.jsx` eliminado, `App.jsx` importa y usa `DashboardLayout`. RF cubiertos: RF-04, RF-06, RF-08. Sin commit ni staging.
+
+- Spec 006, T12 completa (2026-10-14): Refactorización de 10 usos de `.glass-card` a componente `<Card>`.
+   - **4 archivos modificados**:
+     - `src/pages/PaginaDashboardInicio.jsx`: 3 `<article className="glass-card p-5">` → `<Card como="article" className="p-5">` (import `Card` desde `../components/ui/Card`).
+     - `src/components/domain/landing/Features.jsx`: 5 `<div className="glass-card p-7 sm:p-8 flex flex-col justify-between">` dentro del `.map()` → `<Card className="p-7 sm:p-8 flex flex-col justify-between">` (import `Card` desde `../../../components/ui/Card`).
+     - `src/pages/PaginaDashboardTransacciones.jsx`: 1 `<div className="glass-card p-6">` → `<Card className="p-6">` (import `Card` desde `../components/ui/Card`).
+     - `src/pages/PaginaDashboardConfiguracion.jsx`: 1 `<div className="glass-card p-6">` → `<Card className="p-6">` (import `Card` desde `../components/ui/Card`).
+   - Total: 10 instancias `<Card>` correctas (3 con `como="article"`, 7 con `como="div"` por defecto).
+   Validaciones: `grep -r "glass-card" ...` → **0 resultados** en los 4 archivos; `grep -r "<Card" ...` → **10 ocurrencias** totales (3 + 5 vía map + 1 + 1); `npm test` **98/98 en 12 archivos** verde; `npm run build` **verde**. RF cubiertos: RF-03, RF-05, RF-07. Sin commit ni staging.
+
+- Spec 006, T13 completa (2026-10-14): Tests nuevos/actualizados creados y ejecutados.
+   - **Creados**: `src/components/ui/Card.test.jsx` (4 tests: children, clase base glass-card, como="article", combina className), `src/layout/LandingLayout.test.jsx` (3 tests: compone 7 componentes, renderiza children, propaga alAbrirAuth).
+   - **Actualizado**: `src/components/domain/landing/Features.test.jsx` (1 test: verifica 5 tarjetas vía Card con clase glass-card efectiva en DOM).
+   - **Verificado**: `src/components/layout/Header.test.jsx` (2 tests, ya existente de T2), `src/App.test.jsx` (10 tests, regresión de rutas).
+   - **Eliminado**: `src/components/Features.test.jsx` (duplicado antiguo tras mover componente a `domain/landing/`).
+   - Validaciones: 5 pruebas focales pasan (20 tests totales en archivos nuevos/actualizados), `npm test` **105/105 en 14 archivos** verde, `npm run build` **verde**. RF cubiertos: RF-09, pruebas afectadas (spec líneas 127-133). Sin commit ni staging.
+
+- Spec 006, T14 completa (2026-10-14): **Validación final y limpieza — SPEC 006 FINALIZADA**.
+   - **Validación 1** (`grep` referencias antiguas): `grep -r "components/Navbar|components/Footer|components/Hero|components/StatsBar|components/Features|components/HowItWorks|components/CtaSection|components/AuthModal|components/ModalTarjeta|components/AcordeonTarjetas|components/GridTarjetas|components/MiTarjetaVirtual|components/LogMovimientos" src/` → **0 resultados** (solo rutas nuevas en `domain/` o `layout/`). ✅
+   - **Validación 2** (`grep` glass-card en archivos refactorizados): `grep -r "glass-card" src/pages/PaginaDashboardInicio.jsx src/components/domain/landing/Features.jsx src/pages/PaginaDashboardTransacciones.jsx src/pages/PaginaDashboardConfiguracion.jsx` → **0 resultados**. ✅
+   - **Validación 3** (`npm test` suite completa): **105/105 tests en 14 archivos** → **verde**. ✅
+   - **Validación 4** (`npm run build`): **build exitoso** (333.33 kB JS, 51.79 kB CSS). ✅
+   - **RF cubiertos en toda la spec**: RF-01 a RF-09 (todos los requisitos funcionales de la spec 006).
+   - **Arquitectura entregada**:
+     - `src/components/ui/Card.jsx` (átomo reutilizable, 10 usos migrados)
+     - `src/components/layout/` (`Header`, `Footer`, `Container`, `Sidebar`)
+     - `src/components/domain/landing/` (5: Hero, StatsBar, Features, HowItWorks, CtaSection)
+     - `src/components/domain/modales/` (2: AuthModal, ModalTarjeta)
+     - `src/components/domain/dashboard/` (4: AcordeonTarjetas, GridTarjetas, MiTarjetaVirtual, LogMovimientos)
+     - `src/layout/` (3 organismos: LandingLayout, DashboardLayout esqueleto, AuthLayout)
+     - `src/pages/` refactorizadas: `PaginaInicio` usa `LandingLayout`; dashboard usa `DashboardLayout` con `Outlet` (PaginaDashboard.jsx eliminado).
+   - **Decisiones clave registradas**:
+     - DashboardLayout esqueleto (sidebar responsive completo = spec posterior).
+     - Features usa 5 `<Card>` directas con CSS grid interno (no `GridTarjetas` genérico).
+     - Hex heredados conservados (deuda técnica en MEMORY, fuera de alcance).
+     - `Card` sin interacción, sin animación, solo `.glass-card` + `className`, `como` libre.
+     - `Container` clases exactas `mx-auto max-w-6xl px-4` (idénticas a uso previo en páginas).
+     - Tests: 14 archivos, 105 tests totales (antes 12 archivos, 98 tests; +Card, +LandingLayout, +Features actualizado, -duplicado).
+   - **Validación visual**: no realizada (sin cambios visuales/comportamiento; sin navegador disponible).
+   - Sin commit ni staging (a petición del orquestador).

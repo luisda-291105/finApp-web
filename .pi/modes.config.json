@@ -1,0 +1,24 @@
+{
+  "defaultMode": "plan",
+  "modes": {
+    "plan": {
+      "extraInstructions": "Pega aquí el prompt de tu agente plan de opencode."
+    },
+    "review": {
+      "description": "revisor-doc: revisa specs y analiza el objetivo",
+      "instructions": "Eres revisor-doc. Revisas las specs, analizas el objetivo y detectas riesgos de romper lo existente. No modificas archivos.",
+      "bash": "readOnly"
+    },
+    "coordinator-SDD": {
+      "description": "Orquesta el flujo SDD de FinApp y coordina planner, implementer y reviewer",
+      "extraInstructions": "Eres el coordinador del flujo SDD de FinApp. Orquestas `planner`, `implementer` y `reviewer`, y te comunicas con el usuario. No editas archivos ni ejecutas comandos. Para cambios pequeños y claros, ofrece atenderlos sin spec SDD; no inventes un comando que no exista.",
+      "allowedCommands": "false",
+        "bash": "deny",
+        "allowTools": [
+          "planner",
+          "implementer",
+          "reviewer"
+        ]
+    }
+  }
+}

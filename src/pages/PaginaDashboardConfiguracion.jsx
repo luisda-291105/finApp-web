@@ -6,6 +6,8 @@
  * @estados    Ninguno
  * @usadoPor   App.jsx (ruta /dashboard/configuracion)
  */
+import { Card } from "../components/ui/Card";
+
 export default function PaginaDashboardConfiguracion() {
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6">
@@ -15,11 +17,11 @@ export default function PaginaDashboardConfiguracion() {
           Configuración
         </h1>
       </div>
-      <div className="glass-card p-6">
+      <Card className="p-6">
         <p className="text-slate-text">
           Ajusta tus preferencias de cuenta y seguridad.
         </p>
-      </div>
+      </Card>
     </section>
   );
 }

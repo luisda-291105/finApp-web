@@ -10,7 +10,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { TRIAL_ACTIVO } from "./config/app.config";
 import PaginaInicio from "./pages/PaginaInicio";
 import PaginaLogin from "./pages/PaginaLogin";
-import PaginaDashboard from "./pages/PaginaDashboard";
+import DashboardLayout from "./layout/DashboardLayout";
 import PaginaDashboardInicio from "./pages/PaginaDashboardInicio";
 import PaginaDashboardTransacciones from "./pages/PaginaDashboardTransacciones";
 import PaginaDashboardTarjetas from "./pages/PaginaDashboardTarjetas";
@@ -29,7 +29,7 @@ export default function App() {
       <Route
         path="/dashboard"
         element={
-          TRIAL_ACTIVO ? <PaginaDashboard /> : <Navigate to="/login" replace />
+          TRIAL_ACTIVO ? <DashboardLayout /> : <Navigate to="/login" replace />
         }
       >
         <Route index element={<PaginaDashboardInicio />} />

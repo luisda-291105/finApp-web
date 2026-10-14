@@ -4,8 +4,10 @@
  * @datos      Cifras de demostración fijas en JSX; sin backend ni persistencia
  * @eventos    Ninguno
  * @estados    Ninguno
- * @usadoPor   App.jsx (ruta index de /dashboard)
+ * @usadoPor   App.jsx (ruta /dashboard)
  */
+import { Card } from "../components/ui/Card";
+
 export default function PaginaDashboardInicio() {
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6">
@@ -16,18 +18,18 @@ export default function PaginaDashboardInicio() {
         </h1>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <article className="glass-card p-5">
+        <Card como="article" className="p-5">
           <p className="text-sm text-slate-text">Balance disponible</p>
           <p className="mt-3 text-2xl font-semibold text-bg-dark">$12,480.50</p>
-        </article>
-        <article className="glass-card p-5">
+        </Card>
+        <Card como="article" className="p-5">
           <p className="text-sm text-slate-text">Ingresos del mes</p>
           <p className="mt-3 text-2xl font-semibold text-emerald-primary">$4,250.00</p>
-        </article>
-        <article className="glass-card p-5">
+        </Card>
+        <Card como="article" className="p-5">
           <p className="text-sm text-slate-text">Gastos del mes</p>
           <p className="mt-3 text-2xl font-semibold text-bg-dark">$1,820.75</p>
-        </article>
+        </Card>
       </div>
     </section>
   );

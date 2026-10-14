@@ -11,9 +11,9 @@
  * @usadoPor   PaginaDashboardTarjetas (/dashboard/tarjetas, spec 005)
  */
 import { useState } from "react";
-import AcordeonTarjetas from "../components/AcordeonTarjetas";
-import GridTarjetas from "../components/GridTarjetas";
-import ModalTarjeta from "../components/ModalTarjeta";
+import AcordeonTarjetas from "../components/domain/dashboard/AcordeonTarjetas";
+import GridTarjetas from "../components/domain/dashboard/GridTarjetas";
+import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
 import { TARJETAS_DEMO } from "../data/tarjetasDemo";
 
 /**

@@ -1,27 +1,22 @@
 /**
  * @uso        Página landing pública de FinApp (ruta /)
  * @funciones  PaginaInicio()
- * @datos      Sin datos externos; compone secciones de marketing y AuthModal
- * @eventos    manejarAbrirAuth(modo) desde Navbar/Hero/CtaSection y botón "?";
+ * @datos      Sin datos externos; usa LandingLayout y provee AuthModal + botón ayuda como children
+ * @eventos    manejarAbrirAuth(modo) desde LandingLayout (Header/Hero/CtaSection) y botón "?";
  *             manejarCerrarAuth desde AuthModal
- * @estados    modalAbierto (boolean), modoAuth ("registro" | "login")
+ * @estados    modalAbierto (boolean), modoAuth ("login" | "registro")
  * @usadoPor   App.jsx (ruta /)
  */
 import { useState } from "react";
-import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
-import StatsBar from "../components/StatsBar";
-import Features from "../components/Features";
-import HowItWorks from "../components/HowItWorks";
-import CtaSection from "../components/CtaSection";
-import Footer from "../components/Footer";
-import AuthModal from "../components/AuthModal";
+import LandingLayout from "../layout/LandingLayout";
+import AuthModal from "../components/domain/modales/AuthModal";
 
 /**
  * PaginaInicio
- * Landing de la demo. Los literales hex heredados (bg-[#0f1117], etc.) se
- * conservan tal cual por decisión del usuario; su migración a tokens es
- * deuda técnica fuera del alcance de spec 005.
+ * Landing de la demo. Usa LandingLayout como organismo que compone Header, Hero,
+ * StatsBar, Features, HowItWorks, CtaSection y Footer. Los literales hex heredados
+ * (bg-[#0f1117], etc.) se conservan tal cual por decisión del usuario; su migración
+ * a tokens es deuda técnica fuera del alcance de spec 005.
  */
 export default function PaginaInicio() {
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -37,30 +32,7 @@ export default function PaginaInicio() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body">
-      {/* Navbar principal */}
-      <Navbar alAbrirAuth={manejarAbrirAuth} />
-
-      <main className="flex-1">
-        {/* Hero editorial oscuro */}
-        <Hero alAbrirAuth={manejarAbrirAuth} />
-
-        {/* Barra de estadísticas esmeralda */}
-        <StatsBar />
-
-        {/* Sección de funcionalidades sobre fondo crema */}
-        <Features />
-
-        {/* Cómo funciona con números 01/02/03 */}
-        <HowItWorks />
-
-        {/* Bloque CTA final */}
-        <CtaSection alAbrirAuth={manejarAbrirAuth} />
-      </main>
-
-      {/* Pie de página */}
-      <Footer />
-
+    <LandingLayout alAbrirAuth={manejarAbrirAuth}>
       {/* Modal flotante de autenticación */}
       <AuthModal
         abierto={modalAbierto}
@@ -77,6 +49,6 @@ export default function PaginaInicio() {
       >
         ?
       </button>
-    </div>
+    </LandingLayout>
   );
 }

@@ -8,7 +8,7 @@
  */
 import { useNavigate } from "react-router-dom";
 import { TRIAL_ACTIVO } from "../config/app.config";
-import AuthModal from "../components/AuthModal";
+import AuthModal from "../components/domain/modales/AuthModal";
 
 /**
  * PaginaLogin
