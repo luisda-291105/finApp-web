@@ -29,6 +29,13 @@
   --color-cat-other: #c084fc;
 
   --radius-glass: 24px;
+
+  --header-height: 64px;
+}
+
+/* Utilidad para safe-area-inset-bottom con fallback */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
 
 :root {

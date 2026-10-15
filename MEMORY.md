@@ -596,3 +596,72 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
      - Tests: 14 archivos, 105 tests totales (antes 12 archivos, 98 tests; +Card, +LandingLayout, +Features actualizado, -duplicado).
    - **Validación visual**: no realizada (sin cambios visuales/comportamiento; sin navegador disponible).
    - Sin commit ni staging (a petición del orquestador).
+
+---
+### Spec 007 — Dashboard header, sidebar responsive y tarjeta cuenta (en curso)
+
+- Spec 007, T1 completa (2026-10-14): Setup de dependencias, tokens CSS y config usuario mock.
+    - `package.json`: añadidas `lucide-react@^0.454.0`, `clsx@^2.1.0`, `focus-trap-react@^10.2.3` a `dependencies`. `npm install` sin warnings de peer deps para los nuevos paquetes.
+    - `src/styles/index.css` (@theme): añadido `--header-height: 64px`; utilidad `.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 1rem); }` (clase `pb-safe` disponible). Tokens existentes verificados: `bg-bg-dark`, `bg-bg-cream`, `border-border-line`, `emerald-primary`, `mint-accent`, `slate-text`.
+    - `src/config/app.config.js`: export `getUsuarioMock()` que retorna `{ nombre: 'Usuario Demo', iniciales: 'UD', email: 'demo@finapp.local' }`.
+    - Headers JSDoc aplicados a `index.css` y `app.config.js` según plantilla.
+    - Validaciones:
+        - ✅ `npm install` completa sin warnings de peer deps (nuevos paquetes)
+        - ✅ `--header-height` usable como `h-[var(--header-height)]` y `pt-[var(--header-height)]` (verificado en CSS compilado)
+        - ✅ Clase `pb-safe` aplica `env(safe-area-inset-bottom)` con fallback `1rem` (verificado en CSS compilado)
+        - ✅ `getUsuarioMock()` exportada y retorna objeto exacto especificado (verificado ejecución directa)
+        - ✅ No hay hexadecimales nuevos en `index.css` fuera de `@theme` (solo tokens)
+        - ✅ `npm run build` compila correctamente
+        - ✅ `npm test` **110/110 en 15 archivos** pasa (suite completa verde)
+    - Validación visual: no realizada (sin cambios visuales directos; sin navegador disponible).
+
+- Spec 007, T6 completa (2026-10-14): `DashboardDrawer` (drawer tablet/mobile slide-in, portal, focus trap, ancho responsive).
+    - **Archivos creados**:
+        - `src/components/layout/DashboardDrawer.jsx`: drawer lateral con portal (`createPortal` a `document.body`), overlay con `backdrop-blur-sm` + click → `alCerrar`, panel `fixed left-0 top-[var(--header-height)] h-[calc(100vh-var(--header-height))] w-[85vw] max-w-sm bg-bg-dark/95 backdrop-blur-md border-r border-border-line/20 z-60`, transición CSS `transform` 300ms ease-out (`translate-x-0` abierto, `-translate-x-full` cerrado), `FocusTrap` (focus-trap-react) con `onActivate` (foco en primer enlace) y `onDeactivate` (retorno a `triggerRef` o elemento previo), ESC → `alCerrar`, `children` renderizado dentro (esperado: `SidebarNavContenido`). Props: `{ abierto, alCerrar, children, triggerRef? }`. Header JSDoc completo.
+        - `src/components/layout/DashboardDrawer.test.jsx`: 17 pruebas cubriendo portal en `document.body`, renderizado condicional (`abierto=false` no renderiza), overlay click → `alCerrar`, ESC → `alCerrar`, focus trap (foco inicial, elementos enfocables 5 = 4 NavLink + avatar, Tab/Shift+Tab cicla interno), restauración de foco (triggerRef y elemento previo), children renderizado, accesibilidad (role=dialog, aria-modal, overlay aria-hidden). Mock de `focus-trap-react` para evitar error "no tabbable nodes" en jsdom (patrón de `DashboardUserModal.test.jsx`).
+    - **Validaciones**:
+        - ✅ `npx vitest run src/components/layout/DashboardDrawer.test.jsx` **17/17 PASS**
+        - ✅ `npm test` **127/127 en 16 archivos** (suite completa verde)
+        - ✅ `npm run build` **SUCCESS** (336.05 kB JS, 56.76 kB CSS)
+    - **Decisiones**: Mock de `focus-trap-react` necesario en tests (jsdom no provee tabbable nodes reales); verificación de estilos via `classList` (no `getComputedStyle` que no procesa Tailwind en jsdom); `clsx` para composición de clases.
+    - Validación visual: no realizada (sin navegador disponible).
+
+- Spec 007, T9 completa (2026-10-14): `DashboardLayout` (composición completa, márgenes/padding condicionales, integración global).
+    - **Archivos creados/modificados**:
+        - `src/layout/DashboardLayout.jsx`: reescritura completa como organismo raíz del dashboard. Integra `DashboardHeader` (siempre), `SidebarResponsive` (desktop), `DashboardDrawer` (tablet + mobile menú), `BottomNav` (mobile), `Container` + `main{Outlet}`, `DashboardUserModal` (global portal). Estado local: `drawerAbierto` (tablet), `mobileMenuAbierto` (mobile menú), `userModalAbierto` (modal usuario). `useBreakpoint` para breakpoints y `sidebarColapsada`. Márgenes condicionales: `lg:ml-64` (desktop expandida) / `lg:ml-[72px]` (desktop colapsada) / `ml-0` (tablet/mobile). Padding `main`: `pt-[var(--header-height)]` + `pb-20` (mobile bottom nav). Efectos resize: `isDesktop → setDrawerAbierto(false)`, `isMobile → setDrawerAbierto(false)`. Header JSDoc completo.
+        - `src/layout/DashboardLayout.test.jsx`: 33 pruebas cubriendo composición por breakpoint (desktop/tablet/mobile), márgenes/padding correctos, Outlet renderizado, DashboardUserModal global, transiciones resize, SidebarNavContenido compartido, getUsuarioMock. Mocks de `useBreakpoint` y componentes hijos con `vi.mock`.
+    - **Validaciones**:
+        - ✅ `npx vitest run src/layout/DashboardLayout.test.jsx` **33/33 PASS**
+        - ✅ `npm test` **277/277 en 23 archivos** (suite completa verde)
+        - ✅ `npm run build` **SUCCESS** (383.25 kB JS, 57.35 kB CSS)
+        - ✅ Sin hexadecimales en componentes nuevos (`grep` layout → 0 resultados)
+        - ✅ Sin referencias a `variables.css` (`grep` → 0 resultados)
+    - **Decisiones**: `clsx` para clases condicionales; `useBreakpoint` named import; mocks no propagan props a DOM (evita warnings React); `SidebarNavContenido` compartido 3× (SidebarResponsive, DashboardDrawer tablet, DashboardDrawer mobile) sin ser llamado directamente desde DashboardLayout (se pasa como children); vitest.setup.js extendido con `matchMedia` y `localStorage` mocks para jsdom.
+    - Validación visual: no realizada (sin navegador disponible).
+
+- Spec 007, T10 completa (2026-10-15): **Limpieza, tests regresión, validación final y commit — SPEC 007 FINALIZADA**.
+    - **Eliminado `Sidebar.jsx` legacy**: `src/components/layout/Sidebar.jsx` y `Sidebar.test.jsx` eliminados (ya no referenciados tras migración a `SidebarResponsive`). `grep -r "from.*Sidebar" src/` → 0 resultados (solo `SidebarResponsive`/`SidebarNavContenido`); `grep -r "Sidebar" src/App.jsx src/layout/` → solo `SidebarResponsive`.
+    - **Test regresión `App.test.jsx`**: 10/10 pass — rutas `/dashboard`, `/dashboard/transacciones`, `/dashboard/tarjetas`, `/dashboard/configuracion` funcionan con nuevo `DashboardLayout`; `DashboardLayout` monta sin errores.
+    - **Suite completa `npm test`**: **273/273 tests en 22 archivos** → **100% PASS** (todas las suites verdes).
+    - **Build producción `npm run build`**: **SUCCESS** (383.25 kB JS, 57.07 kB CSS).
+    - **Validaciones manuales checklist**:
+        - ✅ `grep -r "#[0-9a-fA-F]\{3,8\}" src/components/layout/` → resultados solo en `Header.jsx`/`Footer.jsx` (modo landing, **fuera de alcance**; dashboard usa tokens puros).
+        - ✅ `grep -r "variables\.css" src/` → **0 resultados** (eliminado, solo `@theme` en `index.css`).
+        - ✅ Sin imports rotos (build y tests verdes).
+    - **MEMORY.md actualizado** con 13 decisiones documentadas:
+        1. Logout "Salir del demo" → `/` (replace) en `DashboardUserModal`.
+        2. Usuario mock centralizado `getUsuarioMock()` en `app.config.js`.
+        3. Iconos `lucide-react` (11: Home, Receipt, CreditCard, Settings, MoreHorizontal, ChevronLeft, ChevronRight, Menu, X, LogOut, User).
+        4. Z-index scale documentada: Header 40, Sidebar 40, BottomNav 50, Drawer overlay 55, Drawer panel 60, Modal overlay 60, Modal panel 65.
+        5. Slots fijos modal (Configuración + Salir del demo) sin `children` override.
+        6. Avatar SVG inline via `getUsuarioMock()`.
+        7. Breakpoints Tailwind nativo (`sm:640`, `md:768`, `lg:1024`).
+        8. Header separado `DashboardHeader` (dashboard) vs `Header.jsx` (landing).
+        9. `SidebarNavContenido` compartido (SidebarResponsive, DashboardDrawer tablet, mobile drawer).
+        10. Safe-area resuelto `pb-safe` con `env(safe-area-inset-bottom)`.
+        11. Fluid Glass ≤3 superficies por viewport (resuelto por z-index scale).
+        12. `variables.css` eliminado, solo `@theme` en `index.css`.
+        13. Framer Motion solo en modal (`DashboardUserModal`).
+    - **Commit**: `git add` archivos del cambio (22 archivos nuevos/modificados); mensaje imperativo español: `feat: navegación responsive dashboard completa (spec 007)`.
+    - **Validaciones finales ("Hecho cuando")**: ✅ Sidebar.jsx eliminado sin referencias rotas ✅ npm test 100% PASS (incluye regresión App) ✅ npm run build SUCCESS ✅ Grep hex legacy en layout → solo landing ✅ Grep variables.css → 0 ✅ Validaciones manuales checklist → todas OK ✅ MEMORY.md actualizado con 13 decisiones ✅ Commit realizado, mensaje imperativo español, staging limpio.
+    - Validación visual: no realizada (sin navegador disponible en el entorno).
