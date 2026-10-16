@@ -41,16 +41,6 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
       role="navigation"
       aria-label="Navegación principal móvil"
     >
-      <style jsx>{`
-        .bottom-nav-label {
-          display: block;
-        }
-        @media (orientation: landscape) {
-          .bottom-nav-label {
-            display: none;
-          }
-        }
-      `}</style>
       {items.map(({ ruta, etiqueta, icono: Icono }) => (
         <button
           key={ruta}

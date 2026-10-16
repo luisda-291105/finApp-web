@@ -1,6 +1,6 @@
 /**
  * @uso        Pruebas unitarias para el componente BottomNav
- * @funciones  test "renderiza 5 items con iconos/etiquetas correctos", test "marca item activo con indicador y color emerald", test "click items 1-4 llama alNavegar", test "click item 5 (Menú) llama alAbrirMenu", test "clase pb-safe presente", test "landscape oculta etiquetas via media query"
+ * @funciones  test "renderiza 5 items con iconos/etiquetas correctos", test "marca item activo con indicador y color emerald", test "click items 1-4 llama alNavegar", test "click item 5 (Menú) llama alAbrirMenu", test "clase pb-safe presente", test "landscape oculta etiquetas via CSS global (sin <style> propio)"
  * @datos      N/A
  * @eventos    click en botones, media query mock
  * @estados    N/A
@@ -97,19 +97,18 @@ describe("BottomNav", () => {
   it("media query landscape oculta etiquetas (clase bottom-nav-label)", () => {
     const { container } = render(<BottomNav {...propsBase} />);
 
-    // Verificar que la clase bottom-nav-label existe en las etiquetas
+    // Verificar que la clase bottom-nav-label existe en las 5 etiquetas: el CSS
+    // global que la oculta en landscape vive en src/styles/index.css (cubierto
+    // por src/styles/index.css.test.js)
     const etiquetas = container.querySelectorAll(".bottom-nav-label");
     expect(etiquetas.length).toBe(5);
-
-    // Verificar que el componente incluye la media query landscape en su JSX
-    // En jsdom no se evalúan media queries CSS, pero verificamos que el componente
-    // tiene la estructura correcta para que el CSS funcione en navegador real
-    const styleElements = container.querySelectorAll("style");
-    // El componente usa <style jsx> que no se renderiza como elemento style en jsdom
-    // Verificamos que las etiquetas tienen la clase correcta
     etiquetas.forEach((etiqueta) => {
       expect(etiqueta).toHaveClass("bottom-nav-label");
     });
+
+    // El componente ya no emite su propio <style jsx>: las reglas están en el
+    // CSS global, así que no debe existir ningún <style> dentro del componente
+    expect(container.querySelectorAll("style")).toHaveLength(0);
   });
 
   it("aplica clases de contenedor correctas (fixed, bottom-0, z-50, grid-cols-5)", () => {

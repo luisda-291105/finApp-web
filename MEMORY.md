@@ -1,5 +1,41 @@
 # MEMORY.md — FinApp
 
+- Cambio pequeño (2026-10-16, sin spec, aprobado por el usuario): dos avisos de consola
+  del navegador corregidos.
+  1) **`jsx` inválido en BottomNav**: `src/components/layout/BottomNav.jsx` usaba
+     `<style jsx>{...}</style>` y `styled-jsx` **no está instalado** (`package.json`
+     verificado), así que React avisaba `Received «true» for a non-boolean attribute
+     «jsx»` y el CSS salía como foco global. Las dos reglas
+     (`.bottom-nav-label { display: block }` y `@media (orientation: landscape)
+     { .bottom-nav-label { display: none } }`) se movieron a `src/styles/index.css`
+     junto a `.safe-bottom` (sección layout/componentes), con comentario del origen y
+     sin tocar el orden de capas de Tailwind v4 ni los tokens `@theme`; el bloque
+     `<style jsx>` se eliminó por completo. El markup restante (clases
+     `bottom-nav-label`, props, iconos) quedó intacto.
+  2) **Future flags v7 de React Router**: `src/main.jsx` monta
+     `<BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>`.
+     La ruta splat del proyecto es el catch-all `*` con `<Navigate>` a rutas absolutas,
+     así que `v7_relativeSplatPath` no altera la navegación (verificado).
+  Pruebas ajustadas: en `BottomNav.test.jsx` el test de landscape ya no insinúa un
+  `<style>` propio (ahora aserta **0 elementos `<style>`** dentro del componente y
+  conserva la comprobación de la clase `bottom-nav-label`); en `index.css.test.js` se
+  añadió un describe nuevo que verifica las reglas migradas en el CSS global porque
+  jsdom no evalúa media queries. Archivos nuevos: `src/main.test.jsx` (mock de
+  `react-dom/client` para capturar el árbol y asertar que `BrowserRouter` recibe ambas
+  flags; **falla si se quitan**) y una prueba en `App.test.jsx` de que el splat
+  `/dashboard/*` sigue redirigiendo con las flags v7 activas.
+  Validaciones: focalizadas `BottomNav.test.jsx` + `index.css.test.js` **34/34**;
+  `npm test` **257/257 en 22 archivos**; `npm run build` verde (CSS 57.34 kB,
+  JS 379.45 kB). Validación visual en navegador **sí realizada** (Firefox headless vía
+  geckodriver, dev en 5199 y preview en 4174): vertical → las 5 etiquetas
+  `display: block`; landscape (740×274) → las 5 `display: none`; 0 `<style>` y 0
+  atributos `[jsx]` dentro del nav. Consola de página capturada con el pref
+  `devtools.console.stdout.content`: sin el aviso `non-boolean` y sin avisos de future
+  flags; al reintroducir el `<style jsx>` a propósito (revertido después) el aviso
+  reaparece, lo que prueba que el check tiene señal. Observación menor: los tests que
+  usan `MemoryRouter` siguen mostrando los avisos informativos de future flags en
+  stderr (no se configuran ahí); fuera de alcance.
+
 - Spec 005 (arquitectura, capa de páginas) FINALIZADA (cierre, 2026-10-13):
   T1–T7 completadas. Creada la capa `src/pages/` (`PaginaInicio`,
   `PaginaLogin`, `PaginaDashboard` y las cuatro páginas de sección, más

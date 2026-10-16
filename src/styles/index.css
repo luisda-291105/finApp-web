@@ -38,6 +38,21 @@
   padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
 
+/* Etiquetas de la barra de navegación inferior (BottomNav): visibles en
+   vertical y ocultas en landscape, donde el espacio vertical es escaso.
+   Reglas migradas desde el <style jsx> del componente (styled-jsx no está
+   instalado, así que el atributo jsx era inválido y el CSS no quedaba
+   encapsulado). */
+.bottom-nav-label {
+  display: block;
+}
+
+@media (orientation: landscape) {
+  .bottom-nav-label {
+    display: none;
+  }
+}
+
 :root {
   font-family: var(--font-body);
 }

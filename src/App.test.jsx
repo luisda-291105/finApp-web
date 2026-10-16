@@ -129,4 +129,18 @@ describe("rutas de la aplicación", () => {
       screen.getByText("Ajusta tus preferencias de cuenta y seguridad.")
     ).toBeDefined();
   });
+
+  it("mantiene la redirección de la ruta splat con las future flags v7 activadas", () => {
+    render(
+      <MemoryRouter
+        initialEntries={["/dashboard/ruta-inexistente"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>
+    );
+
+    // El catch-all interno de /dashboard/* sigue llevando al inicio del dashboard
+    expect(screen.getByRole("heading", { name: "Tu dinero, en equilibrio." })).toBeDefined();
+  });
 });

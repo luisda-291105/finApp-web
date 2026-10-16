@@ -140,3 +140,18 @@ describe("RF10 — bloques presentes en index.css", () => {
     expect(css).toContain(":focus-visible");
   });
 });
+
+describe("BottomNav — etiquetas en landscape (CSS global en index.css)", () => {
+  it("define .bottom-nav-label como bloque", () => {
+    const bloque = css.match(/\.bottom-nav-label\s*\{([\s\S]*?)\}/);
+    expect(bloque).not.toBeNull();
+    expect(bloque?.[1]).toContain("display: block");
+  });
+
+  it("oculta .bottom-nav-label dentro de @media (orientation: landscape)", () => {
+    const bloque = css.match(/@media \(orientation: landscape\)\s*\{([\s\S]*?)\n\}/);
+    expect(bloque).not.toBeNull();
+    expect(bloque?.[1]).toContain(".bottom-nav-label");
+    expect(bloque?.[1]).toContain("display: none");
+  });
+});
