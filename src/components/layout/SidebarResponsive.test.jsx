@@ -44,14 +44,14 @@ describe("SidebarResponsive", () => {
       expect(aside.tagName).toBe("ASIDE");
     });
 
-    it("aplica clases de posición fija y altura completa bajo header", () => {
+    it("aplica clases de posición fija y altura completa de viewport", () => {
       renderSidebarResponsive();
 
       const aside = getSidebarAside();
       expect(aside).toHaveClass("fixed");
       expect(aside).toHaveClass("left-0");
-      expect(aside).toHaveClass("top-[var(--header-height)]");
-      expect(aside).toHaveClass("h-[calc(100vh-var(--header-height))]");
+      expect(aside).toHaveClass("top-0");
+      expect(aside).toHaveClass("h-screen");
       expect(aside).toHaveClass("z-40");
     });
 
@@ -83,33 +83,29 @@ describe("SidebarResponsive", () => {
       expect(aside).not.toHaveClass("w-[72px]");
     });
 
-    it("renderiza logo 'FinApp' como enlace a /dashboard", () => {
+    it("renderiza logo 'FinApp' como botón de toggle, sin enlace", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const logoLink = screen.getByRole("link", { name: /FinApp - Inicio/i });
-      expect(logoLink).toBeTruthy();
-      expect(logoLink.getAttribute("href")).toBe("/dashboard");
-      expect(logoLink).toHaveTextContent("Fin");
-      expect(logoLink).toHaveTextContent("App");
+      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
+      expect(toggleButton).toHaveTextContent("Fin");
+      expect(toggleButton).toHaveTextContent("App");
+      expect(screen.queryByRole("link", { name: /FinApp - Inicio/i })).toBeNull();
     });
 
     it("logo 'Fin' tiene color emerald-primary y 'App' en bg-cream", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const logoLink = screen.getByRole("link", { name: /FinApp - Inicio/i });
-      const finSpan = logoLink.querySelector("span:first-child");
-      const appSpan = logoLink.querySelector("span:last-child");
-      expect(finSpan).toHaveClass("text-emerald-primary");
-      expect(appSpan).toHaveTextContent("App");
+      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
+      const finSpan = toggleButton.querySelector(".text-emerald-primary");
+      expect(finSpan).toHaveTextContent("Fin");
+      expect(toggleButton).toHaveTextContent("App");
     });
 
-    it("renderiza icono ChevronLeft cuando expandida", () => {
+    it("no renderiza chevron cuando expandida", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const chevronLeft = document.querySelector("svg.lucide-chevron-left");
-      expect(chevronLeft).toBeTruthy();
-      expect(chevronLeft).toHaveClass("w-5");
-      expect(chevronLeft).toHaveClass("h-5");
+      expect(document.querySelector("svg.lucide-chevron-left")).toBeNull();
+      expect(document.querySelector("svg.lucide-chevron-right")).toBeNull();
     });
 
     it("botón toggle tiene aria-expanded=true cuando expandida", () => {
@@ -123,8 +119,7 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const links = screen.getAllByRole("link");
-      // 1 logo + 4 nav links = 5 total
-      expect(links).toHaveLength(5);
+      expect(links).toHaveLength(4);
 
       // Usar getByRole con nombre más específico para el link de navegación "Inicio"
       const inicioLink = screen.getByRole("link", { name: /^Inicio$/i });
@@ -184,36 +179,30 @@ describe("SidebarResponsive", () => {
       expect(aside).not.toHaveClass("w-64");
     });
 
-    it("renderiza icono Home con tooltip 'Inicio' en lugar de logo FinApp", () => {
+    it("renderiza inicial 'F' en emerald-primary cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      // El link del logo en colapsada tiene title="Inicio" (tooltip nativo)
-      const homeLink = screen.getByTitle("Inicio");
-      expect(homeLink).toBeTruthy();
-      expect(homeLink.getAttribute("href")).toBe("/dashboard");
-      expect(homeLink.getAttribute("title")).toBe("Inicio");
-
-      const homeIcon = homeLink.querySelector("svg.lucide-house");
-      expect(homeIcon).toBeTruthy();
-      expect(homeIcon).toHaveClass("w-6");
-      expect(homeIcon).toHaveClass("h-6");
+      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      const marca = toggleButton.querySelector(".text-emerald-primary");
+      expect(marca).toBeTruthy();
+      expect(marca).toHaveTextContent("F");
+      expect(toggleButton).not.toHaveTextContent("App");
+      expect(toggleButton.querySelector("svg.lucide-house")).toBeNull();
     });
 
     it("NO renderiza texto 'FinApp' cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      // El texto "Fin" y "App" no deben estar en el documento (están dentro del botón toggle que no se renderiza en colapsada)
-      // Verificar que el link del logo expandido no existe
-      expect(screen.queryByRole("link", { name: /FinApp - Inicio/i })).not.toBeInTheDocument();
+      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      expect(toggleButton).not.toHaveTextContent("FinApp");
+      expect(toggleButton).not.toHaveTextContent("App");
     });
 
-    it("renderiza icono ChevronRight cuando colapsada", () => {
+    it("no renderiza chevron cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      const chevronRight = document.querySelector("svg.lucide-chevron-right");
-      expect(chevronRight).toBeTruthy();
-      expect(chevronRight).toHaveClass("w-5");
-      expect(chevronRight).toHaveClass("h-5");
+      expect(document.querySelector("svg.lucide-chevron-right")).toBeNull();
+      expect(document.querySelector("svg.lucide-chevron-left")).toBeNull();
     });
 
     it("botón toggle tiene aria-expanded=false cuando colapsada", () => {
@@ -268,13 +257,11 @@ describe("SidebarResponsive", () => {
       expect(alToggleColapso).toHaveBeenCalledTimes(1);
     });
 
-    it("click en icono Home (colapsada) navega a /dashboard", async () => {
+    it("click en la F colapsada no renderiza enlace a /dashboard", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      // Usar el link específico con title="Inicio" (tooltip nativo)
-      const homeLink = screen.getByTitle("Inicio");
-      expect(homeLink.getAttribute("href")).toBe("/dashboard");
-      expect(homeLink.getAttribute("title")).toBe("Inicio");
+      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      expect(toggleButton.querySelector("a")).toBeNull();
     });
   });
 

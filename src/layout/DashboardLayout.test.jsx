@@ -40,7 +40,7 @@ vi.mock("../components/layout/SidebarResponsive", () => ({
 }));
 
 vi.mock("../components/layout/DashboardDrawer", () => ({
-  default: vi.fn(({ abierto, alCerrar, children, triggerRef, ...rest }) =>
+  default: vi.fn(({ abierto, alCerrar, children, triggerRef, esMobile, ...rest }) =>
     abierto ? (
       <div data-testid="dashboard-drawer" {...rest}>
         {children}
@@ -50,7 +50,7 @@ vi.mock("../components/layout/DashboardDrawer", () => ({
 }));
 
 vi.mock("../components/layout/BottomNav", () => ({
-  default: vi.fn(({ itemActivo, alNavegar, alAbrirMenu, ...rest }) => (
+  default: vi.fn(({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef, ...rest }) => (
     <nav data-testid="bottom-nav" {...rest} />
   )),
 }));
@@ -210,12 +210,12 @@ describe("DashboardLayout", () => {
       expect(mainDiv).not.toHaveClass("lg:ml-64");
     });
 
-    it("aplica padding pt-[var(--header-height)] y pb-20 en main", () => {
+    it("aplica padding pb-20 y offset pt-[var(--header-height)] en main", () => {
       renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
 
       const main = screen.getByRole("main");
-      expect(main).toHaveClass("pt-[var(--header-height)]");
       expect(main).toHaveClass("pb-20");
+      expect(main).toHaveClass("pt-[var(--header-height)]");
     });
   });
 

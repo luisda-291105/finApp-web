@@ -1,17 +1,8 @@
-/**
- * @uso        Layout completo del dashboard (composición global responsive)
- * @funciones  DashboardLayout()
- * @datos      Orquesta DashboardHeader, SidebarResponsive, DashboardDrawer (tablet + mobile), BottomNav, Container, Outlet, DashboardUserModal
- * @eventos    Resize breakpoints (cierra drawers), navegación BottomNav, apertura modal usuario
- * @estados    drawerAbierto (tablet), mobileMenuAbierto (mobile menú), userModalAbierto (global)
- * @usadoPor   App.jsx (rutas /dashboard/*)
- */
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
 import { useBreakpoint } from "../hooks/useBreakpoint";
-import DashboardHeader from "../components/layout/DashboardHeader";
+
 import SidebarResponsive from "../components/layout/SidebarResponsive";
 import DashboardDrawer from "../components/layout/DashboardDrawer";
 import BottomNav from "../components/layout/BottomNav";
@@ -20,7 +11,14 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import { getUsuarioMock } from "../config/app.config";
 
-/**
+/**doc 
+ * @uso        Layout completo del dashboard (composición global responsive)
+ * @funciones  DashboardLayout()
+ * @datos      Orquesta DashboardHeader, SidebarResponsive, DashboardDrawer (tablet + mobile), BottomNav, Container, Outlet, DashboardUserModal
+ * @eventos    Resize breakpoints (cierra drawers), navegación BottomNav, apertura modal usuario
+ * @estados    drawerAbierto (tablet), mobileMenuAbierto (mobile menú), userModalAbierto (global)
+ * @usadoPor   App.jsx (rutas /dashboard/*)
+
  * DashboardLayout
  * Composición raíz del área autenticada (dashboard). Integra header, navegación lateral
  * (sidebar desktop / drawer tablet / drawer mobile menú), navegación inferior (mobile),
@@ -34,10 +32,12 @@ import { getUsuarioMock } from "../config/app.config";
  * Márgenes/padding condicionales:
  * - Desktop expandida: lg:ml-64 | colapsada: lg:ml-[72px]
  * - Tablet/Mobile: ml-0
- * - Main: pt-[var(--header-height)] (header fijo) + pb-20 (bottom nav mobile)
+ * - Main: pb-20 (bottom nav mobile)
  *
  * @returns {JSX.Element} Layout completo del dashboard
  */
+
+
 export default function DashboardLayout() {
   const { isMobile, isTablet, isDesktop, sidebarColapsada, toggleSidebar } = useBreakpoint();
   const navigate = useNavigate();
@@ -46,6 +46,8 @@ export default function DashboardLayout() {
   const [drawerAbierto, setDrawerAbierto] = useState(false);
   const [mobileMenuAbierto, setMobileMenuAbierto] = useState(false);
   const [userModalAbierto, setUserModalAbierto] = useState(false);
+
+  const bottomNavMenuRef = useRef(null);
 
   const alAbrirUserModal = () => setUserModalAbierto(true);
   const alCerrarUserModal = () => setUserModalAbierto(false);
@@ -65,20 +67,16 @@ export default function DashboardLayout() {
     }
   }, [isMobile]);
 
+  // Efecto: al salir de mobile, cerrar drawer mobile menú
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileMenuAbierto(false);
+    }
+  }, [isMobile]);
+
   return (
     <>
-      {/* Header fijo - siempre renderizado */}
-      <DashboardHeader
-        alAbrirDrawer={isTablet ? () => setDrawerAbierto(true) : undefined}
-        alToggleSidebar={isDesktop ? toggleSidebar : undefined}
-        sidebarColapsada={isDesktop ? sidebarColapsada : false}
-        usuario={usuario}
-        alAbrirUserModal={alAbrirUserModal}
-        isMobile={isMobile}
-        isTablet={isTablet}
-        isDesktop={isDesktop}
-      />
-
+      
       {/* Sidebar desktop fija */}
       {isDesktop && (
         <SidebarResponsive
@@ -90,13 +88,11 @@ export default function DashboardLayout() {
 
       {/* Drawer tablet (navegación) */}
       {isTablet && (
-        <DashboardDrawer
-          abierto={drawerAbierto}
-          alCerrar={() => setDrawerAbierto(false)}
-          triggerRef={undefined}
-        >
-          <SidebarNavContenido alAbrirUserModal={alAbrirUserModal} />
-        </DashboardDrawer>
+        <SidebarResponsive
+          colapsada={sidebarColapsada}
+          alToggleColapso={toggleSidebar}
+          alAbrirUserModal={alAbrirUserModal}
+        />
       )}
 
       {/* Área principal con márgenes condicionales */}
@@ -108,12 +104,7 @@ export default function DashboardLayout() {
         )}
       >
         <Container>
-          <main
-            className={clsx(
-              "pb-20",                    // espacio bottom nav mobile
-              "pt-[var(--header-height)]" // espacio header fijo (token, no magic number)
-            )}
-          >
+          <main className={clsx("pb-20", "pt-[var(--header-height)]")}>
             <Outlet />
           </main>
         </Container>
@@ -125,6 +116,7 @@ export default function DashboardLayout() {
           itemActivo={location.pathname}
           alNavegar={(ruta) => navigate(ruta)}
           alAbrirMenu={() => setMobileMenuAbierto(true)}
+          menuTriggerRef={bottomNavMenuRef}
         />
       )}
 
@@ -133,7 +125,8 @@ export default function DashboardLayout() {
         <DashboardDrawer
           abierto={mobileMenuAbierto}
           alCerrar={() => setMobileMenuAbierto(false)}
-          triggerRef={undefined}
+          triggerRef={bottomNavMenuRef}
+          esMobile={true}
         >
           <SidebarNavContenido alAbrirUserModal={alAbrirUserModal} />
         </DashboardDrawer>

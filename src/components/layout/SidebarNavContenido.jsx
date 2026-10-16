@@ -27,19 +27,20 @@ export default function SidebarNavContenido({ alAbrirUserModal, colapsada = fals
   const usuario = getUsuarioMock();
 
   const enlaces = [
-    { ruta: "/dashboard", icono: Home, etiqueta: "Inicio" },
+    { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },
     { ruta: "/dashboard/transacciones", icono: Receipt, etiqueta: "Transacciones" },
     { ruta: "/dashboard/tarjetas", icono: CreditCard, etiqueta: "Tarjetas" },
-    { ruta: "/dashboard/configuracion", icono: Settings, etiqueta: "Configuración" },
+ 
   ];
 
   return (
     <nav className="flex flex-col" aria-label="Navegación principal del dashboard">
       {/* 4 enlaces de navegación */}
-      {enlaces.map(({ ruta, icono: Icono, etiqueta }) => (
+      {enlaces.map(({ ruta, icono: Icono, etiqueta, exacto }) => (
         <NavLink
           key={ruta}
           to={ruta}
+          end={Boolean(exacto)}
           className={({ isActive }) =>
             `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors min-w-0 ${
               isActive
@@ -60,7 +61,7 @@ export default function SidebarNavContenido({ alAbrirUserModal, colapsada = fals
       <button
         type="button"
         onClick={alAbrirUserModal}
-        className="flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
+        className="flex items-center gap-3 px-3 py-2 my- rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
         aria-label={`Cuenta de ${usuario.nombre}`}
       >
         <div
@@ -70,7 +71,7 @@ export default function SidebarNavContenido({ alAbrirUserModal, colapsada = fals
           {usuario.iniciales}
         </div>
         <div className={clsx("flex-1 min-w-0 truncate text-left", colapsada && "hidden")}>
-          <p className="font-medium text-bg-dark truncate">{usuario.nombre}</p>
+          <p className="font-medium text-white truncate">{usuario.nombre}</p>
           <p className="text-xs text-slate-text truncate">{usuario.email}</p>
         </div>
       </button>

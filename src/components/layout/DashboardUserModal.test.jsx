@@ -78,7 +78,7 @@ describe("DashboardUserModal", () => {
   describe("portal y renderizado", () => {
     it("renderiza en document.body via portal cuando abierto=true", () => {
       renderModal();
-      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/50");
+      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
       const panel = document.body.querySelector("#dashboard-user-modal-panel");
       expect(overlay).toBeTruthy();
       expect(panel).toBeTruthy();
@@ -87,7 +87,7 @@ describe("DashboardUserModal", () => {
     it("no renderiza nada cuando abierto=false", () => {
       const { container } = renderModal({ abierto: false });
       expect(container.querySelector("[role='dialog']")).toBeNull();
-      expect(document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/50")).toBeNull();
+      expect(document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80")).toBeNull();
     });
 
     it("tiene role=dialog, aria-modal=true y aria-labelledby", () => {
@@ -105,7 +105,7 @@ describe("DashboardUserModal", () => {
     it("click en overlay llama alCerrar", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
-      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/50");
+      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
       await userEvent.click(overlay);
       expect(alCerrar).toHaveBeenCalledTimes(1);
     });
@@ -275,15 +275,15 @@ describe("DashboardUserModal", () => {
   });
 
   describe("estilos y clases Fluid Glass", () => {
-    it("overlay usa bg-bg-dark/50 backdrop-blur-sm z-60", () => {
+    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-50", () => {
       renderModal();
-      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/50");
+      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
       expect(overlay).toBeTruthy();
       expect(overlay.classList.contains("backdrop-blur-sm")).toBe(true);
-      expect(overlay.classList.contains("z-60")).toBe(true);
+      expect(overlay.classList.contains("z-50")).toBe(true);
     });
 
-    it("panel usa bg-bg-cream/95 backdrop-blur-md border-border-line/30 rounded-2xl shadow-xl z-65", () => {
+    it("panel usa bg-bg-cream/95 backdrop-blur-md border-border-line/30 rounded-2xl shadow-xl z-60", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
@@ -291,7 +291,7 @@ describe("DashboardUserModal", () => {
       expect(panel.classList.contains("border-border-line/30")).toBe(true);
       expect(panel.classList.contains("rounded-2xl")).toBe(true);
       expect(panel.classList.contains("shadow-xl")).toBe(true);
-      expect(panel.classList.contains("z-65")).toBe(true);
+      expect(panel.classList.contains("z-60")).toBe(true);
       expect(panel.classList.contains("w-[90vw]")).toBe(true);
       expect(panel.classList.contains("max-w-sm")).toBe(true);
     });

@@ -219,5 +219,14 @@ describe("SidebarNavContenido", () => {
       expect(inactiveLink.classList.contains("text-slate-text")).toBe(true);
       expect(inactiveLink.classList.contains("hover:bg-emerald-primary/5")).toBe(true);
     });
+
+    it("Inicio no queda activo en subrutas del dashboard", () => {
+      renderSidebarNavContenido({}, ["/dashboard/tarjetas"]);
+
+      const inicioLink = screen.getByRole("link", { name: /Inicio/i });
+      const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
+      expect(inicioLink.classList.contains("bg-emerald-primary/10")).toBe(false);
+      expect(tarjetasLink.classList.contains("bg-emerald-primary/10")).toBe(true);
+    });
   });
 });

@@ -109,7 +109,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="user-modal-title"
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm bg-bg-cream/95 backdrop-blur-md border border-border-line/30 rounded-2xl shadow-xl z-65"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm bg-bg-cream/95 backdrop-blur-md border border-border-line/30 rounded-2xl shadow-xl z-60"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -156,7 +156,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-bg-dark/50 backdrop-blur-sm z-60"
+        className="fixed inset-0 bg-bg-dark/80 backdrop-blur-sm z-50"
         onClick={handleOverlayClick}
         aria-hidden="true"
       />

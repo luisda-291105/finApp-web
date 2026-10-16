@@ -1,6 +1,6 @@
 /**
  * @uso        Barra de navegación inferior para móvil (5 items fijos, safe-area, indicador activo, landscape)
- * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu })
+ * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef })
  * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu (callback menú)
  * @eventos    click en items 1-4 → alNavegar(ruta), click item 5 (Menú) → alAbrirMenu()
  * @estados    Ninguno (componente controlado vía props)
@@ -32,8 +32,9 @@ const items = [
  * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/transacciones")
  * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en items 1-4
  * @param {() => void} props.alAbrirMenu - Callback al hacer click en item 5 (Menú)
+ * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón Menú (item 5), usado para focus trap return
  */
-export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu }) {
+export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef }) {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-bg-dark/80 backdrop-blur-md border-t border-border-line/20 pb-safe grid grid-cols-5"
@@ -78,6 +79,7 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu }) {
       {/* Item 5: Menú */}
       <button
         type="button"
+        ref={menuTriggerRef}
         onClick={alAbrirMenu}
         className={clsx(
           "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
