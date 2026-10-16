@@ -266,9 +266,12 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 - El dashboard muestra importes de ejemplo; no hay persistencia financiera en `src/`.
 - `AuthModal` usa endpoints centralizados, pero el backend no está listo; el fallback
   actual muestra mensajes demo y no confirma persistencia real.
-- Pruebas: Vitest + Testing Library en jsdom; 12 archivos de test cubren rutas
+- Pruebas: Vitest + Testing Library en jsdom; 21 archivos de test cubren rutas
   (`App.test.jsx`), componentes y páginas (incluido `PanelTarjetas` en
-  `src/pages/`), `useReveal` y reglas de `index.css`. Suite: 98/98.
+  `src/pages/`), la lógica de versión de vista (`useBreakpoint`, dos versiones con
+  corte 768px), el layout del dashboard y los componentes de layout, `useReveal` y
+  reglas de `index.css`. **Suite medida el 2026-10-16 (spec 009, T8): 253/253 en 21
+  archivos, 0 fallos** (línea base de esa spec: 10 fallos / 236, ya resueltos).
 - RF6 (tarea 1 de spec 001): `useReveal` inicializa por defecto con
   `threshold: 0.15` y `rootMargin: "0px 0px -8% 0px"`; Hero, StatsBar,
   Features, HowItWorks y CtaSection ya no sobreescriben opciones.
@@ -665,3 +668,512 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
     - **Commit**: `git add` archivos del cambio (22 archivos nuevos/modificados); mensaje imperativo español: `feat: navegación responsive dashboard completa (spec 007)`.
     - **Validaciones finales ("Hecho cuando")**: ✅ Sidebar.jsx eliminado sin referencias rotas ✅ npm test 100% PASS (incluye regresión App) ✅ npm run build SUCCESS ✅ Grep hex legacy en layout → solo landing ✅ Grep variables.css → 0 ✅ Validaciones manuales checklist → todas OK ✅ MEMORY.md actualizado con 13 decisiones ✅ Commit realizado, mensaje imperativo español, staging limpio.
     - Validación visual: no realizada (sin navegador disponible en el entorno).
+
+---
+### Spec 009 — Eliminar la vista tablet: dos versiones de vista (en curso)
+
+- Spec 009, T1 completa (2026-10-16): **Paso 0 — línea base de la suite y reconocimiento
+  del estado real. Tarea de solo lectura: NO se editó ningún archivo de código.**
+    - **Estado del repo:** `git status --short` solo muestra borrados en `.pi/` y
+      archivos sin trackear (`analicis-completo-cambios.md`, `specs/008-*`,
+      `specs/009-*`). **`src/` está limpio**: las ediciones manuales del dashboard que el
+      plan describía como «sin commitear» en realidad **ya están commiteadas** en
+      `b61286a` («Refactor Dashboard components and tests…», que borra `DashboardHeader.jsx`
+      y su test). No hay `stash` ni staging.
+    - **Línea base medida** (`npx vitest run`, reporter json → `/tmp/opencode/009/baseline.json`):
+      **236 tests en 21 archivos: 226 pass / 10 fail**; **4 archivos con fallos**
+      (17 archivos verdes). Archivo por archivo:
+        - PASS: `App.test.jsx` (10/10), `AcordeonTarjetas` (8), `GridTarjetas` (6),
+          `LogMovimientos` (6), `MiTarjetaVirtual` (16), `Features` (1), `Hero` (1),
+          `BottomNav` (13), `DashboardUserModal` (20), `Header` (3), `ModalTarjeta` (11),
+          `Card` (4), `useBreakpoint.test.js` (17), `useReveal` (6), `LandingLayout` (3),
+          `PanelTarjetas` (12), `index.css` (19).
+        - FAIL: `DashboardLayout.test.jsx` **no compila** — `Failed to resolve import
+          "../components/layout/DashboardHeader"` (módulo borrado en `b61286a`), 0/0.
+        - FAIL: `DashboardDrawer.test.jsx` 26/31 — 5 fallos, todos por
+          «4 enlaces» vs «3 enlaces»/focusables (espera 4+1=5, recibe 4; children 4 vs 3).
+        - FAIL: `SidebarNavContenido.test.jsx` 15/17 — 2 fallos (espera 4 `NavLink`, hay 3).
+        - FAIL: `SidebarResponsive.test.jsx` 29/32 — 3 fallos (espera 4 enlaces/iconos, hay 3).
+    - **Causa común de los 10 fallos de aserción:** las suites todavía esperan **4 enlaces**
+      de navegación lateral, pero el código tiene **3** (el usuario quitó el enlace directo a
+      Configuración; decisión intencionada y fuera de alcance por RF-10/RF-15). Son fallos
+      **preexistentes** por ediciones manuales, **no** de la spec 009. Coincide con
+      `analicis-completo-cambios.md` (10 fallos / 4 archivos).
+    - **Reconocimiento del código del alcance (estado real):**
+        - `src/hooks/useBreakpoint.js`: **sí** expone `isTablet`; **3** `matchMedia`
+          (`max-width:639px`, `640–1023px`, `min-width:1024px`); `?? false` en el
+          inicializador de `sidebarColapsada` (línea 15); **`useEffect` que persiste el
+          estado en cada cambio** (líneas 57–59). Sin cambios del usuario aquí.
+        - `src/layout/DashboardLayout.jsx`: **sí** tiene rama tablet
+          (`{isTablet && <SidebarResponsive/>}`, líneas 90–96); **sí** tiene estado
+          `drawerAbierto` (46) y sus dos efectos de cierre (57–68); **sí** tiene
+          `pt-[var(--header-height)]` en `main` (107); margen con prefijo `lg:`
+          (102, además con lógica conflictiva: el ternario cae en `lg:ml-64` también
+          fuera de desktop y luego añade `ml-0`); pasa `esMobile={true}` al drawer (129);
+          ya **no** importa ni renderiza `DashboardHeader`.
+        - `src/components/layout/DashboardDrawer.jsx`: **sí** conserva la prop `esMobile`
+          (default `false`) y la **rama no-móvil** completa (`if (!esMobile)` con
+          `top-[var(--header-height)] h-[calc(100vh-var(--header-height))]`), más un panel
+          móvil duplicado. `SidebarResponsive.jsx`: 3 enlaces en el código; su cabecera dice
+          «4 enlaces». `BottomNav.jsx`: 4 items + «Menú» (5), sin cambios. `SidebarNavContenido.jsx`:
+          **3 enlaces** (Inicio/Transacciones/Tarjetas); import `Settings` sin usar, `my-`
+          inválido y `text-white` presentes (exentos de limpieza por RF-15).
+        - `src/App.test.jsx` renderiza `App`/`DashboardLayout` real pero **no** asserta
+          composición de navegación (solo contenido de páginas): AC-17 baseline = **PASS (10/10)**.
+        - `vitest.setup.js`: `matchMedia` global devuelve `matches:false` y `innerWidth=1024`;
+          `localStorage.getItem` es `vi.fn()` (⇒ `undefined` = «sin preferencia» bajo RF-07).
+          **No requiere cambios** (coincide con §2 de la spec), pero **ojo**: con la nueva M1
+          `matches:false` significa **móvil**, así que las suites que renderizan el layout real
+          pueden cambiar de composición (riesgo ya previsto en el plan §6).
+    - **Discrepancias vs documentación:** `MEMORY.md` (spec 007) afirmaba `273/273` en 22
+      archivos (T10) y `277/277` en 23 archivos (T9), y 33/33 en `DashboardLayout.test.jsx`;
+      lo **medido** hoy es 236/21 con `DashboardLayout.test.jsx` sin compilar. El plan decía
+      que el dashboard tenía cambios manuales «sin commitear»: hoy están commiteados en
+      `b61286a`. Registrado sin declarar verde nada.
+    - **Inconsistencia documental confirmada (spec §8):** `AGENTS.md` y `doc/constitution.md`
+      citan `.agents/response-rules.md` y `.agents/file-header-template.md`; esas rutas **no
+      existen**. Las reales son `.agents/skills/response-rules.md/SKILL.md` y
+      `.agents/skills/file-hearder-template.md/SKILL.md` (typo «hearder»). Aviso pendiente
+      antes de Tarea 6.
+    - **Validaciones:** línea base `npx vitest run` → **pass de medición** (reportada, no
+      «verde»). `npm run build` **no ejecutado** (T1 es solo lectura). Validación visual **no
+      ejecutada**. Validación diferida (AC-16/AC-18/AC-19) **pendiente** del aviso del usuario.
+    - Sin commit ni staging (a petición del flujo; además T1 no edita código).
+
+- Spec 009, T2 completa (2026-10-16): **`useBreakpoint`: dos versiones de vista, 4 props,
+  defaults por banda y contrato de preferencia** (RF-01, RF-02, RF-06, RF-07, RF-11).
+    - **Paso 0:** `git status --short` sin cambios en `src/` (solo `MEMORY.md` modificado y
+      borrados en `.pi/`); el hook seguía con 3 `matchMedia`, `isTablet` y el `useEffect`
+      que persistía en cada cambio. Edición mínima sobre ese estado real.
+    - **`src/hooks/useBreakpoint.js` reescrito:** una única query de versión de vista
+      `(min-width: 768px)` (`esDesktop = matches`, `isMobile = !esDesktop`, complementaria
+      por construcción) y la query `(min-width: 1024px)` solo como `anchoGrande` para el
+      default de banda. Sin `mqMobile`, sin `mqTablet`, **sin `isTablet`**. Inicial desde
+      `window.innerWidth >= 768` / `>= 1024`; sin `window` ⇒ ambos `true` (CL-05 intacto).
+      `preferencia` (`boolean | null`) leída con `JSON.parse` en `try/catch`, válida ⇔
+      `typeof === "boolean"`; `sidebarColapsada = preferencia !== null ? preferencia :
+      !anchoGrande`. **Se eliminó el `useEffect` de persistencia**: `toggleSidebar` calcula
+      `siguiente = !sidebarColapsada`, hace `setPreferencia` y escribe la clave única
+      `sidebarCollapsed` solo entonces. Cabecera JSDoc actualizada al contrato nuevo.
+    - **`src/hooks/useBreakpoint.test.js` reescrito:** mock de `matchMedia` mapeando las dos
+      queries con `matches` coherente; contrato de exactamente 4 props y ausencia de
+      `isTablet`; partición exhaustiva en 767 / 767,5 / 768 / 800 / 1023 / 1024 / 1440;
+      default por banda (800 ⇒ colapsada, 1200 ⇒ expandida); preferencia válida manda en
+      ambas bandas; `null` / `"null"` / `"1"` / `'"false"'` / JSON corrupto ⇒ sin
+      preferencia; montaje **no** escribe; `toggleSidebar` escribe el valor elegido; cruce
+      1200→800 por `change` colapsa **sin** escrituras; listeners de ambas queries
+      registrados y retirados; patrón primer render sin medición sin excepciones.
+    - **TDD:** la nueva prueba se ejecutó primero contra el hook de HEAD (`b61286a`) en un
+      worktree temporal (ya eliminado, sin tocar el árbol de trabajo): **20 fallos / 7 pass**
+      por el contrato viejo. Tras implementar: **27/27 pass**.
+    - **Validaciones ejecutadas:**
+        - `npx vitest run src/hooks/useBreakpoint.test.js` → ✅ **pass (27/27)**
+          (línea base del archivo: 17/17).
+        - Informativo, no cierre: `npx vitest run src/App.test.jsx src/components/layout
+          src/layout/DashboardLayout.test.jsx` → **App.test.jsx 10/10 pass**; mismo perfil de
+          fallos que la línea base (10 fallos preexistentes: 5 `DashboardDrawer`, 2
+          `SidebarNavContenido`, 3 `SidebarResponsive`; `DashboardLayout.test.jsx` sin
+          compilar). **Sin regresiones atribuibles a T2.**
+        - `npm test` y `npm run build` completos: **no ejecutados** (validación diferida,
+          T8, tras el aviso del usuario). Validación visual en navegador: **no ejecutada**
+          (sin navegador; tampoco hay composición visual nueva).
+    - **Pendiente de validación diferida:** AC-16/AC-18/AC-19 y el efecto real del nuevo
+      default de móvil (`matches:false` global ⇒ ahora `isMobile=true`) sobre las suites que
+      renderizan el layout real, a confirmar en T8.
+    - **Inconsistencia documental (reenviada):** `AGENTS.md` y `doc/constitution.md` citan
+      `.agents/response-rules.md` y `.agents/file-header-template.md`, inexistentes; las
+      reales están en `.agents/skills/response-rules.md/SKILL.md` y
+      `.agents/skills/file-hearder-template.md/SKILL.md` (typo «hearder»). No bloquea T2.
+    - Sin commit ni staging.
+
+- Spec 009, T3 completa (2026-10-16): **`DashboardDrawer`: rama móvil incondicional y retirada
+  de `esMobile`** (RF-04, RF-15).
+    - **Paso 0:** relectura de `DashboardDrawer.jsx` (170 líneas) y su test (488 líneas, 31
+      casos) antes de tocar nada; el estado real era el descrito por el plan (prop `esMobile`
+      con default `false`, rama `if (!esMobile)` con panel
+      `left-0 top-[var(--header-height)] h-[calc(100vh-var(--header-height))]`, y el mismo
+      `id="dashboard-drawer-panel"` duplicado en dos paneles). `git status --short` mostraba
+      además los cambios de T2 en `useBreakpoint*` y `MEMORY.md`: se editó solo el drawer.
+    - **`src/components/layout/DashboardDrawer.jsx`: 170 → 132 líneas.** Retirados la prop
+      `esMobile` (y su default), la rama no-móvil completa (`if (!esMobile)`, sin backdrop, con
+      su `FocusTrap`+`createPortal` propios), la constante `panelContent` que quedaba
+      **colgando** al desaparecer esa rama y el `id` repetido; la rama móvil (backdrop
+      `z-50` + `FocusTrap` + `AnimatePresence`/`motion.div`, panel
+      `inset-y-0 right-0 … border-l … z-55`, `aria-label="Menú de navegación"`) pasa a ser la
+      **única e incondicional**. Contrato final:
+      `{ abierto, alCerrar, children, triggerRef }` (el plan lo describe como `triggerRef`; no
+      existe ningún `referenciaDeRetorno` en el código real). Portada intacta: portal a
+      `document.body`, ESC → `alCerrar`, click en backdrop → `alCerrar`, focus trap y retorno
+      de foco a `triggerRef` o al elemento previo. Cabecera JSDoc reescrita sin tablet ni
+      `esMobile`. **Sin cambios** en la animación de entrada/salida ni en el panel móvil más
+      allá de retirar la rama eliminada (exención explícita de RF-15: no se «rehace» el panel
+      duplicado).
+    - **`src/components/layout/DashboardDrawer.test.jsx`: 31 → 17 casos (reescritura).**
+      Retirados los 14 casos de `esMobile=false`/tablet y los duplicados por modo; conservados
+      y reforzados los de la rama móvil: portal con **un único** `#dashboard-drawer-panel`,
+      `abierto=false` no renderiza nada, backdrop con sus clases, panel con sus clases y
+      `aria-label="Menú de navegación"` (una sola vez), `role=dialog` + `aria-modal`, ESC,
+      click en backdrop, focus trap (foco inicial y elementos enfocables) y retorno de foco a
+      `triggerRef`/elemento previo. **DP-06 aplicado sin tocar la fuente:** enlaces del panel
+      **4 → 3** y enfocables **5 → 4** (3 `NavLink` + botón de avatar). La fuente de
+      `SidebarNavContenido.jsx` sigue con 3 enlaces (Configuración no se restituye).
+    - **TDD:** el test reescrito se ejecutó **primero** contra el componente de HEAD →
+      **5 fallos / 12 pass (17)**, exactamente los dependientes de la rama móvil (sin backdrop,
+      sin `inset-y-0`, con `border-r`/`z-60`, `aria-label` «Navegación del dashboard»). Tras
+      implementar: **17/17**.
+    - **Validaciones ejecutadas:**
+        - `npx vitest run src/components/layout/DashboardDrawer.test.jsx` → ✅ **pass (17/17)**;
+          los 5 fallos de la línea base del archivo quedan resueltos (DP-06).
+        - Verificación por grep en el archivo del alcance: sin `esMobile`, sin «tablet», sin
+          `[var(--header-height)]`; una única aparición de `id="dashboard-drawer-panel"`.
+        - `npm test` y `npm run build` completos: **no ejecutados** (validación diferida, T8).
+          No se declara verde ninguna suite global.
+        - Suite del directorio `src/components/layout` **no ejecutada** por indicación de la
+          tarea (las de `SidebarNavContenido`/`SidebarResponsive` son T5 y la de
+          `DashboardLayout` es T4, que hoy ni compila).
+        - Validación visual: **no ejecutada** (sin navegador; sin composición visual nueva).
+    - **Estado intermedio esperado (documentado):** `src/layout/DashboardLayout.jsx` (línea
+      129) **sigue pasando `esMobile={true}`** al drawer y su efecto de `isTablet` sigue ahí:
+      es la T4. No rompe nada (el drawer ya no lee la prop), pero T4 no puede cerrarse sin
+      esta tarea.
+    - **Aprendizaje:** al retirar una rama condicional, la constante de JSX que solo esa rama
+      usaba queda «colgando»; aquí era justamente el «panel duplicado» con `id` repetido que
+      la tarea pedía eliminar, así que se retiró (no se recreó ninguna alternativa).
+    - Sin commit ni staging.
+
+- Spec 009, T4 completa (2026-10-16): **`DashboardLayout`: composición de dos versiones, margen
+  desde 768px y estados** (RF-03, RF-04, RF-05, RF-08, RF-09, RF-15).
+    - **Paso 0:** relectura del layout (142 líneas) y su test (578 líneas, sin compilar) antes de
+      tocar nada. Estado real confirmado: `isTablet` en el destructuring (42), `drawerAbierto` (46)
+      con dos efectos que lo cerraban (57–68), rama tablet `{isTablet && <SidebarResponsive/>}`
+      (90–96), margen `lg:ml-*` con ternario conflictivo (102), `pt-[var(--header-height)]` (107) y
+      `esMobile={true}` al drawer (129). `git status --short` mostraba además los cambios (aún sin
+      commitear) de T2/T3 en `useBreakpoint*`, `DashboardDrawer*` y `MEMORY.md`: se editaron solo
+      los dos archivos de T4.
+    - **`src/layout/DashboardLayout.jsx`:** destructuring a **4 props** (`isMobile`, `isDesktop`,
+      `sidebarColapsada`, `toggleSidebar`); **un único** bloque `SidebarResponsive` bajo `isDesktop`;
+      **retirados** `drawerAbierto` y sus dos efectos (`isDesktop`/`isMobile`) y la rama tablet;
+      margen del área principal **sin prefijo `lg:`** →
+      `isDesktop ? (sidebarColapsada ? "ml-[72px]" : "ml-64") : "ml-0"`; `main` pasa de
+      `clsx("pb-20","pt-[var(--header-height)]")` a **`"pb-20"`**; el drawer de móvil ya **no
+      recibe `esMobile`** (solo `abierto/alCerrar/triggerRef/children`). El efecto de recomposición
+      al salir de móvil ahora, **si el menú estaba abierto**, lo cierra y **traslada el foco** a
+      `aside[role="navigation"] button` (AC-10, verificado por test estable en jsdom). Cabecera
+      JSDoc reescrita: dos versiones con corte 768px, sin `DashboardHeader`, sin tablet, sin
+      `drawerAbierto`.
+    - **Exenciones de RF-15 respetadas:** `getUsuarioMock`/`usuario` intactos (variable sin uso),
+      `--header-height`/`src/styles/index.css` sin tocar, `pb-20` conservado incondicional, contenido
+      de navegación y conjunto de 3 enlaces sin cambios.
+    - **`src/layout/DashboardLayout.test.jsx`: reescritura completa (21 casos).** Sin el import/mock
+      de `DashboardHeader` (el archivo ya compila); mock de `useBreakpoint` con **4 props**;
+      componentes hijos mockeados (la navegación lateral mockea `aside[role="navigation"]` con su
+      botón de toggle para verificar el foco). Cubre: pantallas grandes 768/800/1023 ⇒ `colapsada=true`,
+      `ml-[72px]`, sin `BottomNav`/drawer y navegación lateral una sola vez (sin composición tablet);
+      1024/1440 ⇒ `colapsada=false`, `ml-64`; móvil 375/700/767 ⇒ `BottomNav` + menú, sin lateral,
+      `ml-0`; margen sin `lg:ml-`; `main` con `pb-20` y **sin** `pt-[var(--header-height)]`; drawer con
+      `abierto/alCerrar/children/triggerRef` y **sin** `esMobile`; apertura del menú por `alAbrirMenu`;
+      modal global en ambas versiones; transiciones de resize móvil→pantallas grandes (cierra menú y
+      mueve foco), pantallas grandes→móvil con modal abierto (permanece) y 1200→800 sin preferencia
+      (margen pasa a `ml-[72px]`).
+    - **TDD:** el test reescrito se ejecutó primero contra el layout de HEAD → **15 fallos / 6 pass**,
+      exactamente por margen `lg:ml-*`, `pt-[var(--header-height)]`, rama tablet, `esMobile` y la
+      ausencia de traslado de foco. Tras implementar: **21/21 pass**.
+    - **Validaciones ejecutadas:**
+        - `npx vitest run src/layout/DashboardLayout.test.jsx` → ✅ **pass (21/21)**; en la línea base
+          el archivo **no compilaba**.
+        - Informativo: `npx vitest run src/App.test.jsx src/components/layout/BottomNav.test.jsx` →
+          ✅ **23/23 pass** (10 + 13), sin regresiones. `npx vitest run` global →
+          **5 fallos / 248 pass (253 tests, 21 archivos)**; los 5 fallos son los **preexistentes** de
+          conteo de enlaces de `SidebarNavContenido.test.jsx` (2) y `SidebarResponsive.test.jsx` (3),
+          **asignados a T5** por DP-06; ninguno nuevo atribuible a T4. **No se declara verde ninguna
+          suite global.**
+        - `npm test` y `npm run build` completos: **no ejecutados** (validación diferida, T8).
+        - Validación visual en navegador: **no ejecutada** (sin navegador).
+    - **Aprendizaje:** para probar de verdad una recomposición hay que cambiar el valor del mock de
+      `useBreakpoint` y `rerender` del **mismo** árbol (`LayoutTree`); volver a llamar a `render`
+      monta una instancia nueva y no dispara los efectos de resize (patrón que usaba el test viejo y
+      por eso sus «transiciones» eran no-ops).
+    - **Inconsistencia documental (reenviada):** `AGENTS.md`/`doc/constitution.md` siguen citando
+      `.agents/response-rules.md` y `.agents/file-header-template.md` (inexistentes); las reales están
+      en `.agents/skills/response-rules.md/SKILL.md` y `.agents/skills/file-hearder-template.md/SKILL.md`
+      (typo «hearder»). Se usaron las reales para la cabecera JSDoc; no bloquea T4.
+    - **Pendiente de validación diferida:** AC-16/AC-18/AC-19 (diff, `npm test`, `npm run build` y
+      revisión visual) tras el aviso del usuario. Sin commit ni staging.
+
+- Spec 009, T5 completa (2026-10-16): **Pruebas de los demás componentes de layout (DP-06/M5:
+  conteos 4→3 y casos de «Configuración»), solo pruebas** (RF-03, RF-04, RF-05, RF-08, RF-12).
+    - **Paso 0:** `git status --short` mostró los cambios sin commitear de T2–T4 esperados
+      (`useBreakpoint*`, `DashboardDrawer*`, `DashboardLayout*`, `MEMORY.md`); `SidebarNavContenido.jsx`
+      y `SidebarResponsive.jsx` **sin cambios** (3 enlaces en la fuente, cabeceras intactas). Se
+      reejecutaron las dos suites del alcance antes de editar: **5 fallos / 44 pass** (49), exactamente
+      los de la línea base: `SidebarNavContenido.test.jsx` 2 (recuento 4 enlaces + Configuración) y
+      `SidebarResponsive.test.jsx` 3 (recuento 4 enlaces + Configuración + piso de iconos decorativos
+      `>=4` con 3 reales).
+    - **Cambios (mínimos, 8 inserciones / 16 borrados, solo `.test.jsx`):**
+        - `src/components/layout/SidebarNavContenido.test.jsx`: título «4 NavLink»→«3 NavLink» y
+          `toHaveLength(4)`→`(3)`; `svgs.length` `toBe(4)`→`(3)`; comentario «// Verificar 4 enlaces» →
+          «// Verificar 3 enlaces (conjunto vigente de la navegación lateral)».
+        - `src/components/layout/SidebarResponsive.test.jsx`: título «4 enlaces»→«3 enlaces» y
+          `toHaveLength(4)`→`(3)`; `navSvgs.length` `toBe(4)`→`(3)`; `allIcons.length`
+          `toBeGreaterThanOrEqual(4)`→`(3)` con comentario «// 3 nav icons + logo icons».
+    - **Casos de «Configuración» (cómo se resolvieron):** en ambos archivos se **eliminaron** los tres
+      asertos que exigían el enlace lateral a Configuración
+      (`getByRole("link", { name: /Configuración/i })` + `href="/dashboard/configuracion"` +
+      `svg.lucide-settings`) — `SidebarNavContenido.test.jsx` L50-54 y `SidebarResponsive.test.jsx`
+      L136-139 —, dejando constancia del conjunto vigente en título/comentario. Se descartó añadir un
+      aserto negativo («no existe Configuración») por ser una afirmación más fuerte que la que pide la
+      spec y ampliar el alcance de pruebas más allá de alinear aserciones con la fuente (plan §4:
+      «basta corregir las aserciones»). **No se tocó `SidebarNavContenido.jsx`**: mantiene sus 3
+      enlaces, su cabecera «4 enlaces» (observación en T6) y `DashboardUserModal` sigue siendo la vía
+      a Configuración en pantallas grandes (`navigate("/dashboard/configuracion")`, archivo sin cambios,
+      verificado por grep).
+    - **Validaciones ejecutadas:**
+        - `npx vitest run src/components/layout/SidebarNavContenido.test.jsx
+          src/components/layout/SidebarResponsive.test.jsx` → ✅ **pass (49/49: 17 + 32)**; los 5 fallos
+          de la línea base en estos archivos quedan resueltos.
+        - Informativo: `npx vitest run src/components/layout` → ✅ **pass (102/102 en 6 archivos)**;
+          `BottomNav.test.jsx` (13) y `DashboardUserModal.test.jsx` (20) siguen verdes y **sin
+          cambios**. El directorio queda sin fallos.
+        - `npm test` y `npm run build` completos: **no ejecutados** (validación diferida, T8). **No se
+          declara verde ninguna suite global.**
+        - Validación visual: **no ejecutada** (cambio exclusivamente de pruebas). Sin commit ni staging.
+    - **Aprendizaje:** un conteo desfasado puede esconderse en un aserto «de piso»
+      (`toBeGreaterThanOrEqual(4)`) o en un comentario que aún describe el estado viejo; conviene
+      barrer el archivo entero por `Configuración`/`lucide-settings`/`4` y no solo los dos rojos
+      evidentes.
+    - **Inconsistencia documental (reenviada):** `AGENTS.md`/`doc/constitution.md` siguen citando
+      `.agents/response-rules.md` y `.agents/file-header-template.md` (inexistentes); las reales están
+      en `.agents/skills/response-rules.md/SKILL.md` y
+      `.agents/skills/file-hearder-template.md/SKILL.md` (typo «hearder»). No bloquea T5.
+
+- Spec 009, T6 completa (2026-10-16): **Cabeceras JSDoc del alcance e inconsistencias documentales**
+  (RF-15). **Solo comentarios/cabeceras: 4 líneas editadas, cero cambios funcionales.**
+    - **Paso 0:** `git status --short` mostró solo los cambios aún sin commitear de T2–T5
+      (`useBreakpoint*`, `DashboardDrawer*`, `DashboardLayout*`, `SidebarNavContenido.test.jsx`,
+      `SidebarResponsive.test.jsx`, `MEMORY.md`); cada archivo se releyó justo antes de editarlo
+      (el usuario sigue editando a mano). Barrido del contrato viejo por grep antes/después:
+      `tablet`, `isTablet`, `esMobile`, `DashboardHeader`, `header-height`, `drawerAbierto`,
+      `lg:ml-`, `escritorio`, `desktop`, `640`, `tres bandas` → **0 resultados** en las cabeceras
+      del alcance tras la edición (antes había 2: `DashboardLayout.jsx:25` y
+      `SidebarNavContenido.jsx:7`).
+    - **Cambios (diferencias mínimas, solo cabeceras):**
+        - `src/layout/DashboardLayout.jsx` (línea 25): «Sin versión tablet.» → «Sin categoría
+          intermedia.» (la negación seguía siendo el único resto de la palabra en el alcance).
+        - `src/components/layout/SidebarNavContenido.jsx` (línea 7): `@usadoPor` con el rol
+          **tablet** ya inexistente → `SidebarResponsive (colapsada/expandida), DashboardDrawer
+          (menú superpuesto de móvil)`.
+        - `src/components/layout/BottomNav.jsx` (línea 7): `@usadoPor DashboardLayout (futuro),
+          vistas mobile del dashboard` → `DashboardLayout (navegación inferior de móvil)`
+          (la T6 pide «`usadoPor` real»; el componente ya se usa de verdad).
+        - `src/components/layout/SidebarResponsive.jsx` (líneas 2 y 15): «Sidebar desktop» →
+          «Navegación lateral permanente/fija de pantallas grandes (≥768px)» («ámbito por versión»;
+          plan §1 ya preveía actualizar esta cabecera). Su `@datos enlaces fijos (4)` **no** se
+          corrigió (recuento de enlaces: RF-15).
+    - **Revisados sin cambios:** `src/hooks/useBreakpoint.js` (T2 ya documenta el contrato de 4
+      props y el rol distinto de 768px y 1024px), `src/components/layout/DashboardDrawer.jsx`
+      (T3) y `DashboardUserModal.jsx` (`@usadoPor DashboardLayout (global, portal)`, real).
+    - **Observaciones registradas, NO corregidas (RF-15):**
+        1. `SidebarNavContenido.jsx` documenta **«4 enlaces»** (`@uso`, `@datos 4 NavLink fijos`,
+           comentario «4 enlaces de navegación») y la fuente tiene **3**: se deja intacto.
+        2. `SidebarResponsive.jsx` `@datos` dice «enlaces fijos (4), usuario desde
+           getUsuarioMock(), logout action»: el 4 no se corrige (recuento) y la imprecisión de
+           `@datos` (el usuario lo renderiza `SidebarNavContenido`; el logout vive en el modal)
+           tampoco se toca por quedar fuera del contrato tablet.
+        3. `src/layout/DashboardLayout.jsx` tiene la cabecera **después de los imports** y con el
+           arranque malformado `/**doc` (ya venía así en HEAD `b61286a`); es formato, no contrato
+           viejo, y no se corrige aquí (lo señala también `analicis-completo-cambios.md:142`).
+        4. La plantilla real de cabeceras
+           (`.agents/skills/file-hearder-template.md/SKILL.md`) incluye un «Ejemplo — completo con
+           crecimiento» que documenta el **contrato viejo** del dashboard (`DashboardHeader`,
+           tres breakpoints con Tablet, `drawerAbierto`, `lg:ml-*`): queda como observación para el
+           orquestador; no se tocó (fuera del alcance de T6).
+    - **Inconsistencia documental de rutas — reporte formal (archivo y líneas exactas):**
+        - `AGENTS.md:6` cita `.agents/response-rules.md` → **no existe**; la real es
+          `.agents/skills/response-rules.md/SKILL.md`.
+        - `AGENTS.md:38` cita `.agents/file-header-template.md` → **no existe**; la real es
+          `.agents/skills/file-hearder-template.md/SKILL.md` (typo «hearder» en el directorio).
+        - `doc/constitution.md:39` cita `.agents/file-header-template.md` → misma ruta inexistente.
+        - Añadido: `.agents/rules/rules.md:21` cita la misma ruta inexistente. No se corrigió
+          ninguno de los cuatro archivos: **`tasks.md` T6 no lo pide** (solo «avisar/registrar»).
+          Se usó la plantilla real para revisar las cabeceras (sin crear archivos nuevos).
+    - **Validaciones ejecutadas:**
+        - `npx vitest run src/hooks/useBreakpoint.test.js src/layout/DashboardLayout.test.jsx
+          src/components/layout src/App.test.jsx` → ✅ **pass (160/160 en 9 archivos)**: 27 + 21 +
+          102 + 10. Incluye el par de la tarea; sin regresiones atribuibles a T6 (los 5 fallos de
+          conteo de la línea base siguen resueltos).
+        - Greps del contrato viejo en el alcance → **0 resultados** (excepto el recuento de
+          enlaces, exento por RF-15).
+        - `npm test` y `npm run build` completos: **no ejecutados** (validación diferida, T8).
+          **No se declara verde ninguna suite global.**
+        - Validación visual: **no ejecutada** (solo comentarios; sin navegador).
+    - **Aprendizaje:** una mención al contrato eliminado puede sobrevivir como **negación**
+      («Sin versión tablet») o como **rol dentro de `@usadoPor`** («DashboardDrawer (tablet)»): el
+      grep por el término desnudo es necesario para limpiar cabeceras de verdad.
+    - Sin commit ni staging.
+
+- Spec 009, T7 completada (2026-10-16): **Auditoría ejecutable de umbrales y referencias colgantes
+  (AC-15) + regresión de rutas (AC-17). Solo verificación: NINGÚN archivo de código ni de pruebas
+  editado** (los únicos cambios de esta tarea son este registro y el ✅ de `tasks.md`).
+    - **Paso 0:** `git status --short` mostró el estado esperado tras T2–T6 (solo los archivos del
+      alcance modificados y aún sin commitear + `MEMORY.md`; `src/App.jsx`/`App.test.jsx` limpios,
+      `git diff --stat` de ambos vacío). Se releyeron antes de auditar
+      `useBreakpoint.js`, `DashboardLayout.jsx` y `DashboardDrawer.jsx`.
+    - **AC-15 — greps de referencias colgantes, SOLO fuentes del alcance** (producción:
+      `useBreakpoint.js`, `DashboardLayout.jsx`, `DashboardDrawer.jsx`, `SidebarResponsive.jsx`,
+      `SidebarNavContenido.jsx`, `BottomNav.jsx`, `DashboardUserModal.jsx`, `Container.jsx`):
+      `isTablet` → **0**; `esMobile` → **0**; `drawerAbierto` → **0**; `DashboardHeader` → **0**;
+      `pt-[var(--header-height)]` → **0**; `header-height` → **0**; `lg:ml-` → **0**; `640` → **0**;
+      `translate-x-full` → **0**; `top-[var(--header-height)]` → **0**; `max-width` → **0**.
+      `1023` aparece **una sola vez**, en un comentario del hook (`// Sin preferencia válida:
+      colapsada en 768–1023px…`) que **describe el estado por defecto de RF-06, no una query ni un
+      corte**. En todo `src/` esos términos solo reaparecen en **aserciones negativas de pruebas**
+      (`useBreakpoint.test.js` «no expone isTablet» y «ninguna query con 640»;
+      `DashboardLayout.test.jsx` «no esMobile», «no pt-[var(--header-height)]», «no lg:ml-»,
+      «no renderiza la composición tablet»), que son las pruebas exigidas por AC-14/AC-15, y en
+      **contenido fuera de alcance** (`src/App.test.jsx`,
+      `src/components/domain/dashboard/GridTarjetas.*`, panel de tarjetas).
+    - **AC-15 — umbrales con rol único:** el hook declara **exactamente dos** `matchMedia`:
+      `" (min-width: 768px)"` (constante `QUERY_PANTALLAS_GRANDES`, única fuente de versión de vista)
+      y `"(min-width: 1024px)"` (`QUERY_ANCHO_GRANDE`). `setEsDesktop` se alimenta **solo** de la
+      query de 768px y `isDesktop = esDesktop` / `isMobile = !esDesktop` (partición complementaria);
+      `setAnchoGrande` (1024px) alimenta **solo** `sidebarColapsada = preferencia !== null ?
+      preferencia : !anchoGrande`. Ninguna regla asigna 768–1023px a una versión tablet y no existe
+      frontera de presentación distinta de 768px en los componentes de layout del dashboard
+      (0 resultados de `sm:`/`md:`/`lg:`/`xl:`/`min-width`/`max-width` en
+      `src/components/layout/*.jsx` del dashboard; `Footer.jsx` es landing, fuera de alcance).
+      El margen del área principal se reserva desde 768px por estado JS
+      (`isDesktop ? (colapsada ? "ml-[72px]" : "ml-64") : "ml-0"`), sin prefijo `lg:`.
+      La rama no-móvil del drawer ya no existe (panel móvil incondicional, un único
+      `id="dashboard-drawer-panel"`, sin `top-[var(--header-height)]`).
+    - **AC-17 — regresión de rutas:** `npx vitest run src/App.test.jsx` → ✅ **pass 10/10**
+      (línea base: 10/10). `src/App.jsx` y `src/App.test.jsx` **sin diff** frente a HEAD; las rutas
+      del dashboard siguen siendo `/dashboard` (índice) + `transacciones`, `tarjetas`, `configuracion`
+      y `*` → `/dashboard`. **No se aparca ni se registra como pendiente.**
+    - **Informativo (no cierre):** `npx vitest run src/hooks/useBreakpoint.test.js
+      src/layout/DashboardLayout.test.jsx src/components/layout` → ✅ **pass 150/150 en 8 archivos**
+      (27 + 21 + 102), confirmando el estado del alcance tras T2–T6. **No se declara verde ninguna
+      suite global.**
+    - **Observaciones registradas (sin acción, fuera de AC-15/alcance):**
+        1. En el entorno de pruebas, `App.test.jsx` y la suite de layout emiten el aviso preexistente
+           de React `Received 'true' for a non-boolean attribute 'jsx'` originado en `BottomNav.jsx`
+           (`<style jsx>`), presente ya en HEAD (el diff de `BottomNav.jsx` en esta spec es solo la
+           línea de cabecera de T6) y sin efecto en el resultado (10/10). Deuda ajena a esta spec.
+        2. `src/pages/PaginaDashboardInicio.jsx:20` usa `sm:grid-cols-3` para la **rejilla de
+           contenido** de las tres cifras: es una sola presentación que refluye, no una bifurcación de
+           versión de vista (CL-09), y las páginas quedan fuera del alcance de la spec.
+        3. Sigue vigente lo de T6: `SidebarNavContenido.jsx` documenta «4 enlaces» y hay 3
+           (observación registrada, no se corrige por RF-15).
+    - **Validaciones diferidas (T8), no ejecutadas aquí:** `npm test` completo, `npm run build` y la
+      revisión visual AC-19. Sin commit ni staging.
+    - **Aprendizaje:** una auditoría de umbrales es más fiable buscando el **término desnudo en las
+      fuentes del alcance** que excluyendo pruebas: en las suites, las menciones a `isTablet`,
+      `esMobile` y `lg:ml-` son **aserciones de ausencia** (valor probatorio) y no restos de código.
+
+- Spec 009, T8 y T9 completadas (2026-10-16): **VALIDACIÓN FINAL EJECUTADA Y CIERRE — la
+  validación diferida (AC-16, AC-18, AC-19) se hizo tras el aviso del usuario de que terminó sus
+  ediciones manuales. Todo lo que sigue está MEDIDO, nada declarado por expectativa.**
+    - **Escaneo del diff (AC-18):** `git status --short` + `git diff --stat` → **17 archivos,
+      +887 / −1234**. Código/pruebas modificados = **12 archivos, todos del alcance**
+      (`useBreakpoint.js`+test, `DashboardLayout.jsx`+test,
+      `DashboardDrawer.jsx`+test, `SidebarNavContenido.jsx`+test, `SidebarResponsive.jsx`+test,
+      `BottomNav.jsx`) + `MEMORY.md`. **Sin diff** en `src/styles/index.css` (`--header-height: 64px`
+      intacto), `App.jsx`/`App.test.jsx`, `vitest.setup.js`, `Header.jsx`/`Footer.jsx`,
+      `src/pages/*` (panel de tarjetas), `src/config/*` y `specs/008-*` (mtime 2026-10-15).
+      **Excepciones (ajenas a la spec, ninguna atribuible a T2–T7):** borrados sin commitear de
+      `.pi/agents/*.md` (4) y `.pi/modes.config.json` — ya presentes en la línea base de T1 — y
+      archivos sin trackear `analicis-completo-cambios.md`, `specs/008-correccion-sidebar/` (3) y
+      `specs/009-eliminar-vista-tablet/` (3), que son documentación del flujo.
+    - **`npm test` completo — PASS, medido literalmente:** `Test Files 21 passed (21)`,
+      `Tests 253 passed (253)`, `Duration 6.14s`, exit 0, **0 fallos** (ningún `FAIL` en la salida).
+      Contra la **línea base medida** (4 archivos fallan / 17 pasan = 21; 10 tests fallan / 226
+      pasan = 236): los 4 archivos y los 10 tests en rojo **quedan resueltos** por DP-06 y por la
+      reescritura de T4 (`DashboardLayout.test.jsx` 21/21 — en la base no compilaba; `DashboardDrawer`
+      17/17; `SidebarNavContenido` 17/17; `SidebarResponsive` 32/32) y **no hay ningún fallo nuevo**
+      ⇒ **0 regresiones**. El total 236 → 253 (+17) por el cambio de tamaño de esas suites
+      (`useBreakpoint` 17→27, `DashboardLayout` 0→21, `DashboardDrawer` 31→17). Los warnings de stderr
+      (`jsx` no booleano en `BottomNav.jsx`, `initial` en `MiTarjetaVirtual`, future flags de React
+      Router) son **preexistentes** y no afectan al resultado. Con esto, la afirmación antigua de
+      `273/273` en 22 archivos (spec 007 T10) queda sustituida por la cifra medida.
+    - **`npm run build` completo — PASS, sin warnings:** `vite v5.4.21`, 2027 módulos,
+      `dist/index.html` 1.11 kB, CSS 57.24 kB, JS 379.63 kB, `✓ built in 1.70s`, exit 0.
+    - **Revisión visual (AC-19) — EJECUTADA** (no «no ejecutada» como en las tareas previas):
+      Firefox 156 **headless** (snap) contra el **build de producción** servido con `vite preview`,
+      con capturas a 768/800/1023/1024/1440/375/640×360 y **medidas de DOM por WebDriver
+      (geckodriver)** a 768/800/1023/1024/1440/375/700/767/640. Resultados:
+        - **768 / 800 / 1023:** navegación lateral **colapsada** (72px), contenido con margen exacto
+          (696/728/951px), `solape nav↔main = false` y `scrollWidth === innerWidth` ⇒ **sin solape ni
+          desplazamiento horizontal**; **sin `BottomNav`** ni composición tablet. **1024 / 1440:**
+          lateral **expandida** (256px), contenido 768/1184px, sin solape ni overflow.
+        - **375 / 700 / 767 / 640:** sin navegación lateral permanente, `BottomNav` (4 items + «Menú»)
+          y contenido a ancho completo ⇒ la banda **640–767 es móvil** (CL-03) también en horizontal
+          (640×360).
+        - **Superficies translúcidas:** **1** con paneles cerrados (lateral en pantallas grandes,
+          `BottomNav` en móvil); **3** con el menú de móvil abierto (BottomNav + overlay + panel) y
+          **3** con el modal de cuenta abierto en 1440 (lateral + overlay + modal) ⇒ **≤3** (RF-14).
+          **Blobs: 0** en todos los anchos.
+        - **AC-10 en navegador real:** con el menú de móvil abierto, pasar de 767px a 1100px cierra el
+          drawer (`#dashboard-drawer-panel` desaparece) y **traslada el foco** al control de la
+          navegación lateral (`BUTTON:Colapsar navegación`).
+        - **AC-05/AC-06 en navegador real:** en 800px sin preferencia ⇒ colapsada (72px); al pulsar el
+          control ⇒ expandida (256px) con `localStorage.sidebarCollapsed = "false"`; **tras recargar
+          sigue expandida** ⇒ la preferencia se guarda, se escribe solo al elegir y se respeta (RF-07).
+        - **Contraste (medido, WCAG):** título de contenido **17,45:1**; etiqueta «FinApp / Panel»
+          (emerald sobre crema) **4,87:1**; enlace de la navegación lateral (emerald sobre `bg-dark`)
+          **3,58:1** ⇒ los dos primeros cumplen AA, el tercero **no alcanza AA para texto normal**.
+          Es **preexistente y ajeno a esta spec** (en esos archivos la 009 solo cambió comentarios y
+          los tokens no se tocan; la banda 768–1023 ya renderizaba esa misma navegación en HEAD `b61286a`):
+          se registra como **deuda/observación de contraste del sidebar** y no se corrige aquí.
+        - **Límite de la medición visual:** la petición de 375px por WebDriver se resolvió a 500px de
+          ancho interno (banda móvil igualmente); la captura de **375×812 es real** y confirma móvil
+          sin solape ni recorte, pero el `scrollWidth` exacto a 375px no se midió numéricamente.
+        - Evidencia auxiliar (fuera del repo, no versionada): capturas en `/tmp/opencode/009/pngs/` y
+          JSON de medidas en `/tmp/opencode/009/`.
+    - **AC-16 (limpieza) — PASS:** grep en las fuentes del alcance → `isTablet` **0**, `esMobile`
+      **0**, `drawerAbierto` **0**, `DashboardHeader` **0**, `pt-[var(--header-height)]` **0**,
+      `header-height` **0**, `lg:ml-` **0**, `translate-x-full` **0**, `640` **0**, `max-width` **0**.
+      Exenciones respetadas: `--header-height` sigue en `index.css` (sin diff) y el contenido de
+      navegación conserva sus 3 enlaces y el recuento «4 enlaces» de su cabecera.
+    - **Decisiones de la spec 009, ya implementadas:** (1) **dos versiones de vista con un único
+      corte en 768px** (móvil <768 / pantallas grandes ≥768) y **sin categoría tablet**; (2) el
+      **umbral de 1024px** existe **solo** como default del estado inicial de la navegación lateral
+      (colapsada en 768–1023, expandida en ≥1024 sin preferencia), nunca como frontera de versión;
+      (3) **contrato de 4 props** (`isMobile`, `isDesktop`, `sidebarColapsada`, `toggleSidebar`) con
+      partición complementaria derivada de una sola media query y `isTablet` eliminado; (4) **contrato
+      de preferencia válida**: válida ⇔ booleano tras `JSON.parse`, y se **escribe solo** al elegir
+      (`toggleSidebar`), sin materializar defaults de banda; (5) **espacio de la navegación reservado
+      desde 768px por estado JS** (`ml-[72px]`/`ml-64`/`ml-0`), sin prefijos de breakpoint en CSS;
+      (6) **limpieza RF-15 acotada** (rama no-móvil del drawer y `esMobile`, `drawerAbierto`,
+      `pt-[var(--header-height)]`), con exenciones (`index.css`/`--header-height`, `pb-20`
+      incondicional, enlaces vigentes 3, `usuario` sin uso, `my-`/`text-white`/`Settings`).
+    - **Deudas y pendientes registrados fuera de esta spec:** (a) **contraste 3,58:1** de los enlaces
+      de la navegación lateral (preexistente, ver arriba); (b) **nombre accesible de los enlaces en
+      estado colapsado** inexistente (deuda preexistente, RF-12, explícitamente fuera de alcance);
+      (c) **obsolescencia de la spec 008** ya declarada en `specs/009-*/spec.md` §3 (no se anota en
+      sus documentos hasta abordarla: DP-05); (d) `pb-20` incondicional en `main` (cambio de
+      comportamiento no autorizado por la spec); (e) **pasada de limpieza de `index.css` /
+      `--header-height`**; (f) borrado sin commitear de `.pi/agents/*.md` y `.pi/modes.config.json`,
+      ajeno a esta spec y **no restaurado** (solo reportado).
+    - **Inconsistencia documental (registrada, no corregida; archivo y línea exactos):**
+      `AGENTS.md:6` cita `.agents/response-rules.md`; `AGENTS.md:38`, `doc/constitution.md:39` y
+      `.agents/rules/rules.md:21` citan `.agents/file-header-template.md`. **Ninguna de esas dos rutas
+      existe**; las reales son `.agents/skills/response-rules.md/SKILL.md` y
+      `.agents/skills/file-hearder-template.md/SKILL.md` (**typo «hearder»** en el directorio).
+      No se corrigió ninguno de los cuatro archivos (fuera del alcance de la spec).
+      Observación adicional: el «Ejemplo — completo con crecimiento» de esa plantilla real documenta
+      el **contrato viejo** del dashboard (`DashboardHeader`, tres breakpoints con Tablet,
+      `drawerAbierto`, `lg:ml-*`); queda como aviso para el orquestador.
+    - **Aprendizajes:** (1) para medir de verdad «sin solape» y «sin scroll horizontal» en jsdom no
+      sirve nada, pero **sí un navegador headless por WebDriver**: `scrollWidth === innerWidth`,
+      rectángulos de `aside`/`main` y recuento de `backdrop-filter` por `getComputedStyle` dan
+      evidencia numérica reutilizable; (2) el snap de Firefox **no puede escribir en `/tmp`**:
+      `--screenshot` falla en silencio y hay que apuntar la salida a `$HOME`; (3) lanzar Firefox
+      headless en bucle seguido falla por bloqueo de perfil: conviene ejecutarlos **de uno en uno**;
+      (4) un recuento de tests que **baja** (DashboardDrawer 31→17) es esperado cuando se retiran
+      casos que validaban comportamiento eliminado (RF-15), pero hay que **explicarlo** para que no
+      parezca pérdida de cobertura; (5) el contraste no lo cubre ninguna suite: medirlo con una
+      pasada de `getComputedStyle` evita afirmar «contraste legible» sin dato.
+    - **Validaciones:** `npm test` **PASS (21/21 archivos, 253/253 tests)**; `npm run build` **PASS**;
+      AC-16/AC-18/AC-19 **PASS** (visual **ejecutado**); evidencia y utilidades temporales en
+      `/tmp/opencode/009/` (fuera del repo). Procesos temporales (`vite preview`, `geckodriver`)
+      detenidos; el servidor de desarrollo que el usuario tuviera abierto **no** se tocó.
+      **Sin commit ni staging** (no solicitados).

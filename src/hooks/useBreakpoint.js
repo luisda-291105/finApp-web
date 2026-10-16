@@ -1,64 +1,74 @@
 /**
- * @uso        Hook unificado de breakpoints y estado sidebar para navegación responsive
- * @funciones  useBreakpoint() → { isMobile, isTablet, isDesktop, sidebarColapsada, toggleSidebar }
- * @datos      Usa matchMedia listeners (cleanup en unmount), sin dependencia de useReveal
- * @eventos    resize, change en media queries
- * @estados    sidebarColapsada (persistida en localStorage 'sidebarCollapsed')
- * @usadoPor   DashboardLayout, DashboardHeader (modo dashboard)
+ * @uso        Dos versiones de vista del dashboard (móvil / pantallas grandes) y estado de la navegación lateral
+ * @funciones  useBreakpoint() → { isMobile, isDesktop, sidebarColapsada, toggleSidebar }
+ * @datos      Lee la preferencia del usuario en localStorage 'sidebarCollapsed' y mide con matchMedia (768px / 1024px)
+ * @eventos    change en la media query de 768px (versión de vista) y en la de 1024px (estado por defecto)
+ * @estados    preferencia (boolean | null), esDesktop (boolean), anchoGrande (boolean)
+ * @usadoPor   DashboardLayout (modo dashboard)
  */
 import { useState, useEffect } from "react";
 
-export function useBreakpoint() {
-  const [sidebarColapsada, setSidebarColapsada] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return JSON.parse(localStorage.getItem("sidebarCollapsed")) ?? false;
-    } catch {
-      return false;
-    }
-  });
+/** Corte de versión de vista: <768px = móvil; >=768px = pantallas grandes (única fuente de verdad). */
+const QUERY_PANTALLAS_GRANDES = "(min-width: 768px)";
+/** Umbral SOLO del estado por defecto de la navegación lateral; no es una versión de vista. */
+const QUERY_ANCHO_GRANDE = "(min-width: 1024px)";
+const CLAVE_PREFERENCIA = "sidebarCollapsed";
 
-  const [breakpoint, setBreakpoint] = useState(() => {
-    if (typeof window === "undefined") {
-      return { isMobile: false, isTablet: false, isDesktop: true };
-    }
-    const w = window.innerWidth;
-    return {
-      isMobile: w < 640,
-      isTablet: w >= 640 && w < 1024,
-      isDesktop: w >= 1024,
-    };
-  });
+/** Preferencia válida ⇔ booleano tras deserializar; clave ausente, otro tipo o error ⇒ sin preferencia. */
+function leerPreferencia() {
+  if (typeof window === "undefined") return null;
+  try {
+    const valor = JSON.parse(localStorage.getItem(CLAVE_PREFERENCIA));
+    return typeof valor === "boolean" ? valor : null;
+  } catch {
+    return null;
+  }
+}
+
+function medirEsDesktop() {
+  if (typeof window === "undefined") return true;
+  return window.innerWidth >= 768;
+}
+
+function medirAnchoGrande() {
+  if (typeof window === "undefined") return true;
+  return window.innerWidth >= 1024;
+}
+
+export function useBreakpoint() {
+  const [preferencia, setPreferencia] = useState(leerPreferencia);
+  const [esDesktop, setEsDesktop] = useState(medirEsDesktop);
+  const [anchoGrande, setAnchoGrande] = useState(medirAnchoGrande);
 
   useEffect(() => {
-    const mqMobile = window.matchMedia("(max-width: 639px)");
-    const mqTablet = window.matchMedia("(min-width: 640px) and (max-width: 1023px)");
-    const mqDesktop = window.matchMedia("(min-width: 1024px)");
+    const mqPantallasGrandes = window.matchMedia(QUERY_PANTALLAS_GRANDES);
+    const mqAnchoGrande = window.matchMedia(QUERY_ANCHO_GRANDE);
 
-    const handler = () =>
-      setBreakpoint({
-        isMobile: mqMobile.matches,
-        isTablet: mqTablet.matches,
-        isDesktop: mqDesktop.matches,
-      });
+    const sincronizarVersion = () => setEsDesktop(mqPantallasGrandes.matches);
+    const sincronizarAnchoGrande = () => setAnchoGrande(mqAnchoGrande.matches);
 
-    mqMobile.addEventListener("change", handler);
-    mqTablet.addEventListener("change", handler);
-    mqDesktop.addEventListener("change", handler);
-    handler(); // sync inicial
+    mqPantallasGrandes.addEventListener("change", sincronizarVersion);
+    mqAnchoGrande.addEventListener("change", sincronizarAnchoGrande);
+    sincronizarVersion(); // sync inicial
+    sincronizarAnchoGrande();
 
     return () => {
-      mqMobile.removeEventListener("change", handler);
-      mqTablet.removeEventListener("change", handler);
-      mqDesktop.removeEventListener("change", handler);
+      mqPantallasGrandes.removeEventListener("change", sincronizarVersion);
+      mqAnchoGrande.removeEventListener("change", sincronizarAnchoGrande);
     };
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("sidebarCollapsed", JSON.stringify(sidebarColapsada));
-  }, [sidebarColapsada]);
+  // Sin preferencia válida: colapsada en 768–1023px, expandida en >=1024px.
+  const sidebarColapsada = preferencia !== null ? preferencia : !anchoGrande;
 
-  const toggleSidebar = () => setSidebarColapsada((c) => !c);
+  const toggleSidebar = () => {
+    const siguiente = !sidebarColapsada;
+    setPreferencia(siguiente);
+    // Solo la elección del usuario se persiste; el default de banda nunca se materializa.
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CLAVE_PREFERENCIA, JSON.stringify(siguiente));
+    }
+  };
 
-  return { ...breakpoint, sidebarColapsada, toggleSidebar };
+  return { isMobile: !esDesktop, isDesktop: esDesktop, sidebarColapsada, toggleSidebar };
 }

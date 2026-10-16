@@ -115,11 +115,11 @@ describe("SidebarResponsive", () => {
       expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
-    it("renderiza 4 enlaces de navegación con iconos y etiquetas", () => {
+    it("renderiza 3 enlaces de navegación con iconos y etiquetas", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(4);
+      expect(links).toHaveLength(3);
 
       // Usar getByRole con nombre más específico para el link de navegación "Inicio"
       const inicioLink = screen.getByRole("link", { name: /^Inicio$/i });
@@ -133,10 +133,6 @@ describe("SidebarResponsive", () => {
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
-
-      const configuracionLink = screen.getByRole("link", { name: /Configuración/i });
-      expect(configuracionLink.getAttribute("href")).toBe("/dashboard/configuracion");
-      expect(configuracionLink.querySelector("svg.lucide-settings")).toBeTruthy();
     });
 
     it("iconos de navegación tienen flex-shrink-0 w-6 h-6", () => {
@@ -144,7 +140,7 @@ describe("SidebarResponsive", () => {
 
       const aside = getSidebarAside();
       const navSvgs = aside.querySelectorAll("a[href^='/dashboard'] svg");
-      expect(navSvgs.length).toBe(4);
+      expect(navSvgs.length).toBe(3);
       navSvgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -294,7 +290,7 @@ describe("SidebarResponsive", () => {
 
       const aside = getSidebarAside();
       const allIcons = aside.querySelectorAll("svg[aria-hidden='true']");
-      expect(allIcons.length).toBeGreaterThanOrEqual(4); // 4 nav icons + logo icons
+      expect(allIcons.length).toBeGreaterThanOrEqual(3); // 3 nav icons + logo icons
     });
 
     it("separador en SidebarNavContenido tiene aria-hidden=true", () => {

@@ -1,10 +1,10 @@
 /**
- * @uso        Drawer slide-in para navegación tablet/mobile (portal, focus trap, ancho responsive)
- * @funciones  DashboardDrawer({ abierto, alCerrar, children, triggerRef, esMobile })
+ * @uso        Menú lateral superpuesto exclusivo de móvil (portal, backdrop, focus trap)
+ * @funciones  DashboardDrawer({ abierto, alCerrar, children, triggerRef })
  * @datos      Renderiza children (esperado: SidebarNavContenido) dentro de panel lateral
- * @eventos    ESC → alCerrar; click backdrop (mobile) → alCerrar; focus trap Tab/Shift+Tab cicla interno
+ * @eventos    ESC → alCerrar; click backdrop → alCerrar; focus trap Tab/Shift+Tab cicla interno
  * @estados    Recibe `abierto` controlado desde padre; sin estado propio
- * @usadoPor   DashboardLayout (tablet), DashboardLayout (mobile menú)
+ * @usadoPor   DashboardLayout (menú superpuesto de móvil)
  */
 
 import { useEffect, useLayoutEffect, useRef } from "react";
@@ -15,19 +15,16 @@ import clsx from "clsx";
 
 /**
  * DashboardDrawer
- * Drawer lateral accesible mediante portal, con focus trap y animación.
- * 
- * - Tablet (esMobile=false): panel slide-in desde izquierda, sin backdrop, z-60
- * - Mobile (esMobile=true): panel slide-in desde derecha + backdrop, focus trap, z-55
+ * Menú lateral superpuesto de móvil: portal, backdrop, focus trap y animación de entrada.
+ * La rama móvil es incondicional: el componente no bifurca por modo.
  * 
  * @param {Object} props
  * @param {boolean} props.abierto - Visibilidad del drawer
  * @param {() => void} props.alCerrar - Callback de cierre
  * @param {React.ReactNode} props.children - Contenido a renderizar (ej. SidebarNavContenido)
  * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Ref al elemento trigger para retorno de foco
- * @param {boolean} [props.esMobile=false] - Si true, usa modo mobile (backdrop + focus trap + animación Framer Motion)
  */
-export default function DashboardDrawer({ abierto, alCerrar, children, triggerRef, esMobile = false }) {
+export default function DashboardDrawer({ abierto, alCerrar, children, triggerRef }) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
 
@@ -92,42 +89,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
     escapeDeactivates: false, // Manejado manualmente
   };
 
-  // Panel del drawer (contenido)
-  const panelContent = (
-    <div
-      ref={panelRef}
-      id="dashboard-drawer-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-label={esMobile ? "Menú de navegación" : "Navegación del dashboard"}
-      className={clsx(
-        "fixed w-[85vw] max-w-sm bg-bg-dark/95 backdrop-blur-md",
-        esMobile
-          ? "inset-y-0 right-0 border-l border-border-line/20 z-55"
-          : "left-0 top-[var(--header-height)] h-[calc(100vh-var(--header-height))] border-r border-border-line/20 z-60 transition-transform duration-300 ease-out",
-        !esMobile && abierto && "translate-x-0",
-        !esMobile && !abierto && "-translate-x-full"
-      )}
-    >
-      {children}
-    </div>
-  );
-
-  // Tablet: comportamiento actual (solo panel, sin backdrop, sin FocusTrap en portal)
-  if (!esMobile) {
-    const drawerContent = (
-      <FocusTrap
-        ref={focusTrapRef}
-        focusTrapOptions={focusTrapOptions}
-      >
-        {panelContent}
-      </FocusTrap>
-    );
-
-    return createPortal(drawerContent, document.body);
-  }
-
-  // Mobile: backdrop + FocusTrap + AnimatePresence + motion.div
+  // Panel del drawer (rama móvil incondicional: backdrop + FocusTrap + AnimatePresence + motion.div)
   const mobilePanelContent = (
     <FocusTrap
       ref={focusTrapRef}

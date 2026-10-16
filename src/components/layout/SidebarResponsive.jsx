@@ -1,5 +1,5 @@
 /**
- * @uso        Sidebar desktop colapsable con navegación, logo toggle, usuario y logout
+ * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
  * @funciones  SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal })
  * @datos      enlaces fijos (4), usuario desde getUsuarioMock(), logout action
  * @eventos    click en enlaces, click en logo toggle, click en avatar
@@ -12,7 +12,7 @@ import SidebarNavContenido from "./SidebarNavContenido";
 
 /**
  * SidebarResponsive
- * Sidebar desktop fija, colapsable, con fondo dark glass y navegación compartida.
+ * Navegación lateral fija de pantallas grandes (≥768px), colapsable, con fondo dark glass y navegación compartida.
  * El estado colapsado/expandido se controla desde el padre (DashboardLayout via useBreakpoint).
  * El logo no navega: solo alterna colapso.
  *

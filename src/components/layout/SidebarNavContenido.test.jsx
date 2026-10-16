@@ -29,12 +29,12 @@ const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) 
 
 describe("SidebarNavContenido", () => {
   describe("renderizado de enlaces de navegación", () => {
-    it("renderiza 4 NavLink con href e iconos correctos", () => {
+    it("renderiza 3 NavLink con href e iconos correctos", () => {
       renderSidebarNavContenido();
 
-      // Verificar 4 enlaces
+      // Verificar 3 enlaces (conjunto vigente de la navegación lateral)
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(4);
+      expect(links).toHaveLength(3);
 
       // Verificar cada enlace con su ruta, icono y etiqueta
       const inicioLink = screen.getByRole("link", { name: /Inicio/i });
@@ -48,10 +48,6 @@ describe("SidebarNavContenido", () => {
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
-
-      const configuracionLink = screen.getByRole("link", { name: /Configuración/i });
-      expect(configuracionLink.getAttribute("href")).toBe("/dashboard/configuracion");
-      expect(configuracionLink.querySelector("svg.lucide-settings")).toBeTruthy();
     });
 
     it("iconos tienen flex-shrink-0 w-6 h-6", () => {
@@ -60,7 +56,7 @@ describe("SidebarNavContenido", () => {
       // Buscar todos los svg dentro de los links de navegación
       const nav = screen.getByRole("navigation");
       const svgs = nav.querySelectorAll("a svg");
-      expect(svgs.length).toBe(4);
+      expect(svgs.length).toBe(3);
       svgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);

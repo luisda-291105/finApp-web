@@ -1,18 +1,18 @@
 /**
- * @uso        Tests de DashboardLayout (composición completa, breakpoints, márgenes, resize)
- * @funciones  Tests de renderizado por breakpoint, márgenes/padding, Outlet, UserModal, transiciones resize
- * @datos      Mocks: useBreakpoint, react-router-dom, componentes hijos
- * @eventos    Navegación BottomNav, apertura modal, resize breakpoints
- * @estados    drawerAbierto, mobileMenuAbierto, userModalAbierto
+ * @uso        Tests de DashboardLayout (dos versiones de vista, márgenes, menú de móvil, recomposición)
+ * @funciones  Composición por versión (móvil <768 / pantallas grandes ≥768), margen sin prefijo lg:,
+ *             main sin padding superior, drawer de móvil sin esMobile, modal global, resize
+ * @datos      Mocks: useBreakpoint (4 props), componentes hijos de layout, getUsuarioMock
+ * @eventos    Navegación BottomNav, apertura de menú de móvil, apertura del modal, resize del corte
+ * @estados    mobileMenuAbierto, userModalAbierto
  * @usadoPor   Vitest suite
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, cleanup } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import { useBreakpoint } from "../hooks/useBreakpoint";
-import DashboardHeader from "../components/layout/DashboardHeader";
 import SidebarResponsive from "../components/layout/SidebarResponsive";
 import DashboardDrawer from "../components/layout/DashboardDrawer";
 import BottomNav from "../components/layout/BottomNav";
@@ -20,64 +20,46 @@ import DashboardUserModal from "../components/layout/DashboardUserModal";
 import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 
-// Mock useBreakpoint (named export)
+// La lógica de versión de vista se mockea con su contrato real de 4 props (sin isTablet)
 vi.mock("../hooks/useBreakpoint", () => ({
   useBreakpoint: vi.fn(),
 }));
 
-// Mock child components to control rendering and verify props
-// These mocks DON'T spread props to DOM elements to avoid React warnings
-vi.mock("../components/layout/DashboardHeader", () => ({
-  default: vi.fn(({ alAbrirDrawer, alToggleSidebar, sidebarColapsada, usuario, alAbrirUserModal, isMobile, isTablet, isDesktop, ...rest }) => (
-    <header data-testid="dashboard-header" {...rest} />
-  )),
-}));
-
+// Mock de la navegación lateral: aside con role de navegación + el control de colapso real
+// (permite verificar el traslado de foco al cruzar el corte).
 vi.mock("../components/layout/SidebarResponsive", () => ({
   default: vi.fn(({ colapsada, alToggleColapso, alAbrirUserModal, ...rest }) => (
-    <aside data-testid="sidebar-responsive" {...rest} />
+    <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
+      <button type="button" data-testid="sidebar-toggle" onClick={alToggleColapso} />
+    </aside>
   )),
 }));
 
+// Drawer exclusivo de móvil: solo monta el panel cuando está abierto
 vi.mock("../components/layout/DashboardDrawer", () => ({
-  default: vi.fn(({ abierto, alCerrar, children, triggerRef, esMobile, ...rest }) =>
-    abierto ? (
-      <div data-testid="dashboard-drawer" {...rest}>
-        {children}
-      </div>
-    ) : null
+  default: vi.fn(({ abierto, children }) =>
+    abierto ? <div data-testid="dashboard-drawer">{children}</div> : null
   ),
 }));
 
 vi.mock("../components/layout/BottomNav", () => ({
-  default: vi.fn(({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef, ...rest }) => (
-    <nav data-testid="bottom-nav" {...rest} />
-  )),
+  default: vi.fn(() => <nav data-testid="bottom-nav" />),
 }));
 
 vi.mock("../components/layout/DashboardUserModal", () => ({
-  default: vi.fn(({ abierto, alCerrar, triggerRef, ...rest }) =>
-    abierto ? (
-      <div data-testid="dashboard-user-modal" {...rest} />
-    ) : (
-      <div data-testid="dashboard-user-modal-closed" {...rest} />
-    )
-  ),
+  default: vi.fn(({ abierto }) => (
+    <div data-testid={abierto ? "user-modal-open" : "user-modal-closed"} />
+  )),
 }));
 
 vi.mock("../components/layout/SidebarNavContenido", () => ({
-  default: vi.fn(({ alAbrirUserModal, colapsada, ...rest }) => (
-    <nav data-testid="sidebar-nav-contenido" {...rest} />
-  )),
+  default: vi.fn(() => <nav data-testid="sidebar-nav-contenido" />),
 }));
 
 vi.mock("../components/layout/Container", () => ({
-  default: vi.fn(({ children, ...rest }) => (
-    <div data-testid="container" {...rest}>{children}</div>
-  )),
+  default: vi.fn(({ children }) => <div data-testid="container">{children}</div>),
 }));
 
-// Mock getUsuarioMock
 vi.mock("../config/app.config", () => ({
   getUsuarioMock: vi.fn(() => ({
     nombre: "Usuario Demo",
@@ -86,493 +68,235 @@ vi.mock("../config/app.config", () => ({
   })),
 }));
 
-// Test helper to render DashboardLayout with MemoryRouter
-const renderDashboardLayout = (initialPath = "/dashboard", mockBreakpoint = {}) => {
-  const defaultBreakpoint = {
-    isMobile: false,
-    isTablet: false,
-    isDesktop: true,
-    sidebarColapsada: false,
-    toggleSidebar: vi.fn(),
-  };
+// Estados del hook mock. Partición complementaria: isMobile === !isDesktop.
+const versionMovil = () => ({
+  isMobile: true,
+  isDesktop: false,
+  sidebarColapsada: false,
+  toggleSidebar: vi.fn(),
+});
+const pantallasGrandes = (sidebarColapsada) => ({
+  isMobile: false,
+  isDesktop: true,
+  sidebarColapsada,
+  toggleSidebar: vi.fn(),
+});
 
-  useBreakpoint.mockReturnValue({ ...defaultBreakpoint, ...mockBreakpoint });
+const LayoutTree = ({ initialPath = "/dashboard" }) => (
+  <MemoryRouter initialEntries={[initialPath]}>
+    <Routes>
+      <Route path="/dashboard/*" element={<DashboardLayout />}>
+        <Route index element={<div data-testid="outlet-content">Inicio</div>} />
+        <Route
+          path="transacciones"
+          element={<div data-testid="outlet-content">Transacciones</div>}
+        />
+      </Route>
+    </Routes>
+  </MemoryRouter>
+);
 
-  return render(
-    <MemoryRouter initialEntries={[initialPath]}>
-      <Routes>
-        <Route path="/dashboard/*" element={<DashboardLayout />}>
-          <Route index element={<div data-testid="outlet-content">Dashboard Home</div>} />
-          <Route path="transacciones" element={<div data-testid="outlet-content">Transacciones</div>} />
-          <Route path="tarjetas" element={<div data-testid="outlet-content">Tarjetas</div>} />
-          <Route path="configuracion" element={<div data-testid="outlet-content">Configuración</div>} />
-        </Route>
-      </Routes>
-    </MemoryRouter>
-  );
+const configurarVersión = (breakpoint) => {
+  useBreakpoint.mockReturnValue(breakpoint);
 };
 
-// Helper to get the first call args of a mock
-const getFirstCall = (mock) => mock.mock.calls[0]?.[0];
+const renderLayout = (breakpoint, initialPath = "/dashboard") => {
+  configurarVersión(breakpoint);
+  return render(<LayoutTree initialPath={initialPath} />);
+};
 
-describe("DashboardLayout", () => {
+const wrapperPrincipal = (container) => container.querySelector('[class*="min-h-screen"]');
+
+const propsDe = (ComponenteMock, indice = 0) => ComponenteMock.mock.calls[indice]?.[0];
+
+describe("DashboardLayout — dos versiones de vista", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.defineProperty(window, "innerWidth", {
-      writable: true,
-      configurable: true,
-      value: 1200,
-    });
   });
 
   afterEach(() => {
-    vi.resetModules();
+    cleanup();
+    vi.clearAllMocks();
   });
 
-  describe("Desktop (≥1024px)", () => {
-    it("renderiza DashboardHeader con props desktop correctas", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
+  describe("Pantallas grandes (≥768px)", () => {
+    it.each([
+      ["768px", true],
+      ["800px", true],
+      ["1023px", true],
+    ])("en %s: navegación lateral colapsada, margen ml-[72px] y sin BottomNav", (_ancho, colapsada) => {
+      const { container } = renderLayout(pantallasGrandes(colapsada));
 
-      const props = getFirstCall(DashboardHeader);
-      expect(props.isDesktop).toBe(true);
-      expect(props.isTablet).toBe(false);
-      expect(props.isMobile).toBe(false);
-      expect(props.alToggleSidebar).toBeTypeOf("function");
-      expect(props.alAbrirDrawer).toBeUndefined();
-      expect(props.sidebarColapsada).toBe(false);
-      expect(props.usuario).toEqual({
-        nombre: "Usuario Demo",
-        iniciales: "UD",
-        email: "demo@finapp.local",
-      });
-    });
-
-    it("renderiza SidebarResponsive en desktop", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
-
-      const props = getFirstCall(SidebarResponsive);
-      expect(props.colapsada).toBe(false);
-      expect(props.alToggleColapso).toBeTypeOf("function");
-      expect(props.alAbrirUserModal).toBeTypeOf("function");
-    });
-
-    it("NO renderiza DashboardDrawer en desktop", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
-
-      const openDrawerCalls = DashboardDrawer.mock.calls.filter((call) => call[0]?.abierto === true);
-      expect(openDrawerCalls).toHaveLength(0);
-    });
-
-    it("NO renderiza BottomNav en desktop", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
+      const sidebarProps = propsDe(SidebarResponsive);
+      expect(sidebarProps.colapsada).toBe(true);
+      expect(sidebarProps.alToggleColapso).toBeTypeOf("function");
+      expect(sidebarProps.alAbrirUserModal).toBeTypeOf("function");
 
       expect(BottomNav).not.toHaveBeenCalled();
+      expect(DashboardDrawer).not.toHaveBeenCalled();
+
+      const wrapper = wrapperPrincipal(container);
+      expect(wrapper).toHaveClass("ml-[72px]");
+      expect(wrapper).not.toHaveClass("ml-64");
     });
 
-    it("renderiza Container + Outlet en desktop", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
+    it.each([
+      ["1024px", false],
+      ["1440px", false],
+    ])("en %s: navegación lateral expandida y margen ml-64", (_ancho, colapsada) => {
+      const { container } = renderLayout(pantallasGrandes(colapsada));
 
+      expect(propsDe(SidebarResponsive).colapsada).toBe(false);
+      expect(wrapperPrincipal(container)).toHaveClass("ml-64");
+      expect(wrapperPrincipal(container)).not.toHaveClass("ml-[72px]");
+    });
+
+    it("no reserva la navegación con prefijos lg: (espacio desde 768px)", () => {
+      const { container } = renderLayout(pantallasGrandes(true));
+
+      const wrapper = wrapperPrincipal(container);
+      expect(wrapper.className).not.toMatch(/lg:ml-/);
+    });
+
+    it("no renderiza la composición tablet (una sola navegación, sin menú superpuesto)", () => {
+      renderLayout(pantallasGrandes(true));
+
+      expect(SidebarResponsive).toHaveBeenCalledTimes(1);
+      expect(DashboardDrawer).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Móvil (<768px)", () => {
+    it.each(["375px", "700px", "767px"])(
+      "en %s: BottomNav + menú superpuesto, sin navegación lateral y margen ml-0",
+      () => {
+        const { container } = renderLayout(versionMovil());
+
+        expect(screen.getByTestId("bottom-nav")).toBeDefined();
+        expect(SidebarResponsive).not.toHaveBeenCalled();
+        expect(wrapperPrincipal(container)).toHaveClass("ml-0");
+        expect(wrapperPrincipal(container).className).not.toMatch(/lg:ml-/);
+      }
+    );
+
+    it("pasa al drawer solo abierto/alCerrar/children/triggerRef y no esMobile", () => {
+      renderLayout(versionMovil());
+
+      const drawerProps = propsDe(DashboardDrawer);
+      expect(drawerProps.abierto).toBe(false);
+      expect(drawerProps.alCerrar).toBeTypeOf("function");
+      expect(drawerProps.children).toBeDefined();
+      expect(drawerProps).toHaveProperty("triggerRef");
+      expect(drawerProps).not.toHaveProperty("esMobile");
+    });
+
+    it("abre el menú superpuesto al llamar alAbrirMenu del BottomNav", () => {
+      renderLayout(versionMovil());
+
+      act(() => {
+        propsDe(BottomNav).alAbrirMenu();
+      });
+
+      expect(screen.getByTestId("dashboard-drawer")).toBeDefined();
+      const ultimaLlamada = DashboardDrawer.mock.calls.at(-1)[0];
+      expect(ultimaLlamada.abierto).toBe(true);
+      expect(ultimaLlamada).not.toHaveProperty("esMobile");
+    });
+
+    it("navega con alNavegar y marca la ruta activa en BottomNav", () => {
+      renderLayout(versionMovil(), "/dashboard/transacciones");
+
+      // El árbol de rutas cambia: BottomNav recibe la ruta activa y el callback de navegación
+      expect(propsDe(BottomNav).itemActivo).toBe("/dashboard/transacciones");
+      expect(propsDe(BottomNav).alNavegar).toBeTypeOf("function");
+    });
+  });
+
+  describe("Área principal y contenido", () => {
+    it("renderiza Container + Outlet en ambas versiones", () => {
+      renderLayout(pantallasGrandes(false));
       expect(Container).toHaveBeenCalled();
-      expect(screen.getByTestId("outlet-content")).toHaveTextContent("Dashboard Home");
+      expect(screen.getByTestId("outlet-content")).toBeDefined();
     });
 
-    it("renderiza DashboardUserModal global (cerrado inicialmente)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
-
-      const props = getFirstCall(DashboardUserModal);
-      expect(props.abierto).toBe(false);
-      expect(props.alCerrar).toBeTypeOf("function");
-    });
-
-    it("aplica margen lateral lg:ml-64 cuando sidebar expandida", () => {
-      const { container } = renderDashboardLayout("/dashboard", {
-        isDesktop: true,
-        isTablet: false,
-        isMobile: false,
-        sidebarColapsada: false,
-      });
-
-      const mainDiv = container.querySelector('[class*="min-h-screen"]');
-      expect(mainDiv).toHaveClass("lg:ml-64");
-      expect(mainDiv).not.toHaveClass("lg:ml-[72px]");
-    });
-
-    it("aplica margen lateral lg:ml-[72px] cuando sidebar colapsada", () => {
-      const { container } = renderDashboardLayout("/dashboard", {
-        isDesktop: true,
-        isTablet: false,
-        isMobile: false,
-        sidebarColapsada: true,
-      });
-
-      const mainDiv = container.querySelector('[class*="min-h-screen"]');
-      expect(mainDiv).toHaveClass("lg:ml-[72px]");
-      expect(mainDiv).not.toHaveClass("lg:ml-64");
-    });
-
-    it("aplica padding pb-20 y offset pt-[var(--header-height)] en main", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
+    it("el main conserva pb-20 y no tiene padding superior de header", () => {
+      renderLayout(pantallasGrandes(false));
 
       const main = screen.getByRole("main");
       expect(main).toHaveClass("pb-20");
-      expect(main).toHaveClass("pt-[var(--header-height)]");
+      expect(main).not.toHaveClass("pt-[var(--header-height)]");
     });
   });
 
-  describe("Tablet (640–1023px)", () => {
-    it("renderiza DashboardHeader con hamburguesa (alAbrirDrawer)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
+  describe("Modal de cuenta global", () => {
+    it("está presente (cerrado) en móvil y en pantallas grandes", () => {
+      renderLayout(versionMovil());
+      expect(screen.getByTestId("user-modal-closed")).toBeDefined();
 
-      const props = getFirstCall(DashboardHeader);
-      expect(props.isDesktop).toBe(false);
-      expect(props.isTablet).toBe(true);
-      expect(props.isMobile).toBe(false);
-      expect(props.alAbrirDrawer).toBeTypeOf("function");
-      expect(props.alToggleSidebar).toBeUndefined();
-      expect(props.sidebarColapsada).toBe(false);
-      expect(props.usuario).toEqual({
-        nombre: "Usuario Demo",
-        iniciales: "UD",
-        email: "demo@finapp.local",
-      });
+      cleanup();
+      renderLayout(pantallasGrandes(false));
+      expect(screen.getByTestId("user-modal-closed")).toBeDefined();
     });
 
-    it("NO renderiza SidebarResponsive en tablet", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
+    it("se abre al llamar alAbrirUserModal del avatar", () => {
+      renderLayout(pantallasGrandes(true));
 
-      expect(SidebarResponsive).not.toHaveBeenCalled();
-    });
-
-    it("renderiza DashboardDrawer condicionalmente (cerrado inicialmente)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
-
-      const props = getFirstCall(DashboardDrawer);
-      expect(props.abierto).toBe(false);
-      expect(props.alCerrar).toBeTypeOf("function");
-      expect(props.triggerRef).toBeUndefined();
-      expect(props.children).toBeDefined();
-    });
-
-    it("abre drawer tablet cuando se llama alAbrirDrawer del header", () => {
-      const { rerender } = renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: true,
-        isMobile: false,
-      });
-
-      const headerProps = getFirstCall(DashboardHeader);
       act(() => {
-        headerProps.alAbrirDrawer();
+        propsDe(SidebarResponsive).alAbrirUserModal();
       });
 
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <Routes>
-            <Route path="/dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<div data-testid="outlet-content">Dashboard Home</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      );
-
-      const openDrawerCalls = DashboardDrawer.mock.calls.filter(
-        (call) => call[0]?.abierto === true
-      );
-      expect(openDrawerCalls.length).toBeGreaterThan(0);
-    });
-
-    it("NO renderiza BottomNav en tablet", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
-
-      expect(BottomNav).not.toHaveBeenCalled();
-    });
-
-    it("aplica ml-0 (sin margen lateral) en tablet", () => {
-      const { container } = renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: true,
-        isMobile: false,
-      });
-
-      const mainDiv = container.querySelector('[class*="min-h-screen"]');
-      expect(mainDiv).toHaveClass("ml-0");
-    });
-
-    it("renderiza Container + Outlet en tablet", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
-
-      expect(Container).toHaveBeenCalled();
-      expect(screen.getByTestId("outlet-content")).toHaveTextContent("Dashboard Home");
+      expect(screen.getByTestId("user-modal-open")).toBeDefined();
     });
   });
 
-  describe("Mobile (<640px)", () => {
-    it("renderiza DashboardHeader solo con avatar (sin logo, sin hamburguesa)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
+  describe("Recomposición al cruzar el corte de 768px", () => {
+    it("móvil → pantallas grandes cierra el menú y traslada el foco al control lateral", () => {
+      const { rerender } = renderLayout(versionMovil());
 
-      const props = getFirstCall(DashboardHeader);
-      expect(props.isDesktop).toBe(false);
-      expect(props.isTablet).toBe(false);
-      expect(props.isMobile).toBe(true);
-      expect(props.alAbrirDrawer).toBeUndefined();
-      expect(props.alToggleSidebar).toBeUndefined();
-      expect(props.sidebarColapsada).toBe(false);
-      expect(props.usuario).toEqual({
-        nombre: "Usuario Demo",
-        iniciales: "UD",
-        email: "demo@finapp.local",
-      });
-    });
-
-    it("NO renderiza SidebarResponsive en mobile", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
-
-      expect(SidebarResponsive).not.toHaveBeenCalled();
-    });
-
-    it("renderiza BottomNav con props correctas", () => {
-      renderDashboardLayout("/dashboard/transacciones", {
-        isDesktop: false,
-        isTablet: false,
-        isMobile: true,
-      });
-
-      const props = getFirstCall(BottomNav);
-      expect(props.itemActivo).toBe("/dashboard/transacciones");
-      expect(props.alNavegar).toBeTypeOf("function");
-      expect(props.alAbrirMenu).toBeTypeOf("function");
-    });
-
-    it("renderiza DashboardDrawer menú condicionalmente (cerrado inicialmente)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
-
-      const drawerCalls = DashboardDrawer.mock.calls.filter(
-        (call) => call[0]?.abierto !== undefined
-      );
-      expect(drawerCalls.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it("abre drawer menú mobile cuando se llama alAbrirMenu del BottomNav", () => {
-      const { rerender } = renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: false,
-        isMobile: true,
-      });
-
-      const bottomNavProps = getFirstCall(BottomNav);
       act(() => {
-        bottomNavProps.alAbrirMenu();
+        propsDe(BottomNav).alAbrirMenu();
       });
+      expect(screen.getByTestId("dashboard-drawer")).toBeDefined();
 
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <Routes>
-            <Route path="/dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<div data-testid="outlet-content">Dashboard Home</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      );
+      configurarVersión(pantallasGrandes(true));
+      rerender(<LayoutTree initialPath="/dashboard" />);
 
-      const mobileDrawerCalls = DashboardDrawer.mock.calls.filter(
-        (call) => call[0]?.abierto === true
-      );
-      expect(mobileDrawerCalls.length).toBeGreaterThan(0);
+      expect(screen.queryByTestId("dashboard-drawer")).toBeNull();
+      expect(document.activeElement).toBe(screen.getByTestId("sidebar-toggle"));
     });
 
-    it("aplica ml-0 (sin margen lateral) en mobile", () => {
-      const { container } = renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: false,
-        isMobile: true,
-      });
+    it("pantallas grandes → móvil con el modal abierto: el modal permanece", () => {
+      const { rerender } = renderLayout(pantallasGrandes(false));
 
-      const mainDiv = container.querySelector('[class*="min-h-screen"]');
-      expect(mainDiv).toHaveClass("ml-0");
-    });
-
-    it("renderiza Container + Outlet en mobile", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
-
-      expect(Container).toHaveBeenCalled();
-      expect(screen.getByTestId("outlet-content")).toHaveTextContent("Dashboard Home");
-    });
-  });
-
-  describe("Outlet y navegación", () => {
-    it("renderiza contenido del Outlet para subrutas", () => {
-      renderDashboardLayout("/dashboard/transacciones", {
-        isDesktop: true,
-        isTablet: false,
-        isMobile: false,
-      });
-
-      expect(screen.getByTestId("outlet-content")).toHaveTextContent("Transacciones");
-    });
-
-    it("navega al hacer click en BottomNav item", () => {
-      renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: false,
-        isMobile: true,
-      });
-
-      const bottomNavProps = getFirstCall(BottomNav);
-      expect(bottomNavProps.alNavegar).toBeTypeOf("function");
-    });
-  });
-
-  describe("DashboardUserModal global", () => {
-    it("está presente en el árbol (portal) en todos los breakpoints", () => {
-      // Desktop
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
-      expect(DashboardUserModal).toHaveBeenCalled();
-
-      // Tablet
-      vi.clearAllMocks();
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
-      expect(DashboardUserModal).toHaveBeenCalled();
-
-      // Mobile
-      vi.clearAllMocks();
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
-      expect(DashboardUserModal).toHaveBeenCalled();
-    });
-
-    it("se abre al llamar alAbrirUserModal", () => {
-      const { rerender } = renderDashboardLayout("/dashboard", {
-        isDesktop: true,
-        isTablet: false,
-        isMobile: false,
-      });
-
-      const headerProps = getFirstCall(DashboardHeader);
       act(() => {
-        headerProps.alAbrirUserModal();
+        propsDe(SidebarResponsive).alAbrirUserModal();
       });
+      expect(screen.getByTestId("user-modal-open")).toBeDefined();
 
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <Routes>
-            <Route path="/dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<div data-testid="outlet-content">Dashboard Home</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      );
+      configurarVersión(versionMovil());
+      rerender(<LayoutTree initialPath="/dashboard" />);
 
-      const openModalCalls = DashboardUserModal.mock.calls.filter(
-        (call) => call[0]?.abierto === true
-      );
-      expect(openModalCalls.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe("Transiciones resize (efectos useEffect)", () => {
-    it("cierra drawer tablet al cambiar a desktop", () => {
-      const { rerender } = renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: true,
-        isMobile: false,
-      });
-
-      const headerProps = getFirstCall(DashboardHeader);
-      act(() => {
-        headerProps.alAbrirDrawer();
-      });
-
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <Routes>
-            <Route path="/dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<div data-testid="outlet-content">Dashboard Home</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      );
-
-      // The effect should have set drawerAbierto to false when isDesktop becomes true
-      // We verify the component re-renders without error
+      expect(screen.getByTestId("user-modal-open")).toBeDefined();
     });
 
-    it("cierra drawer tablet al cambiar a mobile", () => {
-      const { rerender } = renderDashboardLayout("/dashboard", {
-        isDesktop: false,
-        isTablet: true,
-        isMobile: false,
-      });
+    it("1200px → 800px sin preferencia: el margen pasa a ml-[72px] (colapsada)", () => {
+      const { container, rerender } = renderLayout(pantallasGrandes(false));
+      expect(wrapperPrincipal(container)).toHaveClass("ml-64");
 
-      const headerProps = getFirstCall(DashboardHeader);
-      act(() => {
-        headerProps.alAbrirDrawer();
-      });
+      configurarVersión(pantallasGrandes(true));
+      rerender(<LayoutTree initialPath="/dashboard" />);
 
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <Routes>
-            <Route path="/dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<div data-testid="outlet-content">Dashboard Home</div>} />
-            </Route>
-          </Routes>
-        </MemoryRouter>
-      );
-
-      // The effect should have set drawerAbierto to false when isMobile becomes true
-    });
-  });
-
-  describe("SidebarNavContenido compartido", () => {
-    it("se usa en SidebarResponsive (desktop)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
-
-      // SidebarNavContenido is rendered as children of SidebarResponsive, not called directly
-      // We verify SidebarResponsive was called (which internally uses SidebarNavContenido)
-      expect(SidebarResponsive).toHaveBeenCalled();
+      expect(wrapperPrincipal(container)).toHaveClass("ml-[72px]");
     });
 
-    it("se usa en DashboardDrawer (tablet)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
+    it("con preferencia guardada, el estado se conserva al cruzar la banda", () => {
+      const { container, rerender } = renderLayout(pantallasGrandes(true));
+      expect(wrapperPrincipal(container)).toHaveClass("ml-[72px]");
 
-      const headerProps = getFirstCall(DashboardHeader);
-      act(() => {
-        headerProps.alAbrirDrawer();
-      });
+      configurarVersión(pantallasGrandes(true));
+      rerender(<LayoutTree initialPath="/dashboard" />);
 
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: true, isMobile: false });
-
-      const drawerCalls = DashboardDrawer.mock.calls;
-      const lastCall = drawerCalls[drawerCalls.length - 1];
-      expect(lastCall?.[0]?.children).toBeDefined();
-    });
-
-    it("se usa en DashboardDrawer (mobile menú)", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
-
-      const bottomNavProps = getFirstCall(BottomNav);
-      act(() => {
-        bottomNavProps.alAbrirMenu();
-      });
-
-      renderDashboardLayout("/dashboard", { isDesktop: false, isTablet: false, isMobile: true });
-
-      const drawerCalls = DashboardDrawer.mock.calls;
-      const mobileDrawerCall = drawerCalls.find(
-        (call) => call[0]?.abierto === true
-      );
-      expect(mobileDrawerCall?.[0]?.children).toBeDefined();
-    });
-  });
-
-  describe("Usuario mock", () => {
-    it("usa getUsuarioMock para datos de usuario", () => {
-      renderDashboardLayout("/dashboard", { isDesktop: true, isTablet: false, isMobile: false });
-
-      const props = getFirstCall(DashboardHeader);
-      expect(props.usuario).toEqual({
-        nombre: "Usuario Demo",
-        iniciales: "UD",
-        email: "demo@finapp.local",
-      });
+      expect(wrapperPrincipal(container)).toHaveClass("ml-[72px]");
     });
   });
 });

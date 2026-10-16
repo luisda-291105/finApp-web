@@ -4,7 +4,7 @@
  * @datos      4 NavLink fijos + avatar via getUsuarioMock()
  * @eventos    click enlaces (navegan), click avatar → alAbrirUserModal
  * @estados    Ninguno (stateless)
- * @usadoPor   SidebarResponsive (expandida/colapsada), DashboardDrawer (tablet), DashboardDrawer (mobile menú)
+ * @usadoPor   SidebarResponsive (colapsada/expandida), DashboardDrawer (menú superpuesto de móvil)
  */
 
 import { NavLink } from "react-router-dom";

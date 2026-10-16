@@ -4,7 +4,7 @@
  * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu (callback menú)
  * @eventos    click en items 1-4 → alNavegar(ruta), click item 5 (Menú) → alAbrirMenu()
  * @estados    Ninguno (componente controlado vía props)
- * @usadoPor   DashboardLayout (futuro), vistas mobile del dashboard
+ * @usadoPor   DashboardLayout (navegación inferior de móvil)
  */
 
 import { clsx } from "clsx";

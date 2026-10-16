@@ -11,39 +11,33 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import { getUsuarioMock } from "../config/app.config";
 
-/**doc 
- * @uso        Layout completo del dashboard (composición global responsive)
+/**doc
+ * @uso        Layout del dashboard con dos versiones de vista (móvil / pantallas grandes)
  * @funciones  DashboardLayout()
- * @datos      Orquesta DashboardHeader, SidebarResponsive, DashboardDrawer (tablet + mobile), BottomNav, Container, Outlet, DashboardUserModal
- * @eventos    Resize breakpoints (cierra drawers), navegación BottomNav, apertura modal usuario
- * @estados    drawerAbierto (tablet), mobileMenuAbierto (mobile menú), userModalAbierto (global)
+ * @datos      Orquesta SidebarResponsive, DashboardDrawer (menú de móvil), BottomNav, Container, Outlet, DashboardUserModal
+ * @eventos    Cruce del corte de 768px (cierra el menú de móvil y traslada el foco), navegación BottomNav, apertura modal usuario
+ * @estados    mobileMenuAbierto (móvil), userModalAbierto (global)
  * @usadoPor   App.jsx (rutas /dashboard/*)
 
  * DashboardLayout
- * Composición raíz del área autenticada (dashboard). Integra header, navegación lateral
- * (sidebar desktop / drawer tablet / drawer mobile menú), navegación inferior (mobile),
- * área de contenido con Outlet y modal de usuario global.
- *
- * Breakpoints (vía useBreakpoint):
- * - Desktop (≥1024px): SidebarResponsive fija + Header con toggle + Container con margen lateral
- * - Tablet (640–1023px): Header con hamburguesa + Drawer condicional + Container sin margen
- * - Mobile (<640px): Header solo avatar + BottomNav + Drawer menú condicional + Container con padding inferior
+ * Composición raíz del área autenticada (dashboard). Dos versiones de vista con un único
+ * corte en 768px: «pantallas grandes» (≥768px) con navegación lateral permanente y
+ * colapsable; «móvil» (<768px) con navegación inferior y menú superpuesto. Sin categoría intermedia.
  *
  * Márgenes/padding condicionales:
- * - Desktop expandida: lg:ml-64 | colapsada: lg:ml-[72px]
- * - Tablet/Mobile: ml-0
- * - Main: pb-20 (bottom nav mobile)
+ * - Pantallas grandes expandida: ml-64 | colapsada: ml-[72px]
+ * - Móvil: ml-0
+ * - Main: pb-20 (espacio de la navegación inferior de móvil)
  *
  * @returns {JSX.Element} Layout completo del dashboard
  */
 
 
 export default function DashboardLayout() {
-  const { isMobile, isTablet, isDesktop, sidebarColapsada, toggleSidebar } = useBreakpoint();
+  const { isMobile, isDesktop, sidebarColapsada, toggleSidebar } = useBreakpoint();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [drawerAbierto, setDrawerAbierto] = useState(false);
   const [mobileMenuAbierto, setMobileMenuAbierto] = useState(false);
   const [userModalAbierto, setUserModalAbierto] = useState(false);
 
@@ -53,31 +47,25 @@ export default function DashboardLayout() {
   const alCerrarUserModal = () => setUserModalAbierto(false);
   const usuario = getUsuarioMock();
 
-  // Efecto: al pasar a desktop, cerrar drawer tablet
+  // Efecto: al salir de móvil, cerrar el menú superpuesto y trasladar el foco al
+  // control de la navegación lateral que lo sustituye (no dejarlo en un elemento que
+  // se desmonta). El modal de cuenta (global) permanece intacto.
   useEffect(() => {
-    if (isDesktop) {
-      setDrawerAbierto(false);
-    }
-  }, [isDesktop]);
+    if (isMobile || !mobileMenuAbierto) return;
 
-  // Efecto: al pasar a mobile, cerrar drawer tablet
-  useEffect(() => {
-    if (isMobile) {
-      setDrawerAbierto(false);
+    setMobileMenuAbierto(false);
+    const controlNavegacionLateral = document.querySelector(
+      'aside[role="navigation"] button'
+    );
+    if (controlNavegacionLateral instanceof HTMLElement) {
+      controlNavegacionLateral.focus();
     }
-  }, [isMobile]);
-
-  // Efecto: al salir de mobile, cerrar drawer mobile menú
-  useEffect(() => {
-    if (!isMobile) {
-      setMobileMenuAbierto(false);
-    }
-  }, [isMobile]);
+  }, [isMobile, mobileMenuAbierto]);
 
   return (
     <>
       
-      {/* Sidebar desktop fija */}
+      {/* Navegación lateral permanente (pantallas grandes ≥768px) */}
       {isDesktop && (
         <SidebarResponsive
           colapsada={sidebarColapsada}
@@ -86,31 +74,21 @@ export default function DashboardLayout() {
         />
       )}
 
-      {/* Drawer tablet (navegación) */}
-      {isTablet && (
-        <SidebarResponsive
-          colapsada={sidebarColapsada}
-          alToggleColapso={toggleSidebar}
-          alAbrirUserModal={alAbrirUserModal}
-        />
-      )}
-
-      {/* Área principal con márgenes condicionales */}
+      {/* Área principal: margen reservado para la navegación desde 768px (sin prefijo lg:) */}
       <div
         className={clsx(
           "min-h-screen bg-bg-cream transition-all duration-300",
-          isDesktop && sidebarColapsada ? "lg:ml-[72px]" : "lg:ml-64",
-          !isDesktop && "ml-0"
+          isDesktop ? (sidebarColapsada ? "ml-[72px]" : "ml-64") : "ml-0"
         )}
       >
         <Container>
-          <main className={clsx("pb-20", "pt-[var(--header-height)]")}>
+          <main className="pb-20">
             <Outlet />
           </main>
         </Container>
       </div>
 
-      {/* BottomNav mobile */}
+      {/* Navegación inferior (móvil) */}
       {isMobile && (
         <BottomNav
           itemActivo={location.pathname}
@@ -120,13 +98,12 @@ export default function DashboardLayout() {
         />
       )}
 
-      {/* Drawer mobile (menú - 5º item BottomNav) */}
+      {/* Menú superpuesto (móvil, 5.º item del BottomNav) */}
       {isMobile && (
         <DashboardDrawer
           abierto={mobileMenuAbierto}
           alCerrar={() => setMobileMenuAbierto(false)}
           triggerRef={bottomNavMenuRef}
-          esMobile={true}
         >
           <SidebarNavContenido alAbrirUserModal={alAbrirUserModal} />
         </DashboardDrawer>
