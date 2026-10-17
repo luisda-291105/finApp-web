@@ -6,8 +6,11 @@
  * @datos      `tarjeta` (objeto de TARJETAS_DEMO o null = cerrado); movimientos desde MOVIMIENTOS_DEMO[id]
  * @eventos    onCerrar() («X» como ÚNICO control visible de cierre, Esc por el mecanismo único
  *             `useCierreConEsc`, clic en backdrop y gesto de deslizar hacia abajo en móvil);
+ *             al abrir se captura el elemento activo y al cerrar se devuelve el foco con la pieza
+ *             común (useRetornoDeFoco: devolución gobernada por la transición de apertura);
  *             Tab/Shift+Tab cicla dentro (trampa MANUAL conservada, RF-12)
- * @estados    Ninguno propio; animación de entrada/salida con useReducedMotion; el estado
+ * @estados    Ninguno propio; animación de entrada/salida con useReducedMotion; la captura y la
+ *             devolución del foco viven en useRetornoDeFoco (sin estado de React); el estado
  *             de apertura (tarjetaActiva) vive en PanelTarjetas (T7); «móvil» desde useBreakpoint
  * @usadoPor   PanelTarjetas
  */
@@ -18,6 +21,7 @@ import LogMovimientos from "../dashboard/LogMovimientos";
 import { MOVIMIENTOS_DEMO } from "../../../data/tarjetasDemo";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
+import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
 
 const SELECTOR_FOCOABLES =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -31,9 +35,10 @@ const SELECTOR_FOCOABLES =
  *   cierre con Esc (mecanismo único `useCierreConEsc`, capa 50), «X»
  *   "Cerrar detalle de tarjeta", clic en el backdrop y, solo en móvil, gesto de
  *   deslizar hacia abajo (`useDeslizarParaCerrar`).
- * - Devolución del foco: el propio modal guarda `document.activeElement` al
- *   abrirse y lo restaura al desmontar; T7 (PanelTarjetas) no necesita refs
- *   adicionales para el retorno del foco.
+ * - Devolución del foco: la captura al abrir y la devolución al cerrar las gobierna
+ *   `useRetornoDeFoco` por la **transición abierta → cerrada** (spec 011, RF-11/H12):
+ *   el efecto de apertura ya solo restaura el scroll y nunca devuelve el foco. T7
+ *   (PanelTarjetas) no necesita refs adicionales para el retorno del foco.
  * - Animación de entrada/salida con Framer Motion (fade/escala), duración 0
  *   con prefers-reduced-motion.
  * - Solo tokens de estilos (backdrop `bg-bg-dark/60`, superficie `glass-card`);
@@ -42,13 +47,13 @@ const SELECTOR_FOCOABLES =
 export default function ModalTarjeta({ tarjeta, onCerrar }) {
   const reducirMovimiento = useReducedMotion();
   const refDialogo = useRef(null);
-  const refActivador = useRef(null);
 
-  // Al abrir: guardar el activador, mover el foco dentro y bloquear el scroll.
-  // Al cerrar (desmontaje del contenido): restaurar scroll y devolver el foco.
+  // Apertura: mover el foco al contenedor del diálogo y bloquear el scroll. La limpieza **solo**
+  // restaura el scroll: nunca devuelve el foco (eso lo gobierna `useRetornoDeFoco` por la transición
+  // abierta → cerrada, RF-11/H12). Así el montaje con tarjeta activa, el cambio de tarjeta sin cierre
+  // y el doble montaje de `StrictMode` no disparan `focus()` sobre el activador (AC-08/AC-11).
   useEffect(() => {
     if (!tarjeta) return undefined;
-    refActivador.current = document.activeElement;
     // Foco inicial en el propio contenedor del diálogo (contrato D4 / spec §7.1): con la «X»
     // presente, el `??` al primer enfocable nunca caía al contenedor. `tabIndex={-1}` lo deja
     // fuera del ciclo de Tab.
@@ -56,9 +61,14 @@ export default function ModalTarjeta({ tarjeta, onCerrar }) {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
-      refActivador.current?.focus?.();
     };
   }, [tarjeta]);
+
+  // Captura al abrir y devolución al cerrar con la pieza común (patrón M4, spec 011). La captura la
+  // hace la pieza y la devolución se consume una sola vez en la transición abierta → cerrada; sin
+  // `triggerRef` propio, el activador es el elemento capturado y, si falta, el respaldo estable de la
+  // versión de vista (RF-05).
+  useRetornoDeFoco({ activo: Boolean(tarjeta) });
 
   // Esc: mecanismo único compartido por las cuatro superficies; la capa de este panel es 50
   // (plan §2.3-M1). La trampa manual de Tab/Shift+Tab se conserva (RF-12).

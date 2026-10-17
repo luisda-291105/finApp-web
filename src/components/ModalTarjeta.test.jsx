@@ -8,7 +8,8 @@
  *             explícito (innerWidth + matchMedia) para el corte único de 768px
  * @usadoPor   Vitest
  */
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { StrictMode } from "react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useReducedMotion } from "framer-motion";
@@ -304,6 +305,120 @@ describe("ModalTarjeta", () => {
       useReducedMotion.mockReturnValue(true);
       renderModal();
       expect(screen.getByRole("dialog")).toBeTruthy();
+    });
+  });
+
+  // Casos nuevos de la spec 011 (Tarea 6): la devolución del foco deja de ejecutarse en la limpieza
+  // del efecto y pasa a gobernarse por la transición abierta → cerrada con la pieza compartida
+  // `useRetornoDeFoco`. Así el montaje con tarjeta activa, el cambio de tarjeta y el doble montaje de
+  // `StrictMode` no disparan `focus()` sobre el activador. Los casos vigentes de arriba quedan
+  // intactos (no se editan).
+  describe("retorno de foco por transición abierta → cerrada (RF-11, spec 011)", () => {
+    /** Nodos conectados fuera del modal (activador o respaldo estable): se retiran tras cada caso. */
+    const nodosExternos = [];
+
+    /** Crea un control conectado a `document.body` (fuera de `[role="dialog"]`). */
+    const crearControlExterno = (etiqueta) => {
+      const nodo = document.createElement("button");
+      nodo.type = "button";
+      nodo.textContent = etiqueta;
+      document.body.appendChild(nodo);
+      nodosExternos.push(nodo);
+      return nodo;
+    };
+
+    /** Cierra el modal re-renderizando con `tarjeta={null}` (transición abierta → cerrada). */
+    const cerrarModal = async (rerender) => {
+      await act(async () => {
+        rerender(<ModalTarjeta tarjeta={null} onCerrar={vi.fn()} />);
+      });
+    };
+
+    afterEach(() => {
+      nodosExternos.splice(0).forEach((nodo) => nodo.remove());
+      document.body.style.overflow = "";
+    });
+
+    it("AC-08/CL-11: montar con tarjeta activa enfoca el contenedor y no llama a focus() del activador", () => {
+      const activador = crearControlExterno("Abrir detalle");
+      activador.focus();
+      const espiaActivador = vi.spyOn(activador, "focus");
+
+      renderModal();
+      const dialogo = screen.getByRole("dialog");
+
+      expect(espiaActivador).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(dialogo);
+      expect(document.activeElement).not.toBe(activador);
+    });
+
+    it("AC-08/CL-11: cambiar de tarjeta sin cierre no devuelve el foco al activador", async () => {
+      const activador = crearControlExterno("Abrir detalle");
+      activador.focus();
+      const espiaActivador = vi.spyOn(activador, "focus");
+
+      const { rerender } = renderModal();
+
+      await act(async () => {
+        rerender(<ModalTarjeta tarjeta={tarjetaSinMovimientos} onCerrar={vi.fn()} />);
+      });
+
+      expect(espiaActivador).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(screen.getByRole("dialog"));
+    });
+
+    it("AC-11/CL-14: con StrictMode y tarjeta activa hay 0 devoluciones y se conservan scroll y foco inicial", async () => {
+      const activador = crearControlExterno("Abrir detalle");
+      activador.focus();
+      const espiaActivador = vi.spyOn(activador, "focus");
+
+      render(
+        <StrictMode>
+          <ModalTarjeta tarjeta={tarjetaConMovimientos} onCerrar={vi.fn()} />
+        </StrictMode>
+      );
+      await act(async () => {});
+      const dialogo = screen.getByRole("dialog");
+
+      expect(espiaActivador).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(dialogo);
+      expect(document.body.style.overflow).toBe("hidden");
+    });
+
+    it("AC-05: al cerrar con el activador conectado el foco vuelve a él", async () => {
+      const activador = crearControlExterno("Abrir detalle");
+      activador.focus();
+      const espiaActivador = vi.spyOn(activador, "focus");
+
+      const { rerender } = renderModal();
+      await act(async () => {});
+
+      await cerrarModal(rerender);
+
+      expect(espiaActivador).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(activador);
+    });
+
+    it("AC-05: con el activador desconectado cae al respaldo estable y nunca a body", async () => {
+      const activador = crearControlExterno("Abrir detalle");
+      const respaldo = crearControlExterno("Control estable de la vista");
+      activador.focus();
+      const espiaBody = vi.spyOn(document.body, "focus");
+
+      const { rerender } = renderModal();
+      await act(async () => {});
+
+      // El activador desaparece de la vista antes del cierre real (cadena → respaldo estable).
+      activador.remove();
+      const espiaRespaldo = vi.spyOn(respaldo, "focus");
+
+      await cerrarModal(rerender);
+
+      expect(espiaRespaldo).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(respaldo);
+      expect(document.activeElement).not.toBe(document.body);
+      expect(espiaBody).not.toHaveBeenCalled();
+      espiaBody.mockRestore();
     });
   });
 });

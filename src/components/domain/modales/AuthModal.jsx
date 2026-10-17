@@ -5,8 +5,11 @@
  * @funciones  AuthModal({ abierto, modoInicial, alCerrar })
  * @datos      Lee endpoints mediante getEndpoint() de src/config/api.config.js
  * @eventos    onSubmit en formulario, click en tabs, click en la «X», Esc (useCierreConEsc),
- *             clic fuera (overlay con guarda de destino) y gesto (useDeslizarParaCerrar) → alCerrar
- * @estados    modo ('login' | 'registro'), formulario (objeto), cargando (boolean), mensaje (string)
+ *             clic fuera (overlay con guarda de destino) y gesto (useDeslizarParaCerrar) → alCerrar;
+ *             al abrir se captura el elemento activo y al cerrar se devuelve el foco con la pieza
+ *             común (useRetornoDeFoco: captura + devolución)
+ * @estados    modo ('login' | 'registro'), formulario (objeto), cargando (boolean), mensaje (string);
+ *             la captura y la devolución del foco no usan estado de React (viven en useRetornoDeFoco)
  * @usadoPor   PaginaInicio, PaginaLogin
  */
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +17,7 @@ import FocusTrap from "focus-trap-react";
 import { getEndpoint } from "../../../config/api.config";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
+import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
 
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
@@ -59,6 +63,12 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
 
   // Gesto de deslizar hacia abajo (solo móvil, con punteros nativos)
   useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar });
+
+  // Captura al abrir y devolución del foco al cerrar con la pieza compartida (RF-10, spec 011).
+  // Sin `triggerRef` propio: el respaldo es la cadena común (elemento capturado → control de la
+  // versión de vista → primer control enfocable); en `/login` no hay candidato y la pieza devuelve
+  // `null` (limitación explícita, H2).
+  useRetornoDeFoco({ activo: abierto });
 
   useEffect(() => {
     setModo(modoInicial);

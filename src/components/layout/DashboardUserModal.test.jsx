@@ -449,4 +449,196 @@ describe("DashboardUserModal", () => {
       expect(panel.classList.contains("max-w-sm")).toBe(true);
     });
   });
+
+  // Casos nuevos de la spec 011 (Tarea 4): el respaldo estable del modal de cuenta se resuelve por
+  // versión de vista con la pieza compartida `useRetornoDeFoco`. Los casos vigentes de arriba
+  // —incluidos los de retorno `:239-283` y el del control lateral `:285-309`— quedan intactos.
+  describe("respaldo por versión de vista (RF-09, spec 011)", () => {
+    /** Nodos DOM creados por estos casos: se retiran tras cada uno para no contaminar la suite. */
+    const nodosCreados = [];
+
+    /**
+     * Fija la versión de vista con un `matchMedia` **coherente con `innerWidth`** (mismo criterio que
+     * el stub de `vitest.setup.js`: `matches = innerWidth >= min-width`), de modo que el caso mide una
+     * sola versión de vista y `useBreakpoint` —fuente del respaldo— no puede leer algo distinto.
+     */
+    const medirVersionDeVista = (ancho) => {
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: ancho });
+      window.matchMedia = mockMatchMedia((query) => {
+        const minimo = /min-width:\s*(\d+)px/.exec(query);
+        return minimo ? window.innerWidth >= Number(minimo[1]) : false;
+      });
+    };
+
+    const crearBoton = (etiqueta, etiquetaAria) => {
+      const nodo = document.createElement("button");
+      nodo.textContent = etiqueta;
+      if (etiquetaAria) nodo.setAttribute("aria-label", etiquetaAria);
+      document.body.appendChild(nodo);
+      nodosCreados.push(nodo);
+      return nodo;
+    };
+
+    const rerenderCerrado = (rerender, alCerrar, triggerRef) =>
+      rerender(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <DashboardUserModal abierto={false} alCerrar={alCerrar} triggerRef={triggerRef} />
+        </MemoryRouter>
+      );
+
+    beforeEach(() => {
+      // Punto de partida estable: nada enfocado antes de cada caso.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
+
+    afterEach(() => {
+      nodosCreados.splice(0).forEach((nodo) => nodo.remove());
+    });
+
+    it("AC-05 (conectado): devuelve el foco al disparador una sola vez", async () => {
+      medirVersionDeVista(375);
+      const disparador = crearBoton("Avatar");
+      const espiaFocus = vi.spyOn(disparador, "focus");
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparador };
+      const { rerender } = renderModal({ alCerrar, triggerRef });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await act(async () => {
+        rerenderCerrado(rerender, alCerrar, triggerRef);
+      });
+
+      expect(espiaFocus).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(disparador);
+    });
+
+    it("AC-05 (desconectado): la cadena usa el elemento capturado y nunca deja el foco en body", async () => {
+      medirVersionDeVista(375);
+      const previo = crearBoton("Anterior");
+      previo.focus();
+      const disparador = crearBoton("Avatar");
+      const espiaDesconectado = vi.spyOn(disparador, "focus");
+      disparador.remove(); // desconectado: no debe recibir focus()
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparador };
+      const { rerender } = renderModal({ alCerrar, triggerRef });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await act(async () => {
+        rerenderCerrado(rerender, alCerrar, triggerRef);
+      });
+
+      expect(espiaDesconectado).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(previo);
+      expect(document.activeElement).not.toBe(document.body);
+    });
+
+    it("AC-06 (móvil): sin disparador y con el elemento capturado desconectado cae al botón «Menú»", async () => {
+      medirVersionDeVista(375);
+      const respaldo = crearBoton("Menú", "Abrir menú");
+      const previo = crearBoton("Anterior");
+      previo.focus(); // queda capturado al abrir…
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: null };
+      const { rerender } = renderModal({ alCerrar, triggerRef });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      previo.remove(); // …y se desconecta antes del cierre: deja de ser un candidato válido
+
+      await act(async () => {
+        rerenderCerrado(rerender, alCerrar, triggerRef);
+      });
+
+      expect(document.activeElement).toBe(respaldo);
+      expect(document.activeElement).not.toBe(document.body);
+    });
+
+    it("AC-06 (≥768px): el respaldo de pantallas grandes es el control lateral, no el botón «Menú»", async () => {
+      medirVersionDeVista(1024);
+      crearBoton("Menú", "Abrir menú"); // existe en el DOM, pero no es el respaldo de esta versión
+      const aside = document.createElement("aside");
+      aside.setAttribute("role", "navigation");
+      const respaldo = document.createElement("button");
+      respaldo.textContent = "Inicio";
+      aside.appendChild(respaldo);
+      document.body.appendChild(aside);
+      nodosCreados.push(aside);
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: null };
+      const { rerender } = renderModal({ alCerrar, triggerRef });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await act(async () => {
+        rerenderCerrado(rerender, alCerrar, triggerRef);
+      });
+
+      expect(document.activeElement).toBe(respaldo);
+      expect(document.activeElement).not.toBe(document.body);
+    });
+
+    it("AC-24: un candidato disabled no corta la cadena", async () => {
+      medirVersionDeVista(375);
+      const previo = crearBoton("Anterior");
+      previo.focus();
+      const disparadorDeshabilitado = crearBoton("Avatar");
+      disparadorDeshabilitado.disabled = true;
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparadorDeshabilitado };
+      const { rerender } = renderModal({ alCerrar, triggerRef });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await act(async () => {
+        rerenderCerrado(rerender, alCerrar, triggerRef);
+      });
+
+      expect(document.activeElement).toBe(previo);
+      expect(document.activeElement).not.toBe(disparadorDeshabilitado);
+    });
+
+    it("AC-24: un candidato dentro de un subárbol inert no corta la cadena", async () => {
+      medirVersionDeVista(375);
+      const previo = crearBoton("Anterior");
+      previo.focus();
+      const contenedorInerte = document.createElement("div");
+      contenedorInerte.setAttribute("inert", "");
+      const disparadorInerte = document.createElement("button");
+      disparadorInerte.textContent = "Avatar";
+      contenedorInerte.appendChild(disparadorInerte);
+      document.body.appendChild(contenedorInerte);
+      nodosCreados.push(contenedorInerte);
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparadorInerte };
+      const { rerender } = renderModal({ alCerrar, triggerRef });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await act(async () => {
+        rerenderCerrado(rerender, alCerrar, triggerRef);
+      });
+
+      expect(document.activeElement).toBe(previo);
+      expect(document.activeElement).not.toBe(disparadorInerte);
+    });
+
+    it("montaje cerrado: no enfoca ningún candidato ni mueve el foco", () => {
+      medirVersionDeVista(375);
+      const disparador = crearBoton("Avatar");
+      const respaldo = crearBoton("Menú", "Abrir menú");
+      const espiaDisparador = vi.spyOn(disparador, "focus");
+      const espiaRespaldo = vi.spyOn(respaldo, "focus");
+      const focoAntes = document.activeElement;
+
+      renderModal({ abierto: false, triggerRef: { current: disparador } });
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(espiaDisparador).not.toHaveBeenCalled();
+      expect(espiaRespaldo).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(focoAntes);
+    });
+  });
 });

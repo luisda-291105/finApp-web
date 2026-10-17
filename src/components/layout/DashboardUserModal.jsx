@@ -4,11 +4,15 @@
  * @funciones  DashboardUserModal({ abierto, alCerrar, triggerRef })
  * @datos      Slots fijos por defecto: header "Cuenta" con «X», profile → Configuración, logout → /
  * @eventos    clic en overlay, Esc (useCierreConEsc), gesto (useDeslizarParaCerrar) → alCerrar;
- *             clic en slots → navegación + alCerrar
- * @estados    abierto (controlado desde padre DashboardLayout)
+ *             clic en slots → navegación + alCerrar; al cerrar, la devolución de foco se delega en
+ *             `useRetornoDeFoco` (transición abierta → cerrada)
+ * @estados    abierto (controlado desde padre DashboardLayout). La guarda de «estuvo abierto», la
+ *             captura del elemento activo y la cadena validada viven en `useRetornoDeFoco`; su
+ *             respaldo se resuelve por versión de vista vía `useBreakpoint` (móvil → botón «Menú»;
+ *             ≥768px → control de la navegación lateral)
  * @usadoPor   DashboardLayout (global, portal)
  */
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
@@ -17,6 +21,7 @@ import { Settings, LogOut } from "lucide-react";
 import { BotonCerrar } from "../ui/BotonCerrar";
 import { useCierreConEsc } from "../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../hooks/useDeslizarParaCerrar";
+import { useRetornoDeFoco } from "../../hooks/useRetornoDeFoco";
 
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
@@ -40,8 +45,11 @@ function crearOpcionesTrampa(refPanel) {
  *   toque/clic fuera (overlay con guarda de destino) y deslizar hacia abajo solo en móvil.
  * - Una sola trampa de foco (la del panel) y **un solo** control visible de cierre; el foco
  *   inicial va al contenedor del diálogo (`tabIndex={-1}`, fuera del ciclo de Tab).
- * - Retorno de foco encadenado al cerrar (plan §2.3-M4): disparador conectado → elemento previo
- *   conectado → control estable de la navegación lateral; nunca termina en `body`.
+ * - Devolución de foco delegada en la regla común `useRetornoDeFoco` (plan §2.3-M4): captura
+ *   incondicional al abrir, guarda de transición abierta → cerrada, cadena validada con
+ *   comprobación del resultado —disparador conectado → elemento previo conectado → respaldo— y
+ *   respaldo **por versión de vista** (móvil → botón «Menú»; ≥768px → control de la navegación
+ *   lateral); nunca termina en `body`.
  * - Slots fijos: header "Cuenta", botón Configuración (navega a /dashboard/configuracion),
  *   botón Salir del demo (navega a / con replace).
  * @param {Object} props
@@ -54,50 +62,18 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
 
-  // Elemento con el foco antes de abrir (capturado siempre para la cadena de retorno, M4)
-  const previousActiveElementRef = useRef(null);
-  // Marca que el modal llegó a estar abierto, para no devolver foco en el montaje inicial cerrado
-  const estuvoAbiertoRef = useRef(false);
-
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });
 
   // Gesto de deslizar hacia abajo (solo móvil, con punteros nativos)
   useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar });
 
-  // Capturar el foco previo ANTES de que la trampa enfoque el contenedor (useLayoutEffect = sincrónico)
-  useLayoutEffect(() => {
-    if (!abierto) return;
-    previousActiveElementRef.current = document.activeElement;
-  }, [abierto]);
-
-  // Retorno de foco encadenado al cerrar (nunca a un nodo desconectado ni a body)
-  useEffect(() => {
-    if (abierto) {
-      estuvoAbiertoRef.current = true;
-      return;
-    }
-    if (!estuvoAbiertoRef.current) return;
-    estuvoAbiertoRef.current = false;
-
-    const candidatos = [triggerRef?.current, previousActiveElementRef.current];
-    for (const candidato of candidatos) {
-      if (
-        candidato instanceof HTMLElement &&
-        candidato !== document.body &&
-        candidato.isConnected
-      ) {
-        candidato.focus();
-        return;
-      }
-    }
-
-    // Control estable equivalente (navegación lateral) si el disparador ya no existe
-    const controlEstable = document.querySelector('aside[role="navigation"] button');
-    if (controlEstable instanceof HTMLElement) {
-      controlEstable.focus();
-    }
-  }, [abierto, triggerRef]);
+  // Devolución de foco: regla común de las superficies modales (spec 011, RF-06/RF-09). La captura
+  // incondicional al abrir, la guarda de transición abierta → cerrada y la cadena validada —con
+  // comprobación del resultado de cada intento de foco— viven en la pieza compartida; su respaldo se
+  // resuelve por versión de vista (`useBreakpoint`): móvil → botón «Menú» de la navegación inferior;
+  // ≥768px → control de la navegación lateral.
+  useRetornoDeFoco({ activo: abierto, triggerRef });
 
   if (!abierto) return null;
 

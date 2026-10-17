@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
 import { useBreakpoint } from "../hooks/useBreakpoint";
+import { useFocoEnVistaDestino } from "../hooks/useFocoEnVistaDestino";
 
 import SidebarResponsive from "../components/layout/SidebarResponsive";
 import DashboardDrawer from "../components/layout/DashboardDrawer";
@@ -11,14 +12,87 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import { getUsuarioMock } from "../config/app.config";
 
+/** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
+const SELECTOR_NAVEGACION_LATERAL = 'aside[role="navigation"]';
+const SELECTOR_NAVEGACION_INFERIOR = "nav";
+const SELECTOR_CONTROL_LATERAL = 'aside[role="navigation"] button';
+const SELECTOR_CONTROL_MOVIL = 'button[aria-label="Abrir menú"]';
+/** La superficie global abierta y su contenedor: nunca son candidatos del respaldo (RF-14). */
+const SELECTOR_DIALOGO = '[role="dialog"]';
+/** Selector real del «primer control enfocable» (estilo de `ModalTarjeta.jsx`, RF-05). */
+const SELECTOR_ENFOCABLE =
+  'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/**
+ * clasificarOrigenDeFoco
+ * Clasifica el origen del foco para el recuerdo del cruce (M5 del plan 011): dentro de la
+ * navegación lateral ⇒ «escritorio»; dentro de la navegación inferior (un `nav` fuera del `aside`)
+ * ⇒ «movil»; contenido, campos o cualquier nodo dentro de `[role="dialog"]` ⇒ `null` (borra el
+ * recuerdo, lo que hace cumplir RF-14).
+ *
+ * @param {EventTarget} nodo - Nodo que acaba de recibir el foco
+ * @returns {{origen: ("escritorio"|"movil"|null), nodo: HTMLElement|null}}
+ */
+function clasificarOrigenDeFoco(nodo) {
+  if (!(nodo instanceof HTMLElement) || nodo.closest(SELECTOR_DIALOGO)) {
+    return { origen: null, nodo: null };
+  }
+  if (nodo.closest(SELECTOR_NAVEGACION_LATERAL)) return { origen: "escritorio", nodo };
+  if (nodo.closest(SELECTOR_NAVEGACION_INFERIOR)) return { origen: "movil", nodo };
+  return { origen: null, nodo: null };
+}
+
+/** Valida un candidato del respaldo del cruce (RF-05): enfocable, conectado y fuera de un diálogo. */
+function esCandidatoDeCruce(nodo) {
+  return (
+    nodo instanceof HTMLElement &&
+    nodo !== document.body &&
+    nodo.isConnected &&
+    !nodo.disabled &&
+    !nodo.closest(SELECTOR_DIALOGO)
+  );
+}
+
+/** Devuelve el primer nodo de la lista que supera la validación del respaldo (o `null`). */
+function primerCandidatoDeCruce(nodos) {
+  for (const nodo of nodos) {
+    if (esCandidatoDeCruce(nodo)) return nodo;
+  }
+  return null;
+}
+
+/**
+ * trasladarFocoDeCruce
+ * Traslada el foco al control equivalente de la versión de vista de destino (tabla M8) con la
+ * cadena de respaldo de RF-05: (1) control estable de esa versión; (2) el otro control estable;
+ * (3) primer control enfocable. Sin ninguno **no** fuerza el foco a `body` (limitación explícita).
+ *
+ * @param {boolean} esMovil - Versión de vista de destino (`useBreakpoint().isMobile`)
+ */
+function trasladarFocoDeCruce(esMovil) {
+  if (typeof document === "undefined") return;
+  const preferido = esMovil ? SELECTOR_CONTROL_MOVIL : SELECTOR_CONTROL_LATERAL;
+  const alterno = esMovil ? SELECTOR_CONTROL_LATERAL : SELECTOR_CONTROL_MOVIL;
+  const destino =
+    primerCandidatoDeCruce(document.querySelectorAll(preferido)) ??
+    primerCandidatoDeCruce(document.querySelectorAll(alterno)) ??
+    primerCandidatoDeCruce(document.querySelectorAll(SELECTOR_ENFOCABLE));
+  if (destino) destino.focus();
+}
+
 /**doc
  * @uso        Layout del dashboard con dos versiones de vista (móvil / pantallas grandes)
  * @funciones  DashboardLayout()
  * @datos      Orquesta SidebarResponsive, DashboardDrawer (menú de móvil), BottomNav, Container, Outlet, DashboardUserModal
- * @eventos    Cruce del corte de 768px (cierra el menú de móvil y traslada el foco), navegación
- *             BottomNav, apertura del modal de usuario: abrir «Cuenta» CIERRA el menú superpuesto
- *             (una sola superficie y una sola trampa por diseño; RF-07/RF-13) y pasa un
- *             `triggerRef` estable al modal para el retorno de foco (RF-08)
+ * @eventos    Cruce del corte de 768px en ambos sentidos (con el recuerdo del origen por `focusin`):
+ *             con el panel superpuesto abierto lo cierra y traslada el foco al control lateral; sin
+ *             panel, traslada solo si el foco pertenecía a la navegación que se desmonta (RF-12/
+ *             RF-13/RF-14). Navegación BottomNav, apertura del modal de usuario: abrir «Cuenta»
+ *             CIERRA el menú superpuesto (una sola superficie y una sola trampa por diseño;
+ *             RF-07/RF-13) y pasa un `triggerRef` estable al modal para el retorno de foco (RF-08).
+ *             Cierre que navega: con la marca `focoEnDestino` en el estado de la ruta,
+ *             `useFocoEnVistaDestino` coloca el foco una sola vez tras el render del destino, en el
+ *             control estable de la versión de vista (botón «Menú» / navegación lateral; RF-15)
  * @estados    mobileMenuAbierto (móvil), userModalAbierto (global)
  * @usadoPor   App.jsx (rutas /dashboard/*)
 
@@ -45,6 +119,16 @@ export default function DashboardLayout() {
   const [userModalAbierto, setUserModalAbierto] = useState(false);
 
   const bottomNavMenuRef = useRef(null);
+  // Recuerdo del último foco dentro de una navegación (`{ origen, nodo }`): permite saber, al
+  // cruzar, si el elemento enfocado pertenecía a la navegación que se desmonta (M5 del plan 011).
+  const origenFocoRef = useRef({ origen: null, nodo: null });
+  // Versión de vista del render anterior: distingue la dirección del cruce (el primer render no actúa).
+  const versionPreviaRef = useRef(isMobile);
+
+  // Vista de destino del cierre que navega (RF-15): si la entrada de historial trae la marca, coloca
+  // el foco una sola vez en el control estable de la versión de vista (botón «Menú» en móvil,
+  // navegación lateral en ≥768px).
+  useFocoEnVistaDestino();
 
   // Único punto de apertura del modal de Cuenta (plan §2.3-M9): cerrar el menú superpuesto
   // antes de abrirlo garantiza una sola superficie y una sola trampa por diseño (RF-07/RF-13).
@@ -56,19 +140,38 @@ export default function DashboardLayout() {
   const alCerrarUserModal = () => setUserModalAbierto(false);
   const usuario = getUsuarioMock();
 
-  // Efecto: al salir de móvil, cerrar el menú superpuesto y trasladar el foco al
-  // control de la navegación lateral que lo sustituye (no dejarlo en un elemento que
-  // se desmonta). El modal de cuenta (global) permanece intacto.
+  // Único listener `focusin` sobre `document` (registrado una vez al montar, retirado al
+  // desmontar): mantiene el recuerdo del origen del foco para el cruce del corte.
   useEffect(() => {
-    if (isMobile || !mobileMenuAbierto) return;
+    const registrarOrigen = (evento) => {
+      origenFocoRef.current = clasificarOrigenDeFoco(evento.target);
+    };
+    document.addEventListener("focusin", registrarOrigen);
+    return () => document.removeEventListener("focusin", registrarOrigen);
+  }, []);
 
-    setMobileMenuAbierto(false);
-    const controlNavegacionLateral = document.querySelector(
-      'aside[role="navigation"] button'
-    );
-    if (controlNavegacionLateral instanceof HTMLElement) {
-      controlNavegacionLateral.focus();
+  // Efecto: cruce del corte de 768px en ambos sentidos (RF-12/RF-13/RF-14). (a) Con el panel
+  // superpuesto abierto al pasar a pantallas grandes, lo cierra y traslada el foco de forma
+  // incondicional al control lateral (camino vigente). (b) Sin panel, solo traslada si el elemento
+  // enfocado pertenecía a la navegación que se desmonta (recuerdo no `null` y nodo desconectado);
+  // si sobrevive (contenido, campo o modal de cuenta con su trampa), no le roba el foco (RF-14).
+  useEffect(() => {
+    const versionPrevia = versionPreviaRef.current;
+    versionPreviaRef.current = isMobile;
+    if (versionPrevia === isMobile) return;
+
+    if (!isMobile && mobileMenuAbierto) {
+      setMobileMenuAbierto(false);
+      trasladarFocoDeCruce(isMobile);
+      return;
     }
+
+    const { origen, nodo } = origenFocoRef.current;
+    if (origen === null || (nodo && nodo.isConnected)) return;
+    if (isMobile && origen !== "escritorio") return;
+    if (!isMobile && origen !== "movil") return;
+
+    trasladarFocoDeCruce(isMobile);
   }, [isMobile, mobileMenuAbierto]);
 
   return (

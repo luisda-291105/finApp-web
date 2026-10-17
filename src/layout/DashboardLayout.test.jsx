@@ -10,6 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import { useBreakpoint } from "../hooks/useBreakpoint";
@@ -312,6 +313,32 @@ describe("DashboardLayout — dos versiones de vista", () => {
     });
   });
 
+  describe("Canario del mecanismo focusin (jsdom)", () => {
+    // Canario §2.3/M5: la verificabilidad de AC-12(ii)/AC-13 depende de que jsdom despache
+    // `focusin` tanto en `.focus()` programático como en el clic de `userEvent`.
+    it("despacha focusin en .focus() y en el clic de userEvent", async () => {
+      const recibidos = [];
+      const manejar = (evento) => recibidos.push(evento.target);
+      document.addEventListener("focusin", manejar);
+      try {
+        const boton = document.createElement("button");
+        document.body.appendChild(boton);
+
+        boton.focus();
+        expect(recibidos).toEqual([boton]);
+
+        boton.blur();
+        recibidos.length = 0;
+        await userEvent.click(boton);
+        expect(recibidos).toEqual([boton]);
+
+        boton.remove();
+      } finally {
+        document.removeEventListener("focusin", manejar);
+      }
+    });
+  });
+
   describe("Recomposición al cruzar el corte de 768px", () => {
     it("móvil → pantallas grandes cierra el menú y traslada el foco al control lateral", () => {
       const { rerender } = renderLayout(versionMovil());
@@ -340,6 +367,87 @@ describe("DashboardLayout — dos versiones de vista", () => {
       rerender(<LayoutTree initialPath="/dashboard" />);
 
       expect(screen.getByTestId("user-modal-open")).toBeDefined();
+    });
+
+    it("móvil → pantallas grandes sin menú: traslada el foco de la navegación inferior al control lateral (AC-12(ii))", () => {
+      const { rerender } = renderLayout(versionMovil());
+
+      const itemInferior = screen.getByTestId("bottom-nav-menu");
+      act(() => {
+        itemInferior.focus();
+      });
+      expect(document.activeElement).toBe(itemInferior);
+
+      configurarVersión(pantallasGrandes(true));
+      rerender(<LayoutTree initialPath="/dashboard" />);
+
+      expect(document.activeElement).toBe(screen.getByTestId("sidebar-toggle"));
+    });
+
+    it("pantallas grandes → móvil sin panel: traslada el foco de la navegación lateral al botón «Menú» (AC-13)", () => {
+      const { rerender } = renderLayout(pantallasGrandes(true));
+
+      const controlLateral = screen.getByTestId("sidebar-toggle");
+      act(() => {
+        controlLateral.focus();
+      });
+      expect(document.activeElement).toBe(controlLateral);
+
+      configurarVersión(versionMovil());
+      rerender(<LayoutTree initialPath="/dashboard" />);
+
+      expect(document.activeElement).toBe(screen.getByTestId("bottom-nav-menu"));
+    });
+
+    it.each([
+      ["móvil → pantallas grandes", false],
+      ["pantallas grandes → móvil", true],
+    ])(
+      "cruce %s con el foco en el contenido principal: no mueve el foco (AC-14)",
+      (_nombre, cruzaAMovil) => {
+        const versionOrigen = cruzaAMovil ? pantallasGrandes(true) : versionMovil();
+        const versionDestino = cruzaAMovil ? versionMovil() : pantallasGrandes(true);
+        const { rerender } = renderLayout(versionOrigen);
+
+        // Contenido principal fuera de toda navegación: sobrevive al cruce
+        const contenido = screen.getByTestId("outlet-content");
+        contenido.tabIndex = -1;
+        act(() => {
+          contenido.focus();
+        });
+        expect(document.activeElement).toBe(contenido);
+
+        configurarVersión(versionDestino);
+        rerender(<LayoutTree initialPath="/dashboard" />);
+
+        expect(document.activeElement).toBe(contenido);
+      }
+    );
+
+    it("cruce sin el control estable de destino: cae al primer control enfocable (AC-15 variante)", () => {
+      const { rerender } = renderLayout(versionMovil());
+
+      const itemInferior = screen.getByTestId("bottom-nav-menu");
+      act(() => {
+        itemInferior.focus();
+      });
+
+      // La versión de destino (≥768px) se monta sin su control estable (aside sin botones)
+      SidebarResponsive.mockImplementationOnce(() => (
+        <aside data-testid="sidebar-responsive" role="navigation" />
+      ));
+
+      // Primer control enfocable de la vista (fuera de toda navegación y de un diálogo)
+      const contenidoEnfocable = document.createElement("button");
+      document.body.appendChild(contenidoEnfocable);
+      try {
+        configurarVersión(pantallasGrandes(true));
+        rerender(<LayoutTree initialPath="/dashboard" />);
+
+        expect(document.activeElement).toBe(contenidoEnfocable);
+      } finally {
+        contenidoEnfocable.remove();
+      }
     });
 
     it("1200px → 800px sin preferencia: el margen pasa a ml-[72px] (colapsada)", () => {

@@ -7,10 +7,32 @@
  * @estados    viewport explícito (innerWidth + matchMedia) y estado de apertura en los re-render
  * @usadoPor   Vitest
  */
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AuthModal from "./AuthModal";
+import PaginaLogin from "../../../pages/PaginaLogin";
+import PaginaInicio from "../../../pages/PaginaInicio";
+
+/**
+ * Mock **local** de `config/app.config` para los casos nuevos de la spec 011 (Tarea 8). El cierre
+ * que navega necesita `TRIAL_ACTIVO = false` para llevar a `/` (con el valor real navegaría a
+ * `/dashboard`). Por defecto el getter devuelve el **valor real** del módulo, así que el resto de
+ * casos de la suite —que no leen `TRIAL_ACTIVO` (verificado por `grep`)— quedan igual; el valor se
+ * ajusta solo dentro del caso que lo necesita y se restaura al terminar.
+ */
+const estadoTrial = vi.hoisted(() => ({ activo: null }));
+
+vi.mock("../../../config/app.config", async (importOriginal) => {
+  const real = await importOriginal();
+  return {
+    ...real,
+    get TRIAL_ACTIVO() {
+      return estadoTrial.activo ?? real.TRIAL_ACTIVO;
+    },
+  };
+});
 
 /**
  * Mock de `matchMedia` dependiente del ancho: `matches` es verdadero cuando el ancho
@@ -298,6 +320,176 @@ describe("AuthModal", () => {
       comprobarCamposConservados();
       expect(spyError).not.toHaveBeenCalled();
       spyError.mockRestore();
+    });
+  });
+
+  // Casos nuevos de la spec 011 (Tarea 5): el `AuthModal` captura el elemento activo al abrir y
+  // devuelve el foco al cerrar mediante la pieza compartida `useRetornoDeFoco`. En la landing el
+  // respaldo es el primer control enfocable de la vista; en `/login` rige la limitación explícita
+  // (H2: sin ningún enfocable fuera del modal la pieza devuelve `null`). Los casos vigentes de
+  // arriba quedan intactos.
+  describe("captura y devolución de foco (RF-10, spec 011)", () => {
+    /** Nodos DOM creados por estos casos: se retiran tras cada uno para no contaminar la suite. */
+    const nodosCreados = [];
+
+    /** Mismo selector real de foco que usa la pieza compartida (RF-05). */
+    const SELECTOR_ENFOCABLE =
+      'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    const crearBoton = (etiqueta) => {
+      const nodo = document.createElement("button");
+      nodo.textContent = etiqueta;
+      document.body.appendChild(nodo);
+      nodosCreados.push(nodo);
+      return nodo;
+    };
+
+    /** Control de la landing mínima: enlace del logotipo, primer enfocable en orden de documento. */
+    const crearEnlaceDeLanding = () => {
+      const enlace = document.createElement("a");
+      enlace.href = "/";
+      enlace.textContent = "FinApp";
+      document.body.appendChild(enlace);
+      nodosCreados.push(enlace);
+      return enlace;
+    };
+
+    /** Cierra el modal re-renderizando con `abierto={false}` (transición abierta → cerrada). */
+    const cerrarModal = async (rerender, alCerrar) => {
+      await act(async () => {
+        rerender(<AuthModal abierto={false} alCerrar={alCerrar} />);
+      });
+    };
+
+    beforeEach(() => {
+      // Punto de partida estable: nada enfocado antes de cada caso.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
+
+    afterEach(() => {
+      nodosCreados.splice(0).forEach((nodo) => nodo.remove());
+    });
+
+    it("AC-10: al cerrar devuelve el foco al disparador enfocado antes del render (1 devolución)", async () => {
+      fijarViewport(1024);
+      const disparador = crearBoton("Abrir acceso");
+      disparador.focus();
+      const espiaFocus = vi.spyOn(disparador, "focus");
+
+      const alCerrar = vi.fn();
+      const { rerender } = renderModal({ alCerrar });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await cerrarModal(rerender, alCerrar);
+
+      expect(espiaFocus).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(disparador);
+    });
+
+    it("AC-06 (landing): sin disparador válido el foco queda en el primer control enfocable de la vista", async () => {
+      fijarViewport(1024);
+      const enlaceLanding = crearEnlaceDeLanding();
+
+      const alCerrar = vi.fn();
+      const { rerender } = renderModal({ alCerrar });
+      const dialogo = screen.getByRole("dialog");
+      await esperarFocoEnContenedor(dialogo);
+
+      await cerrarModal(rerender, alCerrar);
+
+      expect(document.activeElement).toBe(enlaceLanding);
+      expect(document.activeElement).not.toBe(document.body);
+      expect(dialogo.contains(document.activeElement)).toBe(false);
+    });
+
+    it("AC-06 (/login): sin ningún enfocable fuera del modal no hay focus() sobre body ni excepción", async () => {
+      fijarViewport(1024);
+      const espiaFocusBody = vi.spyOn(document.body, "focus");
+
+      const alCerrar = vi.fn();
+      const { rerender } = renderModal({ alCerrar });
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      // Evidencia de H2: la vista de `/login` no ofrece ningún enfocable fuera del modal.
+      const enfocablesFuera = Array.from(document.querySelectorAll(SELECTOR_ENFOCABLE)).filter(
+        (nodo) => !nodo.closest('[role="dialog"]')
+      );
+      expect(enfocablesFuera.length).toBe(0);
+
+      await cerrarModal(rerender, alCerrar);
+
+      expect(espiaFocusBody).not.toHaveBeenCalled();
+      // Limitación documentada (H2/AC-08): no hay control de origen al que volver.
+      expect(document.activeElement).toBe(document.body);
+      espiaFocusBody.mockRestore();
+    });
+
+    it("AC-08 (parte): montado cerrado no captura, no devuelve y no enfoca ningún candidato", () => {
+      fijarViewport(1024);
+      const disparador = crearBoton("Abrir acceso");
+      disparador.focus();
+      const espiaDisparador = vi.spyOn(disparador, "focus");
+      const enlaceLanding = crearEnlaceDeLanding();
+      const espiaLanding = vi.spyOn(enlaceLanding, "focus");
+      const focoAntes = document.activeElement;
+
+      renderModal({ abierto: false });
+
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(espiaDisparador).not.toHaveBeenCalled();
+      expect(espiaLanding).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(focoAntes);
+    });
+  });
+
+  // Casos nuevos de la spec 011 (Tarea 8): el cierre que **cambia de ruta** coloca el foco en la
+  // vista de destino (RF-15), después del render de la nueva vista y una sola vez. Origen `/login`
+  // con las rutas reales (`PaginaLogin` → `PaginaInicio`) y `TRIAL_ACTIVO` ajustado en el ámbito
+  // del caso (mock local de `config/app.config`): sin marcado ni rutas nuevas. Los casos vigentes
+  // de la suite quedan **sin modificar**.
+  describe("cierre que navega (/login → /): foco en la vista de destino (RF-15, spec 011)", () => {
+    /** Mismo selector real de foco que usa la pieza compartida (RF-05). */
+    const SELECTOR_ENFOCABLE =
+      'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    const renderRutasPublicas = () =>
+      render(
+        <MemoryRouter initialEntries={["/login"]}>
+          <Routes>
+            <Route path="/login" element={<PaginaLogin />} />
+            <Route path="/" element={<PaginaInicio />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+    afterEach(() => {
+      estadoTrial.activo = null;
+    });
+
+    it("AC-22(b): cerrar la «X» en /login navega a / y el foco acaba en el primer control enfocable (logotipo)", async () => {
+      estadoTrial.activo = false;
+      fijarViewport(1024);
+      const usuario = userEvent.setup();
+      renderRutasPublicas();
+      await esperarFocoEnContenedor(screen.getByRole("dialog"));
+
+      await usuario.click(screen.getByRole("button", { name: "Cerrar ventana de acceso" }));
+
+      // La navegación se completa cuando la vista de destino (la landing) ya está renderizada.
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /Controla tu dinero/ })).toBeTruthy();
+      });
+
+      const logotipo = document.querySelector('header a[href="/"]');
+      expect(logotipo).toBeTruthy();
+      await waitFor(() => expect(document.activeElement).toBe(logotipo));
+      expect(document.activeElement).not.toBe(document.body);
+
+      // Y es, además, el **primer control enfocable** de la vista (lista ordenada de RF-15).
+      const primerEnfocable = Array.from(
+        document.querySelectorAll(SELECTOR_ENFOCABLE)
+      ).find((nodo) => !nodo.closest('[role="dialog"]'));
+      expect(primerEnfocable).toBe(logotipo);
     });
   });
 });

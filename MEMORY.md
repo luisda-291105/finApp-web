@@ -1904,3 +1904,612 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
 
 
 
+### Spec 011 — Devolución de foco de las cuatro superficies modales y traslado al cruzar el corte de 768px (Tarea 1 completada 2026-10-17; medición post-012)
+
+- **Contexto:** la 011 se **re-mide después** de la 012 (orden H4/DP-12 ya cerrado). La
+  **Tarea 1** es un **Paso 0 de solo lectura** sobre `src/`: fija la línea base post-012,
+  confirma los criterios rojos, re-verifica las referencias `archivo:línea` y congela la 010.
+  **Ningún archivo de `src/` se editó.**
+- **012 implementada — comprobación bloqueante: PASA.** El stub local de
+  `DashboardUserModal.test.jsx` deriva `matches` de `innerWidth` (`mockMatchMedia` `:38-48`,
+  `restaurarViewportEscritorio` `:56-62`) y el caso de respaldo lateral (`:285-309`) corre bajo
+  el default de pantallas grandes. Sin este ajuste la Tarea 4 no podría cerrar verde.
+- **Línea base medida hoy (post-012) — la cifra válida es la de hoy.** Alcance 011 (8 archivos,
+  comando de §10-1 de la spec): **151 casos / 0 fail** → `App 11`, `ModalTarjeta 18`,
+  `DashboardLayout 23`, `PanelTarjetas 12`, `DashboardDrawer 23`, `DashboardUserModal 27`,
+  `cierreDeModales 22`, `AuthModal 15`. **`npm test` completo: 28 archivos / 373 casos / 0 fail.**
+  `npm run build`: **verde** (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 382.97 kB /
+  gzip 122.09). Las cifras de `MEMORY.md` 253/21, 257/22 y 348/27 quedan **superadas**.
+- **Criterios rojos confirmados (TDD) con sondas fuera del repo** (`/tmp/opencode/011/pruebas-rojas/`,
+  sin tocar `src/`): **7 fail | 2 pass**. Rojos: **AC-01** (el montaje cerrado del drawer enfoca el
+  botón «Menú», `focus()` 1 vez), **AC-10** (`AuthModal` no captura ni devuelve: el foco queda en
+  `body`), **AC-12(ii)** (cruce móvil → ≥768px sin menú: no hay traslado al control lateral),
+  **AC-13** (cruce ≥768px → móvil: no hay traslado al botón «Menú»), **AC-22** en escritorio
+  (`/login` deja el foco en `body`) y **AC-24** (disparador `disabled`: el foco acaba en `body`).
+  **Enmascaramiento documentado:** AC-13 y AC-22-móvil **pasan** hoy con los hijos reales **por el
+  robo de foco del drawer (AC-01)**, no por el mecanismo exigido; se registran como rojo del
+  mecanismo con los mocks de la suite (§4.5/AC-13 de la spec se cumple).
+- **Referencias `archivo:línea` re-verificadas y corregidas en `plan.md`** (se movieron en la 012):
+  stub local `:34-44`/`:47-50` → **`:38-48`/`:56-62`**; caso de respaldo lateral `:265-290` →
+  **`:285-309`** (vigentes `:219-240,:242-263` → `:239-260,:262-283`); andamiaje de geometría
+  `vitest.setup.js:47-83` → **`:55-91`** (plan §0.9 y §6.1). El resto (superficies, layout,
+  `useBreakpoint`, suites) **sin cambios**. `cierreDeModales.test.jsx:130-172` se confirma
+  **correcto**: es el canario de geometría (`:130`–`:172`), uno de los vigentes de la Tarea 9; el
+  caso «abrir «Cuenta» desde el menú» es `:312-340`.
+- **Carpeta antigua `specs/011-retorno-de-foco-drawer/` — ya no aplicable (CL-15).** No existe en
+  disco, ni en el historial de git (`git log --all -- 'specs/011-retorno-de-foco-drawer*'` vacío), ni
+  en `git ls-files specs`; **no se recrea ni se borra nada**.
+- **AC-19 congelado:** `sha256sum` de `specs/010-cierre-de-modales/` → `spec.md` `69d84001…f7982`,
+  `plan.md` `b7fc73fc…3d8e4`, `tasks.md` `ddb354cd…d5d5b` (mtime 2026-10-16, anterior a la 011).
+  **Corrección documental:** en el repo actual los tres documentos **sí están trackeados**
+  (commit `c341f17`), contra lo que afirmaban spec/plan/la checklist («sin trackear»);
+  `git status --porcelain` y `git diff --stat -- specs/010-cierre-de-modales/` salen **vacíos** ⇒ la
+  010 está intacta por git **y** por hash.
+- **Sin ediciones de código:** `git status --porcelain --untracked-files=all` no lista **ningún**
+  archivo de `src/`. Solo figuran cambios **ajenos** a esta spec, ya presentes (borrados
+  `.pi/agents/*.md` (4) y `.pi/modes.config.json`, alta de `analicis-completo-cambios.md` y de
+  `specs/011-foco-de-superficies-y-cruce/*`). Sin commit ni staging.
+- **Sin validación visual** (no aplicable: la corrección no cambia aspecto, marcado ni movimiento).
+- **Siguiente:** Tarea 2 (pieza compartida `useRetornoDeFoco` + suite). No se implementó nada más.
+
+---
+
+### Spec 011 — Tarea 2 completada (2026-10-17, post-012): pieza compartida `useRetornoDeFoco` (M1) y su suite
+
+- **Alcance ejecutado:** **solo se crean dos archivos nuevos** en `src/hooks/`:
+  `useRetornoDeFoco.js` (con cabecera JSDoc de la plantilla real) y `useRetornoDeFoco.test.js`
+  (**29 casos**). **Ninguna** suite ni código de producción existente se modifica (regla común de la
+  011: ampliar sí, reescribir no; sin props ni `refs` nuevas; sin dependencias ni hex nuevos).
+- **API entregada:** `useRetornoDeFoco({ activo = false, triggerRef } = {})` — firma RF-07, con
+  `triggerRef` **opcional** (sin props nuevas para los consumidores) — y el **resolutor puro**
+  `resolverControlDeVista(esMovil)`, exportado para que lo reutilice la Tarea 8
+  (`useFocoEnVistaDestino`). La versión de vista se toma de `useBreakpoint()` **dentro** de la pieza
+  (M3/H4): sin lectura nueva de `matchMedia`.
+- **Mecanismos fijados por el plan y aplicados (M1/M2/M3/M4/M8):**
+  - **Captura incondicional** al abrir con `useLayoutEffect` (sincrónica al commit, antes de que la
+    trampa enfoque el panel) — RF-03.
+  - **Guarda de transición `estuvoAbiertoRef`**: el cierre solo actúa si la superficie llegó a
+    abrirse y la marca se consume; el montaje cerrado, los re-renders cerrados y el doble montaje de
+    `StrictMode` no mueven el foco (RF-01/RF-02/CL-14). Sin `focus()` en limpiezas de efecto
+    (requisito de la migración de `ModalTarjeta`, H12).
+  - **Cadena determinista con comprobación del resultado**: disparador → elemento capturado →
+    respaldo; cada candidato se acepta solo si es `HTMLElement`, no es `body`, está `isConnected`,
+    no vive en un subárbol `[inert]`/`[aria-hidden="true"]` **y** queda efectivamente enfocado
+    (`document.activeElement === candidato`); si no, la cadena **continúa** (RF-04/AC-24).
+  - **Respaldo por versión de vista** (`resolverControlDeVista`): control de la versión actual →
+    otro control estable → primer control enfocable (`a[href], button, input, select, textarea,
+    [tabindex]:not([tabindex="-1"])`), excluyendo `[role="dialog"]` y `disabled`; **`null`** si no
+    hay ninguno (limitación explícita, AC-15/AC-23; sin `scrollIntoView`).
+- **Decisión técnica no cubierta literalmente por el plan (registrada):** la cadena descarta los
+  candidatos que viven dentro de `[inert]`/`[aria-hidden="true"]` **antes** de intentar el foco
+  (`SELECTOR_NO_ENFOCABLE`). Motivo **medido**: en jsdom 25 `.focus()` **sí** enfoca nodos dentro de
+  esos subárboles (jsdom no implementa la inhibición), de modo que sin el descarte los casos
+  «la cadena continúa ante `inert`/`aria-hidden`» no tendrían señal real. La comprobación del
+  resultado (`activeElement === candidato`) sigue rigiendo el resto de la cadena (`disabled`,
+  `<div>` sin foco). No afecta a ningún consumidor real: ningún candidato de las cuatro superficies
+  vive en esos subárboles (el backdrop del drawer es `aria-hidden` pero no contiene candidatos).
+- **TDD (evidencia rojo→verde):** rojo registrado con la suite escrita antes de la pieza
+  (`Failed to resolve import "./useRetornoDeFoco"`); verde tras implementar.
+- **Validaciones medidas:**
+  1. `npx vitest run src/hooks/useRetornoDeFoco.test.js` → ✅ **29/29 pass** (rojo previo ✅).
+  2. `npm test` → ✅ **29 archivos / 402 casos / 0 fail** (línea base post-012: 28/373 ⇒ +1 archivo /
+     +29 casos; ningún recuento previo empeora).
+  3. `npm run build` → ✅ verde (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 382.97 kB /
+     gzip 122.09).
+- **Validación visual: no aplicable** (no cambia aspecto, marcado ni movimiento; la pieza aún no la
+  consume ninguna superficie).
+- **Diff:** solo los dos archivos nuevos (`src/hooks/useRetornoDeFoco.js`,
+  `src/hooks/useRetornoDeFoco.test.js`); `git status` no muestra cambios en ninguna suite ni en
+  código de producción. Sin commit ni staging.
+- **Siguiente:** Tareas 3-6 (superficies: `DashboardDrawer`, `DashboardUserModal`, `AuthModal`,
+  `ModalTarjeta`) consumirán la pieza; no se implementó nada más.
+
+---
+
+### Spec 011 — Tarea 3 completada (2026-10-17): `DashboardDrawer` con paridad M4 (RF-08)
+
+- **Alcance ejecutado:** se **retiraron los dos efectos propios** del drawer (captura condicional y
+  cadena sin validar) y se delegó la devolución de foco en
+  `useRetornoDeFoco({ activo: abierto, triggerRef })`. Se **conservaron** el `if (!abierto) return null`
+  y todo el cromo, incluida la **trampa real** (`focus-trap-react`, sin `vi.mock`). Cambio mínimo: sin
+  props nuevas, sin clases/textos tocados, sin dependencias ni hexadecimales. Se eliminaron los imports
+  `useEffect`/`useLayoutEffect` (ya no se usan; solo queda `useRef`).
+- **Cabecera JSDoc (RF-19):** `@eventos` documenta que la devolución se delega en `useRetornoDeFoco`
+  (transición abierta → cerrada) y `@estados` describe la guarda, la cadena validada y el respaldo
+  móvil (botón «Menú», el mismo nodo que `triggerRef`). Sin citar la ruta inexistente de la plantilla
+  (aviso ya registrado en la Tarea 2).
+- **TDD (evidencia rojo→verde):** se **amplió** `DashboardDrawer.test.jsx` con un `describe` nuevo
+  (5 casos) al final del archivo; el diff de la suite es **solo adiciones** (0 líneas eliminadas ⇒ los
+  23 casos vigentes, incluidos los dos de retorno de foco `:341-384`, **sin editar**). Rojo medido antes
+  de implementar: **3 fail / 25 pass** —
+  - **AC-01:** el montaje cerrado con `triggerRef` conectado llamaba `focus()` **1** vez sobre el botón
+    «Menú» (D1).
+  - **AC-02:** doble devolución (2 llamadas) tras re-renders cerrados.
+  - **AC-05:** sin captura válida el foco quedaba en `body` (no existía respaldo).
+  Verde tras la corrección: **28/28**.
+- **Cobertura nueva por AC:**
+  - **AC-01:** montaje cerrado + disparador conectado → `focus()` **0** veces y `activeElement` sin
+    cambios.
+  - **AC-02:** abre→cierra = **1** devolución; re-render cerrado con **identidad nueva** del `ref` no
+    repite.
+  - **AC-05:** disparador **desconectado** → elemento capturado (con `focus()` **0** veces sobre el nodo
+    desconectado) y, sin captura válida, **respaldo móvil** `button[aria-label="Abrir menú"]`; en ambos
+    `activeElement !== document.body`.
+  - **AC-24 (parte):** candidato `disabled` como primer elemento → la cadena **continúa** al capturado.
+- **Validaciones medidas:**
+  1. `npx vitest run src/components/layout/DashboardDrawer.test.jsx` → ✅ **28/28 pass** (rojo previo
+     3/25 ✅). Línea base T1: `DashboardDrawer 23`.
+  2. `npm test` → ✅ **29 archivos / 407 casos / 0 fail** (línea base post-T2: 402 ⇒ +5 casos).
+  3. `npm run build` → ✅ verde (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 383.76 kB /
+     gzip 122.33).
+- **Validación visual: no aplicable** (la corrección solo cambia el foco; no altera aspecto, marcado ni
+  movimiento).
+- **Diff:** `DashboardDrawer.jsx` (−26/+13 neto: `git diff --stat` 39 líneas) y
+  `DashboardDrawer.test.jsx` (+116, solo adiciones). `git status` no muestra otros cambios de `src/`
+  atribuibles a esta tarea. Sin commit ni staging.
+- **Siguiente:** Tareas 4-6 (resto de superficies) consumirán la pieza; no se implementó nada más.
+
+---
+
+### Spec 011 — Tarea 4 completada (2026-10-17): `DashboardUserModal` con respaldo por versión de vista (RF-09)
+
+- **Paso 0 (bloqueante) — PASA:** la 012 está aplicada (commit `8aa9f0f`; `vitest.setup.js` deriva
+  `matches` de `innerWidth` y el stub local de la suite del modal también). El caso vigente del
+  respaldo lateral `:285-309` corre bajo el default de pantallas grandes. **Línea base medida antes de
+  tocar el componente: `DashboardUserModal` 27/27 pass.**
+- **Alcance ejecutado:** se **retiró el respaldo propio** (`:96`, `aside[role="navigation"] button`) y
+  los dos efectos/refs que sostenían la cadena M4 en el componente; la devolución se **delega** en
+  `useRetornoDeFoco({ activo: abierto, triggerRef })`, que resuelve el respaldo **por versión de vista**
+  con `useBreakpoint` (móvil → `button[aria-label="Abrir menú"]`; ≥768px → control lateral). Se
+  **conservaron** la firma `{ abierto, alCerrar, triggerRef }`, el `if (!abierto) return null`, la
+  trampa real, el cromo, las clases y los textos. Import de `react` reducido a `useRef`.
+- **Cambio mínimo:** sin props nuevas, sin `refs` nuevas desde consumidores, sin dependencias ni
+  hexadecimales nuevos. Cabecera JSDoc actualizada (RF-19): `@eventos` documenta la devolución delegada
+  y `@estados` el respaldo por versión de vista vía `useBreakpoint`; se ajustó la viñeta del contrato
+  que citaba solo el control lateral.
+- **TDD (evidencia rojo→verde):** se **amplió** `DashboardUserModal.test.jsx` con un `describe` nuevo
+  (7 casos) al final; el diff de la suite es **solo adiciones** (192 líneas añadidas, **0** eliminadas ⇒
+  los casos vigentes `:239-283` y `:285-309` y los de cierre **sin editar**). Con control explícito de
+  `matchMedia` **coherente con `innerWidth`** por caso. Rojo medido antes de implementar:
+  **3 fail / 31 pass (34)** —
+  - **AC-06 (móvil):** sin disparador y con el elemento capturado desconectado, el foco quedaba en
+    `body` (el respaldo propio solo contemplaba el control lateral).
+  - **AC-24 (`disabled`):** el candidato se daba por bueno sin comprobar el resultado del `.focus()` y
+    el foco acababa en `body`.
+  - **AC-24 (`inert`):** el candidato dentro de `[inert]` recibía el foco (jsdom no implementa la
+    inhibición).
+  Verde tras la migración: **34/34**.
+- **Cobertura nueva por AC:** **AC-05** (conectado → 1 devolución; desconectado → capturado, nunca
+  `body`); **AC-06** (móvil → botón «Menú»; ≥768px explícito → control lateral aun existiendo el botón
+  «Menú»; el caso vigente `:285-309` sigue verde sin cambios); **AC-24** (`disabled` e `inert` → la
+  cadena continúa); **AC-10 (parte)** por equivalencia con la pieza; **montaje cerrado sin robo**
+  (`abierto={false}` → 0 `focus()`).
+- **Validaciones medidas:**
+  1. `npx vitest run src/components/layout/DashboardUserModal.test.jsx` → ✅ **34/34 pass** (rojo previo
+     3/31 ✅). Línea base T1: `DashboardUserModal 27`.
+  2. `npm test` → ✅ **29 archivos / 414 casos / 0 fail** (línea base post-T3: 407 ⇒ +7 casos).
+  3. `npm run build` → ✅ verde (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 383.36 kB /
+     gzip 122.25).
+- **Validación visual: no aplicable** (la corrección solo cambia el foco; no altera aspecto, marcado ni
+  movimiento).
+- **Diff:** `DashboardUserModal.jsx` (+19/−43) y `DashboardUserModal.test.jsx` (+192, solo adiciones).
+  `git status` no muestra otros cambios de `src/` atribuibles a esta tarea; `specs/010-*` y `specs/012-*`
+  sin tocar. Sin commit ni staging.
+- **Decisión no cubierta literalmente por el plan (registrada):** se añadió un caso AC-06 de ≥768px con
+  `matchMedia` explícito a 1024 (además del vigente `:285-309`, que se deja intacto) para asertar la
+  **prioridad** del control lateral cuando en el DOM existe **también** el botón «Menú»; el plan solo
+  exigía mantener verde el caso vigente.
+- **Siguiente:** Tareas 5-6 (resto de superficies) consumirán la pieza; no se implementó nada más.
+
+### Spec 011 — Tarea 5 completada (2026-10-17): `AuthModal` con captura y devolución de foco (RF-10)
+
+- **Paso 0:** el `AuthModal` no tenía ninguna lógica de foco; la 012 ya retiró la clase muerta
+  `animate-fadeIn` (no se reintrodujo) y el bloque `fetch` editado a mano por el usuario (DP-21) quedó
+  **intacto**. Línea base medida antes de tocar nada: `AuthModal.test.jsx` **15/15 pass**.
+- **Alcance ejecutado:** se **añadió** la llamada a `useRetornoDeFoco({ activo: abierto })` tras
+  `useDeslizarParaCerrar` (sin `triggerRef` propio: sin props ni refs nuevas desde el consumidor). El
+  respaldo es la cadena común de la pieza: elemento capturado → control de la versión de vista →
+  **primer control enfocable** (excluyendo `[role="dialog"]` y `disabled`). En la landing el primer
+  enfocable es el enlace del logotipo; en `/login` no hay candidato y la pieza devuelve `null`
+  (limitación explícita, **H2**). Marcado, clases y aspecto **sin tocar**.
+- **Cambio mínimo:** +1 import y +1 llamada en el componente; cabecera JSDoc actualizada (RF-19):
+  `@eventos` documenta la captura al abrir y la devolución por la pieza común; `@estados` aclara que el
+  foco no usa estado de React. Sin dependencias ni hexadecimales nuevos.
+- **TDD (evidencia rojo→verde):** se **amplió** `AuthModal.test.jsx` con un `describe` nuevo (4 casos) al
+  final; los casos vigentes («X», clic fuera, Esc con el foco en un campo, clic dentro, gesto en móvil,
+  AC-22) quedan **sin editar** (el único cambio fuera de los casos nuevos es `act` en la línea de
+  import). Rojo medido antes de implementar: **2 fail / 17 pass (19)** —
+  - **AC-10:** al cerrar no había ninguna devolución (`focus()` sobre el disparador = 0 veces).
+  - **AC-06 (landing):** el foco quedaba en `body` (no en el primer control enfocable).
+  - Los otros dos casos nuevos (**AC-06 `/login`** y **AC-08 parte**) ya pasaban antes por no depender
+    de la pieza ausente; quedan como no-regresión de la limitación y del montaje cerrado. Verde tras la
+    implementación: **19/19**.
+- **Cobertura nueva por AC:** **AC-10** (disparador enfocado antes del render → 1 devolución a ese
+  nodo); **AC-06** (landing → primer control enfocable, no `body`, no dentro de `[role="dialog"]`;
+  `/login` → 0 enfocables fuera del modal, `focus()` sobre `body` sin llamadas y paso intermedio por
+  `body` documentado); **AC-08 (parte)** (montaje cerrado → 0 captura, 0 devolución, `activeElement` sin
+  cambios).
+- **Validaciones medidas:**
+  1. `npx vitest run src/components/domain/modales/AuthModal.test.jsx` → ✅ **19/19 pass** (rojo previo
+     2/17).
+  2. `npm test` → ✅ **29 archivos / 418 casos / 0 fail** (línea base post-T4: 414 ⇒ +4 casos).
+  3. `npm run build` → ✅ verde (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 383.38 kB /
+     gzip 122.30).
+- **Validación visual: no aplicable** (la corrección solo cambia el foco; no altera aspecto, marcado ni
+  movimiento).
+- **Diff:** `AuthModal.jsx` (+13/−3, solo cabecera + import + llamada) y `AuthModal.test.jsx` (solo
+  adiciones + `act` en el import). `specs/010-*` y `specs/012-*` sin tocar. Sin commit ni staging.
+- **Siguiente:** Tarea 6 (`ModalTarjeta`) consumirá la pieza; no se implementó nada más.
+
+### Spec 011 — Tarea 6 completada (2026-10-17): `ModalTarjeta` migrado al patrón M4 (RF-11, H12)
+
+- **Paso 0 (DP-21):** verificadas las líneas reales antes de editar: el efecto único de apertura/cierre
+  estaba en `:49-61` (`refActivador.current = document.activeElement`, foco al contenedor, scroll, y
+  limpieza que devolvía el foco con `refActivador.current?.focus?.()`), y la trampa manual `atraparTab`
+  en `:71-84`. Línea base focalizada: `ModalTarjeta.test.jsx` **18/18** + `PanelTarjetas.test.jsx`
+  **12/12** = **30/30**.
+- **Alcance ejecutado (cambio mínimo):** se **dividió** el efecto —la limpieza ahora **solo** restaura el
+  scroll (`overflow = ""`) y **nunca** llama a `focus()`—; la devolución pasa a
+  `useRetornoDeFoco({ activo: Boolean(tarjeta) })` (transición abierta → cerrada) y se **retiró**
+  `refActivador` (ya no aparece en `src/`). Sin `triggerRef`: el activador es el elemento capturado por
+  la pieza y, si falta (desconectado), el respaldo estable de la versión de vista (RF-05). Conservados:
+  captura, foco inicial al contenedor (`refDialogo`/`tabIndex={-1}`), bloqueo de scroll, **trampa
+  manual** (`atraparTab`), gesto, Esc, clic fuera, animaciones y contenido (RF-16/RF-17).
+- **TDD (evidencia rojo→verde):** se **amplió** `ModalTarjeta.test.jsx` con un `describe` nuevo (5 casos);
+  los casos vigentes de foco (`:263-301`) quedan **sin editar** (único cambio fuera de los casos nuevos:
+  `StrictMode`/`act` en los imports). Rojo medido antes de implementar: **3 fail / 20 pass (23)**:
+  - **AC-08/CL-11 (ii) cambio de tarjeta sin cierre:** la limpieza enfocaba al activador (**1** llamada).
+  - **AC-11/CL-14 `StrictMode`:** el doble montaje enfocaba al activador (**1** llamada).
+  - **AC-05 activador desconectado:** la limpieza enfocaba el nodo desconectado y el respaldo quedaba a
+    **0** llamadas.
+  Verde tras implementar: **23/23**. El caso **AC-08/CL-11 (i) montaje con tarjeta activa** ya pasaba
+  antes (sin `StrictMode` no había limpieza en el montaje): queda como garantía (0 `focus()` al activador,
+  foco en el contenedor). El caso **AC-05 activador conectado** también era verde antes (coincidía con la
+  limpieza antigua) y queda como no-regresión.
+- **No-regresión de integración:** `PanelTarjetas.test.jsx` **12/12 sin editar** — los dos casos vigentes
+  de retorno al activador (`:138-165`) siguen verdes: el clic en el botón del grid deja el foco en él
+  (capturado por la pieza al abrir) y el cierre por botón/Esc lo devuelve.
+- **Cobertura nueva por AC:** **AC-08/CL-11** (montaje con tarjeta activa y cambio de tarjeta sin cierre →
+  0 `focus()` sobre el activador); **AC-11/CL-14** (`StrictMode` + tarjeta activa → 0 devoluciones, scroll
+  bloqueado y foco en el contenedor); **AC-05** (activador conectado → 1 devolución a él; desconectado →
+  respaldo estable, `activeElement` ≠ `body` y 0 `focus()` sobre `body`).
+- **Validaciones medidas:**
+  1. `npx vitest run src/components/ModalTarjeta.test.jsx src/pages/PanelTarjetas.test.jsx` → ✅
+     **35/35 pass** (rojo previo 3/32; `ModalTarjeta` 18 → 23, `PanelTarjetas` 12 sin cambios).
+  2. `npm test` → ✅ **29 archivos / 423 casos / 0 fail** (línea base post-T5: 418 ⇒ +5 casos).
+  3. `npm run build` → ✅ verde (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 383.28 kB /
+     gzip 122.27).
+- **Validación visual: no aplicable** (la corrección solo cambia cuándo se devuelve el foco; no altera
+  aspecto, marcado ni movimiento).
+- **Diff:** `ModalTarjeta.jsx` (+28/−9 aprox., cabecera JSDoc + split del efecto + import + llamada;
+  `refActivador` retirado) y `ModalTarjeta.test.jsx` (solo adiciones + `StrictMode`/`act` en el import).
+  `specs/010-*` y `specs/012-*` sin tocar. Sin commit ni staging.
+- **Siguiente:** Tarea 7 (`DashboardLayout`, cruce bidireccional); no se implementó nada más.
+
+### Spec 011 — Tarea 7 completada (2026-10-17): cruce bidireccional del corte en `DashboardLayout` (RF-12/RF-13/RF-14)
+
+- **Paso 0 (DP-21):** re-verificadas las líneas reales antes de editar: el efecto de un solo sentido
+  estaba en `:62-72` (`if (isMobile || !mobileMenuAbierto) return;` + `querySelector` del control
+  lateral). Línea base focalizada: `DashboardLayout.test.jsx` **23/23**.
+- **Canario (primero, §2.3/M5):** **pass** — jsdom **sí** despacha `focusin` tanto en `.focus()`
+  programático como en el clic de `userEvent` (caso nuevo `Canario del mecanismo focusin (jsdom)`). El
+  mecanismo es **estable en jsdom** ⇒ AC-12(ii)/AC-13 **verificables** (no se usó la alternativa
+  `focus`/`blur` en captura). Por tanto **no** se registraron como «revisión no realizada».
+- **Alcance ejecutado (cambio mínimo):** se sustituyó el efecto por uno **bidireccional** que distingue
+  la dirección con `versionPreviaRef` (el primer render no actúa) y aplica los dos caminos de M5:
+  (a) panel superpuesto abierto al pasar a ≥768px ⇒ `setMobileMenuAbierto(false)` + traslado
+  **incondicional** al control lateral (camino vigente); (b) **sin** panel ⇒ traslado **solo** si el
+  recuerdo del origen no es `null` y el nodo ya está desconectado (pertenecía a la navegación que se
+  desmonta). Un **único** listener `focusin` sobre `document` (registrado una vez al montar, retirado al
+  desmontar) mantiene el recuerdo `{ origen, nodo }`: `aside[role="navigation"]` ⇒ «escritorio»;
+  `nav` fuera del `aside` ⇒ «movil»; contenido/campos/`[role="dialog"]` ⇒ `null` (borra el recuerdo,
+  lo que cumple RF-14). **Sin** props, refs expuestas ni `matchMedia` nuevo (la versión viene de
+  `useBreakpoint`).
+- **Selectores (tabla M8):** `aside[role="navigation"] button` (≥768px) y
+  `button[aria-label="Abrir menú"]` (móvil). El destino se resuelve con la cadena de respaldo de RF-05
+  (control de la versión de destino → otro control estable → primer control enfocable → `null`: sin
+  candidato **no** se fuerza `body`). Se implementó **local** (helper `trasladarFocoDeCruce`), **sin**
+  importar `resolverControlDeVista`: el plan reserva ese resolutor de la pieza T2 para el cierre que
+  navega (Tarea 8) — `plan.md` §1/§3.1 y `tasks.md` T2/T8 lo citan como **su único otro consumidor**.
+- **TDD (evidencia rojo→verde):** se **amplió** `DashboardLayout.test.jsx` (+6 casos: canario,
+  AC-12(ii), AC-13, AC-14×2, AC-15). Rojo medido antes de implementar: **3 fail / 26 pass (29)** —
+  **AC-12(ii)** y **AC-13** dejaban el foco en `body`, y **AC-15 (variante)** no tenía traslado. Verde
+  tras implementar: **29/29** (estable en 3 ejecuciones consecutivas).
+- **Casos vigentes sin editar:** `:294-312` (firmas), `:316-329` (AC-12(i), cruce con el menú abierto)
+  y `:331-343` (convivencia con el modal de cuenta abierto) **sin modificar** y verdes.
+- **AC-15 (variante) ejecutada:** con la versión de destino montada **sin** su control estable
+  (`aside` sin botones vía `mockImplementationOnce`), el cruce recae en el **primer control enfocable**
+  de la vista; sin ninguno, `trasladarFocoDeCruce` termina en `null` (no fuerza `body`).
+- **Validaciones medidas:**
+  1. Canario `focusin` → ✅ **pass** (despacho en `.focus()` y en `userEvent.click`).
+  2. `npx vitest run src/layout/DashboardLayout.test.jsx` → ✅ **29/29** (rojo previo 3/26;
+     línea base 23).
+  3. `npm test` → ✅ **29 archivos / 429 casos / 0 fail** (línea base 423 ⇒ +6).
+  4. `npm run build` → ✅ verde (`index.html` 1.11 kB; CSS 57.49 kB; JS 384.31 kB / gzip 122.62).
+- **Validación visual: no aplicable** (solo cambia el traslado de foco en el cruce; sin cambios de
+  aspecto, marcado ni movimiento). Sin navegador.
+- **Diff:** `DashboardLayout.jsx` (+116/−14 aprox.: cabecera `@eventos`, selectores y helpers M8,
+  `origenFocoRef`/`versionPreviaRef`, listener `focusin` y efecto bidireccional) y
+  `DashboardLayout.test.jsx` (solo adiciones + `userEvent` en el import). `specs/010-*` y `specs/012-*`
+  sin tocar. Sin commit ni staging.
+- **Siguiente:** Tarea 8 (`useFocoEnVistaDestino`: cierre que navega); no se implementó nada más.
+
+### Spec 011 — Tarea 8 completada (2026-10-17): cierre que navega → foco en la vista de destino (RF-15)
+
+- **Paso 0 (DP-21):** re-verificadas las líneas reales antes de editar: `PaginaLogin.jsx:29` era el
+  único punto que sabía que se cambiaba de ruta (`alCerrar={() => navigate(TRIAL_ACTIVO ?
+  "/dashboard" : "/")}`); `DashboardLayout.jsx` y `PaginaInicio.jsx` no consumían nada; `App.jsx`
+  (mapa de rutas `:26-50`) intacto. Línea base medida al empezar: `npm test` **429/29** y build verde
+  (igual que el registro de T7).
+- **Pieza nueva `src/hooks/useFocoEnVistaDestino.js` (M6, mecanismo (c) `location.state`):** lee
+  `location.state.focoEnDestino`, corre en un **efecto de nivel de ruta** (después del render de la
+  vista de destino) y aplica la **lista ordenada de RF-15 reutilizando `resolverControlDeVista`** de
+  la pieza de T2 (control estable de la versión → otro control estable → primer control enfocable →
+  `null` = limitación). **Una sola colocación por entrada de historial**: guarda por `location.key` +
+  `ref` que se registra **antes** de intentar el foco (si no hay candidato tampoco se reintenta). Sin
+  marca no toca el foco. Sin props, sin `matchMedia` nuevo (versión vía `useBreakpoint`) y sin
+  dependencias.
+- **Consumidores (destinos) y origen:** `DashboardLayout.jsx` (destino `/dashboard`) y
+  `PaginaInicio.jsx` (destino `/`) llaman a la pieza (1 línea + comentario cada uno); `PaginaLogin.jsx`
+  cambia **una línea** (`navigate(..., { state: { focoEnDestino: true } })`). Sin props nuevas, sin
+  marcado ni controles nuevos, sin tocar rutas.
+- **TDD (evidencia rojo→verde):** primero la suite de la pieza (`useFocoEnVistaDestino.test.js`,
+  8 casos: móvil, ≥768px, landing con `[role="dialog"]` excluido, CL-18, sin marca, sin candidatos,
+  `StrictMode`/re-render = 1 sola llamada, entrada de historial nueva = vuelve a colocar) → **rojo**
+  inicial por import inexistente y verde tras implementar la pieza. Después se ampliaron
+  `App.test.jsx` (**+6**: `it.each` X en móvil 375px y ≥768px 1024px, Esc en móvil, CL-18, AC-25 ×2) y
+  `AuthModal.test.jsx` (**+1**: AC-22(b) `/login` → `/`) y se ejecutaron **antes** de implementar el
+  origen y los destinos: **5 fail / 32 pass (37)** — los 4 casos de navegación de `App.test.jsx` y el
+  de `AuthModal.test.jsx` dejaban el foco en `body` (**AC-22(a) y AC-22(b) en rojo**). Tras implementar:
+  **45/45** en las 3 suites.
+- **AC-22(b) sin limitación:** el mock local de `config/app.config` (getter con `vi.hoisted` que por
+  defecto devuelve el **valor real** y solo se pone a `false` dentro del caso nuevo, restaurado en
+  `afterEach`) resultó **estable en jsdom**, así que **no** se usó la variante de la «mitad de destino»
+  ni se registra limitación. `grep TRIAL_ACTIVO` en `AuthModal.test.jsx` **antes** de editar: **0**
+  resultados (ningún caso vigente lo lee) ⇒ el resto de la suite queda idéntico. Aprendizaje: en
+  Vitest/Vite el binding importado se lee del namespace en cada uso, así que un `get` en la fábrica de
+  `vi.mock` es **live** (verificado con una sonda temporal, ya eliminada) y permite acotar el mock al
+  caso que lo necesita.
+- **AC-23** se cubre en la suite de la pieza (con las rutas reales no existe un destino alcanzable sin
+  controles): 0 `focus()`, sin excepción, `activeElement` sigue en `body`, **0** enfocables y recuento
+  de nodos sin cambios (no se inventa marcado).
+- **Validaciones medidas (pass/fail/no ejecutado):**
+  1. `npx vitest run src/hooks/useFocoEnVistaDestino.test.js src/App.test.jsx
+     src/components/domain/modales/AuthModal.test.jsx` → ✅ **pass (45/45 en 3 archivos)**.
+  2. `npm test` → ✅ **pass (444/444 en 30 archivos, 0 fail)**; línea base 429/29 ⇒ **+15 casos** (8 de
+     la pieza + 6 de `App.test.jsx` + 1 de `AuthModal.test.jsx`) y **+1 archivo**, sin perder ninguno.
+  3. `npm run build` → ✅ **verde** (`index.html` 1.11 kB; CSS 57.49 kB; JS 384.58 kB / gzip 122.73).
+- **No-regresión:** los diffs de las dos suites solo **añaden** (líneas eliminadas: las 3 de cabecera y
+  la del import de Testing Library en `App.test.jsx`, y la del import en `AuthModal.test.jsx`); ningún
+  caso vigente se editó ni se debilitó.
+- **RF-16 verificado:** `git diff --stat -- src/App.jsx` **vacío**; firma de `AuthModal` intacta
+  (`{ abierto, modoInicial = "login", alCerrar }`); los demás archivos de otras tareas no se tocaron;
+  sin hexadecimales nuevos en los archivos del alcance; sin dependencias; `specs/010-*` sin cambios
+  (`sha256sum` registrado) y `specs/012-*`/`specs/013/`/`specs/014/` sin tocar.
+- **Validación visual: no aplicable** (solo cambia dónde queda el foco; sin cambios de aspecto, marcado
+  ni movimiento). Sin navegador; se registra como **no ejecutada**.
+- **Diff:** `useFocoEnVistaDestino.js` + `useFocoEnVistaDestino.test.js` (nuevos), `PaginaLogin.jsx`
+  (1 línea + cabecera), `PaginaInicio.jsx` (import + llamada + cabecera), `DashboardLayout.jsx` (import +
+  llamada + `@eventos`; el resto del diff es de T7) y las dos suites ampliadas. Sin commit ni staging.
+- **Siguiente:** Tarea 9 (suite transversal `cierreDeModales.test.jsx`, `grep` de auditoría, cabeceras y
+  AC-19); no se implementó nada más.
+
+### Spec 011 — Tarea 9 completada (2026-10-17): suite transversal, auditoría de `grep`, cabeceras y AC-19
+
+- **Objetivo:** verificar la **misma regla** de devolución de foco en las **cuatro superficies reales**,
+  confirmar la no-regresión documental (AC-19) y dejar el árbol listo para la Tarea 10. Solo se
+  **amplió** `src/components/layout/cierreDeModales.test.jsx` (canario, matriz, integración y los dos
+  casos de capas **sin modificar**) y se actualizaron `tasks.md`/`MEMORY.md`. **Cero** cambios en código
+  de producto.
+- **Criterio «ampliar sí, reescribir no» respetado:** la suite pasa de **22 → 32** casos verdes (0 fail);
+  el diff solo borra **6** líneas (5 de la cabecera JSDoc + 1 del import, al añadir `act`). Ningún caso
+  vigente se editó ni se debilitó.
+- **AC-10 (paridad, 8 casos nuevos):** mismo escenario en las cuatro superficies reales —disparador
+  **desconectado** (`document.createElement("button")` fuera del árbol) y elemento previo inválido
+  (`body`)— cerradas por su propio control, parametrizado por versión de vista: **móvil (375px) → botón
+  «Menú»**; **≥768px (1024px) → control de la navegación lateral**. En los 8 casos `document.activeElement`
+  **es** el respaldo de RF-05 y **≠** `body`. Los descriptores viven en `SUPERFICIES_PARIDAD` con un
+  arnés con `useState` por superficie (`abierto` o `tarjeta`) que cierra con la transición real.
+- **AC-11 (1 caso nuevo):** en el `describe` de integración (layout real), abrir «Cuenta» desde el menú y
+  **cerrarla**: el foco acaba en el botón «Abrir menú» (el mismo nodo del `triggerRef`), la espía
+  `vi.spyOn(botonMenu, "focus")` se invoca **1** vez (sin doble devolución), el menú sigue cerrado y no
+  queda ninguna superficie (0 `dialog`).
+- **AC-14 (1 caso nuevo, cruce forzado):** con el modal de Cuenta **real** abierto y su trampa activada,
+  un cruce móvil → pantallas grandes **no** mueve el foco (sigue dentro del panel), el modal sigue montado
+  y hay **1** `dialog`. El cruce **sí se pudo forzar en jsdom** con un mock **controlable** de
+  `matchMedia` (`instalarMatchMediaControlable`: registra los oyentes de `change` y `fijarAncho` los
+  dispara; el mock de `fijarViewport` no lo permite porque sus `addEventListener` son no-ops). Se asevera
+  además que la composición cambió de verdad (`aside[role="navigation"]` ausente antes / presente
+  después) ⇒ **no** es un no-op. Por tanto **AC-14 = ejecutada**, no «no ejecutado».
+- **Auditoría de `grep` (plan §8), conteos reales:** `vi.mock("focus-trap-react"` en `src/` ⇒ **0**;
+  `displayCheck` en `src/` ⇒ **0**; `min-width` fuera de `src/hooks/useBreakpoint.js` y de pruebas ⇒ **0**
+  (solo en `useBreakpoint.js` [2] y en archivos `.test.*`); `git diff -- package.json` ⇒ **vacío**
+  (sin dependencias nuevas); añadidos del diff de `src/` ⇒ **0** hexadecimales.
+- **RF-07/AC-18:** `npx vitest run src/layout/DashboardLayout.test.jsx` ⇒ **29/29 verde** con el caso de
+  firmas `:295-313` (contratos de drawer/modal) **sin cambios** ⇒ ninguna prop nueva.
+- **AC-19:** `sha256sum` de `specs/010-cierre-de-modales/{spec,plan,tasks}.md` **idéntico** al de la Tarea
+  1 (`69d84001e19dc4…f7982`, `b7fc73fc9477425…3d8e4`, `ddb354cd29ce3a8…d5d5b`) y `git status
+  --porcelain --untracked-files=all -- specs/010-cierre-de-modales/` **vacío** (`git diff --stat` también
+  vacío). La 010 intacta.
+- **AC-20:** los **9** archivos de producto tocados por la 011 (`DashboardDrawer.jsx`,
+  `DashboardUserModal.jsx`, `AuthModal.jsx`, `ModalTarjeta.jsx`, `DashboardLayout.jsx`, `PaginaLogin.jsx`,
+  `PaginaInicio.jsx`, `useRetornoDeFoco.js`, `useFocoEnVistaDestino.js`) tienen los **6 campos** de la
+  plantilla real (`@uso`/`@funciones`/`@datos`/`@eventos`/`@estados`/`@usadoPor`) y describen el contrato
+  de foco corregido; **no fue necesario editar ninguna** (ya quedaron actualizadas en T2–T8). **Aviso
+  registrado:** `AGENTS.md:38`, `doc/constitution.md:39` y `.agents/rules/rules.md:21` citan
+  `.agents/file-header-template.md`, que **no existe**; la plantilla real es
+  `.agents/skills/file-hearder-template.md/SKILL.md` (typo «hearder»).
+- **AC-21/RF-17:** inspección del diff ⇒ **0** animaciones, transiciones, hexadecimales, superficies
+  translúcidas o blobs nuevos; cabeceras JSDoc de los 9 archivos sin cambios respecto a HEAD; **cero**
+  cambios de aspecto. Validación visual **no aplicable**.
+- **Validaciones medidas (pass/fail/no ejecutado):**
+  1. `npx vitest run src/components/layout/cierreDeModales.test.jsx` → ✅ **pass (32/32)**.
+  2. `npx vitest run src/layout/DashboardLayout.test.jsx` → ✅ **pass (29/29)** (no-regresión de firmas).
+  3. `npm test` → ✅ **pass (454/454 en 30 archivos, 0 fail)**; línea base T8 444/30 ⇒ **+10 casos**
+     (8 de paridad AC-10 + 1 de AC-11 + 1 de AC-14), sin perder ninguno.
+  4. `npm run build` → ✅ **verde** (CSS 57.49 kB; JS 384.58 kB / gzip 122.73).
+  5. Los `grep` de auditoría y los `sha256sum`/`git status` de la 010 → ✅ **pass** (conteos arriba).
+- **Diff:** `src/components/layout/cierreDeModales.test.jsx` (ampliado, +260/−6),
+  `specs/011-foco-de-superficies-y-cruce/tasks.md` (Tarea 9 marcada) y este `MEMORY.md`. Sin commit ni
+  staging; `specs/010-*`, `specs/012-*`, `specs/013/` y `specs/014/` sin tocar.
+- **Siguiente:** Tarea 10 (validación final, `npm test` + `npm run build`, línea base AC-17 y registro
+  final en `MEMORY.md`); no se implementó nada más.
+
+### Spec 011 — Tarea 10 completada (2026-10-17): VALIDACIÓN FINAL EJECUTADA — **SPEC 011 CERRADA**
+
+- **Alcance de la tarea:** medición completa y registro. **Cero cambios de código de producto o de
+  pruebas**: la validación **no** destapó ningún defecto, así que **no** hubo ninguna «corrección de
+  una línea». Los únicos archivos escritos son `specs/011-foco-de-superficies-y-cruce/tasks.md`
+  (Tarea 10 marcada) y este `MEMORY.md`.
+- **Línea base de comparación = la de la Tarea 1 (post-012), medida el mismo día del arranque de la
+  011:** alcance de la 011 **8 archivos / 151 casos / 0 fail** (`App 11`, `ModalTarjeta 18`,
+  `DashboardLayout 23`, `PanelTarjetas 12`, `DashboardDrawer 23`, `DashboardUserModal 27`,
+  `cierreDeModales 22`, `AuthModal 15`); `npm test` **28 archivos / 373 casos / 0 fail**;
+  `npm run build` verde. Las cifras antiguas de `MEMORY.md` (253/21, 257/22, 348/27) siguen
+  **superadas** y no se usaron para comparar.
+- **AC-17 — `npm test` (literal):** `Test Files 30 passed (30)` / `Tests 454 passed (454)`, 0 fallos,
+  5,95 s. **Tabla de atribución archivo por archivo** (línea base post-012 → hoy), **ningún recuento
+  empeora**:
+
+  | Suite | Base | Hoy | Δ | Causa |
+  |---|---|---|---|---|
+  | `App.test.jsx` | 11 | **17** | +6 | T8: cierre que navega (AC-22(a) ×3, AC-22(b) vía AuthModal, CL-18, AC-25 ×2) |
+  | `AuthModal.test.jsx` | 15 | **20** | +5 | T5: captura/devolución (4) + T8 (AC-22(b)) |
+  | `cierreDeModales.test.jsx` | 22 | **32** | +10 | T9: paridad AC-10 (8) + AC-11 + AC-14 |
+  | `DashboardDrawer.test.jsx` | 23 | **28** | +5 | T3: AC-01/AC-02/AC-05 ×2/AC-24 |
+  | `DashboardUserModal.test.jsx` | 27 | **34** | +7 | T4: respaldo por versión de vista, `disabled`/`inert`, montaje cerrado |
+  | `ModalTarjeta.test.jsx` | 18 | **23** | +5 | T6: CL-11, CL-14, AC-05 ×2 |
+  | `DashboardLayout.test.jsx` | 23 | **29** | +6 | T7: canario `focusin`, AC-12(ii), AC-13, AC-14 ×2, AC-15 variante |
+  | `PanelTarjetas.test.jsx` | 12 | 12 | 0 | **sin editar** (no-regresión de integración, CL-11) |
+  | `useRetornoDeFoco.test.js` | — | **29** | +29 | **suite nueva** (T2, pieza compartida) |
+  | `useFocoEnVistaDestino.test.js` | — | **8** | +8 | **suite nueva** (T8, cierre que navega) |
+  | **20 suites restantes** (`useBreakpoint` 29, `index.css` 21, `BottomNav` 13, `SidebarResponsive` 32, `SidebarNavContenido` 17, `LogMovimientos` 24, `AcordeonTarjetas` 8, `GridTarjetas` 6, `MiTarjetaVirtual` 16, `useReveal` 6, `useDeslizarParaCerrar` 18, `useCierreConEsc` 10, `BotonCerrar` 5, `Card` 4, `Header` 3, `Hero` 1, `Features` 1, `LandingLayout` 3, `main` 1, `entornoDeMedicion` 4) | 222 | **222** | 0 | **recuento idéntico** en las 20 (ninguna empeora) |
+
+  Total: **373 → 454** = **+81 casos** (+44 en las 8 suites del alcance, 151→195; +37 de las dos suites
+  nuevas) y **28 → 30 archivos**. `PanelTarjetas.test.jsx` queda **sin editar** (12, no-regresión de
+  integración). Avisos de stderr **preexistentes** y sin efecto en el resultado (future flags de React
+  Router, `Received false for a non-boolean attribute initial`, `whileHover`/`whileTap` de los mocks de
+  `framer-motion`).
+- **Criterios antes rojos → verdes (evidencia focalizada):** ejecución filtrada por nombre
+  (`-t "AC-(01|10|11|12|13|22|24)"` sobre las 6 suites implicadas) ⇒ **22 pass / 0 fail**, con los casos
+  citados por su título: **AC-01** (`DashboardDrawer`: «montado cerrado con el disparador conectado no
+  invoca `focus()`…»), **AC-10** (`AuthModal`: «al cerrar devuelve el foco al disparador…» + los 4 pares
+  de paridad de `cierreDeModales`), **AC-12(ii)**/**AC-13** (`DashboardLayout`), **AC-22(a)** ×3 y
+  **AC-22(b)**, **AC-24** (`DashboardDrawer` + `DashboardUserModal`, `disabled` e `inert`). Sondas rojas
+  previas registradas en la Tarea 1 (**7 fail | 2 pass**, fuera del repo).
+- **`npm run build`:** ✅ **verde**, `vite v5.4.21`, **2032 módulos**, `index.html` 1.11 kB (gzip 0.60),
+  CSS `index-B0_ZOIQp.css` **57.49 kB** (gzip 9.48), JS `index-DslZ-WoW.js` **384.58 kB** (gzip 122.73),
+  `✓ built in 1.67s` ⇒ mismos tamaños que la T9.
+- **AC-19 (010 intacta):** `sha256sum` **idéntico** al de la Tarea 1 —`spec.md`
+  `69d84001e19dc4c9…f7982`, `plan.md` `b7fc73fc94774252…3d8e4`, `tasks.md` `ddb354cd29ce3a84…d5d5b`
+  (mtime 2026-10-16, anterior a esta spec)— y `git status --porcelain --untracked-files=all --
+  specs/010-cierre-de-modales/` **vacío** (`git diff --stat` también vacío). `specs/012-*` no aparece en
+  `git status` (ya commiteada en `8aa9f0f`); `specs/013/` y `specs/014/` **sin tocar**.
+- **AC-21 (sin cambios visuales):** **0** coincidencias de
+  `animate|transition|duration|backdrop|blob|hex` en los añadidos del diff de `src/` y en los 4 archivos
+  nuevos; **0** líneas añadidas con `className`, `style=` o `#hex` en los **7 archivos de producto**
+  modificados (`AuthModal.jsx`, `ModalTarjeta.jsx`, `DashboardDrawer.jsx`, `DashboardUserModal.jsx`,
+  `DashboardLayout.jsx`, `PaginaInicio.jsx`, `PaginaLogin.jsx`); las menciones a `aria-label`/`role=`
+  del diff viven **solo** en mocks de suites. **Validación visual: no aplicable / no ejecutada** (no hay
+  nada visual que comparar; Firefox y geckodriver **sí** están disponibles, pero el plan §8.5 y la regla
+  común nº 7 declaran la corrección como solo de foco/teclado). **No** se registra ninguna excepción
+  visual.
+- **AC-16/AC-18 (bonus de la auditoría, reverificados):** `vi.mock("focus-trap-react"` en `src/` ⇒ **0**;
+  `displayCheck` en `src/` ⇒ **0**; `min-width` fuera de `useBreakpoint.js` y de pruebas ⇒ **0**;
+  `git diff -- package.json` ⇒ **vacío** (sin dependencias); `git diff --stat -- src/App.jsx` ⇒ **vacío**
+  (mapa de rutas intacto); firmas conservadas: `DashboardDrawer({ abierto, alCerrar, children,
+  triggerRef })`, `DashboardUserModal({ abierto, alCerrar, triggerRef })`,
+  `AuthModal({ abierto, modoInicial = "login", alCerrar })`, `ModalTarjeta({ tarjeta, onCerrar })`,
+  `DashboardLayout()`.
+- **Decisiones fijadas y aplicadas (M1-M8):** **M1** pieza compartida `useRetornoDeFoco` (forma de la
+  regla común, DP-06); **M2** captura incondicional con `useLayoutEffect` + guarda de transición
+  `estuvoAbiertoRef` (una devolución por cierre, nada en el montaje cerrado, `StrictMode` sin doble
+  efecto); **M3** versión de vista con `useBreakpoint()` **dentro** de la pieza (sin props nuevas y sin
+  ninguna lectura nueva de `matchMedia`); **M4** respaldo del área pública = **primer control enfocable**
+  excluyendo `[role="dialog"]` y `disabled`, **solo** en la landing (en `/login` no aplica, H2);
+  **M5** cruce bidireccional del corte con un **único** listener `focusin` en `document` que recuerda la
+  procedencia del foco (camino (a) panel abierto ⇒ cierre + traslado incondicional; camino (b) sin panel
+  ⇒ traslado solo si el nodo recordado se desmontó); **M6** colocación en la vista de destino con
+  `location.state.focoEnDestino` + `useFocoEnVistaDestino` (una vez por entrada de historial, guarda por
+  `location.key` + `ref`); **M7** `ModalTarjeta`: efecto dividido (la limpieza **solo** restaura el
+  scroll y **nunca** llama a `focus()`; la devolución la gobierna la transición abierta → cerrada);
+  **M8** selectores concretos: `button[aria-label="Abrir menú"]` (móvil), `aside[role="navigation"]
+  button` (≥768px) y `a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])` en
+  orden de documento (landing).
+- **Decisiones del plan (D-01..D-11) respetadas:** **D-01** pieza única en vez de cuatro copias;
+  **D-02** `useBreakpoint` dentro de la pieza en vez de prop `isMobile`; **D-03** exclusión por
+  `[role="dialog"]` en vez de pasar un `ref` del panel (ref nuevo prohibido); **D-04** efecto
+  bidireccional con ref de la versión previa (leer `activeElement` dentro del efecto llegaría tarde);
+  **D-05** registro por `focusin` en `document` en vez de props `onFocus`/`onBlur` o listener propio de
+  `matchMedia`; **D-06** mecanismo (c) `location.state` (una bandera global podría dispararse en una
+  navegación ordinaria); **D-07** la marca la escribe `PaginaLogin` (la superficie no sabe si su
+  `alCerrar` navega); **D-08** dividir el efecto de `ModalTarjeta` (mantener la limpieza no cumpliría
+  H12); **D-09** reutilizar los selectores ya presentes en el producto (`data-*`/clases serían marcado
+  nuevo); **D-10** «ampliar sí, reescribir no» (la 011 no tocó ningún stub ni caso vigente);
+  **D-11** la convivencia con el modal real al cruzar se verifica en `cierreDeModales.test.jsx`.
+- **Limitaciones registradas (honestidad de alcance):** (1) **H2 — `/login`**: su vista no tiene ningún
+  control enfocable fuera del modal, así que el respaldo «primer control enfocable» **no aplica**; se
+  **aserta la limitación** (0 enfocables, 0 `focus()` sobre `body`) y manda el destino de RF-15; **no**
+  se añadió marcado para fabricarla. (2) **AC-15/AC-23**: cuando no existe **ningún** candidato, la
+  pieza devuelve `null` y no fuerza `body` (sin `scrollIntoView` ni controles ficticios). (3) Las
+  candidatos `inert` se descartan **antes** de intentar el foco porque jsdom **sí** enfoca nodos dentro
+  de esos subárboles (jsdom no implementa la inhibición): decisión medida y documentada en la Tarea 2.
+  **Ninguna** de AC-12(ii), AC-13, AC-15 ni AC-22(b) queda como «no ejecutada»: las cuatro se
+  ejecutaron y están **verdes** (canario `focusin` **pass** en la Tarea 7 y cruce forzado con mock
+  **controlable** de `matchMedia` en la Tarea 9). **Validación visual: no ejecutada / no aplicable.**
+- **Informe final de la spec:** **10/10 tareas ✅** en el orden del plan §9 (T1 Paso 0 post-012 →
+  T2 pieza compartida → T3-T6 las cuatro superficies → T7 cruce bidireccional → T8 cierre que navega →
+  T9 suite transversal + auditoría + AC-19 → T10 validación final). Mecanismos fijados y aplicados:
+  **(a)** pieza compartida; **(b)** registro `focusin`; **(c)** `location.state`; **(d)**
+  `useBreakpoint` dentro de la pieza; **(e)** división del efecto de `ModalTarjeta`; **(f)** selectores
+  de M8. **Cero preguntas abiertas** (spec §11 + `plan.md` §10). **Sin dependencias nuevas, sin
+  hexadecimales nuevos, sin props ni firmas cambiadas, sin animaciones nuevas.**
+- **Diff final de la 011 (`git diff --stat -- src/` = 14 archivos modificados, +1304 / −109):** 7 de
+  producto (`AuthModal.jsx` +14, `ModalTarjeta.jsx` +28, `DashboardDrawer.jsx` +39, `DashboardUserModal.jsx`
+  +62, `DashboardLayout.jsx` +131, `PaginaInicio.jsx` +9, `PaginaLogin.jsx` +6) y 7 de pruebas
+  (`App.test.jsx`, `ModalTarjeta.test.jsx`, `AuthModal.test.jsx`, `DashboardDrawer.test.jsx`,
+  `DashboardUserModal.test.jsx`, `cierreDeModales.test.jsx`, `DashboardLayout.test.jsx`) + **4 archivos
+  nuevos** en `src/hooks/` (`useRetornoDeFoco.js`/`.test.js`, `useFocoEnVistaDestino.js`/`.test.js`).
+  **Sin commit ni staging**: solo lecturas de git; `specs/010-*`, `specs/012-*`, `specs/013/` y
+  `specs/014/` sin tocar; sin datos sensibles.
+- **Deuda abierta al cerrar (no de esta spec):** la avisada inconsistencia documental
+  (`AGENTS.md:38`, `doc/constitution.md:39` y `.agents/rules/rules.md:21` citan
+  `.agents/file-header-template.md`, que **no existe**; la plantilla real es
+  `.agents/skills/file-hearder-template.md/SKILL.md`, con el typo «hearder»), la animación de salida de
+  las superficies (DP-07 de la 010), `ModalTarjeta.test.jsx` fuera de la carpeta de su fuente, la clase
+  inválida `my-` de `SidebarNavContenido.jsx` y los borrados sin commitear de `.pi/agents/*` y
+  `.pi/modes.config.json` (ajenos y no restaurados).
+
+- **Cierre de la revisión del reviewer de la spec 011 (fase 5/6, 2026-10-17)** — veredicto del reviewer
+  **APROBADO «OK»** (RF-01…RF-19 / AC-01…AC-25). Se aplicaron **dos ajustes de pruebas/documentación**,
+  se documentó **una limitación** y **no** se cambió **código de producto**:
+  - **Hallazgo 3 (método de AC-02):** **+1 caso nuevo** en `DashboardDrawer.test.jsx` que monta el
+    drawer dentro de **`<StrictMode>`** con `abierto={false}` **desde el montaje** (superficie del
+    defecto **D1**) y asercia **0** llamadas a `focus()` sobre el botón «Menú» (espía sobre el nodo) y
+    `document.activeElement` **sin cambios**. **Ningún caso vigente** se editó (solo se añadió el
+    import `StrictMode`). Suite **28 → 29**; `npm test` **454 → 455** (`30 archivos`, 0 fail).
+    **Señal medida:** una sonda **temporal** (borrada tras medirla) con los **dos efectos previos a la
+    011** confirmó que aquel montaje cerrado **sí** invocaba `focus()` ⇒ el caso nuevo **falla** contra
+    el código defectuoso y pasa con la corrección (no es un aserto vacío).
+  - **Hallazgo 6 (cifra no reproducible):** la cifra del filtro declarada en la Tarea 10 (`-t
+    "AC-(01|10|11|12|13|22|24)"` → «22 pass / 0 fail») se **corrigió** por la medida real del **mismo**
+    comando el 2026-10-17: **36 pass / 0 fail** (`Test Files 10 passed | 20 skipped (30)`,
+    `Tests 36 passed | 418 skipped (454)`), porque el patrón de `-t` es **regex sobre el nombre completo
+    del caso** y casa además con los casos que **citan** «AC-…» en su título. La cifra válida es **36**;
+    la corrección queda anotada en `tasks.md` (Tarea 10) con su fecha. La evidencia firme sigue siendo
+    la comparación **archivo por archivo** de `npm test`.
+  - **Hallazgo 5 (limitación documentada):** la marca `location.state.focoEnDestino` **no se limpia al
+    consumirse** (`useFocoEnVistaDestino.js` solo recuerda `location.key` en una `ref`), así que al
+    **re-montar la misma entrada de historial** (p. ej. `/login` → cerrar → `/dashboard`, navegar fuera
+    y **volver**; navegación ordinaria que aterrice en una entrada marcada; y **atrás** hasta la entrada
+    marcada) el foco **se vuelve a colocar sin ningún cierre de superficie**. RF-15 (colocación «una vez
+    por cierre-navegación») y AC-25 (navegación ordinaria **sin** cierre) **no definen la navegación
+    «atrás»**; la 011 **no** lo corrige (exigiría decidir la limpieza de la marca o una clave de consumo
+    que sobreviva al re-montaje, con su propio criterio y pruebas). Queda como **limitación explícita**
+    en `spec.md` **§6.1 CL-19** y como **deuda para una spec futura**. **Cero** cambios de
+    comportamiento: **no** se tocó `useFocoEnVistaDestino.js` ni ninguna otra pieza.
+  - **Validaciones del cierre (todas pass):** `npx vitest run src/components/layout/DashboardDrawer.test.jsx`
+    ⇒ **29/29**; `npm test` ⇒ **30 archivos / 455 casos / 0 fail** (baseline post-011: 454 ⇒ **+1**, 0
+    eliminados); `npm run build` ⇒ verde. **Sin `git add -A`/`git add .`**: staging con **rutas
+    explícitas** (22 rutas), **sin `push`**. **No se tocó** `specs/010-*`, `specs/012-*`, `specs/013/`
+    ni `specs/014/`. Sin datos sensibles.

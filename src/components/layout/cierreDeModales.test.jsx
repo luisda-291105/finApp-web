@@ -1,16 +1,19 @@
 /**
- * @uso        Suite transversal del cierre de las CUATRO superficies modales (spec 010, T9):
- *             canario del andamiaje, matriz superficie × forma, una sola superficie/trampa y
- *             Esc con dos capas forzadas
- * @funciones  render, screen, within, waitFor, userEvent
+ * @uso        Suite transversal del cierre de las CUATRO superficies modales (spec 010, T9) y de la
+ *             paridad y convivencia real de su devolución de foco (spec 011, T9): canario del
+ *             andamiaje, matriz superficie × forma, paridad del respaldo (AC-10), convivencia del
+ *             menú con «Cuenta» (AC-11), cruce de versión de vista con el modal real (AC-14), una
+ *             sola superficie/trampa y Esc con dos capas forzadas
+ * @funciones  render, screen, within, waitFor, userEvent, act
  * @datos      Superficies REALES montadas con lo mínimo de su entorno (MemoryRouter, fixture de
- *             tarjetas y viewport explícito); NO se mockea focus-trap-react (RF-18, AC-19)
+ *             tarjetas y viewport explícito); NO se mockea focus-trap-react (RF-18, AC-19). La
+ *             convivencia usa un mock controlable de matchMedia para forzar el cruce del corte
  * @eventos    «X», Esc, clic fuera y gestos de puntero (deslizar hacia abajo solo en móvil);
  *             Tab/Shift+Tab sobre la trampa real
  * @estados    viewport explícito (innerWidth + matchMedia) por caso
  * @usadoPor   Vitest
  */
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -335,6 +338,35 @@ describe("una sola superficie activa — integración con DashboardLayout real",
     await usuario.tab();
     expect(panelModal.contains(document.activeElement)).toBe(true);
   });
+
+  it("al cerrar «Cuenta» el foco vuelve al respaldo del menú (botón «Menú») sin doble devolución", async () => {
+    fijarViewport(375);
+    const usuario = userEvent.setup();
+    renderLayoutMovil();
+
+    // Abrir el menú superpuesto y, desde el avatar, «Cuenta» (el menú se cierra antes)
+    await usuario.click(screen.getByRole("button", { name: "Abrir menú" }));
+    const panelMenu = document.body.querySelector("#dashboard-drawer-panel");
+    await usuario.click(within(panelMenu).getByRole("button", { name: /Cuenta de/ }));
+
+    const panelModal = document.body.querySelector("#dashboard-user-modal-panel");
+    expect(panelModal).toBeTruthy();
+    await esperarFocoDentro(panelModal);
+
+    // Espía del respaldo estable de móvil: el mismo nodo que el `triggerRef` del modal (botón «Menú»)
+    const botonMenu = screen.getByRole("button", { name: "Abrir menú" });
+    const espiaMenu = vi.spyOn(botonMenu, "focus");
+
+    await usuario.click(screen.getByRole("button", { name: "Cerrar Cuenta" }));
+
+    // Una sola devolución por el cierre de «Cuenta» (sin doble devolución) hacia el respaldo del menú
+    expect(espiaMenu).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(botonMenu);
+    expect(document.activeElement).not.toBe(document.body);
+    // El menú superpuesto sigue cerrado y no queda ninguna superficie abierta
+    expect(document.body.querySelector("#dashboard-drawer-panel")).toBeNull();
+    expect(screen.queryAllByRole("dialog")).toHaveLength(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -422,5 +454,227 @@ describe("Esc con dos capas forzadas — defensa CL-02", () => {
     expect(cerrarTarjeta).toHaveBeenCalledTimes(1);
     expect(cerrarAcceso).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Ventana de acceso" })).toBeTruthy();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Paridad de la regla común en las cuatro superficies reales (spec 011; RF-06/RF-18; AC-10)
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Monta los dos controles estables de RF-05 FUERA de cualquier superficie, para que el respaldo
+ * del cierre tenga destino en las dos versiones de vista: botón «Menú» (móvil) y control de la
+ * navegación lateral (≥768px).
+ */
+const renderControlesDeVersion = () =>
+  render(
+    <>
+      <button type="button" aria-label="Abrir menú">
+        Menú
+      </button>
+      <aside role="navigation" aria-label="Navegación de prueba">
+        <button type="button">Navegación lateral</button>
+      </aside>
+    </>
+  );
+
+/**
+ * Descriptores de paridad (AC-10). Cada `montar(triggerRef)` monta la superficie **abierta** con un
+ * arnés que la cierra por su propio control; `cerrar()` produce la transición real
+ * abierta → cerrada. Mismo escenario en las cuatro: disparador **desconectado** y elemento previo
+ * inválido (`body`) ⇒ el cierre solo puede acabar en el respaldo de la versión de vista (RF-05).
+ */
+const SUPERFICIES_PARIDAD = [
+  {
+    nombre: "DashboardUserModal (Cuenta)",
+    montar: (triggerRef) => {
+      function Arnes() {
+        const [abierto, setAbierto] = useState(true);
+        return (
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <DashboardUserModal
+              abierto={abierto}
+              alCerrar={() => setAbierto(false)}
+              triggerRef={triggerRef}
+            />
+          </MemoryRouter>
+        );
+      }
+      render(<Arnes />);
+    },
+    cerrar: () => userEvent.click(screen.getByRole("button", { name: "Cerrar Cuenta" })),
+  },
+  {
+    nombre: "DashboardDrawer (menú superpuesto)",
+    montar: (triggerRef) => {
+      function Arnes() {
+        const [abierto, setAbierto] = useState(true);
+        return (
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <DashboardDrawer
+              abierto={abierto}
+              alCerrar={() => setAbierto(false)}
+              triggerRef={triggerRef}
+            >
+              <SidebarNavContenido alAbrirUserModal={vi.fn()} />
+            </DashboardDrawer>
+          </MemoryRouter>
+        );
+      }
+      render(<Arnes />);
+    },
+    cerrar: () => userEvent.click(screen.getByRole("button", { name: "Cerrar menú" })),
+  },
+  {
+    nombre: "AuthModal (ventana de acceso)",
+    montar: () => {
+      function Arnes() {
+        const [abierto, setAbierto] = useState(true);
+        return <AuthModal abierto={abierto} alCerrar={() => setAbierto(false)} />;
+      }
+      render(<Arnes />);
+    },
+    cerrar: () =>
+      userEvent.click(screen.getByRole("button", { name: "Cerrar ventana de acceso" })),
+  },
+  {
+    nombre: "ModalTarjeta (detalle de tarjeta)",
+    montar: () => {
+      function Arnes() {
+        const [tarjeta, setTarjeta] = useState(TARJETAS_DEMO[0]);
+        return <ModalTarjeta tarjeta={tarjeta} onCerrar={() => setTarjeta(null)} />;
+      }
+      render(<Arnes />);
+    },
+    cerrar: () =>
+      userEvent.click(screen.getByRole("button", { name: "Cerrar detalle de tarjeta" })),
+  },
+];
+
+describe.each(SUPERFICIES_PARIDAD)("paridad de la regla común (AC-10) — $nombre", (superficie) => {
+  it.each([
+    ["móvil (375px)", 375, "Abrir menú"],
+    ["pantallas grandes (1024px)", 1024, "Navegación lateral"],
+  ])(
+    "disparador desconectado → el foco acaba en el respaldo de RF-05 en %s, nunca en body",
+    async (_etiqueta, ancho, nombreControl) => {
+      fijarViewport(ancho);
+      renderControlesDeVersion();
+
+      // Disparador desconectado del documento: la cadena lo descarta antes de invocar `focus()`
+      const triggerRef = { current: document.createElement("button") };
+
+      superficie.montar(triggerRef);
+      await esperarFocoDentro(screen.getByRole("dialog"));
+
+      await superficie.cerrar();
+
+      const controlEsperado = screen.getByRole("button", { name: nombreControl });
+      expect(document.activeElement).toBe(controlEsperado);
+      expect(document.activeElement).not.toBe(document.body);
+    }
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Convivencia real con el modal abierto al cruzar el corte (spec 011; D-11; AC-14)
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Mock **controlable** de `matchMedia` (AC-14): además de derivar `matches` del ancho simulado,
+ * registra los oyentes de `change` y permite **forzar el cruce** de versión de vista con
+ * `fijarAncho`. El mock de `fijarViewport` no lo permite (sus `addEventListener` son no-ops).
+ */
+const instalarMatchMediaControlable = (anchoInicial) => {
+  let ancho = anchoInicial;
+  const listas = new Map();
+
+  const crearLista = (query) => {
+    const minimo = Number((/(\d+)px/.exec(query) || [])[1] ?? 0);
+    const oyentes = new Set();
+    const lista = {
+      get matches() {
+        return ancho >= minimo;
+      },
+      media: query,
+      onchange: null,
+      addListener: (oyente) => oyentes.add(oyente),
+      removeListener: (oyente) => oyentes.delete(oyente),
+      addEventListener: (_tipo, oyente) => oyentes.add(oyente),
+      removeEventListener: (_tipo, oyente) => oyentes.delete(oyente),
+      dispatchEvent: (evento) => {
+        oyentes.forEach((oyente) => oyente(evento));
+        return true;
+      },
+    };
+    listas.set(query, { lista, oyentes });
+    return lista;
+  };
+
+  window.matchMedia = vi.fn().mockImplementation(
+    (query) => listas.get(query)?.lista ?? crearLista(query)
+  );
+
+  const fijarAncho = (nuevoAncho) => {
+    ancho = nuevoAncho;
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: nuevoAncho,
+    });
+    listas.forEach(({ lista, oyentes }) => {
+      const evento = { matches: lista.matches, media: lista.media };
+      oyentes.forEach((oyente) => oyente(evento));
+      if (typeof lista.onchange === "function") lista.onchange(evento);
+    });
+  };
+
+  return { fijarAncho };
+};
+
+/** Layout real del dashboard (mismo entorno que el caso de integración de la 010). */
+const renderLayoutReal = () =>
+  render(
+    <MemoryRouter initialEntries={["/dashboard"]}>
+      <Routes>
+        <Route path="/dashboard/*" element={<DashboardLayout />}>
+          <Route index element={<div>Inicio</div>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+
+describe("convivencia real: cruce con el modal de Cuenta real abierto (AC-14)", () => {
+  it("el cruce móvil → pantallas grandes no roba el foco ni cierra el modal real", async () => {
+    const { fijarAncho } = instalarMatchMediaControlable(375);
+    const usuario = userEvent.setup();
+    renderLayoutReal();
+
+    // Abrir «Cuenta» desde el menú superpuesto (móvil): el modal real queda abierto con su trampa
+    await usuario.click(screen.getByRole("button", { name: "Abrir menú" }));
+    const panelMenu = document.body.querySelector("#dashboard-drawer-panel");
+    await usuario.click(within(panelMenu).getByRole("button", { name: /Cuenta de/ }));
+
+    const panelModal = document.body.querySelector("#dashboard-user-modal-panel");
+    expect(panelModal).toBeTruthy();
+    await esperarFocoDentro(panelModal);
+    const focoAntes = document.activeElement;
+
+    // Antes del cruce: composición móvil (sin navegación lateral permanente)
+    expect(document.querySelector('aside[role="navigation"]')).toBeNull();
+
+    // El cruce se fuerza en jsdom con el mock controlable de matchMedia (ejecutable, no diferido)
+    await act(async () => {
+      fijarAncho(1024);
+    });
+
+    // Evidencia de que el cruce ocurrió de verdad: la composición ya es de pantallas grandes
+    expect(document.querySelector('aside[role="navigation"]')).toBeTruthy();
+
+    // El modal real sigue abierto, con su foco y su trampa intactos: el cruce no le roba el foco
+    expect(document.body.querySelector("#dashboard-user-modal-panel")).toBeTruthy();
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    expect(document.activeElement).toBe(focoAntes);
+    expect(panelModal.contains(document.activeElement)).toBe(true);
   });
 });

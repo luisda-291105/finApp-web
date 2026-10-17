@@ -2,7 +2,9 @@
  * @uso        Página de inicio de sesión en una ruta propia
  * @funciones  PaginaLogin()
  * @datos      Abre AuthModal en modo login
- * @eventos    Cierre o acceso demo navega a /dashboard durante el trial; sin trial navega a /
+ * @eventos    Cierre o acceso demo navega a /dashboard durante el trial; sin trial navega a /.
+ *             El cierre que navega escribe la marca `focoEnDestino` en el estado de la ruta para
+ *             que la vista de destino coloque el foco ahí (RF-15, spec 011)
  * @estados    N/A
  * @usadoPor   App.jsx (ruta /login)
  */
@@ -26,7 +28,7 @@ export default function PaginaLogin() {
       <AuthModal
         abierto
         modoInicial="login"
-        alCerrar={() => navigate(TRIAL_ACTIVO ? "/dashboard" : "/")}
+        alCerrar={() => navigate(TRIAL_ACTIVO ? "/dashboard" : "/", { state: { focoEnDestino: true } })}
       />
     </main>
   );

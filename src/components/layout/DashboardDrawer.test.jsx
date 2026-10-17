@@ -7,6 +7,7 @@
  * @estados    Controlado por prop `abierto`
  * @usadoPor   Vitest
  */
+import { StrictMode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
@@ -415,6 +416,146 @@ describe("DashboardDrawer", () => {
 
       const backdrop = document.body.querySelector('[aria-hidden="true"]');
       expect(backdrop).toHaveAttribute("aria-hidden", "true");
+    });
+  });
+
+  // Casos nuevos de la spec 011 (Tarea 3): paridad M4 de la devolución de foco. Los casos
+  // vigentes, incluidos los dos de «restauración de foco al cerrar», quedan intactos arriba.
+  describe("paridad M4 de la devolución de foco (spec 011)", () => {
+    /** Nodos DOM creados por estos casos: se retiran tras cada uno para no contaminar la suite. */
+    const nodosCreados = [];
+
+    const crearDisparador = (etiqueta, etiquetaAria) => {
+      const nodo = document.createElement("button");
+      nodo.textContent = etiqueta;
+      if (etiquetaAria) nodo.setAttribute("aria-label", etiquetaAria);
+      document.body.appendChild(nodo);
+      nodosCreados.push(nodo);
+      return nodo;
+    };
+
+    const rerenderCerrado = (rerender, alCerrar, triggerRef) =>
+      rerender(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <DashboardDrawer
+            abierto={false}
+            alCerrar={alCerrar}
+            children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
+            triggerRef={triggerRef}
+          />
+        </MemoryRouter>
+      );
+
+    beforeEach(() => {
+      // Punto de partida estable: nada enfocado antes de cada caso.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
+
+    afterEach(() => {
+      nodosCreados.splice(0).forEach((nodo) => nodo.remove());
+    });
+
+    it("AC-01: montado cerrado con el disparador conectado no invoca focus() ni mueve el foco", () => {
+      const disparador = crearDisparador("Menú", "Abrir menú");
+      const espiaFocus = vi.spyOn(disparador, "focus");
+      const focoAntes = document.activeElement;
+
+      renderDrawer({ abierto: false, triggerRef: { current: disparador } });
+
+      expect(espiaFocus).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(focoAntes);
+    });
+
+    it("AC-02: la devolución al disparador ocurre una sola vez y los re-renders cerrados no repiten", () => {
+      const disparador = crearDisparador("Menú", "Abrir menú");
+      const espiaFocus = vi.spyOn(disparador, "focus");
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparador };
+
+      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+
+      rerenderCerrado(rerender, alCerrar, triggerRef);
+
+      expect(espiaFocus).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(disparador);
+
+      // Re-render posterior cerrado con identidad NUEVA del ref: no repite la devolución.
+      rerenderCerrado(rerender, alCerrar, { current: disparador });
+
+      expect(espiaFocus).toHaveBeenCalledTimes(1);
+    });
+
+    it("AC-02: montado cerrado dentro de StrictMode no invoca focus() ni mueve el foco (superficie de D1)", () => {
+      const disparador = crearDisparador("Menú", "Abrir menú");
+      const espiaFocus = vi.spyOn(disparador, "focus");
+      const focoAntes = document.activeElement;
+
+      // Montaje cerrado DENTRO de <StrictMode>: es la superficie del defecto D1 (el dashboard
+      // monta el drawer cerrado con el disparador asignado y los efectos dobles de desarrollo).
+      render(
+        <StrictMode>
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <DashboardDrawer
+              abierto={false}
+              alCerrar={vi.fn()}
+              children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
+              triggerRef={{ current: disparador }}
+            />
+          </MemoryRouter>
+        </StrictMode>
+      );
+
+      expect(espiaFocus).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(focoAntes);
+    });
+
+    it("AC-05: con el disparador desconectado la cadena usa el elemento capturado", () => {
+      const previo = crearDisparador("Anterior");
+      previo.focus();
+      const disparador = crearDisparador("Menú", "Abrir menú");
+      const espiaDesconectado = vi.spyOn(disparador, "focus");
+      disparador.remove(); // desconectado: no debe recibir focus()
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparador };
+      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+
+      rerenderCerrado(rerender, alCerrar, triggerRef);
+
+      expect(espiaDesconectado).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(previo);
+      expect(document.activeElement).not.toBe(document.body);
+    });
+
+    it("AC-05: sin elemento capturado válido la cadena cae al respaldo móvil (botón «Menú»)", () => {
+      const respaldo = crearDisparador("Menú", "Abrir menú");
+      const disparador = crearDisparador("Menú viejo");
+      disparador.remove(); // desconectado y sin captura válida ⇒ respaldo por versión de vista
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparador };
+      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+
+      rerenderCerrado(rerender, alCerrar, triggerRef);
+
+      expect(document.activeElement).toBe(respaldo);
+      expect(document.activeElement).not.toBe(document.body);
+    });
+
+    it("AC-24: un candidato disabled no corta la cadena", () => {
+      const previo = crearDisparador("Anterior");
+      previo.focus();
+      const disparadorDeshabilitado = crearDisparador("Menú", "Abrir menú");
+      disparadorDeshabilitado.disabled = true;
+
+      const alCerrar = vi.fn();
+      const triggerRef = { current: disparadorDeshabilitado };
+      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+
+      rerenderCerrado(rerender, alCerrar, triggerRef);
+
+      expect(document.activeElement).toBe(previo);
+      expect(document.activeElement).not.toBe(disparadorDeshabilitado);
     });
   });
 });

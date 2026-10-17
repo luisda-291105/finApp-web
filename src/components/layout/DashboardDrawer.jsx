@@ -3,8 +3,12 @@
  * @funciones  DashboardDrawer({ abierto, alCerrar, children, triggerRef })
  * @datos      Renderiza children (esperado: SidebarNavContenido) dentro del panel lateral
  * @eventos    «X» superior → alCerrar; ESC (mecanismo único) → alCerrar; click backdrop → alCerrar;
- *             click en el panel → no cierra; Tab/Shift+Tab ciclan dentro de la trampa
- * @estados    Recibe `abierto` controlado desde padre; sin estado propio
+ *             click en el panel → no cierra; Tab/Shift+Tab ciclan dentro de la trampa; al cerrar,
+ *             la devolución de foco se delega en `useRetornoDeFoco` (transición abierta → cerrada)
+ * @estados    Recibe `abierto` controlado desde padre; sin estado propio. La guarda de «estuvo
+ *             abierto» y la cadena validada viven en `useRetornoDeFoco`; su respaldo es el control
+ *             de la versión de vista (móvil del dashboard → botón «Menú», el mismo nodo que
+ *             `triggerRef`)
  * @usadoPor   DashboardLayout (menú superpuesto de móvil)
  *
  * Contrato (spec 010, T5 — RF-02, RF-05, RF-10, RF-15, RF-16, RF-22):
@@ -20,13 +24,14 @@
  *   abajo (RF-15) sin solaparse con la «X».
  */
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
 import clsx from "clsx";
 import { BotonCerrar } from "../ui/BotonCerrar";
 import { useCierreConEsc } from "../../hooks/useCierreConEsc";
+import { useRetornoDeFoco } from "../../hooks/useRetornoDeFoco";
 
 /** Capa del panel del menú en el registro de Esc (plan §2.3-M1; el modal de Cuenta usa 60). */
 const CAPA_MENU = 55;
@@ -62,32 +67,14 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
 
-  // Guardar el elemento que tenía el foco antes de abrir el drawer
-  const previousActiveElementRef = useRef(null);
-
   // Esc: mecanismo único compartido con el resto de superficies (capa del panel: 55)
   useCierreConEsc({ activo: abierto, zIndex: CAPA_MENU, alCerrar });
 
-  // Guardar el elemento activo ANTES de que FocusTrap actúe (useLayoutEffect = sincrónico)
-  useLayoutEffect(() => {
-    if (!abierto) return;
-    // Solo guardar si no tenemos triggerRef (si lo tenemos, usaremos ese para retorno)
-    if (!triggerRef?.current) {
-      previousActiveElementRef.current = document.activeElement;
-    }
-  }, [abierto, triggerRef]);
-
-  // Devolver foco al cerrar
-  useEffect(() => {
-    if (abierto) return; // Solo ejecutar al cerrar (cuando abierto pasa a false)
-
-    // Devolver foco al triggerRef si existe, sino al elemento previo guardado
-    if (triggerRef?.current) {
-      triggerRef.current.focus();
-    } else if (previousActiveElementRef.current instanceof HTMLElement) {
-      previousActiveElementRef.current.focus();
-    }
-  }, [abierto, triggerRef]);
+  // Devolución de foco delegada en la regla común (spec 011, RF-08): captura incondicional al abrir,
+  // guarda de transición abierta → cerrada —el montaje cerrado no mueve el foco— y cadena validada
+  // con respaldo por versión de vista (móvil del dashboard → botón «Menú», el mismo nodo que el
+  // `triggerRef` del layout).
+  useRetornoDeFoco({ activo: abierto, triggerRef });
 
   if (!abierto) return null;
 

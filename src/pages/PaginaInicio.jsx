@@ -3,13 +3,15 @@
  * @funciones  PaginaInicio()
  * @datos      Sin datos externos; usa LandingLayout y provee AuthModal + botón ayuda como children
  * @eventos    manejarAbrirAuth(modo) desde LandingLayout (Header/Hero/CtaSection) y botón "?";
- *             manejarCerrarAuth desde AuthModal
+ *             manejarCerrarAuth desde AuthModal. Es vista de destino del cierre que navega: con la
+ *             marca `focoEnDestino` coloca el foco una vez (useFocoEnVistaDestino, RF-15)
  * @estados    modalAbierto (boolean), modoAuth ("login" | "registro")
  * @usadoPor   App.jsx (ruta /)
  */
 import { useState } from "react";
 import LandingLayout from "../layout/LandingLayout";
 import AuthModal from "../components/domain/modales/AuthModal";
+import { useFocoEnVistaDestino } from "../hooks/useFocoEnVistaDestino";
 
 /**
  * PaginaInicio
@@ -21,6 +23,11 @@ import AuthModal from "../components/domain/modales/AuthModal";
 export default function PaginaInicio() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState("registro");
+
+  // Vista de destino del cierre que navega (RF-15): si la entrada de historial trae la marca,
+  // coloca el foco una sola vez con la lista ordenada (control estable por versión de vista →
+  // primer control enfocable de la landing, que es el enlace del logotipo).
+  useFocoEnVistaDestino();
 
   const manejarAbrirAuth = (modo) => {
     setModoAuth(modo);
