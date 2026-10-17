@@ -15,7 +15,10 @@ import { getUsuarioMock } from "../config/app.config";
  * @uso        Layout del dashboard con dos versiones de vista (móvil / pantallas grandes)
  * @funciones  DashboardLayout()
  * @datos      Orquesta SidebarResponsive, DashboardDrawer (menú de móvil), BottomNav, Container, Outlet, DashboardUserModal
- * @eventos    Cruce del corte de 768px (cierra el menú de móvil y traslada el foco), navegación BottomNav, apertura modal usuario
+ * @eventos    Cruce del corte de 768px (cierra el menú de móvil y traslada el foco), navegación
+ *             BottomNav, apertura del modal de usuario: abrir «Cuenta» CIERRA el menú superpuesto
+ *             (una sola superficie y una sola trampa por diseño; RF-07/RF-13) y pasa un
+ *             `triggerRef` estable al modal para el retorno de foco (RF-08)
  * @estados    mobileMenuAbierto (móvil), userModalAbierto (global)
  * @usadoPor   App.jsx (rutas /dashboard/*)
 
@@ -43,7 +46,13 @@ export default function DashboardLayout() {
 
   const bottomNavMenuRef = useRef(null);
 
-  const alAbrirUserModal = () => setUserModalAbierto(true);
+  // Único punto de apertura del modal de Cuenta (plan §2.3-M9): cerrar el menú superpuesto
+  // antes de abrirlo garantiza una sola superficie y una sola trampa por diseño (RF-07/RF-13).
+  // Sirve a los dos disparadores: el menú de móvil y la navegación lateral (≥768px).
+  const alAbrirUserModal = () => {
+    setMobileMenuAbierto(false);
+    setUserModalAbierto(true);
+  };
   const alCerrarUserModal = () => setUserModalAbierto(false);
   const usuario = getUsuarioMock();
 
@@ -109,10 +118,13 @@ export default function DashboardLayout() {
         </DashboardDrawer>
       )}
 
-      {/* Modal usuario global (portal, siempre al final para z-index) */}
+      {/* Modal usuario global (portal, siempre al final para z-index).
+          triggerRef = botón «Menú» del BottomNav: control estable de retorno de foco en móvil
+          (RF-08); en ≥768px el ref no tiene elemento y la cadena de M4 cae al control lateral. */}
       <DashboardUserModal
         abierto={userModalAbierto}
         alCerrar={alCerrarUserModal}
+        triggerRef={bottomNavMenuRef}
       />
     </>
   );

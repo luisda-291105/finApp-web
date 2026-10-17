@@ -1,10 +1,14 @@
 /**
- * @uso        Modal accesible de detalle de tarjeta (flip 3D + datos + log de movimientos, spec 004)
+ * @uso        Modal accesible de detalle de tarjeta (flip 3D + datos + log de movimientos;
+ *             spec 004) que cumple las CUATRO formas de cierre de spec 010: «X» superior, Esc,
+ *             clic fuera y deslizar hacia abajo (solo móvil, RF-06)
  * @funciones  ModalTarjeta({ tarjeta, onCerrar })
  * @datos      `tarjeta` (objeto de TARJETAS_DEMO o null = cerrado); movimientos desde MOVIMIENTOS_DEMO[id]
- * @eventos    onCerrar() (Esc, backdrop o botón de cierre); Tab/Shift+Tab cicla dentro (focus trap)
+ * @eventos    onCerrar() («X» como ÚNICO control visible de cierre, Esc por el mecanismo único
+ *             `useCierreConEsc`, clic en backdrop y gesto de deslizar hacia abajo en móvil);
+ *             Tab/Shift+Tab cicla dentro (trampa MANUAL conservada, RF-12)
  * @estados    Ninguno propio; animación de entrada/salida con useReducedMotion; el estado
- *             de apertura (tarjetaActiva) vive en PanelTarjetas (T7)
+ *             de apertura (tarjetaActiva) vive en PanelTarjetas (T7); «móvil» desde useBreakpoint
  * @usadoPor   PanelTarjetas
  */
 import { useEffect, useRef } from "react";
@@ -12,6 +16,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import MiTarjetaVirtual from "../dashboard/MiTarjetaVirtual";
 import LogMovimientos from "../dashboard/LogMovimientos";
 import { MOVIMIENTOS_DEMO } from "../../../data/tarjetasDemo";
+import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
+import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 
 const SELECTOR_FOCOABLES =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -20,8 +26,11 @@ const SELECTOR_FOCOABLES =
  * ModalTarjeta
  * - `tarjeta === null` → no renderiza nada (el padre controla el estado).
  * - Accesibilidad: role="dialog" + aria-modal + aria-labelledby al titular,
- *   foco inicial dentro del diálogo, focus trap manual con Tab/Shift+Tab,
- *   cierre con Esc, botón "Cerrar detalle de tarjeta" y clic en el backdrop.
+ *   foco inicial en el contenedor del diálogo (`tabIndex={-1}`, fuera del ciclo
+ *   de Tab), trampa **manual** con Tab/Shift+Tab (RF-12, no se sustituye),
+ *   cierre con Esc (mecanismo único `useCierreConEsc`, capa 50), «X»
+ *   "Cerrar detalle de tarjeta", clic en el backdrop y, solo en móvil, gesto de
+ *   deslizar hacia abajo (`useDeslizarParaCerrar`).
  * - Devolución del foco: el propio modal guarda `document.activeElement` al
  *   abrirse y lo restaura al desmontar; T7 (PanelTarjetas) no necesita refs
  *   adicionales para el retorno del foco.
@@ -40,9 +49,10 @@ export default function ModalTarjeta({ tarjeta, onCerrar }) {
   useEffect(() => {
     if (!tarjeta) return undefined;
     refActivador.current = document.activeElement;
-    const dialogo = refDialogo.current;
-    const primerFocoable = dialogo?.querySelector(SELECTOR_FOCOABLES);
-    (primerFocoable ?? dialogo)?.focus();
+    // Foco inicial en el propio contenedor del diálogo (contrato D4 / spec §7.1): con la «X»
+    // presente, el `??` al primer enfocable nunca caía al contenedor. `tabIndex={-1}` lo deja
+    // fuera del ciclo de Tab.
+    refDialogo.current?.focus();
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
@@ -50,15 +60,13 @@ export default function ModalTarjeta({ tarjeta, onCerrar }) {
     };
   }, [tarjeta]);
 
-  // Cierre con Escape (listener en document mientras el modal esté abierto)
-  useEffect(() => {
-    if (!tarjeta) return undefined;
-    const alPulsarTecla = (e) => {
-      if (e.key === "Escape") onCerrar();
-    };
-    document.addEventListener("keydown", alPulsarTecla);
-    return () => document.removeEventListener("keydown", alPulsarTecla);
-  }, [tarjeta, onCerrar]);
+  // Esc: mecanismo único compartido por las cuatro superficies; la capa de este panel es 50
+  // (plan §2.3-M1). La trampa manual de Tab/Shift+Tab se conserva (RF-12).
+  useCierreConEsc({ activo: Boolean(tarjeta), zIndex: 50, alCerrar: onCerrar });
+
+  // Gesto de deslizar hacia abajo (solo móvil, punteros nativos). No arranca sobre controles
+  // interactivos (incluido el flip de la tarjeta) ni con el panel desplazado (CL-09).
+  useDeslizarParaCerrar({ activo: Boolean(tarjeta), refPanel: refDialogo, alCerrar: onCerrar });
 
   const atraparTab = (e) => {
     if (e.key !== "Tab") return;

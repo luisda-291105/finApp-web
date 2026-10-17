@@ -1,5 +1,23 @@
 # MEMORY.md — FinApp
 
+- Cambio pequeño (2026-10-16, sin spec, aprobado por el usuario): alineación de
+  `src/components/layout/BottomNav.test.jsx` al estado real de `BottomNav.jsx`
+  editado a mano por el usuario (le retiró el enlace «Configuración», coherente con
+  la spec 009). La barra inferior tiene **4** controles (3 ítems de navegación +
+  botón «Menú»), no 5. **Solo se tocó el archivo de pruebas; `BottomNav.jsx` quedó
+  intacto.** Ajustes (patrón de la T5 de la spec 009): título/`@uso` «5 items»→«4» y
+  «click items 1-4»→«1-3»; `toHaveLength(5)`→`(4)`; suelo de iconos
+  `toBeGreaterThanOrEqual(5)`→`(4)`; `@media landscape` recuento `toBe(5)`→`(4)`;
+  retirado el aserto del enlace «Configuración» (`getByText` + `alNavegar` con
+  `/dashboard/configuracion`) y su comentario; renombrado el caso de «Menú» a
+  «click en el botón Menú». Sin asertos negativos añadidos. Se conservaron los
+  asertos vigentes (clase `bottom-nav-label`, ausencia de `<style>` propio,
+  `pb-safe`, clases `grid-cols-5`/`z-50`, orden y navegación de los 3 ítems).
+  Validaciones: `npx vitest run src/components/layout/BottomNav.test.jsx` → antes
+  **3 fallos / 10 pass (13)**; después ✅ **13/13 pass**. `npm test`/`npm run build`
+  completos no ejecutados (cambio acotado de pruebas). Validación visual no aplicable
+  (solo pruebas). Sin dependencias nuevas, sin commit ni staging.
+
 - Cambio pequeño (2026-10-16, sin spec, aprobado por el usuario): dos avisos de consola
   del navegador corregidos.
   1) **`jsx` inválido en BottomNav**: `src/components/layout/BottomNav.jsx` usaba
@@ -1213,3 +1231,584 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
       `/tmp/opencode/009/` (fuera del repo). Procesos temporales (`vite preview`, `geckodriver`)
       detenidos; el servidor de desarrollo que el usuario tuviera abierto **no** se tocó.
       **Sin commit ni staging** (no solicitados).
+
+---
+
+### Spec 010 — Cierre universal de las cuatro superficies modales (finalizada, 2026-10-16)
+
+- Cierre documental (2026-10-16, sin spec nueva, aprobado por el usuario): spec marcada como
+  **finalizada (2026-10-16)** en `spec.md` (Estado + nota de cierre: aprobada en Fase 2b sin botón
+  «Cerrar» al pie; validación T10 348/348 en 27 archivos, build verde, navegador 47 PASS / 0 FAIL) y
+  en `tasks.md` (`**Estado:** finalizada (2026-10-16)`). Se marcó la casilla residual de la **T9**
+  tras la alineación de `BottomNav.test.jsx` a los 4 controles reales (cambio pequeño **solo de
+  pruebas**): el comando de T9
+  `npx vitest run src/components/layout src/layout src/components/domain/modales src/hooks` queda
+  **verde (`14 passed`, `238 passed`, 0 fallos, 2026-10-16)**. Se corrigió la cabecera JSDoc de
+  `src/components/layout/BottomNav.jsx` a **4 controles** (3 ítems de navegación + botón «Menú»),
+  sin tocar clases (incluida `grid-cols-5`), props, lógica ni texto de UI. Verificado
+  `BottomNav.test.jsx` **13/13**. Sin datos sensibles.
+
+- Spec 010, T1 completa (2026-10-16, **solo lectura**: 0 archivos de código/pruebas editados).
+  **Paso 0 / línea base medida:**
+  - `npm test` → **PASS: 257/257 en 22 archivos, 0 fallos** (línea base). Del último registro de
+    MEMORY (spec 009 T8/T10: 253/253 en 21) hay **+4 pruebas y +1 archivo**; delta **no atribuido**
+    (queda para la T10 contrastar). Archivos por resultado (todos ✓): `useReveal.test.js` (6),
+    `index.css.test.js` (21), `useBreakpoint.test.js` (27), `DashboardLayout.test.jsx` (21),
+    `BottomNav.test.jsx` (13), `LandingLayout.test.jsx` (3), `SidebarNavContenido.test.jsx` (17),
+    `DashboardDrawer.test.jsx` (17), `ModalTarjeta.test.jsx` (11), `DashboardUserModal.test.jsx` (20),
+    `SidebarResponsive.test.jsx` (32), `AcordeonTarjetas.test.jsx` (8), `Header.test.jsx` (3),
+    `App.test.jsx` (11), `LogMovimientos.test.jsx` (6), `Card.test.jsx` (4), `PanelTarjetas.test.jsx`
+    (12), `Hero.test.jsx` (1), `Features.test.jsx` (1), `GridTarjetas.test.jsx` (6), `main.test.jsx`
+    (1), `MiTarjetaVirtual.test.jsx` (16). **Confirmado:** hoy **pasan** las dos suites que mockean
+    `focus-trap-react` (`DashboardUserModal` y `DashboardDrawer`), que es justo lo que oculta que la
+    trampa del menú no se crea (el mock las hace verdes).
+  - `npm run build` → **PASS** (`dist/index.html` 1.11 kB; CSS 57.34 kB / gzip 9.46 kB; JS 379.52 kB /
+    gzip 120.45 kB). Línea base para la T10.
+  **Premisas del plan que ya NO son ciertas (reportadas, NO resueltas):**
+  1. **La config de Vitest ya no está en `vite.config.js`.** El usuario **eliminó** el bloque `test`
+     (`environment: "jsdom"`, `globals: true`) de `vite.config.js` (modificado sin commitear); la
+     configuración real vive en un **`vitest.config.js` nuevo** (`setupFiles`, `environment: jsdom`,
+     `include: ["src/**/*.test.{js,jsx}"]`, `globals: true`) y en `package.json`
+     (`"vitest": { "setupFiles": ["vitest.setup.js"] }`). El plan T2/M7 solo edita `vitest.setup.js`
+     (sigue vigente), pero cualquier premisa que asuma la config en `vite.config.js` es falsa.
+  2. **El grep de auditoría `vi.mock("focus-trap-react")` de la T9/AC-19 da 0 aunque los mocks
+     existan**: la forma real es `vi.mock("focus-trap-react", async () => {`, que no contiene el
+     literal con `)` final. El grep debe ser **sin el paréntesis de cierre** (`vi.mock("focus-trap-react"`),
+     que hoy devuelve **2** (`DashboardUserModal.test.jsx:32`, `DashboardDrawer.test.jsx:17`).
+  3. **El grep `768` fuera de `useBreakpoint` NO da 0 hoy**: hay menciones en **comentarios/JSDoc** de
+     `DashboardLayout.jsx` (`:18,24,25,68,77`) y `SidebarResponsive.jsx` (`:2,15`). AC-23 debe
+     excluir comentarios. `min-width` solo aparece en `useBreakpoint.js:12,14` (OK).
+  **Referencias `archivo:línea` re-verificadas (todas correctas salvo una):**
+  - Correctas: X ausente en `DashboardUserModal.jsx:119-123` (el `<header>` solo tiene el `<h2>`);
+    `clickDeactivates` en `DashboardUserModal.jsx:102` y `DashboardDrawer.jsx:88`; ausencia de Esc y
+    de clic fuera en `AuthModal` (contenedor `:81` sin `onClick`; sin listener de teclado);
+    `aria-label="Cerrar modal"` en `AuthModal.jsx:92`; `ModalTarjeta` foco a primer enfocable
+    `:44-45`, `tabIndex={-1}` `:100`, Esc `:54-61`, trampa manual `:63-76`, `max-h`/`overflow` `:101`;
+    `triggerRef` no pasado en `DashboardLayout.jsx:113-116`; `useBreakpoint.js:12`
+    (`QUERY_PANTALLAS_GRANDES`); mock global `vitest.setup.js:5-36` (matchMedia 5-17, innerWidth 20-24,
+    localStorage 27-36); mocks de trampa `DashboardUserModal.test.jsx:32-58` y
+    `DashboardDrawer.test.jsx:17-53`; aserciones `DashboardUserModal.test.jsx:146-151,163-171` y
+    `DashboardDrawer.test.jsx:203-215,217-231`; `ModalTarjeta.test.jsx:123-127`.
+  - **Única imprecisa:** el plan/§4.3-C4 citan `AnimatePresence` como hijo directo de `FocusTrap` en
+    `DashboardDrawer.jsx:93-97`; el código real es `FocusTrap` `:94-97` y `<AnimatePresence>` `:98-115`
+    (el `motion.div` del panel en `:99`). El hecho (hijo directo sin `ref`) se confirma.
+  - La `spec.md` §4.2 depende de `focus-trap` 7.8.0: verificado `checkPointerDown` retorna con
+    `allowOutsideClick` (~`:674-677`) y `checkClick` retorna (~`:826-828`) sin tocar el evento; README
+    confirma `allowOutsideClick` default `false` (`:227`) y `clickOutsideDeactivates` default `false`
+    (`:216`).
+  **Inventario de aserciones afectadas por D4 (foco al contenedor) y por la «X» nueva:**
+  - `DashboardUserModal.test.jsx:146-151` — hoy espera `document.activeElement === btnConfig`
+    («Configuración»); debe pasar a **contenedor** del diálogo.
+  - `DashboardUserModal.test.jsx:163-171` — hoy espera **2** focoables, `[0]`«Configuración»,
+    `[1]`«Salir del demo»; con la «X» pasa a **3** (cambia el índice del primero).
+  - `DashboardUserModal.test.jsx:266-274` (**afectada por la X, no por D4**) — recorre *todos* los
+    `svg` de `#dashboard-user-modal-panel` y exige `flex-shrink-0 w-6 h-6`; el aspa de `BotonCerrar`
+    no tiene esas clases ⇒ **romperá** salvo que se acote el selector.
+  - `DashboardDrawer.test.jsx:203-215` — hoy espera **4** focoables y `activeElement === primer enlace`;
+    pasa a **5** y foco = panel.
+  - `DashboardDrawer.test.jsx:217-231` — hoy espera **4** con orden `A,A,A,BUTTON`; pasa a **5** con la
+    «X» (reordenar índices).
+  - `DashboardDrawer.test.jsx:159-166` (**afectada por retirar el mock de la trampa**) — hoy exige
+    `panel.parentElement !== document.body` y `tagName === "DIV"` (por el wrapper del mock); con la
+    trampa real `focus-trap-react` no envuelve ⇒ `parentElement` será `document.body`.
+  - `ModalTarjeta.test.jsx:123-127` — hoy solo aserta `dialog.contains(document.activeElement)` (pasa
+    con el foco en la X); debe **reforzarse** a `document.activeElement === dialog`.
+  - `PanelTarjetas.test.jsx:151,164` — retorno de foco al activador tras cerrar; **no** cambia por D4
+    (se conserva), se vigila como regresión.
+  - `AuthModal` — **no existe suite propia** (confirmado); la T7 la crea.
+  **Nota:** `ModalTarjeta.test.jsx` vive en `src/components/` (fuera de la carpeta del componente), tal
+  como registran plan/§9:1 (se edita en su sitio).
+  **Validación:** re-verificación de líneas y greps **PASS**; greps vacíos hoy: `initialFocus` 0,
+  `allowOutsideClick`/`clickOutsideDeactivates` 0, `displayCheck` 0. Sin cambios de código ni pruebas.
+
+- Spec 010, T2 completa (2026-10-16): **andamiaje de geometría en el entorno de pruebas** (RF-18,
+  DP-10/D1) + semilla de la suite transversal. Archivos: `vitest.setup.js` (cabecera JSDoc nueva +
+  bloque `// Stub de geometría…`) y `src/components/layout/cierreDeModales.test.jsx` **(nuevo)**.
+  - **Qué hace el stub:** `Element.prototype.getBoundingClientRect()` y `getClientRects()`
+    devuelven un rectángulo **1×1 no vacío** **solo** cuando `this.isConnected` y jsdom no aporta
+    geometría (rect vacío); los nodos **desconectados** conservan el comportamiento original, y si
+    jsdom devolviera área se respeta tal cual. Sin `vi.mock` de `focus-trap-react`/`tabbable` y sin
+    `displayCheck` (la librería se ejecuta **real**).
+  - **Por qué (motivo real, verificado):** jsdom no calcula layout ⇒ `getClientRects()` vacío;
+    `tabbable` decide visibilidad con `displayCheck: 'full'` (su defecto) por
+    `node.getClientRects().length` (`tabbable/dist/index.js:421`), no encuentra nodos tabulables y
+    `focus-trap` lanza al activar `Your focus-trap must have at least one container with at least
+    one tabbable node in it at all times`. **Corrección de referencia:** en las suites la librería
+    resuelve al **build UMD** `node_modules/focus-trap/index.js`, así que el throw observado es
+    `index.js:437-438` (y `:333-334` para «needs at least one focusable element»), no el
+    `dist/focus-trap.js:402-404` que citan spec §4.3-C13 y plan §2.3-M7 (ese es el equivalente ESM,
+    `:485`). El hecho diagnosticado no cambia.
+  - **Canario (`cierreDeModales.test.jsx`, 3 pruebas):** monta un `FocusTrap` **real** con dos
+    botones dentro y un botón fuera; verifica (1) la trampa se crea y el foco queda en el primer
+    botón del contenedor, (2) Tab desde el último vuelve al primero **sin** escaparse al control de
+    fuera, (3) Shift+Tab desde el primero va al último sin escapar. Foco inicial esperado con
+    `waitFor` porque `focus-trap` difiere el foco (`delayInitialFocus`). El archivo queda preparado
+    para que la T9 añada la matriz transversal (no se inventó la matriz).
+  - **Demostración del andamiaje:** con el stub **desactivado temporalmente** (setup recortado y
+    restaurado después, verificado byte a byte con `cmp`) el canario **falla 3/3** con el error de
+    «no tabbable node»; con el stub **pasa 3/3**. El stub quedó activo.
+  - **Suite completa medida: 260/260 en 23 archivos, 0 fallos** = línea base **257/257 en 22** + las
+    3 pruebas del canario y +1 archivo. **Comparación archivo por archivo: los 22 archivos de la T1
+    conservan exactamente su recuento** (useReveal 6, index.css 21, useBreakpoint 27,
+    DashboardLayout 21, BottomNav 13, LandingLayout 3, SidebarNavContenido 17, DashboardDrawer 17,
+    ModalTarjeta 11, DashboardUserModal 20, SidebarResponsive 32, AcordeonTarjetas 8, Header 3,
+    App 11, LogMovimientos 6, Card 4, PanelTarjetas 12, Hero 1, Features 1, GridTarjetas 6,
+    main 1, MiTarjetaVirtual 16). **No hubo degradación ⇒ no se estrechó el stub** (no hizo falta el
+    acotado a `[role="dialog"]`); solo se observaron los avisos ya conocidos en stderr (future flags
+    de React Router y `Received false for a non-boolean attribute initial`), sin nuevos fallos.
+  - `npm run build` **verde** y **idéntico a la línea base** (CSS 57.34 kB, JS 379.52 kB): el
+    andamiaje vive fuera del bundle.
+  - **Greps:** `vi.mock("focus-trap-react"` = **2** (sin cambios: `DashboardUserModal.test.jsx:32`,
+    `DashboardDrawer.test.jsx:17`; su retirada es de T4/T5) y `displayCheck` = **0**. No se tocó
+    `vitest.config.js`, `vite.config.js` ni `package.json` (config localizada, no revertida).
+  - **Premisa observada:** `specs/010-cierre-de-modales/tasks.md` fue **editado por el usuario
+    durante la sesión** (nueva regla común nº 7 y `Archivos`/paso 1 de la T2 sobre localizar la
+    config); se leyó la versión vigente antes de cerrar y se marcó la T2 como hecha con los
+    recuentos medidos. Sin commit ni staging.
+
+- Spec 010, T3 completa (2026-10-16): **maquinaria común de cierre** (RF-02, RF-04, RF-06, RF-14,
+  RF-16, RF-20-versión-de-vista, RF-21; AC-10/AC-12/AC-16 y defensa AC-07). Seis archivos **nuevos**
+  (untracked, sin staging): `src/components/ui/BotonCerrar.jsx` + `.test.jsx`,
+  `src/hooks/useCierreConEsc.js` + `.test.js`, `src/hooks/useDeslizarParaCerrar.js` + `.test.js`.
+  Ninguna superficie modal ni el layout se tocaron (T4–T8).
+  - **Contrato exacto — `BotonCerrar({ ariaLabel, alCerrar, className })`** · export **nombrado**
+    (coherente con `ui/Card`). Renderiza `<button type="button" aria-label={ariaLabel}
+    onClick={alCerrar}>` con las clases base `rounded-full p-2 focus-visible:ring-2 outline-none`
+    + las de tono inyectadas por `className` (tokens claro/oscuro los elige el consumidor). Dentro,
+    aspa SVG `aria-hidden` (`w-5 h-5`, mismo `path` que `ModalTarjeta.jsx:115-117`). Sin hex.
+    Una pulsación ⇒ **una** llamada (verificado).
+  - **Contrato exacto — `useCierreConEsc({ activo = true, zIndex = 0, alCerrar })`**: registro de
+    capas **a nivel de módulo** (`capas[]`, `contadorOrden`, `listenerInstalado`) compartido por
+    todas las instancias; **un único** `keydown` en `document`, instalado con la primera capa y
+    retirado con la última; `Escape` cierra **solo** la superior (mayor `zIndex`; empate ⇒ mayor
+    `orden` = montada más tarde); `activo:false` no registra ni instala; `alCerrar` se lee por
+    **ref** (cambiar la identidad del callback no re-registra la capa). Con **doble montaje
+    (StrictMode)** queda 1 capa y 1 listener y sigue habiendo **una** llamada por pulsación.
+    Capas previstas: Cuenta `60`, menú `55`, `AuthModal`/`ModalTarjeta` `50` (plan §M1).
+  - **Contrato exacto — `useDeslizarParaCerrar({ activo = true, refPanel, alCerrar })`**: solo actúa
+    si `activo && useBreakpoint().isMobile` (corte único 768px; en ≥768px **no registra nada**).
+    Eventos **de puntero nativos** `pointerdown/pointermove/pointerup/pointercancel` sobre
+    `refPanel.current`, **sin** `setPointerCapture` y **sin** Framer Motion; solo el puntero
+    **primario** (`isPrimary !== false`) y uno a la vez. Cierra cuando `dy >= 96px` **y**
+    `|dy| > |dx| · 1.5` (vertical predominante). **No arranca** si el `pointerdown` cae en
+    `button, a, input, select, textarea, label, [role="button"], [contenteditable="true"]`, ni si el
+    objetivo o sus ancestros **hasta el panel** tienen `scrollTop > 0` (no consume el scroll, CL-09).
+    **No aplica `transform` ni transición** ⇒ RF-21 se cumple **por construcción** (no hay movimiento
+    nuevo que inhibir). Limpia sus 4 listeners al desactivarse/desmontar.
+  - **Decisiones de diseño (no cubiertas literalmente por el plan, tomadas y reportadas):**
+    1. `BotonCerrar` con **export nombrado** (como `ui/Card`) y callback `alCerrar` (español,
+       convención del proyecto; T8 lo cableará a `onCerrar` de `ModalTarjeta`).
+    2. `alCerrar` guardado en **ref** en ambos hooks para que un callback de identidad nueva no
+       re-registre la capa del registro de Esc (rompería el desempate por «montada más tarde») ni
+       re-suscriba el gesto.
+    3. La comprobación de scroll recorre la cadena **objetivo → ancestros → panel**, no sólo el
+       `scrollTop` del panel: cumple tanto el texto de la tarea («panel con `scrollTop > 0`») como el
+       plan §M6/CL-09 («ancestro desplazable más próximo dentro de él»).
+    4. Decisión consciente de **no tocar ningún archivo existente** ni la config de pruebas: los tres
+       hooks no se consumen aún, así que la T3 no puede romper superficies.
+  - **Validación medida:**
+    - Focalizadas: **33/33 PASS** — `BotonCerrar` 5, `useCierreConEsc` 10, `useDeslizarParaCerrar` 18.
+      TDD: las 3 suites se escribieron antes (fallaron por «Failed to resolve import»).
+    - `npm test` → **293/293 en 26 archivos, 0 fallos** (línea base **260/260 en 23**). **Contraste
+      archivo por archivo: los 23 recuentos previos intactos** (diff solo añade las 3 suites nuevas).
+    - `npm run build` → **verde** e **idéntico** a la línea base (CSS 57.34 kB; JS 379.52 kB): las
+      piezas aún no importadas no entran al bundle.
+    - Greps: `clickDeactivates` **2** (T4/T5, sin cambios), `vi.mock("focus-trap-react"` **2**
+      (sin cambios), `displayCheck` **0**, `drag` en `src/` **0** (se reformuló un comentario JSDoc
+      del hook nuevo para no introducir el literal y no ensuciar el grep de auditoría de T9).
+    - **Validación visual: no ejecutada** (no aplica a las piezas; el gesto real se revisa en
+      T4/T7/T8/T10).
+  - **Nota/deuda:** `useDeslizarParaCerrar` monta `useBreakpoint` (2 listeners de `matchMedia` por
+    superficie abierta), coste aceptado por la spec (plan §M8); el cierre por Esc casa con
+    `evento.key === "Escape"` (navegadores modernos). Sin commit ni staging.
+
+- Spec 010, T4 completa (2026-10-16): **`DashboardUserModal` con las cuatro formas de cierre**
+  (RF-02, RF-04, RF-05, RF-06, RF-08, RF-09, RF-16, RF-22; AC-01, AC-02, AC-08, AC-12, AC-20).
+  Solo dos archivos tocados: `src/components/layout/DashboardUserModal.jsx` y su `.test.jsx`.
+  - **Contrato final del modal:** «X» de `BotonCerrar` (export nombrado) con `aria-label`
+    **«Cerrar Cuenta»** dentro del `<header>` (junto al `<h2>` con `justify-between` ya existente),
+    como **único** control visible de cierre (sin botón al pie). Panel `motion.div` con
+    `id="dashboard-user-modal-panel"`, `role="dialog"`, `aria-modal="true"`,
+    `aria-labelledby="user-modal-title"`, **`tabIndex={-1}`**, **`max-h-[85vh] overflow-y-auto
+    outline-none`** (el cromo nuevo no deja nada inalcanzable y el contenedor no muestra anillo).
+    Overlay sin cambios (guarda `event.target === event.currentTarget` conservada).
+  - **Opciones reales de la trampa** (fábrica `crearOpcionesTrampa(refPanel)` en el módulo):
+    `allowOutsideClick: true`, `escapeDeactivates: false`, `initialFocus: () => refPanel.current`,
+    `returnFocusOnDeactivate: false`. **Eliminado** `clickDeactivates` (opción inexistente); **no**
+    se usa `clickOutsideDeactivates`. Listener propio de Esc **retirado**: Esc lo cubre
+    `useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar })` (capa del panel). Gesto con
+    `useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar })` (solo móvil).
+    Se eliminaron también los `onActivate`/`onDeactivate` no-ops que servían al retorno manual viejo.
+  - **Retorno de foco encadenado (M4):** al cerrar, primer candidato **conectado** de
+    `[triggerRef?.current, previousActiveElementRef.current]` (excluyendo `body`), y si ninguno,
+    el control estable `document.querySelector('aside[role="navigation"] button')`.
+    `previousActiveElementRef` se captura **siempre** en `useLayoutEffect` al abrir; un
+    `estuvoAbiertoRef` evita devolver foco en el montaje inicial cerrado. `triggerRef` aún **no** se
+    pasa desde el layout (T6): la cadena funciona con `triggerRef` ausente.
+  - **Decisiones no cubiertas literalmente por el plan (tomadas y reportadas):** (1) capturar el
+    foco previo **siempre** y excluir `body` de la cadena — evita enfocar `body` y cumple
+    «nunca en `body`»; (2) guardas `estuvoAbiertoRef` para no robar foco al montar cerrado;
+    (3) la aserción frágil de iconos se **acotó** (no se relajó) a `svg.lucide` (los dos iconos
+    lucide conservan `flex-shrink-0 w-6 h-6`; el aspa de la «X» es `w-5 h-5` y queda fuera).
+  - **Validación medida:**
+    - Focalizada `npx vitest run src/components/layout/DashboardUserModal.test.jsx`: **falla antes**
+      (mock retirado + contrato nuevo ⇒ **10 fallos / 26**) y **pasa después** (**26/26**).
+    - `npm test` → **299/299 en 26 archivos, 0 fallos** (línea base **293/293**; delta = +6 de esta
+      suite; **ningún recuento ajeno cambia**).
+    - `npm run build` → **verde** (CSS 57.34 kB idéntico; JS 382.32 kB, +2.8 kB por las piezas nuevas).
+    - Greps: `clickDeactivates` **2 → 1** (queda `DashboardDrawer.jsx:88`, T5);
+      `vi.mock("focus-trap-react"` **2 → 1** (queda `DashboardDrawer.test.jsx:17`, T5);
+      `displayCheck` **0**; `clickOutsideDeactivates` **0**.
+    - **Revisión en navegador: EJECUTADA** (Firefox 156.0.1 headless + geckodriver 0.37.1, sobre
+      `vite preview:4173`). PASS: Esc real cierra en 1024×768 y en 375×700; foco inicial en el
+      **contenedor** en ambas; en ≥768 el foco al cerrar va al **avatar** (disparador); gesto de
+      arrastre 180px hacia abajo sobre zona no interactiva cierra en móvil con puntero **`touch`
+      y `mouse`**; un arrastre que **arranca sobre un control no cierra** (exclusión verificada).
+    - **Deuda/hallazgo honesto (no aprobado):** en **móvil**, el foco al cerrar queda hoy en `body`
+      porque `DashboardDrawer` (T5 pendiente) conserva su propio listener de Esc (`:35-48`) y también
+      se cierra al pulsar Esc, desmontando el avatar; sin `triggerRef` (T6) no hay control estable en
+      móvil (no existe `aside`). Se resolverá con T5 (mecanismo único) + T6 (`triggerRef` = botón
+      «Menú», siempre montado en móvil). **No se improvisó** un sustituto dentro de T4.
+  - Nota de contexto: durante la sesión apareció una edición manual del usuario en
+    `src/components/layout/BottomNav.jsx` (retira el ítem «Configuración»); es DP-21, **fuera de
+    alcance de T4** y no se tocó. Sin commit ni staging.
+
+- Spec 010, T5 completa (2026-10-16): **`DashboardDrawer` con trampa real, «X» con aire superior y
+  clic fuera** (RF-02, RF-05, RF-10, RF-15, RF-16, RF-22; AC-03, AC-09, AC-12, AC-20). Tarea de
+  **cierre documental**: el código y la suite ya estaban escritos en el árbol de trabajo (sin
+  commitear); se re-verificó el código real (DP-21) y solo se editaron `tasks.md` y este `MEMORY.md`.
+- **Contrato final del menú (verificado en el código):** `AnimatePresence` **envuelve** a
+  `FocusTrap` y el hijo directo es el `motion.div` del panel (con `ref={panelRef}`), de modo que la
+  trampa se crea de verdad (antes el hijo directo era `AnimatePresence` y el `ref` no llegaba).
+  Opciones reales vía `crearOpcionesTrampa(refPanel)`: `allowOutsideClick: true`,
+  `escapeDeactivates: false`, `initialFocus: () => refPanel.current`,
+  `returnFocusOnDeactivate: false`; **eliminado** `clickDeactivates`. Esc por **mecanismo único**
+  `useCierreConEsc({ activo: abierto, zIndex: 55, alCerrar })` (sin listener propio). Panel
+  `tabIndex={-1}` + `flex flex-col`, **`inset-y-0` conservado** (Spec 008), fila de cromo
+  `flex justify-end px-4 pt-6 pb-2` con la «X» (`BotonCerrar`, `aria-label="Cerrar menú"`,
+  `focus-visible:ring-mint-accent`) y contenido en `min-h-0 flex-1 overflow-y-auto pb-4`.
+  **Sin** gesto de deslizar (DP-08): el hook no se importa.
+- **Decisiones registradas (no cubiertas literalmente por el plan):**
+  1. Envolver `AnimatePresence` alrededor de `FocusTrap` (y no al revés) es lo que hace que el
+     `motion.div` sea hijo directo y la trampa se cree; el mock de `framer-motion` del test reenvía
+     el `ref` para que la trampa real reciba el nodo.
+  2. El clic exterior se apoya en `allowOutsideClick: true` (la trampa **sigue activa**) más la
+     guarda `event.target === event.currentTarget` del backdrop; nunca `clickOutsideDeactivates`.
+  3. El aire superior se da con cromo `pt-6 pb-2` + envoltorio `min-h-0 flex-1 overflow-y-auto`,
+     sin perder la altura completa (`inset-y-0`) ni la desplazabilidad hasta el final.
+- **Validación medida:**
+  - `npx vitest run src/components/layout/DashboardDrawer.test.jsx` → **PASS: 23/23 en 1 archivo,
+    0 fallos** (literal: `Test Files 1 passed (1)` / `Tests 23 passed (23)`). Sustituye el recuento
+    previo de 17 de la T1/T2: la suite se reescribió con la **trampa real** (sin el mock de
+    `focus-trap-react`); los +6 casos cubren hijo directo corregido, foco al contenedor, confinamiento
+    por Tab, recuento/orden de focoables (5 = «X» + 3 enlaces + avatar), gesto que **no** cierra y
+    estructura del cromo/envoltorio.
+  - Greps en `src/`: `clickDeactivates` = **0** (heredado de T4, ya retirado también del test) y
+    `vi.mock("focus-trap-react"` (sin paréntesis de cierre) = **0**. Ambos en el objetivo de T9.
+  - **`npm test` (global) y `npm run build`: NO ejecutados aquí** (la regla común nº 3 de
+    `tasks.md` los reserva para la T10). No se declaran verdes.
+  - **Revisión en navegador [navegador] (AC-09/AC-15): no ejecutada aquí**; queda para la T10.
+- **Aprendizajes / deudas:** (1) con la trampa real `focus-trap-react` **no** envuelve al hijo en
+  ningún `<div>`: el `parentElement` del panel es `document.body`, y el test se reescribió a ese
+  hecho sin perder la comprobación de que la trampa existe (foco inicial en el contenedor tras
+  `delayInitialFocus`). (2) `initialFocus` como función que devuelve el contenedor mantiene el foco
+  inicial **fuera** del ciclo de Tab (`tabindex="-1"`), coherente con D4/T8. (3) **Deuda DP-07:** la
+  animación de salida (transición `x: "100%"` al cerrar) queda pendiente de revisión fina en T10;
+  el desmontaje (`if (!abierto) return null`) puede impedir ver el `exit`, no se modificó aquí.
+  Sin commit ni staging.
+
+- Spec 010, T7 completa (2026-10-16): **`AuthModal` con trampa real, Esc, clic fuera, nombres
+  accesibles y gesto** (RF-02, RF-04, RF-05, RF-06, RF-08, RF-11, RF-16, RF-20, RF-22; AC-04,
+  AC-12, AC-22, AC-23). Dos archivos: `src/components/domain/modales/AuthModal.jsx` (editado) y
+  `AuthModal.test.jsx` **(nuevo, no existía)**. Aspecto y hex heredados **intactos** (DP-03).
+  - **Contrato final del modal de acceso:** capa exterior (backdrop) con `onClick={manejarClicExterior}`
+    (guarda `event.target === event.currentTarget`, antes **no existía** `onClick`); dentro,
+    `FocusTrap` con `crearOpcionesTrampa(panelRef)` = `allowOutsideClick: true`,
+    `escapeDeactivates: false`, `initialFocus: () => panelRef.current`,
+    `returnFocusOnDeactivate: false` (misma fábrica que T4/T5, sin `clickDeactivates` ni
+    `clickOutsideDeactivates`). Panel `ref={panelRef}`, `role="dialog"`, `aria-modal="true"`,
+    **`aria-label="Ventana de acceso"`** (antes el diálogo **no tenía nombre accesible**),
+    `tabIndex={-1}`, `max-h-[85vh] overflow-y-auto outline-none`. «X» propia conservada en
+    `absolute top-5 right-5` con su SVG y su tono (`text-white/50 hover:text-white p-1 rounded-lg
+    transition-colors cursor-pointer`), **`aria-label` específico «Cerrar ventana de acceso»** (antes
+    «Cerrar modal») y anillo de foco con tokens
+    (`outline-none focus-visible:ring-2 focus-visible:ring-mint-accent`). Esc por **mecanismo único**
+    `useCierreConEsc({ activo: abierto, zIndex: 50, alCerrar })`; gesto con
+    `useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar })` (solo móvil).
+  - **Decisiones no cubiertas literalmente por el plan (tomadas y reportadas):**
+    1. **No** se reutilizó `BotonCerrar` en esta superficie: su base (`rounded-full p-2` + aspa
+       `strokeWidth="2"`) habría alterado el aspecto heredado (`rounded-lg p-1`, aspa con
+       `strokeLinecap/Linejoin`); la tarea autoriza conservar el `<button>` propio con el **mismo
+       patrón visual**, y así se hizo (DP-03).
+    2. `outline-none` en el panel (no en los controles): evita que el foco inicial pinte un anillo
+       que sugiera interacción (plan §2.3-M3/CL-15, RF-16).
+    3. Se reindentó (+2 espacios) el cuerpo del panel al ganar un nivel de anidamiento con
+       `FocusTrap`: **ninguna** clase, texto ni lógica cambió en esas líneas.
+    4. `manejarEnvio`/`fetch` y los estados del formulario **no** se tocaron (edición manual del
+       usuario, DP-21).
+  - **Validación medida:**
+    - **TDD:** suite nueva contra el `AuthModal.jsx` actual ⇒ **14 fallos / 15** (nombre del diálogo y
+      de la «X», anillo, `max-h`/`tabindex`, foco al contenedor, Esc, clic fuera, los cuatro casos del
+      gesto y las dos de AC-22; el único verde era «clic dentro del panel NO cierra», trivial sin
+      `onClick`). Tras implementar: `Test Files 1 passed (1)` / **`Tests 15 passed (15)`**, 0 fallos.
+    - Chequeo extra de regresión (no sustituye a la T10): `npx vitest run src/App.test.jsx` → **11/11**
+      (el test de `/login` monta `AuthModal` **abierto**, así que era el riesgo real de regresión).
+    - **Navegador (Firefox headless + geckodriver sobre `vite --port 5199`):** en `/login`
+      1024×768 y 390×744, Esc real cierra (navega a `/dashboard`) y el foco inicial **es** el panel
+      (`document.activeElement === [role="dialog"]`, `overflow-y: auto`, `max-height` ≈ 85vh medido);
+      en móvil, tras cerrar, el foco queda en «Abrir menú» (BottomNav). En la landing, clic en el
+      backdrop cierra; gesto de **180px** hacia abajo sobre zona **no interactiva** del panel cierra en
+      390×744; lo escrito (`ana@correo.com`) **persiste** al reabrir (AC-22 real).
+    - **No ejecutado aquí:** `npm test` y `npm run build` completos (T10); contraste medido de la «X»
+      sobre panel oscuro y límites Fluid Glass (AC-15/T10).
+  - **Aprendizajes / deudas:** (1) el gesto **no** arranca si el arrastre empieza sobre la fila de
+    tabs o sobre un campo (exclusión de controles), lo que obligó a repetir la prueba de navegador
+    con el inicio en el padding del panel: el primer intento (inicio sobre los tabs) **no** cerró, y
+    es el comportamiento esperado, no un fallo. (2) El grep de `displayCheck` en `src/` es **0**, pero
+    la palabra aparece **2 veces en comentarios** de `vitest.setup.js:55,64` (prosa del stub, no
+    código): conviene acotar el grep de la T9 a `src/`. (3) La deuda DP-07 (animación de salida) y el
+    contraste AC-15 siguen abiertos para la T10. Sin commit ni staging.
+
+- Spec 010, T8 completa (2026-10-16): **`ModalTarjeta` con foco inicial al contenedor y gesto en
+  móvil** (RF-06, RF-12, RF-16, RF-20; AC-05, AC-10, AC-12). Dos archivos: `src/components/domain/
+  modales/ModalTarjeta.jsx` (editado) y `src/components/ModalTarjeta.test.jsx` (editado **en su
+  sitio**: sigue fuera de la carpeta del componente, plan §9:1).
+  - **Cambios en el componente (mínimos y localizados; contenido, props `tarjeta`/`onCerrar`, «X»
+    (`aria-label="Cerrar detalle de tarjeta"`), bloqueo del scroll del body y animación con
+    `useReducedMotion` intactos):**
+    1. **Foco inicial al contenedor:** `(primerFocoable ?? dialogo)?.focus()` → `refDialogo.current?.focus()`
+    (errata del plan corregida en spec §7.1: con la «X» presente el `??` nunca caía al contenedor; el
+    `tabIndex={-1}` ya existía y el selector `SELECTOR_FOCOABLES` sigue usándose **solo** en la trampa manual).
+    2. **Esc:** el listener propio (`:54-61`) se retiró y pasa a
+    `useCierreConEsc({ activo: Boolean(tarjeta), zIndex: 50, alCerrar: onCerrar })` (capa `50`, plan §M1).
+    3. **Gesto:** `useDeslizarParaCerrar({ activo: Boolean(tarjeta), refPanel: refDialogo, alCerrar: onCerrar })`
+    sobre el panel (solo móvil vía `useBreakpoint`), reutilizando las piezas de T3 sin añadirlas ni
+    modificarlas.
+  - **Decisiones no cubiertas literalmente por el plan (tomadas y reportadas):**
+    1. `activo: Boolean(tarjeta)` (y no `tarjeta !== null`/una condición nueva): el componente
+    permanece montado con `tarjeta = null`, así que los dos hooks se llaman **siempre** en el mismo
+    orden (reglas de hooks) y el registro de Esc se desregistra al cerrar.
+    2. **No** se sustituyó la trampa manual de Tab/Shift+Tab por `focus-trap-react`: RF-12 la obliga a
+    conservar, y con el foco inicial en el contenedor (`-1`, fuera del ciclo de Tab) el primer Tab
+    pasa al primer focoable por el comportamiento nativo del navegador.
+    3. Se actualizaron **solo** las líneas del JSDoc que describían el contrato viejo (mecanismo de
+    Esc y foco inicial); la revisión completa de cabeceras sigue siendo de la T9 (RF-19).
+    4. En el test se añadió `beforeEach` que fija viewport explícito (1024px + `matchMedia`
+    coherente, patrón de `AuthModal.test.jsx`) y **restaura** `useReducedMotion` a `false`: antes el
+    último caso dejaba el mock en `true` para cualquier caso posterior.
+  - **Validación medida:**
+    - **TDD (rojo → verde):** la suite actualizada contra el componente viejo ⇒ **3 fallos / 18**
+    (los dos casos de foco: `document.activeElement` era la «X», no el diálogo; y el gesto en móvil
+    no cerraba). Tras implementar: `Test Files 1 passed (1)` / **`Tests 18 passed (18)`**, 0 fallos
+    (línea base de esta suite: **11/11**).
+    - Chequeo extra de regresión (no sustituye a la T10): `npx vitest run src/pages/PanelTarjetas.test.jsx
+    src/App.test.jsx` → **23/23** (CL-11: el retorno de foco al activador de `PanelTarjetas` —con «X»
+    y con Esc— se conserva).
+    - **`npm test` y `npm run build`: NO ejecutados aquí** (regla común nº 3 de `tasks.md`: se reservan
+    para la T10). No se declaran verdes.
+    - **Navegador (Firefox headless + geckodriver por WebDriver, `vite --port 5215`,
+    `/dashboard/tarjetas`): 11/11 comprobaciones PASS.** Foco inicial = contenedor en 1024×768 y
+    375×700; gesto de 180px que cierra en móvil con puntero `mouse` y `touch`; gesto que no arranca
+    sobre el control de flip; gesto que no existe en ≥768px; panel con `overflow-y: auto` y scroll
+    real (se recorrió el log hasta el final, `scrollTop ≈ 213`, **sin** cierre involuntario); con el
+    panel desplazado el arrastre **no** cierra (prioridad del scroll, CL-09); Esc real cierra en ambas
+    versiones de vista. Script fuera del repo: `/tmp/opencode/010/verificar_t8.py`.
+  - **Aprendizajes / deudas:** (1) `dispararPuntero` con `Event` nativo (no `PointerEvent`) basta
+    porque jsdom no implementa coordenadas de `PointerEvent`; el gesto solo lee
+    `clientX/clientY/isPrimary/pointerId`. (2) Para probar la exclusión de scroll hay que definir
+    `scrollTop` con `Object.defineProperty` (jsdom no lo conserva al asignarlo directamente). (3) La
+    deuda DP-07 (animación de salida) y el contraste AC-15 siguen abiertos para la T10. Sin commit ni
+    staging.
+
+- Spec 010, T6 completa (2026-10-16): **`DashboardLayout`: una sola superficie al abrir «Cuenta» y
+  `triggerRef` estable** (RF-07, RF-08, RF-13; AC-02, AC-06, AC-08). Dos archivos: `src/layout/
+  DashboardLayout.jsx` y `src/layout/DashboardLayout.test.jsx`. Sin props nuevas en
+  `SidebarResponsive` (firmas intactas).
+  - **Cambios exactos en el layout:**
+    1. `alAbrirUserModal` pasa de `() => setUserModalAbierto(true)` a
+       `() => { setMobileMenuAbierto(false); setUserModalAbierto(true); }` → **único punto de
+       apertura** (plan §2.3-M9): al abrir «Cuenta» el menú superpuesto se cierra, con lo que
+       desaparece el apilamiento menú (`z-55`) ↔ modal (`z-60`) y la doble superficie translúcida.
+       Sirve a los **dos** disparadores (avatar del menú de móvil y avatar de la navegación lateral
+       ≥768px), que comparten el mismo callback.
+    2. `DashboardUserModal` recibe `triggerRef={bottomNavMenuRef}` (el mismo ref que ya usaban
+       `BottomNav.menuTriggerRef` y `DashboardDrawer.triggerRef`): es el **control estable** del
+       retorno de foco en móvil (botón «Menú», siempre montado); en ≥768px el ref no tiene elemento
+       (`BottomNav` no se monta) y la cadena de M4 cae al control `aside[role="navigation"] button`.
+       El contrato del modal (T4) **no** se tocó: ya encadenaba `triggerRef` → elemento previo →
+       control estable.
+  - **Decisiones no cubiertas literalmente por el plan (tomadas y reportadas):**
+    1. El cierre del menú se hace **antes** de abrir el modal, en el mismo manejador y sin un
+       `useEffect` de coordinación: un solo punto de apertura ⇒ no puede haber dos superficies
+       (RF-07/RF-13), sin estado ni efecto nuevos.
+    2. El JSDoc del layout **no** se reescribió: su `@eventos` («apertura modal usuario») sigue
+       siendo cierto; la revisión completa de cabeceras es de la T9 (RF-19).
+    3. En la suite se enriquecieron **solo** los dos mocks estrictamente necesarios: `BottomNav`
+       ahora reenvía `menuTriggerRef` a un botón «Menú» (`aria-label="Abrir menú"`) — refleja el
+       comportamiento real y permite comprobar la **identidad** del control estable — y
+       `DashboardUserModal` expone `role="dialog"` cuando está abierto (se mantienen los
+       `data-testid` previos, así que ninguna aserción anterior cambia).
+  - **Validación medida:**
+    - **TDD (rojo → verde):** casos nuevos contra el layout previo ⇒ **3 fallos / 23** («abrir Cuenta
+      desde el menú» no cerraba el menú: el `dashboard-drawer` seguía presente; y `triggerRef`
+      llegaba `undefined` al modal, en móvil y en ≥768px). Tras implementar:
+      `npx vitest run src/layout/DashboardLayout.test.jsx` → **`Test Files 1 passed (1)` /
+      `Tests 23 passed (23)`**, 0 fallos (línea base de la suite: **21/21**; +2 casos).
+    - Chequeo extra de regresión (no sustituye a la T10):
+      `npx vitest run src/components/layout/DashboardUserModal.test.jsx` → **26/26** (el modal real
+      conserva su contrato `triggerRef`).
+    - **`npm test` y `npm run build`: NO ejecutados aquí** (regla común nº 3 de `tasks.md`: se
+      reservan para la T10). No se declaran verdes.
+    - **Revisión en navegador: NO ejecutada aquí** (T10); queda pendiente comprobar una sola
+      superficie visible y la ausencia de franja muerta de clic.
+  - **Estado de la deuda de foco (heredada de T4):** el **cableado** que la resuelve queda verificado
+    aquí (`triggerRef.current` **es** el botón «Menú», conectado y montado en móvil; en ≥768px es
+    `null` ⇒ cadena al control lateral) y la cadena de retorno ya estaba verde en T4
+    (`triggerRef` conectado → foco). **No verificado de extremo a extremo en jsdom:** esta suite
+    **mockea** `DashboardUserModal`, así que `document.activeElement` tras cerrar no se mide aquí
+    (exigiría desmockear el modal, fuera del alcance de la T6). Queda como **deuda para la T10**
+    (medición real del foco al cerrar «Cuenta» en móvil).
+  - **Hallazgo preexistente (ajeno a esta tarea, DP-21):** `npx vitest run src/layout
+    src/components/layout` deja **3 fallos / 143** en `src/components/layout/BottomNav.test.jsx`
+    («5 items fijos», «click en items 1-4 … Configuración», «media query landscape … 4≠5»). Los
+    causa la **edición manual del usuario** en `src/components/layout/BottomNav.jsx` (retira el ítem
+    «Configuración»: `items` tiene 3 entradas → 4 botones con «Menú», no 5), **no** este cambio;
+    `BottomNav.test.jsx` no está en el alcance de la T6 y no se tocó. Se reporta, no se corrige.
+    **Aprendizaje:** un fallo preexistente por edición manual del usuario aparece al ejecutar la
+    carpeta completa aunque la suite de la tarea esté verde; hay que **atribuirlo** con `git status`
+    y el código real antes de llamarlo regresión. Sin commit ni staging.
+
+- Spec 010, T9 completa (2026-10-16): **suite transversal, auditoría de greps y cabeceras JSDoc**
+  (RF-01, RF-07, RF-14, RF-19; AC-06, AC-07, AC-16, AC-18, AC-19). Archivos tocados:
+  `src/components/layout/cierreDeModales.test.jsx` (de canario a suite completa) y **solo cabeceras
+  JSDoc** de `src/components/ui/BotonCerrar.jsx`, `src/components/domain/modales/ModalTarjeta.jsx` y
+  `src/layout/DashboardLayout.jsx`; además `specs/010-cierre-de-modales/tasks.md` (casillas de T9) y
+  este `MEMORY.md`.
+  - **Suite transversal (22/22 en 1 archivo).** Mantiene las 3 pruebas del canario de la T2 y añade:
+    **matriz superficie × forma** (`describe.each` sobre las cuatro superficies reales) con «X»
+    (dentro del panel, 1 llamada), Esc (1 llamada por pulsación) y clic fuera (con la **trampa real**,
+    sin mock); **gesto ↓** en móvil (cierra en las tres de contenido y **no** en el menú, DP-08);
+    **una sola superficie/trampa** por integración con el `DashboardLayout` **real** (se abre el menú
+    con el botón «Menú» real del `BottomNav`, se pulsa el avatar del menú y se comprueba que el menú
+    se cierra, queda **1** `role="dialog"` y el foco queda confinado por Tab en el modal); y **Esc con
+    dos capas forzadas** (CL-02): capa distinta (`AuthModal` 50 + `DashboardUserModal` 60 ⇒ cierra solo
+    Cuenta con 1 llamada y la segunda pulsación cierra la siguiente) y empate de capa (`AuthModal` 50
+    montada antes + `ModalTarjeta` 50 montada después ⇒ gana la montada más tarde). Los anfitriones de
+    los casos defensivos usan `useState` para que el cierre real desmonte la superficie y se
+    **desregistre** la capa (con un `vi.fn()` que no cierra, la capa superior seguiría registrada).
+  - **Mocks mínimos:** solo `framer-motion` (`motion.div` con `forwardRef`, `AnimatePresence`
+    pass-through y `useReducedMotion` a `false`) y el viewport (`innerWidth` + `matchMedia`).
+    **Nunca** se mockea `focus-trap-react`: la trampa se ejecuta real en las tres superficies que la
+    usan (RF-18/AC-19).
+  - **Señal de la suite (no medida contra el código previo, documentada):** las aserciones de la
+    matriz reutilizan el mismo hecho que ya falló antes de T4–T8 — «X» ausente en Cuenta y menú
+    (T4: 10 fallos; T5), Esc/clic fuera ausentes en `AuthModal` (T7: 14 fallos), gesto ausente
+    (T7/T8) y apilamiento menú↔modal (T6: 3 fallos) — y ahora corren **sin el mock** de la trampa
+    que ocultaba el defecto. No se ejecutó la suite contra el árbol pre-T4–T8 (requeriría revertir
+    trabajo cerrado), así que la señal se documenta, no se mide.
+  - **Auditoría de greps (conteo literal en `src/`):** `clickDeactivates` **0**;
+    `clickOutsideDeactivates` **0**; `escapeDeactivates: true` **0**; `displayCheck` **0**
+    (las **2** apariciones de la palabra viven en comentarios de prosa de `vitest.setup.js`, fuera de
+    `src/` y no son código); `vi.mock("focus-trap-react"` (sin paréntesis de cierre) **0**;
+    `min-width` **0** en código de producto fuera de `useBreakpoint.js` (única fuente: `:12,14`; las
+    ocurrencias restantes son de archivos `*.test.*`, esperadas); `al pie` **0** (no hay botón
+    «Cerrar» al pie; el único comentario «Botón Cerrar» es la «X» **superior** de `AuthModal`).
+    **`768` = 17** en código de producto (todas en comentarios/JSDoc o en la fuente única
+    `useBreakpoint.js`) y **35** en pruebas: **esperado**, no se fuerza a 0.
+  - **Cabeceras JSDoc (RF-19).** Ninguna describe el contrato viejo. Correcciones: `BotonCerrar.jsx`
+    decía que lo usaban las cuatro superficies y **es falso** (AuthModal y ModalTarjeta conservan su
+    propia «X» con el mismo patrón visual, DP-03) ⇒ `@usadoPor` corregido a DashboardUserModal y
+    DashboardDrawer; `ModalTarjeta.jsx` gana en `@uso`/`@eventos` el contrato de las cuatro formas,
+    la «X» como único control visible y la trampa **manual** conservada; `DashboardLayout.jsx`
+    documenta que abrir «Cuenta» **cierra** el menú (una sola superficie/trampa, RF-07/RF-13) y pasa
+    un `triggerRef` estable (RF-08). `DashboardUserModal.jsx`, `DashboardDrawer.jsx`, `AuthModal.jsx`,
+    `useCierreConEsc.js`, `useDeslizarParaCerrar.js` y `vitest.setup.js` ya estaban al contrato nuevo
+    (no se editaron). Sin citar las rutas inexistentes de plantilla (`grep '.agents/'` en `src/` = 0).
+  - **Validación medida:** `npx vitest run src/components/layout src/layout src/components/domain/
+    modales src/hooks` → `Test Files 1 failed | 13 passed (14)` / `Tests 3 failed | 235 passed (238)`.
+    Línea base del mismo comando antes de T9: `3 failed | 216 passed (219)`. Delta = **+19 pruebas**
+    (esta suite: 3 → 22); los **3 fallos** son de `BottomNav.test.jsx` y **preexistentes** (véase el
+    hallazgo de la T6): `BottomNav.jsx` fue editado a mano por el usuario (3 ítems ⇒ 4 botones) **no**
+    por esta spec; ningún otro archivo falla ⇒ **0 fallos nuevos** atribuibles a la spec 010.
+    `npm test` y `npm run build` completos **no ejecutados** aquí (regla común nº 3: reservados a la
+    T10). **Revisión en navegador: no aplica** (T9 es suite + documentación).
+  - **Deudas / observaciones abiertas para la T10:** (1) la suite produce avisos de React en stderr
+    por el mock de `framer-motion` (`Received false for a non-boolean attribute initial`,
+    `whileHover`/`whileTap`), del mismo tipo que las suites de T7/T8: no afectan al resultado.
+    (2) `BottomNav.test.jsx` sigue en rojo por la edición manual (fuera de alcance; no se tocó).
+    (3) Siguen abiertas la animación de salida (DP-07) y el contraste/AC-15 en navegador.
+    Sin commit ni staging.
+
+- Spec 010 — FINALIZADA (T10, 2026-10-16): **validación final medida — las cuatro superficies modales
+  cierran con «X», Esc, clic fuera y gesto ↓** (RF-01…RF-21; AC-01…AC-22). Archivos tocados por la T10:
+  **solo** `MEMORY.md` y `specs/010-cierre-de-modales/tasks.md` (casillas de T10); **no** se tocó código
+  de producto ni de pruebas (la validación **no** destapó ningún defecto).
+  - **`npm test` (literal):** `Test Files 27 passed (27)` / `Tests 348 passed (348)`, 0 fallos, 5.89 s.
+    Contra la línea base de la T1 **257/257 en 22 archivos** (+3 del canario de la T2 = 260/260 en 23):
+    crecimiento esperado por suites nuevas y aserciones añadidas; **ningún recuento por archivo de la
+    línea base empeora** y **AC-01, AC-03, AC-06 y AC-14 dejan de fallar**. Reparto medido hoy:
+    DashboardUserModal **26**, DashboardDrawer **23**, DashboardLayout **23**, ModalTarjeta **18**,
+    cierreDeModales **22**, AuthModal **15** (nueva), BotonCerrar **5** (nueva), useCierreConEsc **10**
+    (nueva), useDeslizarParaCerrar **18** (nueva); `BottomNav.test.jsx` (**13**) pasa: fue realineado a
+    mano por el usuario a 4 controles (fuera del alcance de esta spec).
+  - **`npm run build` (literal):** verde — `dist/index.html 1.11 kB (gzip 0.60)`,
+    `dist/assets/index-B0_ZOIQp.css 57.49 kB (gzip 9.48)`, `dist/assets/index-CGGCbTeD.js 382.86 kB
+    (gzip 122.07)`, `✓ 2030 modules transformed` / `✓ built in 1.72s`.
+  - **Diff:** los cambios de **esta spec** se limitan al alcance de T1–T9 (`vitest.setup.js`,
+    `cierreDeModales.test.jsx`, `BotonCerrar`, `useCierreConEsc`, `useDeslizarParaCerrar`,
+    `DashboardUserModal`, `DashboardDrawer`, `DashboardLayout`, `AuthModal`, `ModalTarjeta` —fuente y
+    pruebas— y cabeceras JSDoc). El árbol de trabajo contiene además **ediciones manuales del usuario
+    fuera del alcance** (`.pi/agents/*` borrados, `BottomNav.jsx` + `BottomNav.test.jsx`,
+    `src/config/app.config.js`, `vite.config.js`, `PENDIENTE.m`, `analicis-completo-cambios.md`,
+    `specs/008-correccion-sidebar/`): se documentan, no se revierten ni se apropian.
+  - **Revisión en navegador (EJECUTADA):** Firefox **158.0** headless + geckodriver **0.37.1** sobre
+    `vite preview` (:4173), WebDriver por HTTP; Linux 7.0.0-38-generic. **54 comprobaciones: 47 PASS /
+    0 FAIL / 7 INFO.** Viewports reales 1024×682 y 500×626 (mínimo de ventana en headless); viewports
+    pequeños (320×568, 568×320, 320×300 ≈ zoom 200 %) emulados con un **iframe same-origin del tamaño
+    exacto** (la ventana headless no baja de ~500 px de ancho).
+    - **AC-14 (Esc):** PASS en las cuatro superficies (Cuenta/lateral, menú móvil, AuthModal en `/` y en
+      `/login`, ModalTarjeta) y en las dos versiones de vista; **1 sola pulsación cierra** y el foco no
+      queda en `body` (vuelve al disparador: «Abrir menú», «Colapsar navegación», etc.). Abrir «Cuenta»
+      desde el menú deja **1** `role="dialog"` (el menú se cierra). **En ≥768px el menú superpuesto NO
+      APLICA:** `DashboardDrawer` y `BottomNav` solo se montan en móvil (`isMobile`), así que no hay forma
+      de abrirlo en escritorio (discrepancia doc↔código, ver observaciones).
+    - **AC-15 (Fluid Glass):** menú abierto ⇒ **3** superficies translúcidas / **0** blobs; Cuenta (móvil
+      y escritorio) ⇒ **3** / **0**; AuthModal ⇒ **1** blob. En el límite (≤3 y ≤2) y conforme. Contraste
+      **real** de la «X» medido por píxeles (captura del elemento + Pillow): Cuenta **5.06:1** (panel
+      claro), menú **17.17:1** (oscuro), AuthModal **5.36:1** (oscuro), ModalTarjeta **5.98:1** (claro)
+      ⇒ todas ≥ **3:1** (WCAG 1.4.11, control no textual). (El cálculo por color computado se descartó:
+      Firefox devuelve `oklab(...)` para los tokens Tailwind v4.)
+    - **AC-09 (aire superior):** menú móvil ⇒ `panelTop 0`, «X» `top 24 / bottom 60`, primer contenido
+      `top 68` ⇒ **aire superior 68 px** y sin solape con la «X».
+    - **AC-10 (gesto):** el gesto ↓ **no** arranca sobre un control interactivo (flip de la tarjeta ni la
+      «X»); con el panel desplazado **no** cierra (prioridad del scroll, `scrollTop 212.9`); al principio
+      cierra con **touch y mouse**; en ≥768px **no existe**.
+    - **AC-20 (viewports pequeños):** la «X» del menú y de Cuenta queda dentro del viewport real
+      (320×568, 568×320, 320×300) y es el `elementFromPoint` de su centro; el contenido usa
+      `overflow-y:auto`; Esc cierra dentro del viewport pequeño. **Aprobado con el método de iframe
+      documentado** (no se pudo usar una ventana real de 320 px: Firefox headless la fija en ~500).
+    - **AC-21 (`prefers-reduced-motion`):** la banda está activa en el navegador; el gesto **no** aplica
+      `transform` ni añade transición; cierre por gesto **16 ms** (< 300) y apertura de ModalTarjeta
+      **19 ms** ⇒ sin animación nueva.
+  - **Decisiones de la spec (resumen):** (1) **piezas compartidas** `BotonCerrar` + `useCierreConEsc` +
+    `useDeslizarParaCerrar` como única maquinaria de cierre (AuthModal y ModalTarjeta conservan su propia
+    «X» con el mismo patrón visual, DP-03); (2) **opciones reales de `focus-trap`** —se retiraron los mocks
+    de `focus-trap-react` y las opciones viejas (`clickDeactivates`, `escapeDeactivates`) y se usa
+    `clickOutsideDeactivates` con la trampa **real** en jsdom gracias al **andamiaje de geometría**
+    (DP-10) de `vitest.setup.js`; (3) **gesto con Pointer Events nativos** (touch + mouse), no sintético;
+    (4) **abrir «Cuenta» cierra el menú** (una sola superficie/trampa, RF-07/RF-13) con `triggerRef`
+    estable; (5) **aire superior** del panel del menú para que la «X» no pise el contenido.
+  - **Deudas / observaciones abiertas:** (1) animación de salida de las superficies (DP-07) sigue fuera
+    de alcance; (2) `src/components/ModalTarjeta.test.jsx` vive **fuera** de la carpeta de su fuente
+    (`src/components/domain/modales/ModalTarjeta.jsx`); (3) deuda documental de `SidebarNavContenido.jsx`:
+    JSDoc/comentario dicen **«4 enlaces»** pero hay **3**, y usa la clase inválida `my-` (`:64`) —estado
+    **commiteado**, ajeno a esta spec; (4) configuración de pruebas **repartida** entre `vitest.config.js`
+    (`test.setupFiles`, `environment`, `include`, `globals`) y `package.json` (`"vitest".setupFiles`),
+    mientras `vite.config.js` perdió su bloque `test` por edición manual del usuario (no unificar
+    unilateralmente); (5) `BottomNav.jsx` conserva JSDoc «5 items» y `grid-cols-5` con solo **4** botones
+    (3 ítems + «Menú») tras la edición manual; (6) el foco móvil tras cerrar vuelve a «Abrir menú»
+    (correcto), pero la deuda genérica de foco móvil del `BottomNav` sigue anotada; (7)
+    `BottomNav.jsx`/`BottomNav.test.jsx` son ediciones manuales del usuario fuera del alcance. Sin commit
+    ni staging.
+
+

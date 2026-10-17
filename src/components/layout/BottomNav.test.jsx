@@ -1,6 +1,6 @@
 /**
  * @uso        Pruebas unitarias para el componente BottomNav
- * @funciones  test "renderiza 5 items con iconos/etiquetas correctos", test "marca item activo con indicador y color emerald", test "click items 1-4 llama alNavegar", test "click item 5 (Menú) llama alAbrirMenu", test "clase pb-safe presente", test "landscape oculta etiquetas via CSS global (sin <style> propio)"
+ * @funciones  test "renderiza 4 items con iconos/etiquetas correctos", test "marca item activo con indicador y color emerald", test "click items 1-3 llama alNavegar", test "click en el botón Menú llama alAbrirMenu", test "clase pb-safe presente", test "landscape oculta etiquetas via CSS global (sin <style> propio)"
  * @datos      N/A
  * @eventos    click en botones, media query mock
  * @estados    N/A
@@ -26,23 +26,22 @@ describe("BottomNav", () => {
     vi.restoreAllMocks();
   });
 
-  it("renderiza 5 items fijos con iconos y etiquetas correctos en orden", () => {
+  it("renderiza 4 items fijos con iconos y etiquetas correctos en orden", () => {
     render(<BottomNav {...propsBase} />);
 
-    // Verificar los 4 items de navegación + 1 item Menú = 5 botones
+    // Verificar los 3 items de navegación + 1 item Menú = 4 botones
     const botones = screen.getAllByRole("button");
-    expect(botones).toHaveLength(5);
+    expect(botones).toHaveLength(4);
 
     // Verificar etiquetas en orden
     expect(screen.getByText("Inicio")).toBeDefined();
     expect(screen.getByText("Transacciones")).toBeDefined();
     expect(screen.getByText("Tarjetas")).toBeDefined();
-    expect(screen.getByText("Configuración")).toBeDefined();
     expect(screen.getByText("Menú")).toBeDefined();
 
     // Verificar que cada item tiene un icono (lucide-react renderiza SVG)
     const svgs = document.querySelectorAll("svg");
-    expect(svgs.length).toBeGreaterThanOrEqual(5);
+    expect(svgs.length).toBeGreaterThanOrEqual(4);
   });
 
   it("marca item activo con color emerald y barra indicadora superior", () => {
@@ -63,7 +62,7 @@ describe("BottomNav", () => {
     expect(botonInactivo).toHaveClass("text-slate-text");
   });
 
-  it("click en items 1-4 llama alNavegar con la ruta correcta", () => {
+  it("click en items 1-3 llama alNavegar con la ruta correcta", () => {
     render(<BottomNav {...propsBase} />);
 
     fireEvent.click(screen.getByText("Inicio"));
@@ -74,12 +73,9 @@ describe("BottomNav", () => {
 
     fireEvent.click(screen.getByText("Tarjetas"));
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/tarjetas");
-
-    fireEvent.click(screen.getByText("Configuración"));
-    expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/configuracion");
   });
 
-  it("click en item 5 (Menú) llama alAbrirMenu", () => {
+  it("click en el botón Menú llama alAbrirMenu", () => {
     render(<BottomNav {...propsBase} />);
 
     fireEvent.click(screen.getByText("Menú"));
@@ -97,11 +93,11 @@ describe("BottomNav", () => {
   it("media query landscape oculta etiquetas (clase bottom-nav-label)", () => {
     const { container } = render(<BottomNav {...propsBase} />);
 
-    // Verificar que la clase bottom-nav-label existe en las 5 etiquetas: el CSS
+    // Verificar que la clase bottom-nav-label existe en las 4 etiquetas: el CSS
     // global que la oculta en landscape vive en src/styles/index.css (cubierto
     // por src/styles/index.css.test.js)
     const etiquetas = container.querySelectorAll(".bottom-nav-label");
-    expect(etiquetas.length).toBe(5);
+    expect(etiquetas.length).toBe(4);
     etiquetas.forEach((etiqueta) => {
       expect(etiqueta).toHaveClass("bottom-nav-label");
     });

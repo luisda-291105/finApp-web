@@ -1,8 +1,8 @@
 /**
- * @uso        Barra de navegación inferior para móvil (5 items fijos, safe-area, indicador activo, landscape)
+ * @uso        Barra de navegación inferior para móvil (4 controles: 3 ítems de navegación + «Menú», safe-area, indicador activo, landscape)
  * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef })
  * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu (callback menú)
- * @eventos    click en items 1-4 → alNavegar(ruta), click item 5 (Menú) → alAbrirMenu()
+ * @eventos    click en ítems 1-3 → alNavegar(ruta), click en «Menú» (4.º control) → alAbrirMenu()
  * @estados    Ninguno (componente controlado vía props)
  * @usadoPor   DashboardLayout (navegación inferior de móvil)
  */
@@ -19,20 +19,20 @@ import {
 const items = [
   { ruta: "/dashboard", etiqueta: "Inicio", icono: Home },
   { ruta: "/dashboard/transacciones", etiqueta: "Transacciones", icono: Receipt },
-  { ruta: "/dashboard/tarjetas", etiqueta: "Tarjetas", icono: CreditCard },
-  { ruta: "/dashboard/configuracion", etiqueta: "Configuración", icono: Settings },
+  { ruta: "/dashboard/tarjetas", etiqueta: "Tarjetas", icono: CreditCard }
 ];
 
 /**
  * BottomNav
- * Barra de navegación inferior fija para móvil con 5 items equidistantes.
+ * Barra de navegación inferior fija para móvil con 4 controles equidistantes
+ * (3 ítems de navegación + botón «Menú»).
  * Incluye safe-area (pb-safe), indicador activo en el item seleccionado,
  * y media query landscape que oculta las etiquetas.
  * @param {Object} props
  * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/transacciones")
- * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en items 1-4
- * @param {() => void} props.alAbrirMenu - Callback al hacer click en item 5 (Menú)
- * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón Menú (item 5), usado para focus trap return
+ * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en los ítems 1-3
+ * @param {() => void} props.alAbrirMenu - Callback al hacer click en «Menú» (4.º control)
+ * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón «Menú» (4.º control), usado para focus trap return
  */
 export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef }) {
   return (
@@ -66,7 +66,7 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
           )}
         </button>
       ))}
-      {/* Item 5: Menú */}
+      {/* 4.º control: Menú */}
       <button
         type="button"
         ref={menuTriggerRef}

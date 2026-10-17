@@ -42,13 +42,29 @@ vi.mock("../components/layout/DashboardDrawer", () => ({
   ),
 }));
 
+// BottomNav: refleja el botón «Menú» real, que recibe menuTriggerRef (control estable de
+// retorno de foco en móvil, spec 010 rf-08/AC-08).
 vi.mock("../components/layout/BottomNav", () => ({
-  default: vi.fn(() => <nav data-testid="bottom-nav" />),
+  default: vi.fn(({ menuTriggerRef }) => (
+    <nav data-testid="bottom-nav">
+      <button
+        type="button"
+        ref={menuTriggerRef}
+        data-testid="bottom-nav-menu"
+        aria-label="Abrir menú"
+      />
+    </nav>
+  )),
 }));
 
+// DashboardUserModal: el mock expone el contrato real (abierto, triggerRef) para poder
+// comprobar que el layout cierra el menú antes de abrirlo y le pasa el control estable.
 vi.mock("../components/layout/DashboardUserModal", () => ({
   default: vi.fn(({ abierto }) => (
-    <div data-testid={abierto ? "user-modal-open" : "user-modal-closed"} />
+    <div
+      data-testid={abierto ? "user-modal-open" : "user-modal-closed"}
+      role={abierto ? "dialog" : undefined}
+    />
   )),
 }));
 
@@ -203,6 +219,29 @@ describe("DashboardLayout — dos versiones de vista", () => {
       expect(ultimaLlamada).not.toHaveProperty("esMobile");
     });
 
+    it("abrir «Cuenta» desde el menú cierra el menú y deja una sola superficie", () => {
+      renderLayout(versionMovil());
+
+      act(() => {
+        propsDe(BottomNav).alAbrirMenu();
+      });
+      expect(screen.getByTestId("dashboard-drawer")).toBeDefined();
+
+      // El avatar del menú dispara la apertura del modal (mismo callback que la navegación lateral)
+      act(() => {
+        propsDe(SidebarNavContenido).alAbrirUserModal();
+      });
+
+      // Una sola superficie: el menú superpuesto se cierra y solo queda el modal abierto
+      expect(screen.queryByTestId("dashboard-drawer")).toBeNull();
+      expect(screen.getByTestId("user-modal-open")).toBeDefined();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+
+      const modalProps = DashboardUserModal.mock.calls.at(-1)[0];
+      expect(modalProps.abierto).toBe(true);
+      expect(modalProps).not.toHaveProperty("esMobile");
+    });
+
     it("navega con alNavegar y marca la ruta activa en BottomNav", () => {
       renderLayout(versionMovil(), "/dashboard/transacciones");
 
@@ -246,6 +285,30 @@ describe("DashboardLayout — dos versiones de vista", () => {
       });
 
       expect(screen.getByTestId("user-modal-open")).toBeDefined();
+      // En ≥768px el ref no tiene elemento (no hay BottomNav): la cadena de M4 cae al control lateral
+      const modalProps = DashboardUserModal.mock.calls.at(-1)[0];
+      expect(modalProps.triggerRef).toBeDefined();
+      expect(modalProps.triggerRef.current).toBeNull();
+    });
+
+    it("recibe el triggerRef del botón «Menú» sin cambiar las firmas del layout", () => {
+      renderLayout(versionMovil());
+
+      const modalProps = propsDe(DashboardUserModal);
+      expect(modalProps.triggerRef).toBeDefined();
+      expect(modalProps.triggerRef.current).toBe(screen.getByTestId("bottom-nav-menu"));
+      expect(modalProps.triggerRef.current).toHaveAttribute("aria-label", "Abrir menú");
+      // Firmas intactas: el modal no recibe props nuevas
+      expect(Object.keys(modalProps).sort()).toEqual(
+        ["abierto", "alCerrar", "triggerRef"].sort()
+      );
+
+      // El drawer conserva exactamente su contrato (sin props nuevas en sidebars)
+      const drawerProps = propsDe(DashboardDrawer);
+      expect(Object.keys(drawerProps).sort()).toEqual(
+        ["abierto", "alCerrar", "children", "triggerRef"].sort()
+      );
+      expect(drawerProps).not.toHaveProperty("esMobile");
     });
   });
 

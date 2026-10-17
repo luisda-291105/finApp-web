@@ -1,18 +1,20 @@
 /**
- * @uso        Pruebas unitarias para DashboardUserModal (modal usuario global, spec 007 T3)
- * @funciones  render, screen, within, userEvent
+ * @uso        Pruebas del modal de cuenta con las cuatro formas de cierre (spec 010, T4)
+ * @funciones  render, screen, waitFor, act, userEvent
  * @datos      N/A
- * @eventos    click en overlay/backdrop, ESC, click en botones Configuración/Salir del demo, Tab (focus trap)
+ * @eventos    click fuera (overlay), Esc, click en la «X», click en Configuración/Salir del demo,
+ *             Tab (focus trap real) y gestos de puntero (deslizar en móvil)
  * @estados    abierto (boolean), triggerRef (mock ref)
  * @usadoPor   Vitest
  */
-import { cleanup, render, screen, act } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, waitFor, act } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import DashboardUserModal from "./DashboardUserModal";
 
-// Mock de framer-motion: motion.div trivial con forwardRef para que el ref del focus trap llegue al DOM
+// Mock de framer-motion: motion.div trivial con forwardRef para que el ref del focus trap
+// real llegue al nodo del panel. NO se mockea focus-trap-react: la trampa debe ser real.
 vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   const React = await vi.importActual("react");
@@ -28,36 +30,31 @@ vi.mock("framer-motion", async () => {
   };
 });
 
-// Mock de focus-trap-react para evitar error "no tabbable nodes" en jsdom
-vi.mock("focus-trap-react", async () => {
-  const React = await vi.importActual("react");
-  return {
-    __esModule: true,
-    default: React.forwardRef(({ children, focusTrapOptions, ...props }, ref) => {
-      // Simular focus trap: enfocar primer elemento enfocable al montar
-      const containerRef = React.useRef(null);
-      React.useEffect(() => {
-        if (containerRef.current) {
-          const focusable = containerRef.current.querySelector(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusable) {
-            focusable.focus();
-          }
-        }
-        // Cleanup: focus trap options onDeactivate
-        return () => {
-          if (focusTrapOptions?.onDeactivate) {
-            focusTrapOptions.onDeactivate();
-          }
-        };
-      }, []);
-      return <div ref={(el) => { containerRef.current = el; if (ref) ref.current = el; }} {...props}>{children}</div>;
-    }),
-  };
-});
+/** Mismo mock de `matchMedia` que `vitest.setup.js`, reutilizable para restaurar el viewport. */
+const mockMatchMedia = (coincide) =>
+  vi.fn().mockImplementation((query) => ({
+    matches: typeof coincide === "function" ? coincide(query) : coincide,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
 
-afterEach(cleanup);
+/** Deja el viewport en «pantallas grandes» (≥768px) tras cada caso. */
+const restaurarViewportEscritorio = () => {
+  Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+  window.matchMedia = mockMatchMedia(false);
+};
+
+beforeEach(restaurarViewportEscritorio);
+
+afterEach(() => {
+  cleanup();
+  restaurarViewportEscritorio();
+});
 
 const renderModal = (props = {}) => {
   const defaultProps = {
@@ -74,11 +71,28 @@ const renderModal = (props = {}) => {
   );
 };
 
+const obtenerOverlay = () =>
+  document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
+
+/** Espera a que la trampa real (delayInitialFocus) enfoque el contenedor del diálogo. */
+const esperarFocoEnContenedor = async (dialogo) => {
+  await waitFor(() => {
+    expect(document.activeElement).toBe(dialogo);
+  });
+};
+
+/** Despacha un evento de puntero nativo con las propiedades que lee el gesto. */
+const dispararPuntero = (elemento, tipo, props = {}) => {
+  const evento = new Event(tipo, { bubbles: true, cancelable: true });
+  Object.assign(evento, { isPrimary: true, pointerId: 7, clientX: 0, clientY: 0, ...props });
+  elemento.dispatchEvent(evento);
+};
+
 describe("DashboardUserModal", () => {
   describe("portal y renderizado", () => {
     it("renderiza en document.body via portal cuando abierto=true", () => {
       renderModal();
-      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
+      const overlay = obtenerOverlay();
       const panel = document.body.querySelector("#dashboard-user-modal-panel");
       expect(overlay).toBeTruthy();
       expect(panel).toBeTruthy();
@@ -87,7 +101,7 @@ describe("DashboardUserModal", () => {
     it("no renderiza nada cuando abierto=false", () => {
       const { container } = renderModal({ abierto: false });
       expect(container.querySelector("[role='dialog']")).toBeNull();
-      expect(document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80")).toBeNull();
+      expect(obtenerOverlay()).toBeNull();
     });
 
     it("tiene role=dialog, aria-modal=true y aria-labelledby", () => {
@@ -102,15 +116,28 @@ describe("DashboardUserModal", () => {
   });
 
   describe("cierre del modal", () => {
-    it("click en overlay llama alCerrar", async () => {
+    it("click en overlay cierra con la trampa REAL activa y la trampa sigue activa después", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
-      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
-      await userEvent.click(overlay);
+      const dialog = screen.getByRole("dialog");
+      await esperarFocoEnContenedor(dialog);
+
+      // Con la trampa real, `allowOutsideClick` deja pasar el evento: el onClick del overlay corre.
+      await userEvent.click(obtenerOverlay());
       expect(alCerrar).toHaveBeenCalledTimes(1);
+
+      // La trampa NO se desactivó: un foco exterior es devuelto dentro del panel (checkFocusIn).
+      const externo = document.createElement("button");
+      externo.textContent = "Fuera de la trampa";
+      document.body.appendChild(externo);
+      externo.focus();
+      await waitFor(() => {
+        expect(dialog.contains(document.activeElement)).toBe(true);
+      });
+      document.body.removeChild(externo);
     });
 
-    it("click dentro del panel NO llama alCerrar (stopPropagation implícito)", async () => {
+    it("click dentro del panel NO llama alCerrar", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
       const panel = screen.getByRole("dialog");
@@ -118,7 +145,17 @@ describe("DashboardUserModal", () => {
       expect(alCerrar).not.toHaveBeenCalled();
     });
 
-    it("tecla ESC llama alCerrar", async () => {
+    it("la «X» superior llama a alCerrar una sola vez y está dentro del panel", async () => {
+      const alCerrar = vi.fn();
+      renderModal({ alCerrar });
+      const dialog = screen.getByRole("dialog");
+      const botonCerrar = screen.getByRole("button", { name: "Cerrar Cuenta" });
+      expect(dialog.contains(botonCerrar)).toBe(true);
+      await userEvent.click(botonCerrar);
+      expect(alCerrar).toHaveBeenCalledTimes(1);
+    });
+
+    it("tecla ESC cierra una sola vez mediante el mecanismo único", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
       await userEvent.keyboard("{Escape}");
@@ -142,37 +179,44 @@ describe("DashboardUserModal", () => {
     });
   });
 
-  describe("focus trap y accesibilidad", () => {
-    it("foco inicial queda en el primer botón (Configuración)", () => {
-      renderModal();
-      // El focus trap enfoca el primer button, getByRole lo encuentra
-      const btnConfig = screen.getByRole("button", { name: /Configuración/i });
-      expect(document.activeElement).toBe(btnConfig);
-    });
-
-    it("focus trap está presente (FocusTrap wrapper)", () => {
-      renderModal();
-      // Verificar que el modal tiene el role=dialog y aria-modal
-      const dialog = screen.getByRole("dialog");
-      expect(dialog.getAttribute("aria-modal")).toBe("true");
-      // El focus trap se verifica por la presencia del wrapper en el mock
-      // (el mock de focus-trap-react envuelve el contenido)
-      expect(dialog).toBeTruthy();
-    });
-
-    it("elementos enfocables son solo los botones del modal", () => {
+  describe("focus trap real y accesibilidad", () => {
+    it("foco inicial queda en el contenedor del diálogo (no en un botón)", async () => {
       renderModal();
       const dialog = screen.getByRole("dialog");
-      const focusables = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-      // Solo 2 botones: Configuración y Salir del demo
-      expect(focusables.length).toBe(2);
-      expect(focusables[0].textContent).toContain("Configuración");
-      expect(focusables[1].textContent).toContain("Salir del demo");
+      await esperarFocoEnContenedor(dialog);
+      // El contenedor está fuera del ciclo de Tab
+      expect(dialog.getAttribute("tabindex")).toBe("-1");
+    });
+
+    it("la trampa real confina el foco dentro del panel al tabular", async () => {
+      const usuario = userEvent.setup();
+      renderModal();
+      const dialog = screen.getByRole("dialog");
+      await esperarFocoEnContenedor(dialog);
+
+      await usuario.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      await usuario.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      await usuario.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+
+    it("elementos enfocables: la «X», Configuración y Salir del demo (3)", () => {
+      renderModal();
+      const dialog = screen.getByRole("dialog");
+      const focusables = dialog.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      expect(focusables.length).toBe(3);
+      expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar Cuenta");
+      expect(focusables[1].textContent).toContain("Configuración");
+      expect(focusables[2].textContent).toContain("Salir del demo");
     });
   });
 
   describe("retorno de foco al cerrar", () => {
-    it("devuelve foco a triggerRef.current si existe", async () => {
+    it("devuelve foco a triggerRef.current si está conectado", async () => {
       const alCerrar = vi.fn();
       const triggerButton = document.createElement("button");
       triggerButton.textContent = "Avatar";
@@ -181,7 +225,6 @@ describe("DashboardUserModal", () => {
       const focusSpy = vi.spyOn(triggerButton, "focus");
 
       const { rerender } = renderModal({ alCerrar, triggerRef });
-      // Cambiar abierto a false para disparar el useEffect de retorno de foco
       await act(async () => {
         rerender(
           <MemoryRouter initialEntries={["/dashboard"]}>
@@ -191,11 +234,12 @@ describe("DashboardUserModal", () => {
       });
 
       expect(focusSpy).toHaveBeenCalled();
+      expect(document.activeElement).toBe(triggerButton);
       focusSpy.mockRestore();
       document.body.removeChild(triggerButton);
     });
 
-    it("devuelve foco a previousActiveElement si no hay triggerRef", async () => {
+    it("devuelve foco al elemento previo conectado si no hay triggerRef", async () => {
       const alCerrar = vi.fn();
       const previousButton = document.createElement("button");
       previousButton.textContent = "Prev";
@@ -213,8 +257,100 @@ describe("DashboardUserModal", () => {
       });
 
       expect(focusSpy).toHaveBeenCalled();
+      expect(document.activeElement).toBe(previousButton);
       focusSpy.mockRestore();
       document.body.removeChild(previousButton);
+    });
+
+    it("cae al control estable de la navegación lateral si no hay disparador ni elemento previo", async () => {
+      const alCerrar = vi.fn();
+      const aside = document.createElement("aside");
+      aside.setAttribute("role", "navigation");
+      const navButton = document.createElement("button");
+      navButton.textContent = "Inicio";
+      aside.appendChild(navButton);
+      document.body.appendChild(aside);
+      const focusSpy = vi.spyOn(navButton, "focus");
+
+      const { rerender } = renderModal({ alCerrar, triggerRef: { current: null } });
+      await act(async () => {
+        rerender(
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <DashboardUserModal abierto={false} alCerrar={alCerrar} triggerRef={{ current: null }} />
+          </MemoryRouter>
+        );
+      });
+
+      expect(focusSpy).toHaveBeenCalled();
+      expect(document.activeElement).toBe(navButton);
+      expect(document.activeElement).not.toBe(document.body);
+      focusSpy.mockRestore();
+      document.body.removeChild(aside);
+    });
+  });
+
+  describe("gesto de deslizar hacia abajo (solo móvil)", () => {
+    const activarMovil = () => {
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 375 });
+      window.matchMedia = mockMatchMedia(false);
+    };
+
+    const activarPantallasGrandes = () => {
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+      window.matchMedia = mockMatchMedia((query) => query.includes("min-width: 768px"));
+    };
+
+    it("cierra al deslizar hacia abajo en móvil", async () => {
+      activarMovil();
+      const alCerrar = vi.fn();
+      renderModal({ alCerrar });
+      const panel = screen.getByRole("dialog");
+      await esperarFocoEnContenedor(panel);
+
+      dispararPuntero(panel, "pointerdown", { clientY: 0 });
+      dispararPuntero(panel, "pointermove", { clientY: 160 });
+      dispararPuntero(panel, "pointerup", { clientY: 160 });
+
+      expect(alCerrar).toHaveBeenCalledTimes(1);
+    });
+
+    it("no cierra con un arrastre corto ni horizontal en móvil", async () => {
+      activarMovil();
+      const alCerrar = vi.fn();
+      renderModal({ alCerrar });
+      const panel = screen.getByRole("dialog");
+      await esperarFocoEnContenedor(panel);
+
+      dispararPuntero(panel, "pointerdown", { clientX: 0, clientY: 0 });
+      dispararPuntero(panel, "pointerup", { clientX: 0, clientY: 40 });
+      dispararPuntero(panel, "pointerdown", { clientX: 0, clientY: 0 });
+      dispararPuntero(panel, "pointerup", { clientX: 200, clientY: 120 });
+
+      expect(alCerrar).not.toHaveBeenCalled();
+    });
+
+    it("no cierra al deslizar en pantallas grandes (≥768px)", async () => {
+      activarPantallasGrandes();
+      const alCerrar = vi.fn();
+      renderModal({ alCerrar });
+      const panel = screen.getByRole("dialog");
+      await esperarFocoEnContenedor(panel);
+
+      dispararPuntero(panel, "pointerdown", { clientY: 0 });
+      dispararPuntero(panel, "pointermove", { clientY: 200 });
+      dispararPuntero(panel, "pointerup", { clientY: 200 });
+
+      expect(alCerrar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("altura y scroll interno (RF-22)", () => {
+    it("el panel limita su altura y ofrece scroll interno", () => {
+      renderModal();
+      const panel = screen.getByRole("dialog");
+      expect(panel.classList.contains("max-h-[85vh]")).toBe(true);
+      expect(panel.classList.contains("overflow-y-auto")).toBe(true);
+      expect(panel.getAttribute("tabindex")).toBe("-1");
     });
   });
 
@@ -222,26 +358,21 @@ describe("DashboardUserModal", () => {
     it("renderiza motion.div con props de animación (initial, animate, exit, transition)", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
-      // Verificar que el panel tiene los atributos ARIA esperados
       expect(panel.getAttribute("role")).toBe("dialog");
       expect(panel.getAttribute("aria-modal")).toBe("true");
       expect(panel.getAttribute("aria-labelledby")).toBe("user-modal-title");
-      // La presencia de AnimatePresence y motion.div se verifica por la estructura
       expect(panel).toBeTruthy();
     });
 
     it("AnimatePresence presente para animación de salida", () => {
-      // El test de renderizado sin errores ya valida que AnimatePresence no rompe
       const { rerender } = renderModal({ abierto: true });
       expect(screen.getByRole("dialog")).toBeTruthy();
 
-      // Cambiar a cerrado
       rerender(
         <MemoryRouter initialEntries={["/dashboard"]}>
           <DashboardUserModal abierto={false} alCerrar={vi.fn()} />
         </MemoryRouter>
       );
-      // No debe lanzar error
       expect(screen.queryByRole("dialog")).toBeNull();
     });
   });
@@ -263,9 +394,11 @@ describe("DashboardUserModal", () => {
       expect(icon.classList.contains("lucide-log-out")).toBe(true);
     });
 
-    it("iconos tienen flex-shrink-0 w-6 h-6", () => {
+    it("los iconos lucide tienen flex-shrink-0 w-6 h-6 (acotado a los iconos bajo prueba)", () => {
       renderModal();
-      const icons = document.querySelectorAll("#dashboard-user-modal-panel svg");
+      // Acotado a los iconos lucide: el aspa de BotonCerrar (w-5 h-5) no debe romper esta aserción.
+      const icons = document.querySelectorAll("#dashboard-user-modal-panel svg.lucide");
+      expect(icons.length).toBe(2);
       icons.forEach((icon) => {
         expect(icon.classList.contains("flex-shrink-0")).toBe(true);
         expect(icon.classList.contains("w-6")).toBe(true);
@@ -277,7 +410,7 @@ describe("DashboardUserModal", () => {
   describe("estilos y clases Fluid Glass", () => {
     it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-50", () => {
       renderModal();
-      const overlay = document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
+      const overlay = obtenerOverlay();
       expect(overlay).toBeTruthy();
       expect(overlay.classList.contains("backdrop-blur-sm")).toBe(true);
       expect(overlay.classList.contains("z-50")).toBe(true);

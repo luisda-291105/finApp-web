@@ -1,8 +1,10 @@
 /**
- * @uso        Modal de usuario (portal) con slots fijos: Configuración + Salir del demo
+ * @uso        Modal de cuenta (portal) con las CUATRO formas de cierre (spec 010): «X» superior,
+ *             Esc, toque/clic fuera y deslizar hacia abajo (solo móvil)
  * @funciones  DashboardUserModal({ abierto, alCerrar, triggerRef })
- * @datos      Slots fijos por defecto: header "Cuenta", profile → Configuración, logout → redirect /
- * @eventos    click overlay, ESC → alCerrar; click slots → navegación + alCerrar
+ * @datos      Slots fijos por defecto: header "Cuenta" con «X», profile → Configuración, logout → /
+ * @eventos    clic en overlay, Esc (useCierreConEsc), gesto (useDeslizarParaCerrar) → alCerrar;
+ *             clic en slots → navegación + alCerrar
  * @estados    abierto (controlado desde padre DashboardLayout)
  * @usadoPor   DashboardLayout (global, portal)
  */
@@ -12,12 +14,36 @@ import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
 import { useNavigate } from "react-router-dom";
 import { Settings, LogOut } from "lucide-react";
+import { BotonCerrar } from "../ui/BotonCerrar";
+import { useCierreConEsc } from "../../hooks/useCierreConEsc";
+import { useDeslizarParaCerrar } from "../../hooks/useDeslizarParaCerrar";
+
+/**
+ * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
+ * clic exterior (la trampa no cancela ni consume el evento) SIN desactivarse; `escapeDeactivates:
+ * false` deja Esc al único manejador común (`useCierreConEsc`); el foco inicial va al contenedor
+ * del diálogo y el retorno de foco es manual (`returnFocusOnDeactivate: false`).
+ * Solo se pasan opciones existentes de la API: no se desactiva la trampa con el clic exterior.
+ */
+function crearOpcionesTrampa(refPanel) {
+  return {
+    allowOutsideClick: true,
+    escapeDeactivates: false,
+    initialFocus: () => refPanel.current,
+    returnFocusOnDeactivate: false,
+  };
+}
 
 /**
  * DashboardUserModal
- * Modal global accesible mediante portal, con focus trap y animación Framer Motion.
- * Slots fijos: header "Cuenta", botón Configuración (navega a /dashboard/configuracion),
- * botón Salir del demo (navega a / con replace).
+ * - Cuatro formas de cierre: «X» superior (`BotonCerrar`), Esc (mecanismo único por capa),
+ *   toque/clic fuera (overlay con guarda de destino) y deslizar hacia abajo solo en móvil.
+ * - Una sola trampa de foco (la del panel) y **un solo** control visible de cierre; el foco
+ *   inicial va al contenedor del diálogo (`tabIndex={-1}`, fuera del ciclo de Tab).
+ * - Retorno de foco encadenado al cerrar (plan §2.3-M4): disparador conectado → elemento previo
+ *   conectado → control estable de la navegación lateral; nunca termina en `body`.
+ * - Slots fijos: header "Cuenta", botón Configuración (navega a /dashboard/configuracion),
+ *   botón Salir del demo (navega a / con replace).
  * @param {Object} props
  * @param {boolean} props.abierto - Visibilidad del modal
  * @param {() => void} props.alCerrar - Callback de cierre
@@ -28,45 +54,48 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
 
-  // Guardar el elemento que tenía el foco antes de abrir el modal
-  // useLayoutEffect se ejecuta sincrónicamente después de mutaciones del DOM pero antes de paint,
-  // capturando el foco ANTES de que FocusTrap lo mueva al primer botón
+  // Elemento con el foco antes de abrir (capturado siempre para la cadena de retorno, M4)
   const previousActiveElementRef = useRef(null);
+  // Marca que el modal llegó a estar abierto, para no devolver foco en el montaje inicial cerrado
+  const estuvoAbiertoRef = useRef(false);
 
-  // Manejar cierre con teclado (ESC) y focus trap
-  useEffect(() => {
-    if (!abierto) return;
+  // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
+  useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });
 
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        alCerrar();
-      }
-    };
+  // Gesto de deslizar hacia abajo (solo móvil, con punteros nativos)
+  useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar });
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [abierto, alCerrar]);
-
-  // Guardar el elemento activo ANTES de que FocusTrap actúe (useLayoutEffect = sincrónico)
+  // Capturar el foco previo ANTES de que la trampa enfoque el contenedor (useLayoutEffect = sincrónico)
   useLayoutEffect(() => {
     if (!abierto) return;
-    // Solo guardar si no tenemos triggerRef (si lo tenemos, usaremos ese para retorno)
-    if (!triggerRef?.current) {
-      previousActiveElementRef.current = document.activeElement;
-    }
-  }, [abierto, triggerRef]);
+    previousActiveElementRef.current = document.activeElement;
+  }, [abierto]);
 
-  // Devolver foco al cerrar
+  // Retorno de foco encadenado al cerrar (nunca a un nodo desconectado ni a body)
   useEffect(() => {
-    if (abierto) return; // Solo ejecutar al cerrar (cuando abierto pasa a false)
+    if (abierto) {
+      estuvoAbiertoRef.current = true;
+      return;
+    }
+    if (!estuvoAbiertoRef.current) return;
+    estuvoAbiertoRef.current = false;
 
-    // Devolver foco al triggerRef si existe, sino al elemento previo guardado
-    if (triggerRef?.current) {
-      triggerRef.current.focus();
-    } else if (previousActiveElementRef.current instanceof HTMLElement) {
-      previousActiveElementRef.current.focus();
+    const candidatos = [triggerRef?.current, previousActiveElementRef.current];
+    for (const candidato of candidatos) {
+      if (
+        candidato instanceof HTMLElement &&
+        candidato !== document.body &&
+        candidato.isConnected
+      ) {
+        candidato.focus();
+        return;
+      }
+    }
+
+    // Control estable equivalente (navegación lateral) si el disparador ya no existe
+    const controlEstable = document.querySelector('aside[role="navigation"] button');
+    if (controlEstable instanceof HTMLElement) {
+      controlEstable.focus();
     }
   }, [abierto, triggerRef]);
 
@@ -92,16 +121,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const modalContent = (
     <FocusTrap
       ref={focusTrapRef}
-      focusTrapOptions={{
-        onActivate: () => {
-          // El focus-trap-react enfoca automáticamente el primer elemento enfocable
-        },
-        onDeactivate: () => {
-          // El retorno de foco se maneja en el useEffect de arriba
-        },
-        clickDeactivates: false, // No desactivar al click fuera (manejado por overlay)
-        escapeDeactivates: false, // Manejado manualmente
-      }}
+      focusTrapOptions={crearOpcionesTrampa(panelRef)}
     >
       <motion.div
         ref={panelRef}
@@ -109,17 +129,23 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="user-modal-title"
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm bg-bg-cream/95 backdrop-blur-md border border-border-line/30 rounded-2xl shadow-xl z-60"
+        tabIndex={-1}
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 backdrop-blur-md border border-border-line/30 rounded-2xl shadow-xl z-60"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
       >
-        {/* Header */}
+        {/* Header con el único control visible de cierre */}
         <header className="flex items-center justify-between px-5 py-4 border-b border-border-line/30">
           <h2 id="user-modal-title" className="font-display text-lg font-semibold text-bg-dark">
             Cuenta
           </h2>
+          <BotonCerrar
+            ariaLabel="Cerrar Cuenta"
+            alCerrar={alCerrar}
+            className="text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
+          />
         </header>
 
         {/* Profile: Configuración */}
@@ -154,7 +180,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
 
   return createPortal(
     <>
-      {/* Overlay */}
+      {/* Overlay: cierra el modal al tocar/clicar fuera (allowOutsideClick deja pasar el evento) */}
       <div
         className="fixed inset-0 bg-bg-dark/80 backdrop-blur-sm z-50"
         onClick={handleOverlayClick}
