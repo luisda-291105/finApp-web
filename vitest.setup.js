@@ -10,22 +10,30 @@
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
 
-// Mock window.matchMedia for jsdom (used by useBreakpoint hook)
+// Mock window.matchMedia for jsdom (used by useBreakpoint hook).
+// `matches` se deriva del `innerWidth` vigente en el momento de la consulta (una sola fuente de
+// la medición): con el ancho por defecto (1024, ver abajo) las consultas de ancho dan `true`.
+// Las consultas que no son de ancho (p. ej. prefers-reduced-motion) se quedan en `false`.
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+  configurable: true,
+  value: vi.fn().mockImplementation((query) => {
+    const minimo = /min-width:\s*(\d+)px/.exec(query);
+    return {
+      matches: minimo ? window.innerWidth >= Number(minimo[1]) : false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    };
+  }),
 });
 
-// Mock window.innerWidth for breakpoint tests
+// Mock window.innerWidth for breakpoint tests (default: pantallas grandes, coherente con el stub
+// de `matchMedia` de arriba)
 Object.defineProperty(window, "innerWidth", {
   writable: true,
   configurable: true,

@@ -10,7 +10,7 @@ import PanelTarjetas from "./PanelTarjetas";
 
 export default function PaginaDashboardTarjetas() {
   return (
-    <section aria-labelledby="dashboard-title" className="space-y-6">
+    <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
       <div>
         <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
         <h1 id="dashboard-title" className="mt-2 font-display text-3xl text-bg-dark">
