@@ -282,4 +282,89 @@ describe("useBreakpoint", () => {
       expect(typeof result.current.sidebarColapsada).toBe("boolean");
     });
   });
+
+  describe("fuente única del snapshot inicial (RF-01, RF-02)", () => {
+    beforeEach(() => {
+      global.localStorage.getItem.mockReturnValue(null);
+    });
+
+    /**
+     * Sonda de composiciones: el callback de `renderHook` se invoca en cada render
+     * (`@testing-library/react` 16.3.3), así que acumula cada valor devuelto por el hook.
+     * `result.current` no sirve (ya es post-efecto y nacería verde) y `result.all` no existe.
+     */
+    const medirComposiciones = (width) => {
+      if (width !== undefined) configurarAncho(width);
+      const registros = [];
+      const { unmount } = renderHook(() => {
+        const valor = useBreakpoint();
+        registros.push(valor);
+        return valor;
+      });
+      unmount();
+      return registros;
+    };
+
+    it("con un mock incoherente manda la media query ya en el primer render (AC-02)", () => {
+      // Mock DELIBERADAMENTE incoherente (innerWidth 1024 con matches false): es la única
+      // excepción de RF-13 y vive solo dentro de este caso.
+      Object.defineProperty(window, "innerWidth", {
+        value: 1024,
+        writable: true,
+        configurable: true,
+      });
+      matchMediaMocks.pantallasGrandes.matches = false;
+      matchMediaMocks.anchoGrande.matches = false;
+
+      const registros = medirComposiciones();
+
+      expect(registros[0]).toMatchObject({
+        isMobile: true,
+        isDesktop: false,
+        sidebarColapsada: true,
+      });
+      expect(registros).toHaveLength(1);
+
+      registros.forEach((registro) => {
+        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
+        expect(registro.isMobile).toBe(!matchMediaMocks.pantallasGrandes.matches);
+        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+      });
+    });
+
+    it("con un mock coherente el primer render ya es el medido en 375, 800 y 1200 (AC-01)", () => {
+      const enMovil = medirComposiciones(375);
+      expect(enMovil[0]).toMatchObject({
+        isMobile: true,
+        isDesktop: false,
+        sidebarColapsada: true,
+      });
+      enMovil.forEach((registro) => {
+        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
+        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+      });
+
+      const enMediano = medirComposiciones(800);
+      expect(enMediano[0]).toMatchObject({
+        isMobile: false,
+        isDesktop: true,
+        sidebarColapsada: true,
+      });
+      enMediano.forEach((registro) => {
+        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
+        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+      });
+
+      const enGrande = medirComposiciones(1200);
+      expect(enGrande[0]).toMatchObject({
+        isMobile: false,
+        isDesktop: true,
+        sidebarColapsada: false,
+      });
+      enGrande.forEach((registro) => {
+        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
+        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+      });
+    });
+  });
 });

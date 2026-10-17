@@ -3,7 +3,10 @@
  * @funciones  LogMovimientos(), formatearFechaCorta(fechaISO)
  * @datos      Props: `movimientos` (array {id, fecha ISO, descripcion, categoria, monto});
  *              ordena descendente por fecha ISO (lexicográfica) y formatea la fecha en
- *              la capa UI ("12 oct 2026") con meses en español sin Intl
+ *              la capa UI ("12 oct 2026") con meses en español sin Intl.
+ *              `formatearFechaCorta` exige el formato estricto "AAAA-MM-DD" (4/2/2
+ *              dígitos), valida el mes (1-12) y devuelve el texto neutro "—" ante
+ *              cualquier entrada inválida; su contrato es una cadena (sin guarda de tipo).
  * @eventos    Ninguno
  * @estados    Ninguno
  * @usadoPor   ModalTarjeta
@@ -14,13 +17,30 @@ const MESES_ES = [
   "jul", "ago", "sep", "oct", "nov", "dic",
 ];
 
+/** Texto neutro (guion largo U+2014) para toda entrada de fecha inválida. */
+const FECHA_NEUTRA = "—";
+
 /**
- * Convierte una fecha ISO "AAAA-MM-DD" al formato corto "12 oct 2026"
- * usando un mapa de meses en español (sin depender de Intl ni del locale del SO).
+ * Convierte una fecha ISO "AAAA-MM-DD" (exactamente 4/2/2 dígitos) al formato corto
+ * "12 oct 2026" usando un mapa de meses en español (sin depender de Intl ni del locale
+ * del SO). Valida el mes (1-12); el día y el año no se validan. Ante un mes fuera de
+ * rango o un formato incumplido devuelve el texto neutro "—". Espera una cadena: con
+ * otro tipo se mantiene el TypeError de `split`.
  */
 export function formatearFechaCorta(fechaISO) {
-  const [anio, mes, dia] = fechaISO.split("-").map(Number);
-  return `${dia} ${MESES_ES[mes - 1]} ${anio}`;
+  const [anio, mes, dia] = fechaISO.split("-");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) {
+    return FECHA_NEUTRA;
+  }
+
+  const numeroMes = Number(mes);
+
+  if (numeroMes < 1 || numeroMes > 12) {
+    return FECHA_NEUTRA;
+  }
+
+  return `${Number(dia)} ${MESES_ES[numeroMes - 1]} ${Number(anio)}`;
 }
 
 /**

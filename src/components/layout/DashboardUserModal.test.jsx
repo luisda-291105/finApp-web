@@ -30,7 +30,11 @@ vi.mock("framer-motion", async () => {
   };
 });
 
-/** Mismo mock de `matchMedia` que `vitest.setup.js`, reutilizable para restaurar el viewport. */
+/**
+ * Mismo mock de `matchMedia` que `vitest.setup.js`: recibe un booleano o un predicado sobre la
+ * consulta. Se conserva porque lo siguen usando los dos viewports explícitos del gesto
+ * (`activarMovil` con `false` y `activarPantallasGrandes` con predicado).
+ */
 const mockMatchMedia = (coincide) =>
   vi.fn().mockImplementation((query) => ({
     matches: typeof coincide === "function" ? coincide(query) : coincide,
@@ -43,10 +47,18 @@ const mockMatchMedia = (coincide) =>
     dispatchEvent: vi.fn(),
   }));
 
-/** Deja el viewport en «pantallas grandes» (≥768px) tras cada caso. */
+/**
+ * Deja el viewport en «pantallas grandes» (≥768px) tras cada caso e instala un `matchMedia`
+ * derivado del `innerWidth` vigente en el momento de la consulta, con el mismo criterio que el
+ * stub global de `vitest.setup.js` (`matches = innerWidth >= min-width`; las consultas sin
+ * `min-width` quedan en `false`). Así la suite mide una sola versión de vista (pantallas grandes).
+ */
 const restaurarViewportEscritorio = () => {
   Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
-  window.matchMedia = mockMatchMedia(false);
+  window.matchMedia = mockMatchMedia((query) => {
+    const minimo = /min-width:\s*(\d+)px/.exec(query);
+    return minimo ? window.innerWidth >= Number(minimo[1]) : false;
+  });
 };
 
 beforeEach(restaurarViewportEscritorio);
@@ -89,6 +101,14 @@ const dispararPuntero = (elemento, tipo, props = {}) => {
 };
 
 describe("DashboardUserModal", () => {
+  describe("entorno de medición (RF-13, AC-13)", () => {
+    it("el default mide pantallas grandes: con innerWidth 1024 coinciden 768 y 1024", () => {
+      expect(window.innerWidth).toBe(1024);
+      expect(window.matchMedia("(min-width: 768px)").matches).toBe(true);
+      expect(window.matchMedia("(min-width: 1024px)").matches).toBe(true);
+    });
+  });
+
   describe("portal y renderizado", () => {
     it("renderiza en document.body via portal cuando abierto=true", () => {
       renderModal();

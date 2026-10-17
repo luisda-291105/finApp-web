@@ -1,9 +1,9 @@
 /**
  * @uso        Dos versiones de vista del dashboard (móvil / pantallas grandes) y estado de la navegación lateral
  * @funciones  useBreakpoint() → { isMobile, isDesktop, sidebarColapsada, toggleSidebar }
- * @datos      Lee la preferencia del usuario en localStorage 'sidebarCollapsed' y mide con matchMedia (768px / 1024px)
+ * @datos      Lee la preferencia del usuario en localStorage 'sidebarCollapsed'; el snapshot inicial y la suscripción miden con las mismas matchMedia (768px / 1024px), fuente única
  * @eventos    change en la media query de 768px (versión de vista) y en la de 1024px (estado por defecto)
- * @estados    preferencia (boolean | null), esDesktop (boolean), anchoGrande (boolean)
+ * @estados    preferencia (boolean | null), esDesktop (boolean), anchoGrande (boolean), inicializados con la medición de matchMedia
  * @usadoPor   DashboardLayout (modo dashboard)
  */
 import { useState, useEffect } from "react";
@@ -27,12 +27,12 @@ function leerPreferencia() {
 
 function medirEsDesktop() {
   if (typeof window === "undefined") return true;
-  return window.innerWidth >= 768;
+  return window.matchMedia(QUERY_PANTALLAS_GRANDES).matches;
 }
 
 function medirAnchoGrande() {
   if (typeof window === "undefined") return true;
-  return window.innerWidth >= 1024;
+  return window.matchMedia(QUERY_ANCHO_GRANDE).matches;
 }
 
 export function useBreakpoint() {

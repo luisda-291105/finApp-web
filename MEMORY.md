@@ -1811,4 +1811,96 @@ Memoria breve del estado del proyecto, decisiones y aprendizajes entre sesiones.
     `BottomNav.jsx`/`BottomNav.test.jsx` son ediciones manuales del usuario fuera del alcance. Sin commit
     ni staging.
 
+---
+
+### Spec 012 — Correcciones menores: medición inicial de `useBreakpoint`, clase muerta de `AuthModal` y fecha inválida en `LogMovimientos` (T1–T9 completadas 2026-10-17)
+
+- Spec 012, **T1–T9 completadas (2026-10-17; cerrada)**. **Tres correcciones de
+  producción** independientes, todas medidas:
+  1. **`src/hooks/useBreakpoint.js` — fuente única del snapshot inicial** (RF-01…RF-05): el cuerpo de
+     las dos funciones de medición (`medirEsDesktop`/`medirAnchoGrande`) pasa de `window.innerWidth` a
+     `window.matchMedia(QUERY_PANTALLAS_GRANDES/QUERY_ANCHO_GRANDE).matches`, la **misma fuente** que la
+     suscripción. Diff **4 líneas (4/4)**. Contrato **intacto**: 4 props, corte único 768px, umbral
+     1024px solo como default de banda, `leerPreferencia`, efecto, `toggleSidebar` y la guarda
+     `typeof window === "undefined"` ⇒ `true`. Cabecera JSDoc actualizada (`@datos`, `@estados`).
+  2. **`src/components/domain/modales/AuthModal.jsx:124` — clase muerta `animate-fadeIn` retirada**
+     (RF-06/RF-07): **1 línea / 1 inserción / 1 borrado**; sin animación nueva, sin migración de colores
+     (hex heredados intactos); la capa exterior conserva `fixed inset-0 z-50 … bg-black/70
+     backdrop-blur-sm`. Cabecera **no** tocada (RF-12 la excluye). `grep` de `fadeIn`/`fade-in`/`fade_in`
+     en `src/` ⇒ **0**. El **CSS del build no cambia de tamaño** ⇒ CL-11 confirmada empíricamente.
+  3. **`src/components/domain/dashboard/LogMovimientos.jsx` — `formatearFechaCorta` estricto**
+     (RF-08…RF-10): `fechaISO.split("-")` sigue **primero** (conserva el `TypeError`, Q3); patrón
+     **anclado** `^\d{4}-\d{2}-\d{2}$`, **mes validado (1–12)** antes de indexar `MESES_ES`, y **una
+     única** constante `FECHA_NEUTRA = "—"` (**U+2014**, verificado por `codePointAt`) para **todos** los
+     caminos inválidos. **Día y año no validados**: `"2026-10-99"` ⇒ `"99 oct 2026"`, `"0000-01-01"` ⇒
+     `"1 ene 0"`. Sin `typeof`/`trim`/`try-catch` (AC-12 pass). Salidas válidas y resto del log
+     (orden, monto, tokens, `tabular-nums`, estado vacío) **intactos**.
+- **Decisiones cerradas por el usuario:** **Q1 = opción (b)** — se permite ajustar `vitest.setup.js` y
+  las suites afectadas para que `matchMedia` sea **coherente con `innerWidth`**; **Q2 = opción (a)** —
+  formato **estricto** `AAAA-MM-DD` (4/2/2 dígitos), **mes validado (1–12)**, **día no validado**;
+  **Q3 = opción (b)** — se **mantiene el `TypeError`** de contrato (espera **cadena**, no es función
+  total; **sin** guarda de tipo ni conversión).
+- **Entorno de medición: una sola fórmula `matches = innerWidth >= min-width` (RF-13).**
+  - **Stub global (`vitest.setup.js`):** `matches` se deriva del `innerWidth` **vigente en el momento de
+    la consulta**; las consultas sin `min-width` (p. ej. `(prefers-reduced-motion: reduce)`) siguen en
+    `false`; default `1024` («pantallas grandes») conservado y documentado; se añadió
+    `configurable: true` (el stub sigue asignable). Suite dedicada **`src/entornoDeMedicion.test.js`**
+    (nueva, 4 casos) que **no** reemplaza `window.matchMedia`. `vitest.config.js` **no** se tocó.
+  - **Stub local (`src/components/layout/DashboardUserModal.test.jsx`, DP-12):** el default
+    `restaurarViewportEscritorio` deja de fijar `matches: false` con `innerWidth 1024` y pasa a
+    derivarlo con el **mismo criterio** que el global; se conserva el factory `mockMatchMedia` (lo usan
+    los dos viewports explícitos del `describe` del gesto, que **no** cambia) y se añade **1 caso** de
+    coherencia. Esta ampliación **no** viene de Q1: viene de la **coordinación con la 011** (DP-12,
+    §3.4).
+  - **Excepción única permitida:** el mock **deliberadamente incoherente** (`innerWidth 1024` /
+    `matches:false`) vive **solo** dentro del caso AC-02 de `useBreakpoint.test.js` y **no** se propagó
+    a ningún otro stub (verificado por `grep`).
+- **Cifras medidas (nada declarado verde sin medirse):** línea base **T1 = 27 archivos / 348 tests
+  pass**; **T2** 28/352 (la suite nueva aporta 4); **T3** 28/353; **T4** 28/355; **T5** 28/355;
+  **T6** 28/373; **T7** 28/373 ⇒ **`npm test` 373/373 en 28 archivos, 0 fallos**. **Build:**
+  `dist/index.html` 1.11 kB; CSS **57.49 kB** (gzip 9.48); JS **382.95 kB** (gzip 122.09). Comando
+  focalizado del inventario (16 archivos): **267 (T1) → 288 (T7)**. Deltas **todos atribuidos**:
+  `useBreakpoint.test.js` **27→29** (+2 de AC-01/AC-02), `LogMovimientos.test.jsx` **6→24** (+7 AC-06 /
+  +11 AC-07), `DashboardUserModal.test.jsx` **26→27** (+1 de AC-13) y `AuthModal.test.jsx` **15→15**
+  (0 casos, AC-05/DP-06); las **13 suites restantes** del inventario conservan su recuento exacto.
+- **Orden clave: la 012 va PRIMERO; la 011 NO se toca y se re-mide DESPUÉS** contra este estado (§3.4
+  de la spec, DP-12; §10 de la 011). `specs/011-*` y `specs/010-*` quedaron **sin tocar**.
+- **Auditoría de alcance (T8, AC-10):** `git diff --stat` de código/pruebas = **7 archivos modificados
+  + 1 nuevo (+180 / −26)**, todos de §3.1 del plan (`useBreakpoint.js` + su test, `AuthModal.jsx`,
+  `LogMovimientos.jsx` + su test, `vitest.setup.js`, `DashboardUserModal.test.jsx` y el nuevo
+  `entornoDeMedicion.test.js`). Cabeceras JSDoc actualizadas **solo** en `useBreakpoint.js` y
+  `LogMovimientos.jsx` (siguiendo la plantilla **real**
+  `.agents/skills/file-hearder-template.md/SKILL.md`); **`AuthModal.jsx` excluido** (su cabecera no se
+  toca). `grep` de `fadeIn` en `src/` ⇒ **0**; **0 hexadecimales nuevos** en las líneas añadidas del
+  diff; **`package.json` sin cambios**. **Excepciones ajenas a la 012** (preexistentes, reportadas y
+  **no** tocadas): borrados en `.pi/agents/*.md` (4) y `.pi/modes.config.json`, `M vite.config.js` (el
+  usuario retiró el bloque `test`; la config vive en `vitest.config.js`) y `?? analicis-completo-cambios.md`.
+- **AC-04 (sin `window`) reportado «no ejecutado»** (jsdom siempre tiene `window`), **nunca verde**.
+  **Validación visual: no aplicable / no declarada como realizada** (la clase retirada no generaba
+  reglas y el efecto de la corrección (1) solo sería observable en el borde de 768px).
+- **T9 — validación final (2026-10-17, solo medición y reporte):** `npm test` **28 archivos / 373 tests
+  — pass (0 fallos)**; `npm run build` **verde** con los **mismos tamaños** que T6–T8
+  (`index.html` 1.11 kB; CSS 57.49 kB / gzip 9.48; JS 382.95 kB / gzip 122.09); **comando focalizado del
+  inventario 16 archivos / 288 tests — pass (0 fallos)**, idéntico a T7 (267 T1 → 288 T9). Atribución
+  `+21 = +2` (hook) `+18` (helper) `+1` (modal de cuenta); las 13 suites restantes conservan recuento.
+  La línea base T1 (`27/348`) pasa a `28/373` (+1 archivo de la suite nueva `entornoDeMedicion.test.js`,
+  +25 tests), sin que ninguna suite empeore. **AC-04: no ejecutado.** **Coordinación pendiente:** la
+  **011** se re-mide **después** contra este estado (medición única + entorno coherente); **la 011 no se
+  ha tocado** (`specs/011-*` sin seguimiento, sin modificar; `specs/010-*` sin cambios).
+- Sin dependencias nuevas, sin hexadecimales, sin animaciones, nombres en español, sin `git add -A`,
+  **sin commit ni staging** (hasta el cierre). Sin datos sensibles.
+- **Cierre de la spec 012 (2026-10-17, tras la validación del reviewer: APROBADO «OK»).** Dos ajustes
+  **aditivos** de pruebas, dentro de casos ya existentes y sin cambiar ningún aserto previo: (a) **AC-01**
+  mide también **800px** (375 / **800** / 1200, como pide su fila) ⇒ `isMobile: false`, `isDesktop: true`,
+  `sidebarColapsada: true`; (b) **AC-02** añade `expect(registros).toHaveLength(1)` (ata RF-02: una
+  **sola** composición; con el defecto previo eran dos). La suite sigue en **29** casos y el global en
+  **28 archivos / 373 tests**: re-validado **29/29**, **373/373** y **build verde**
+  (CSS 57.49 kB / gzip 9.48; JS **382.97 kB** / gzip 122.09 — el +0.02 kB frente a T9 viene del commit
+  **ajeno** `54d2a6a` «feat: add padding to dashboard sections…» que el usuario creó entre T9 y el
+  cierre y que **ya incluyó** `vitest.setup.js` (T2) y `vite.config.js`; ningún archivo de producción de
+  la 012 cambió después de T9). **Commit** «fix: corrige la fuente de medición, la clase muerta y la
+  fecha inválida (spec 012)» con rutas **explícitas** (sin `git add -A` y sin `push`), que deja la 012
+  commiteada y **`specs/011-*` / `specs/010-*` sin tocar**.
+
+
 
