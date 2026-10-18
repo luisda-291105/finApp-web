@@ -22,15 +22,16 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/010-cierre-de-modales/` — cierre de las cuatro superficies modales. Finalizada (commit `c341f17`).
 - `specs/011-foco-de-superficies-y-cruce/` — devolución de foco de las cuatro superficies y traslado al cruzar 768px. Cerrada (commit `944542c`).
 - `specs/012-correcciones-menores/` — medición de `useBreakpoint`, clase muerta de `AuthModal`, fecha inválida en `LogMovimientos`. Cerrada (commit `8aa9f0f`).
-- `specs/013-calidad-css/spec.md` — **borrador** de calidad CSS / Fluid Glass. Sin plan ni tareas.
+- `specs/013-calidad-css/spec.md` — **aprobada** (2026-10-18); `plan.md` y `tasks.md` escritos (**10 tareas**, T1–T10). Implementación pendiente.
+- `specs/015-higiene-y-dobles/spec.md` — **aprobada** (2026-10-18); sin plan ni tareas (se planifica después de la 013).
 - `specs/014/spec-ambiguedades.md` — sin planificar (botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens).
 
 ## Tareas faltantes
 
-- **Spec 013 (calidad CSS):** cerrar sus preguntas → `plan.md` + `tasks.md` → implementar. Alcance fijado: absorbe los defectos P1–P8 y los 5 puntos de la petición original (citados al inicio de `specs/013-calidad-css/spec.md`); **re-adoptar `.reveal*`** en las 5 secciones de landing (sin borrar CSS, sin enmendar la 001 y sin tocar `index.html`). Los hex de JSX quedan fuera (spec 014).
-  - **Antes de tocar código, re-medir la línea base.** Última medida: `npm test` **455/455 en 30 archivos** y `npm run build` verde (2026-10-17).
-  - Defectos a corregir (evidencia `archivo:línea` en `specs/013-calidad-css/spec.md` §4): **P1** el build pierde el `backdrop-filter` sin prefijo de `.glass-hero` · **P2** `.safe-bottom` sin consumidores y `pb-safe` que no genera CSS · **P3** deriva de tokens dentro de `index.css` · **P4** contraste AA (3,98 / 3,16 / 3,58 / 4,47:1) · **P5** blur < 20px y radios internos de 16px · **P6** capas/blobs (sin prueba automatizada) · **P7** clase inválida `my-`, import `Settings` sin uso y JSDoc «4 enlaces» en `SidebarNavContenido.jsx` · **P8** `grid-cols-5` con 4 controles en `BottomNav`.
+- **Spec 013 (calidad visual/CSS):** implementar T1–T10 en el orden de `tasks.md`. **T1 re-mide la línea base** (última: `npm test` 455/455 en 30 archivos y `npm run build` verde, 2026-10-17) antes de tocar código; si no cierra en verde, se detiene el flujo.
+- **Spec 015 (higiene, dobles y documentación):** redactar `plan.md` + `tasks.md` cuando cierre la 013.
 - **Spec 014:** redactar spec y planificar (botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos).
+- **Spec futura (P1):** compatibilidad de prefijos CSS en el build — el `dist` pierde el `backdrop-filter` sin prefijo de `.glass-hero`. Documentado en `specs/013-calidad-css/spec.md` §4.1; requiere reconstruir y medir el CSS resultante.
 - **Deuda CL-19 (spec 011):** la marca `location.state.focoEnDestino` no se limpia al consumirse; al volver «atrás» a una entrada marcada el foco se recoloca sin cierre. Requiere spec futura.
 - **Deuda DP-07 (spec 010):** animación de salida de los modales, pendiente.
 - **Backend real:** conectar autenticación y datos financieros (hoy demo: `TRIAL_ACTIVO = true`, sin persistencia). Definir contratos, manejo de errores y seguridad antes.
@@ -38,9 +39,4 @@ antes de tocar código** y no revertir sus ediciones.
 
 ## Preguntas por resolver
 
-- **Spec 013 — bloquean el plan:**
-  1. Punto 2 (avisos `initial`/`whileHover`/`whileTap`, que nacen en los stubs de prueba, no en los componentes): (a) corregir los stubs sin tocar componentes —recomendado—; (b) solo las suites que no tocan 011/012; (c) fuera. Recuento a confirmar: 5 suites (reviewer) vs 7 (planner).
-  2. Punto 3 (`GridTarjetas`): (a) conservar el `role="listitem"` y documentar el descarte —recomendado—; (b) retirarlo.
-  3. Punto 5 (`Card`): (a) añadir solo el `@param` que falta —recomendado—; (b) renombrar (rompe RF-03 de la 006); (c) fuera.
-  4. P1 (artefacto de build): (a) incluir el CSS construido (`dist`) como validación de la spec —recomendado—; (b) separarlo en otra spec.
 - **Spec 014 — sin spec redactada:** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.
