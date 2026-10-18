@@ -1,6 +1,6 @@
 /**
  * @uso        Pruebas unitarias para el componente BottomNav
- * @funciones  test "renderiza 4 items con iconos/etiquetas correctos", test "marca item activo con indicador y color emerald", test "click items 1-3 llama alNavegar", test "click en el botón Menú llama alAbrirMenu", test "clase pb-safe presente", test "landscape oculta etiquetas via CSS global (sin <style> propio)"
+ * @funciones  test "renderiza 4 items con iconos/etiquetas correctos", test "marca item activo con indicador y color mint", test "click items 1-3 llama alNavegar", test "click en el botón Menú llama alAbrirMenu", test "clase safe-bottom presente", test "landscape oculta etiquetas via CSS global (sin <style> propio)"
  * @datos      N/A
  * @eventos    click en botones, media query mock
  * @estados    N/A
@@ -44,22 +44,50 @@ describe("BottomNav", () => {
     expect(svgs.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("marca item activo con color emerald y barra indicadora superior", () => {
+  it("marca item activo con color mint y barra indicadora superior", () => {
     render(<BottomNav {...propsBase} />);
 
     // Item activo (Inicio)
     const botonActivo = screen.getByText("Inicio").closest("button");
-    expect(botonActivo).toHaveClass("text-emerald-primary");
+    expect(botonActivo).toHaveClass("text-mint-accent");
+    expect(botonActivo).not.toHaveClass("text-emerald-primary");
 
-    // Verificar indicador (span absoluto con bg-emerald-primary)
+    // Verificar indicador (span absoluto con bg-mint-accent)
     const indicador = botonActivo.querySelector(
-      "span.absolute.top-0.left-1\\/2.-translate-x-1\\/2.w-8.h-0\\.5.bg-emerald-primary.rounded-full"
+      "span.absolute.top-0.left-1\\/2.-translate-x-1\\/2.w-8.h-0\\.5.bg-mint-accent.rounded-full"
     );
-    expect(indicador).toBeDefined();
+    expect(indicador).not.toBeNull();
+    expect(indicador).toHaveAttribute("aria-hidden", "true");
 
-    // Items inactivos tienen color slate-text
+    // Items inactivos tienen color crema (AA sobre el fondo compuesto)
     const botonInactivo = screen.getByText("Transacciones").closest("button");
-    expect(botonInactivo).toHaveClass("text-slate-text");
+    expect(botonInactivo).toHaveClass("text-bg-cream");
+    expect(botonInactivo).not.toHaveClass("text-slate-text");
+  });
+
+  it("los cuatro controles usan tokens AA (crema/mint) y no los colores anteriores", () => {
+    render(<BottomNav {...propsBase} />);
+
+    const botones = screen.getAllByRole("button");
+    const botonActivo = screen.getByText("Inicio").closest("button");
+
+    botones.forEach((boton) => {
+      // Los tokens anteriores (`slate-text` y `emerald-primary`) no alcanzaban AA
+      // sobre el fondo compuesto de la barra (CL-08/AC-15).
+      expect(boton).not.toHaveClass("text-slate-text");
+      expect(boton).not.toHaveClass("text-emerald-primary");
+
+      if (boton === botonActivo) {
+        expect(boton).toHaveClass("text-mint-accent");
+      } else {
+        expect(boton).toHaveClass("text-bg-cream");
+        expect(boton).toHaveClass("hover:text-mint-accent");
+      }
+    });
+
+    // El 4.º control («Menú») también queda cubierto por el token claro.
+    const botonMenu = screen.getByText("Menú").closest("button");
+    expect(botonMenu).toHaveClass("text-bg-cream");
   });
 
   it("click en items 1-3 llama alNavegar con la ruta correcta", () => {
@@ -83,11 +111,12 @@ describe("BottomNav", () => {
     expect(propsBase.alNavegar).not.toHaveBeenCalled();
   });
 
-  it("tiene clase pb-safe para safe-area-inset-bottom", () => {
+  it("usa safe-bottom (utilidad real de área segura) y no la clase inexistente pb-safe", () => {
     render(<BottomNav {...propsBase} />);
 
     const nav = screen.getByRole("navigation");
-    expect(nav).toHaveClass("pb-safe");
+    expect(nav).toHaveClass("safe-bottom");
+    expect(nav).not.toHaveClass("pb-safe");
   });
 
   it("media query landscape oculta etiquetas (clase bottom-nav-label)", () => {
@@ -107,7 +136,7 @@ describe("BottomNav", () => {
     expect(container.querySelectorAll("style")).toHaveLength(0);
   });
 
-  it("aplica clases de contenedor correctas (fixed, bottom-0, z-50, grid-cols-5)", () => {
+  it("aplica clases de contenedor correctas (fixed, bottom-0, z-50, grid-cols-4)", () => {
     render(<BottomNav {...propsBase} />);
 
     const nav = screen.getByRole("navigation");
@@ -117,9 +146,9 @@ describe("BottomNav", () => {
     expect(nav).toHaveClass("right-0");
     expect(nav).toHaveClass("z-50");
     expect(nav).toHaveClass("grid");
-    expect(nav).toHaveClass("grid-cols-5");
+    expect(nav).toHaveClass("grid-cols-4");
     expect(nav).toHaveClass("bg-bg-dark/80");
-    expect(nav).toHaveClass("backdrop-blur-md");
+    expect(nav).toHaveClass("glass-surface");
     expect(nav).toHaveClass("border-t");
     expect(nav).toHaveClass("border-border-line/20");
   });

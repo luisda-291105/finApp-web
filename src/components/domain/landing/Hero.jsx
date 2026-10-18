@@ -33,8 +33,8 @@ export default function Hero({ alAbrirAuth }) {
 
       <div
         ref={ref}
-        className={`relative z-10 max-w-5xl mx-auto transition-all duration-700 ${
-          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        className={`relative z-10 max-w-5xl mx-auto reveal ${
+          visible ? "revealed" : ""
         }`}
       >
         {/* Badge superior */}

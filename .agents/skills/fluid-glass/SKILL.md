@@ -11,7 +11,7 @@ Identidad: **hero oscuro con vidrio** sobre **páginas crema con tarjetas limpia
 - Tailwind v4: tokens en `@theme` dentro del CSS global (`@import "tailwindcss"`), NO `tailwind.config.js`.
 - Fuentes: `font-display` = Fraunces (títulos, cifras grandes), `font-body` = Outfit (UI, texto).
 - Paleta (usar siempre los tokens, nunca hex sueltos):
-  - Oscuros: `bg-dark #0f1117`, `bg-dark-mid #1a3a2e`, `bg-dark-end #1a7a5e`
+  - Oscuros: `bg-dark #0f1117`
   - Claros: `bg-cream #f7f6f2`, `border-line #e0ddd8`, `slate-text #5a6475`
   - Marca: `emerald-primary #1a7a5e`, `emerald-hover #15634c`, `mint-accent #6ee7c0`
   - Categorías: `cat-income` azul, `cat-expense` rojo, `cat-savings` menta, `cat-other` violeta
@@ -29,7 +29,7 @@ Identidad: **hero oscuro con vidrio** sobre **páginas crema con tarjetas limpia
 Regla: el vidrio SOLO funciona sobre fondo oscuro con gradiente/grilla. Sobre crema usar `.glass-card` (blanca). Nunca `backdrop-filter` sobre fondo plano claro: no se ve y cuesta rendimiento.
 
 ## Fondo del hero
-- Gradiente `bg-dark → bg-dark-mid → bg-dark-end` + `.hero-grid` (grilla 36px al 5%).
+- Gradiente de tres pasos oscuros en `Hero.jsx` (hex en JSX; Spec 014) + `.hero-grid` (grilla 36px al 5%).
 - Máx. 2 manchas de luz radiales (mint al 15-25%, esmeralda). Sin `filter: blur()` grandes: usar `radial-gradient`.
 
 ## Reglas de vidrio (`.glass-hero`)

@@ -33,7 +33,7 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
     <header
       className={`fixed top-0 left-0 right-0 z-40 w-full transition-all duration-400 ease-in-out ${
         desplazado
-          ? "bg-[#f7f6f2]/92 backdrop-blur-md border-b border-[#e0ddd8] py-3.5 shadow-sm"
+          ? "bg-[#f7f6f2]/92 glass-surface border-b border-[#e0ddd8] py-3.5 shadow-sm"
           : "bg-transparent border-b border-transparent py-5"
       }`}
     >

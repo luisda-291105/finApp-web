@@ -55,12 +55,12 @@ describe("SidebarResponsive", () => {
       expect(aside).toHaveClass("z-40");
     });
 
-    it("aplica fondo dark glass con tokens: bg-bg-dark/80 backdrop-blur-md border-border-line/20", () => {
+    it("aplica fondo dark glass con tokens: bg-bg-dark/80 glass-surface border-border-line/20", () => {
       renderSidebarResponsive();
 
       const aside = getSidebarAside();
       expect(aside).toHaveClass("bg-bg-dark/80");
-      expect(aside).toHaveClass("backdrop-blur-md");
+      expect(aside).toHaveClass("glass-surface");
       expect(aside).toHaveClass("border-r");
       expect(aside).toHaveClass("border-border-line/20");
     });

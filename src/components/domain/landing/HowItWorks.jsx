@@ -47,8 +47,8 @@ export default function HowItWorks() {
 
         <div
           ref={ref}
-          className={`grid grid-cols-1 md:grid-cols-3 gap-10 transition-all duration-700 ${
-            visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"
+          className={`grid grid-cols-1 md:grid-cols-3 gap-10 reveal-left ${
+            visible ? "revealed" : ""
           }`}
         >
           {PASOS.map((paso) => (

@@ -23,8 +23,8 @@ export default function CtaSection({ alAbrirAuth }) {
 
       <div
         ref={ref}
-        className={`relative z-10 max-w-3xl mx-auto transition-all duration-700 ${
-          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        className={`relative z-10 max-w-3xl mx-auto reveal ${
+          visible ? "revealed" : ""
         }`}
       >
         <span className="text-[#6ee7c0] text-xs font-semibold tracking-widest uppercase block mb-4">

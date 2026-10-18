@@ -106,7 +106,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         aria-modal="true"
         aria-labelledby="user-modal-title"
         tabIndex={-1}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 backdrop-blur-md border border-border-line/30 rounded-2xl shadow-xl z-60"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-2xl shadow-xl z-60"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}

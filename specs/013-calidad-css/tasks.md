@@ -46,7 +46,7 @@ de **cada** referencia de la lista, sin haber editado ningún archivo.
 
 ---
 
-## T2 — Revelado y preferencias en las cinco secciones
+## T2 — Revelado y preferencias en las cinco secciones ✅
 
 **Etapa 2 · Depende de:** T1.
 **Alcance:** sustituir las utilidades en línea por las clases de revelado del CSS global.
@@ -78,7 +78,7 @@ queda ninguna utilidad en línea equivalente, las suites del bloque A pasan y M-
 
 ---
 
-## T3 — Hoja global: `.glass-surface`, dos contextos y precedencia (H-1)
+## T3 — Hoja global: `.glass-surface`, dos contextos y precedencia (H-1) ✅
 
 **Etapa 3 · Depende de:** T1.
 **Alcance:** crear la clase de superficie con el contrato de blur/saturación, extenderla a la
@@ -142,7 +142,7 @@ hero están registradas.
 
 ---
 
-## T4 — Adopción de `.glass-surface` en las cinco superficies
+## T4 — Adopción de `.glass-surface` en las cinco superficies ✅
 
 **Etapa 4 · Depende de:** T3.
 **Alcance:** las cinco superficies de componente pasan de `backdrop-blur-md` a `glass-surface`; se
@@ -181,7 +181,7 @@ y el control excluido no cambió.
 
 ---
 
-## T5 — Radios del conjunto y esquinas anidadas
+## T5 — Radios del conjunto y esquinas anidadas ✅
 
 **Etapa 5 · Depende de:** T1.
 **Alcance:** quitar el 16px que pisa el radio de vidrio y alinear las caras de la tarjeta virtual con
@@ -213,7 +213,7 @@ igual, las suites del bloque C pasan y M-4 está registrada.
 
 ---
 
-## T6 — Área segura aplicada y cuatro columnas
+## T6 — Área segura aplicada y cuatro columnas ✅
 
 **Etapa 6 · Depende de:** T4.
 **Alcance:** usar la clase de área segura que ya existe y corregir la grilla; actualizar las
@@ -241,7 +241,7 @@ está registrada.
 
 ---
 
-## T7 — Tokens y literales del CSS global
+## T7 — Tokens y literales del CSS global ✅
 
 **Etapa 7 · Depende de:** T3.
 **Alcance:** migrar los tres literales con token equivalente y resolver los tokens sin consumidor
@@ -277,7 +277,7 @@ sigue documentado, la suite del CSS global pasa (antiguos + nuevos) y el diff no
 
 ---
 
-## T8 — Contraste de la franja y de la barra inferior
+## T8 — Contraste de la franja y de la barra inferior ✅
 
 **Etapa 8 · Depende de:** T6.
 **Alcance:** llevar a AA la etiqueta de métricas y las etiquetas/indicador de la barra con tokens
@@ -311,7 +311,7 @@ indicador + `aria-current`, suite de la barra verde y M-6/M-7 registradas.
 
 ---
 
-## T9 — Validación manual integral (§9-P)
+## T9 — Validación manual integral (§9-P) ✅
 
 **Etapa 9 · Depende de:** T2–T8.
 **Alcance:** ejecutar y registrar **todas** las mediciones no automatizadas.
@@ -330,7 +330,7 @@ aparece como **pendiente** con su motivo.
 
 ---
 
-## T10 — Cierre técnico y declaración de validaciones
+## T10 — Cierre técnico y declaración de validaciones ✅
 
 **Etapa 10 · Depende de:** T9.
 **Alcance:** comparar con la línea base y declarar el resultado real.
@@ -351,3 +351,10 @@ aparece como **pendiente** con su motivo.
 **Comandos:** `npm test`, `npm run build`.
 **Hecho cuando:** están registrados los recuentos por archivo, build verde, diff revisado y la lista
 de validaciones no realizadas declarada explícitamente.
+
+**Resultado (2026-10-18):** `npm test` **478/478 en 31 archivos** (0 fallos; +23 casos y +1 archivo
+frente a la línea base de 455/30) · `npm run build` **verde** (CSS 58,74 kB · JS 384,24 kB).
+**No realizadas, declaradas pendientes:** M-5 con *safe area* (el navegador usado no expone
+`setSafeAreaInsets`) y M-9 (sin motor sin `backdrop-filter`), en `spec.md` §9.1. **Limitaciones
+registradas:** P1 afecta a las **seis** superficies (hero + cinco `.glass-surface`) y el área segura no
+tiene efecto observable sin `viewport-fit=cover` (`spec.md` §4.1, §4.4, CL-15 y DP-27).

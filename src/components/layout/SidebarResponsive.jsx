@@ -26,7 +26,7 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
     <aside
       className={clsx(
         "fixed left-0 top-0 h-screen z-40 transition-all duration-300",
-        "bg-bg-dark/80 backdrop-blur-md border-r border-border-line/20",
+        "bg-bg-dark/80 glass-surface border-r border-border-line/20",
         "flex flex-col overflow-hidden",
         colapsada ? "w-[72px]" : "w-64",
       )}

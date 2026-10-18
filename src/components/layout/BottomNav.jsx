@@ -26,7 +26,7 @@ const items = [
  * BottomNav
  * Barra de navegación inferior fija para móvil con 4 controles equidistantes
  * (3 ítems de navegación + botón «Menú»).
- * Incluye safe-area (pb-safe), indicador activo en el item seleccionado,
+ * Incluye safe-area (safe-bottom), indicador activo en el item seleccionado,
  * y media query landscape que oculta las etiquetas.
  * @param {Object} props
  * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/transacciones")
@@ -37,7 +37,7 @@ const items = [
 export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef }) {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-bg-dark/80 backdrop-blur-md border-t border-border-line/20 pb-safe grid grid-cols-5"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid grid-cols-4"
       role="navigation"
       aria-label="Navegación principal móvil"
     >
@@ -49,8 +49,8 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
           className={clsx(
             "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
             ruta === itemActivo
-              ? "text-emerald-primary"
-              : "text-slate-text hover:text-emerald-primary/70"
+              ? "text-mint-accent"
+              : "text-bg-cream hover:text-mint-accent"
           )}
           aria-current={ruta === itemActivo ? "page" : undefined}
         >
@@ -60,7 +60,7 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
           </span>
           {ruta === itemActivo && (
             <span
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-emerald-primary rounded-full"
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-mint-accent rounded-full"
               aria-hidden="true"
             />
           )}
@@ -73,7 +73,7 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
         onClick={alAbrirMenu}
         className={clsx(
           "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
-          "text-slate-text hover:text-emerald-primary/70"
+          "text-bg-cream hover:text-mint-accent"
         )}
         aria-label="Abrir menú"
       >

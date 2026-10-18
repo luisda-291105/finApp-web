@@ -105,7 +105,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
           aria-label="Menú de navegación"
           tabIndex={-1}
           className={clsx(
-            "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col bg-bg-dark/95 backdrop-blur-md border-l border-border-line/20 z-55 outline-none"
+            "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col bg-bg-dark/95 glass-surface border-l border-border-line/20 z-55 outline-none"
           )}
           initial={{ x: "100%" }}
           animate={{ x: 0 }}

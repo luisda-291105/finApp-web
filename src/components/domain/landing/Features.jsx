@@ -101,8 +101,8 @@ export default function Features() {
         {/* Grid de 5 tarjetas */}
         <div
           ref={ref}
-          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-700 ${
-            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 reveal ${
+            visible ? "revealed" : ""
           }`}
         >
           {FUNCIONALIDADES.map((func) => (

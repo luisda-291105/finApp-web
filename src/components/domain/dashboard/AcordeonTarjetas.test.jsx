@@ -141,6 +141,15 @@ describe("AcordeonTarjetas", () => {
     expect(within(panel).queryByText(/Toca para ver CVV/i)).toBeNull();
   });
 
+  it("el encabezado usa el radio de vidrio de glass-card (sin rounded-2xl de 16px)", () => {
+    renderAcordeon();
+    const encabezado = screen.getByRole("button", {
+      name: new RegExp(`${TARJETAS_DEMO[0].titular}.*••••`, "i"),
+    });
+    expect(encabezado.classList.contains("glass-card")).toBe(true);
+    expect(encabezado.classList.contains("rounded-2xl")).toBe(false);
+  });
+
   it("con prefers-reduced-motion no hay animación de expansión (duración 0)", () => {
     useReducedMotion.mockReturnValue(true);
     renderAcordeon();

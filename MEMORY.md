@@ -22,16 +22,16 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/010-cierre-de-modales/` — cierre de las cuatro superficies modales. Finalizada (commit `c341f17`).
 - `specs/011-foco-de-superficies-y-cruce/` — devolución de foco de las cuatro superficies y traslado al cruzar 768px. Cerrada (commit `944542c`).
 - `specs/012-correcciones-menores/` — medición de `useBreakpoint`, clase muerta de `AuthModal`, fecha inválida en `LogMovimientos`. Cerrada (commit `8aa9f0f`).
-- `specs/013-calidad-css/spec.md` — **aprobada** (2026-10-18); `plan.md` y `tasks.md` escritos (**10 tareas**, T1–T10). Implementación pendiente.
+- `specs/013-calidad-css/spec.md` — visual/CSS (revelado, vidrio, radios, área segura, tokens y contraste). Cerrada (2026-10-18).
 - `specs/015-higiene-y-dobles/spec.md` — **aprobada** (2026-10-18); sin plan ni tareas (se planifica después de la 013).
 - `specs/014/spec-ambiguedades.md` — sin planificar (botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens).
 
 ## Tareas faltantes
 
-- **Spec 013 (calidad visual/CSS):** implementar T1–T10 en el orden de `tasks.md`. **T1 re-mide la línea base** (última: `npm test` 455/455 en 30 archivos y `npm run build` verde, 2026-10-17) antes de tocar código; si no cierra en verde, se detiene el flujo.
-- **Spec 015 (higiene, dobles y documentación):** redactar `plan.md` + `tasks.md` cuando cierre la 013.
+- **Spec 015 (higiene, dobles y documentación):** redactar `plan.md` + `tasks.md` (la 013 ya está cerrada).
 - **Spec 014:** redactar spec y planificar (botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos).
-- **Spec futura (P1):** compatibilidad de prefijos CSS en el build — el `dist` pierde el `backdrop-filter` sin prefijo de `.glass-hero`. Documentado en `specs/013-calidad-css/spec.md` §4.1; requiere reconstruir y medir el CSS resultante.
+- **Spec futura (P1):** compatibilidad de prefijos CSS en el build — se pierde el `backdrop-filter` sin prefijo en las **seis** superficies (hero + cinco `glass-surface`) y en `preview` computa `none`. Requiere reconstruir y medir el CSS resultante (013 §4.1).
+- **Deuda 013 — área segura:** `.safe-bottom` está aplicada, pero sin `viewport-fit=cover` el inset resuelve 0 y no hay efecto visible; una spec futura debe decidir el modo a sangre completa (013 CL-15/DP-27).
 - **Deuda CL-19 (spec 011):** la marca `location.state.focoEnDestino` no se limpia al consumirse; al volver «atrás» a una entrada marcada el foco se recoloca sin cierre. Requiere spec futura.
 - **Deuda DP-07 (spec 010):** animación de salida de los modales, pendiente.
 - **Backend real:** conectar autenticación y datos financieros (hoy demo: `TRIAL_ACTIVO = true`, sin persistencia). Definir contratos, manejo de errores y seguridad antes.

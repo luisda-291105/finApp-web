@@ -141,14 +141,14 @@ describe("DashboardDrawer", () => {
       expect(classList.contains("max-w-sm")).toBe(true);
     });
 
-    it("panel: bg-bg-dark/95 backdrop-blur-md border-l border-border-line/20 z-55", () => {
+    it("panel: bg-bg-dark/95 glass-surface border-l border-border-line/20 z-55", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
       const classList = panel.classList;
 
       expect(classList.contains("bg-bg-dark/95")).toBe(true);
-      expect(classList.contains("backdrop-blur-md")).toBe(true);
+      expect(classList.contains("glass-surface")).toBe(true);
       expect(classList.contains("border-l")).toBe(true);
       expect(classList.contains("border-border-line/20")).toBe(true);
       expect(classList.contains("z-55")).toBe(true);

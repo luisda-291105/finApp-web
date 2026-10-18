@@ -30,4 +30,16 @@ describe("Features", () => {
     const elementosGlassCard = document.querySelectorAll(".glass-card");
     expect(elementosGlassCard.length).toBe(5);
   });
+
+  it("usa la clase de revelado global en lugar de utilidades en línea", () => {
+    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+    }));
+
+    render(<Features />);
+
+    expect(document.querySelector(".reveal")).not.toBeNull();
+    expect(document.querySelector(".opacity-0")).toBeNull();
+  });
 });

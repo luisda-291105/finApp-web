@@ -436,11 +436,11 @@ describe("DashboardUserModal", () => {
       expect(overlay.classList.contains("z-50")).toBe(true);
     });
 
-    it("panel usa bg-bg-cream/95 backdrop-blur-md border-border-line/30 rounded-2xl shadow-xl z-60", () => {
+    it("panel usa bg-bg-cream/95 glass-surface border-border-line/30 rounded-2xl shadow-xl z-60", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
-      expect(panel.classList.contains("backdrop-blur-md")).toBe(true);
+      expect(panel.classList.contains("glass-surface")).toBe(true);
       expect(panel.classList.contains("border-border-line/30")).toBe(true);
       expect(panel.classList.contains("rounded-2xl")).toBe(true);
       expect(panel.classList.contains("shadow-xl")).toBe(true);

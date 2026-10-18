@@ -44,7 +44,7 @@ export default function AcordeonTarjetas({ tarjetas, onSeleccionarTarjeta }) {
             <button
               type="button"
               id={idEncabezado}
-              className="w-full text-left glass-card rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+              className="w-full text-left glass-card px-4 py-3 flex items-center justify-between gap-3"
               aria-expanded={expandida}
               aria-controls={idPanel}
               onClick={() => alternarIndice(indice)}

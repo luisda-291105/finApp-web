@@ -191,6 +191,19 @@ describe("MiTarjetaVirtual", () => {
     expect(estadoInicial).toBeDefined();
   });
 
+  it("las dos caras heredan el radio del contenedor glass-card", () => {
+    render(<MiTarjetaVirtual {...propsDefault} />);
+
+    const frente = screen.getByTestId("tarjeta-frente");
+    const reverso = frente.nextElementSibling;
+
+    [frente, reverso].forEach((cara) => {
+      expect(cara).not.toBeNull();
+      expect(cara.classList.contains("rounded-[inherit]")).toBe(true);
+      expect(cara.classList.contains("rounded-2xl")).toBe(false);
+    });
+  });
+
   describe("flipDeshabilitado", () => {
     it("no gira la tarjeta con click", async () => {
       const user = userEvent.setup();

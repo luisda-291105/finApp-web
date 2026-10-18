@@ -27,4 +27,16 @@ describe("Hero", () => {
     expect(screen.getByText("Otro")).toBeDefined();
     expect(screen.getByText("$ 3,200")).toBeDefined();
   });
+
+  it("usa la clase de revelado global en lugar de utilidades en línea", () => {
+    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+    }));
+
+    render(<Hero alAbrirAuth={vi.fn()} />);
+
+    expect(document.querySelector(".reveal")).not.toBeNull();
+    expect(document.querySelector(".opacity-0")).toBeNull();
+  });
 });

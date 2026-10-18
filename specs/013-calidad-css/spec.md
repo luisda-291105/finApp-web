@@ -230,6 +230,14 @@ futura.
   de prefijos CSS**, que deberá reconstruir, inspeccionar el CSS resultante y fijar el mecanismo.
 - **Consecuencia de alcance:** la 013 **no** incluye requisito ni AC para el CSS compilado, **no**
   valida `dist/` (§9) y **no** cambia la configuración de build ni añade dependencias.
+- **Actualización post-implementación (2026-10-18, sin cambiar RF/AC ni el alcance):** la
+  comprobación sobre el artefacto construido (`npm run build` + `npm run preview`) confirma que el
+  defecto **no se limita a `.glass-hero`**: el `backdrop-filter` sin prefijo se pierde también en las
+  **cinco** superficies `.glass-surface` (header, sidebar, barra inferior y los dos paneles modales),
+  es decir, en **las seis superficies del conjunto**. En la vista previa,
+  `getComputedStyle(…).backdropFilter` computa **`none`** en las seis. Se mantiene **FUERA DE
+  ALCANCE** (R4/DP-14) y se remite a la **spec futura de compatibilidad de prefijos**, que deberá
+  cubrir las seis superficies, no solo el hero.
 
 ### 4.2 H-1 (hallazgo propio del planner) — El ajuste de ≤640px pisa la transparencia reducida
 
@@ -322,6 +330,11 @@ futura.
 - **No verificado por el planner:** el contenido del CSS compilado; **fuera de alcance** por R4. La
   comprobación se hace sobre la **fuente** (RF-09/AC-10) y por **medición en navegador** del relleno
   computado (§9, protocolo M-5).
+- **Estado post-implementación (2026-10-18):** `BottomNav` ya usa `.safe-bottom` y la utilidad declara
+  `padding-bottom: env(safe-area-inset-bottom, 1rem)`; la reserva **existe** y tiene consumidor
+  (RF-09/AC-10 sobre la fuente). **Limitación registrada:** el documento **no** declara
+  `viewport-fit=cover`, así que el `env()` resuelve **0** y **no hay efecto observable** en el estado
+  actual (ver CL-15/DP-27). No cambia RF/AC.
 
 ### 4.5 P8 — Cinco pistas para cuatro controles
 
@@ -620,6 +633,12 @@ recuentos documentados), **vive ahora en la Spec 015 §4**. Aquí solo queda la 
   `StatsBar`, `HowItWorks` y `CtaSection` **no** tienen suite. Su verificación es de **fuente** (lectura
   del componente + contrato global probado por `index.css.test.js` y `useReveal.test.js`); añadir
   suites nuevas es **opcional** para el plan y **no** se exige como criterio de aceptación (DP-18).
+- **CL-15 — Área segura sin `viewport-fit=cover` (limitación registrada, post-implementación).** La
+  barra inferior usa `.safe-bottom` (`padding-bottom: env(safe-area-inset-bottom, 1rem)`), pero el
+  documento **no** declara `viewport-fit=cover`; sin ese modo a sangre completa el inset resuelto es
+  **0** y la reserva **no tiene efecto observable** en el estado actual. Se mantiene el cambio (RF-09
+  se cumple sobre la fuente y conserva el respaldo) y se anota como **deuda** para una spec que decida
+  el modo a sangre completa. No cambia RF/AC.
 
 ### 6.2 Decisiones
 
@@ -651,6 +670,7 @@ recuentos documentados), **vive ahora en la Spec 015 §4**. Aquí solo queda la 
 | **DP-24** | **Fondos de prueba del contraste (M4):** F1 `#f7f6f2`, F2 `#ffffff`, F3 `#0f1117` y F4 `#1a7a5e`, compuestos con la regla de CL-08. El umbral se cumple contra **todos**; si la solución depende de un fondo distinto, **no** vale. |
 | **DP-25** | **≤640px agnóstico al mecanismo (detalle del reviewer):** lo exigido es el **efecto por superficie**, no la forma de lograrlo. Queda **prohibido** resolverlo sobrescribiendo la utilidad compartida `backdrop-blur-md` en el media query: afectaría también al **control excluido** `PaginaInicio.jsx:55` (prohibido por RF-05/RF-06). Los asertos nuevos de `index.css.test.js` **DEBEN** verificar el efecto exigido y **no** presuponer dónde vive la regla (CL-13). |
 | **DP-26** | **Barrido de blur corregido (detalle del reviewer):** el inventario de §4.3 es la **referencia única** de sitios con `backdrop-blur*`: **cinco** superficies `md` + el botón «?» (sexto uso de `md`) + velos en `DashboardDrawer.jsx:138`, `DashboardUserModal.jsx:161`, `ModalTarjeta.jsx:106` y **`AuthModal.jsx:134`** + píldora `MiTarjetaVirtual.jsx:216` (**`sm`**, no `xs`) + `Hero.jsx:68` (`xs`) + `AuthModal.jsx:141` (`xl`). Cualquier cifra distinta en el cuerpo del documento es un error y prevalece este inventario. |
+| **DP-27** | **Área segura: deuda de `viewport-fit=cover` (post-implementación):** se conserva `.safe-bottom` con respaldo `1rem`; sin `viewport-fit=cover` el `env()` resuelve **0** y el efecto no es observable (CL-15). Decidir el modo a sangre completa y su impacto en el resto del layout queda para una **spec futura**; la 013 **no** cambia `index.html` ni añade configuración de viewport. |
 
 ---
 
@@ -833,6 +853,12 @@ agnóstico al mecanismo), DP-26 (inventario de blur corregido); 015 DP-06…DP-0
 | **M-7** | Contraste de la barra inferior contra los cuatro fondos de prueba | 1440×900 y 375×812 | normal | `color` de cada etiqueta, fondo efectivo compuesto por F1–F4 (CL-08) y **ratio calculado** (peor de los cuatro) | AC-15 |
 | **M-8** | Capas de vidrio y blobs visibles | 1440×900, 375×812 (con menú y modal abiertos) | normal | número de superficies translúcidas superpuestas (≤3) y blobs visibles (≤2) | RF-16 |
 | **M-9** | Fallback sin soporte de desenfoque *(opcional)* | el que se declare | normal | fondo semisólido aplicado y legibilidad del texto | CL-04 |
+
+**Estado de ejecución (T9, 2026-10-18).** Ejecutadas y registradas: M-1, M-2, M-3a, M-3b, M-4, M-6,
+M-7 y M-8. **No realizadas — declaradas pendientes, no verdes:** **M-5 con *safe area*** — el
+navegador usado (Chromium por CDP) no expone `setSafeAreaInsets`, así que no se pudo simular un inset
+positivo (sin notch, `padding-bottom` = 16px, respaldo `1rem`); **M-9** — no hay en la máquina un motor sin
+soporte de `backdrop-filter` para forzar el fallback.
 
 ### 9.2 Bloques de comandos
 

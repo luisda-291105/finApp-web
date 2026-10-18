@@ -121,7 +121,7 @@ export default function MiTarjetaVirtual({
         // Framer Motion respeta automáticamente (hover: hover) para whileHover
       >
         {/* FRENTE DE LA TARJETA */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden" style={{ backfaceVisibility: "hidden" }} aria-hidden={volteada} data-testid="tarjeta-frente">
+        <div className="absolute inset-0 rounded-[inherit] overflow-hidden" style={{ backfaceVisibility: "hidden" }} aria-hidden={volteada} data-testid="tarjeta-frente">
           <div className={`relative h-full min-h-[200px] ${tema.gradiente} ${tema.texto} p-6 flex flex-col justify-between`}>
             {/* Chip y logo entidad */}
             <div className="flex items-start justify-between">
@@ -161,7 +161,7 @@ export default function MiTarjetaVirtual({
         </div>
 
         {/* REVERSO DE LA TARJETA */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} aria-hidden={!volteada}>
+        <div className="absolute inset-0 rounded-[inherit] overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }} aria-hidden={!volteada}>
           <div className="relative h-full min-h-[200px] bg-slate-100 flex flex-col">
             {/* Franja magnética */}
             <div className="h-14 bg-slate-800/90 relative" aria-hidden="true">
