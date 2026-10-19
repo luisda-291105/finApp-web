@@ -1,21 +1,21 @@
 /**
- * @uso        Contenido de navegación compartido: 4 enlaces + avatar → modal
+ * @uso        Contenido de navegación compartido: 3 enlaces + avatar → modal
  * @funciones  SidebarNavContenido({ alAbrirUserModal, colapsada })
- * @datos      4 NavLink fijos + avatar via getUsuarioMock()
+ * @datos      3 NavLink fijos + avatar via getUsuarioMock()
  * @eventos    click enlaces (navegan), click avatar → alAbrirUserModal
  * @estados    Ninguno (stateless)
  * @usadoPor   SidebarResponsive (colapsada/expandida), DashboardDrawer (menú superpuesto de móvil)
  */
 
 import { NavLink } from "react-router-dom";
-import { Home, Receipt, CreditCard, Settings } from "lucide-react";
+import { Home, Receipt, CreditCard } from "lucide-react";
 import { getUsuarioMock } from "../../config/app.config";
 import clsx from "clsx";
 
 /**
  * SidebarNavContenido
  * Componente stateless que renderiza la navegación compartida del dashboard:
- * 4 enlaces con icono + etiqueta, separador, y avatar de usuario que abre el modal.
+ * 3 enlaces con icono + etiqueta, separador, y avatar de usuario que abre el modal.
  * No gestiona navegación propia (delega a NavLink) ni estado.
  * Cuando `colapsada=true`, oculta las etiquetas de texto de los enlaces.
  *
@@ -35,7 +35,7 @@ export default function SidebarNavContenido({ alAbrirUserModal, colapsada = fals
 
   return (
     <nav className="flex flex-col" aria-label="Navegación principal del dashboard">
-      {/* 4 enlaces de navegación */}
+      {/* 3 enlaces de navegación */}
       {enlaces.map(({ ruta, icono: Icono, etiqueta, exacto }) => (
         <NavLink
           key={ruta}
@@ -61,7 +61,7 @@ export default function SidebarNavContenido({ alAbrirUserModal, colapsada = fals
       <button
         type="button"
         onClick={alAbrirUserModal}
-        className="flex items-center gap-3 px-3 py-2 my- rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
+        className="flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
         aria-label={`Cuenta de ${usuario.nombre}`}
       >
         <div

@@ -33,13 +33,24 @@ import { TARJETAS_DEMO } from "../../data/tarjetasDemo";
 vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   const React = await vi.importActual("react");
+  const PROPS_DE_ANIMACION = new Set([
+    "initial", "animate", "exit", "transition", "variants", "custom",
+    "whileHover", "whileTap", "whileFocus", "whileDrag", "whileInView",
+    "layout", "layoutId", "layoutDependency", "layoutScroll",
+    "drag", "dragConstraints", "dragElastic", "dragMomentum", "dragPropagation",
+    "dragDirectionLock", "dragControls",
+    "onDragStart", "onDrag", "onDragEnd", "onAnimationStart", "onAnimationComplete",
+    "onUpdate", "transformTemplate", "viewport", "inherit",
+  ]);
+  const propsDom = (props) =>
+    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
   return {
     ...actual,
     useReducedMotion: () => false,
     AnimatePresence: ({ children }) => children,
     motion: {
       div: React.forwardRef(({ children, ...props }, ref) => (
-        <div ref={ref} {...props}>{children}</div>
+        <div ref={ref} {...propsDom(props)}>{children}</div>
       )),
     },
   };

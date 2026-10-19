@@ -23,12 +23,11 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/011-foco-de-superficies-y-cruce/` — devolución de foco de las cuatro superficies y traslado al cruzar 768px. Cerrada (commit `944542c`).
 - `specs/012-correcciones-menores/` — medición de `useBreakpoint`, clase muerta de `AuthModal`, fecha inválida en `LogMovimientos`. Cerrada (commit `8aa9f0f`).
 - `specs/013-calidad-css/spec.md` — visual/CSS (revelado, vidrio, radios, área segura, tokens y contraste). Cerrada (2026-10-18).
-- `specs/015-higiene-y-dobles/spec.md` — **aprobada** (2026-10-18); sin plan ni tareas (se planifica después de la 013).
+- `specs/015-higiene-y-dobles/spec.md` — higiene de código, dobles de prueba y documentación. Cerrada (2026-10-18).
 - `specs/014/spec-ambiguedades.md` — sin planificar (botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens).
 
 ## Tareas faltantes
 
-- **Spec 015 (higiene, dobles y documentación):** redactar `plan.md` + `tasks.md` (la 013 ya está cerrada).
 - **Spec 014:** redactar spec y planificar (botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos).
 - **Spec futura (P1):** compatibilidad de prefijos CSS en el build — se pierde el `backdrop-filter` sin prefijo en las **seis** superficies (hero + cinco `glass-surface`) y en `preview` computa `none`. Requiere reconstruir y medir el CSS resultante (013 §4.1).
 - **Deuda 013 — área segura:** `.safe-bottom` está aplicada, pero sin `viewport-fit=cover` el inset resuelve 0 y no hay efecto visible; una spec futura debe decidir el modo a sangre completa (013 CL-15/DP-27).

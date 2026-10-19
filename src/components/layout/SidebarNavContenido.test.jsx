@@ -95,6 +95,10 @@ describe("SidebarNavContenido", () => {
       const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
       expect(avatarButton).toBeTruthy();
 
+      // Guarda (spec 015, RF-01): `my-` es un token fantasma que no genera ninguna regla.
+      // La comprobación es por token exacto, así que no confunde el `my-3` del separador.
+      expect(avatarButton.classList.contains("my-")).toBe(false);
+
       // Verificar círculo con iniciales
       const avatarCircle = avatarButton.querySelector(".w-10.h-10.rounded-full.bg-emerald-primary");
       expect(avatarCircle).toBeTruthy();

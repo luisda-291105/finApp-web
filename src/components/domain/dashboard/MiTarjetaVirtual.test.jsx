@@ -15,11 +15,22 @@ import MiTarjetaVirtual from "./MiTarjetaVirtual";
 // Mock de useReducedMotion de Framer Motion
 vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
+  const PROPS_DE_ANIMACION = new Set([
+    "initial", "animate", "exit", "transition", "variants", "custom",
+    "whileHover", "whileTap", "whileFocus", "whileDrag", "whileInView",
+    "layout", "layoutId", "layoutDependency", "layoutScroll",
+    "drag", "dragConstraints", "dragElastic", "dragMomentum", "dragPropagation",
+    "dragDirectionLock", "dragControls",
+    "onDragStart", "onDrag", "onDragEnd", "onAnimationStart", "onAnimationComplete",
+    "onUpdate", "transformTemplate", "viewport", "inherit",
+  ]);
+  const propsDom = (props) =>
+    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
   return {
     ...actual,
     useReducedMotion: vi.fn(() => false),
     motion: {
-      div: ({ children, ...props }) => <div {...props}>{children}</div>,
+      div: ({ children, ...props }) => <div {...propsDom(props)}>{children}</div>,
     },
   };
 });

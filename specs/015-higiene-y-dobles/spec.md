@@ -1,6 +1,6 @@
 # Spec 015 — Higiene de código, dobles de prueba y documentación
 
-**Estado: borrador** (aprobación del usuario pendiente) · **listo para aprobación**
+**Estado: aprobado** (2026-10-18) · **plan y tareas:** [`plan.md`](plan.md) y [`tasks.md`](tasks.md)
 **Fecha:** 2026-10-18 · **Última revisión:** 2026-10-18 (spec nueva, nacida del reparto de la 013)
 **Origen:** la revisión del borrador de la **Spec 013** partió su alcance en dos por decisión del
 usuario (2026-10-18). Esta spec recoge **todo lo que no es visual/CSS**: higiene de código, **dobles
@@ -54,8 +54,10 @@ recrea.
 **Nota de formato:** esta spec define **el QUÉ y el POR QUÉ**. Las referencias `archivo:línea` de §4
 son **evidencia del estado medido**, no una propuesta de solución; mecanismos, archivos y pruebas
 concretas son del **plan**.
-**Línea base:** aportada por el orquestador/reviewer — `npm test` **455/455 en 30 archivos** y
-`npm run build` verde. **No re-medida por el planner**; debe re-medirse **antes de tocar código**.
+**Línea base:** la del orquestador/reviewer fue `npm test` **455/455 en 30 archivos** (anterior a la
+013). **Re-medida antes de tocar código** (T1, 2026-10-18): **478/478 en 31 archivos** y
+`npm run build` verde. **Resultado de cierre** (T10, 2026-10-18): **479/479 en 31 archivos**
+(+1 caso guardia de T8) y build verde, **JS 384,23 kB**.
 
 ---
 
@@ -489,14 +491,15 @@ suites), DP-08 (entorno de medición intacto), DP-09 (pruebas). Los nuevos de la
 
 ## 9. Validaciones y comandos
 
-> Ninguna validación se declara verde sin haberse ejecutado. La **línea base** (455/455 en 30
-> archivos, aportada por el orquestador) **debe re-medirse** antes de tocar código; la comparación es
-> **suite por suite**.
+> Ninguna validación se declara verde sin haberse ejecutado. La **línea base** del reviewer (455/455 en
+> 30 archivos) se **re-midió antes de tocar código** (T1: **478/478 en 31 archivos**) y la comparación es
+> **suite por suite**. **Cierre** (T10, 2026-10-18): **479/479 en 31 archivos** (+1 caso guardia de T8) y
+> `npm run build` verde (JS 384,23 kB).
 
 | Bloque | Alcance | Comando / método |
 |---|---|---|
 | **F — Higiene y documentación** | `SidebarNavContenido`, `SidebarResponsive`, `BottomNav`, `Card` | `npx vitest run src/components/layout src/components/ui` + `grep` de `my-`, del icono `Settings` y de los recuentos documentados |
-| **G — Suites con dobles de animación (R1)** | Las **siete** suites de §4.2 y los componentes implicados | Una ejecución **por suite**: `npx vitest run src/components/domain/dashboard/MiTarjetaVirtual.test.jsx src/components/domain/dashboard/AcordeonTarjetas.test.jsx src/components/ModalTarjeta.test.jsx src/pages/PanelTarjetas.test.jsx src/components/layout/cierreDeModales.test.jsx src/components/layout/DashboardDrawer.test.jsx src/components/layout/DashboardUserModal.test.jsx` — se **registra**, por suite, la ausencia de avisos y el recuento de casos |
+| **G — Suites con dobles de animación (R1)** | Las **siete** suites de §4.2 y los componentes implicados | Una ejecución **por suite** (coherente con lo medido en T1 y T10): `npx vitest run <ruta>` para cada una de las siete rutas —`src/components/domain/dashboard/MiTarjetaVirtual.test.jsx`, `src/components/domain/dashboard/AcordeonTarjetas.test.jsx`, `src/components/ModalTarjeta.test.jsx`, `src/pages/PanelTarjetas.test.jsx`, `src/components/layout/cierreDeModales.test.jsx`, `src/components/layout/DashboardDrawer.test.jsx`, `src/components/layout/DashboardUserModal.test.jsx`—. Agruparlas en una sola invocación es equivalente, pero el registro se hace **por suite**: ausencia de avisos y recuento de casos |
 | **H — Cierre** | Todo el proyecto | `npm test` y `npm run build`, comparados **suite por suite** con la línea base re-medida |
 
 **Validaciones declaradas NO automatizadas o solo de inspección:**
@@ -536,6 +539,7 @@ confirma en el bloque G.
 | **Q4 — Reparto de la petición** | **Separar la higiene en otra spec** | Esta spec (015): higiene, dobles y documentación. El resto (visual/CSS) queda en la 013 (§8.3) |
 | **(traslado)** P1 (artefacto de build), H-1, blur a ≤640px y tokens (R4–R8) | — | **No** se tratan aquí; viven en la **013** (§4.1, §4.2, RF-06 y RF-12) |
 
-**Estado:** `borrador` **por aprobación pendiente**, no por falta de información. **Preguntas
-abiertas: ninguna**; las decisiones que podrían requerir al usuario (radio del cromo modal) están
-registradas como notas no bloqueantes en la 013 (DP-20).
+**Estado:** `aprobado` (2026-10-18) e **implementado** (T1–T10 ejecutadas). **Resultado medido** en el
+cierre (T10, 2026-10-18): `npm test` **479/479 en 31 archivos** y `npm run build` verde (JS 384,23 kB;
+el tamaño del CSS no es criterio). **Preguntas abiertas: ninguna**; las decisiones que podrían requerir
+al usuario (radio del cromo modal) están registradas como notas no bloqueantes en la 013 (DP-20).

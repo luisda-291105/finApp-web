@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import GridTarjetas from "./GridTarjetas";
@@ -31,6 +31,19 @@ describe("GridTarjetas (tablet/desktop)", () => {
     const grid = container.firstChild;
     for (const clase of ["hidden", "sm:grid", "sm:grid-cols-2", "lg:grid-cols-3"]) {
       expect(grid.className).toContain(clase);
+    }
+  });
+
+  it("conserva el div role=listitem de cada tarjeta en vez de un <li>: los roles ya declaran la lista y retirar el envoltorio dejaría un role=list sin elementos (spec 015 §4.3/DP-03, R2)", () => {
+    render(<GridTarjetas tarjetas={TARJETAS_DEMO} onSeleccionarTarjeta={vi.fn()} />);
+    const lista = screen.getByRole("list", { name: "Tarjetas de demostración" });
+    expect(lista.tagName).toBe("DIV");
+    expect(lista).toHaveAttribute("role", "list");
+    const elementos = within(lista).getAllByRole("listitem");
+    expect(elementos).toHaveLength(TARJETAS_DEMO.length);
+    for (const elemento of elementos) {
+      expect(elemento.tagName).toBe("DIV");
+      expect(elemento).toHaveAttribute("role", "listitem");
     }
   });
 

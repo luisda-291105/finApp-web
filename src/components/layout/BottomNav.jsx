@@ -12,7 +12,6 @@ import {
   Home,
   Receipt,
   CreditCard,
-  Settings,
   MoreHorizontal,
 } from "lucide-react";
 
