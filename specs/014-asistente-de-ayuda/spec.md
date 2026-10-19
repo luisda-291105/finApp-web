@@ -60,9 +60,9 @@ aplique se registra como «ya no aplicable» y **no se recrea** (CL-01).
 **Nota de formato:** esta spec define **solo el diseño** (estructura, estados visuales, literales,
 tokens, accesibilidad y presupuesto visual). Las decisiones de implementación concreta son del plan.
 
-**Línea base:** `HEAD` en `24ce894`; `npm test` **479/479 en 31 archivos** y `npm run build` verde,
-**aportados por el orquestador**. El planner **no** los re-ejecutó; esta spec no declara validaciones
-propias.
+**Línea base:** `HEAD` de partida `cfdd1af`; `npm test` **479/479 en 31 archivos** y `npm run build`
+verde, aportados por el orquestador y **re-medidos en T1**. Resultado final: **518/518 en 33 archivos**
+y build verde.
 
 ---
 
@@ -260,7 +260,7 @@ transición, ni estado de React de conversación, ni forma de cambiar de uno a o
   revisión de diseño y pruebas de estructura; **no** es una máquina de estados ni tiene control en
   producción. Las pruebas y la revisión la pasan explícitamente.
 - **Dónde vive el estado de UI:** el estado de apertura/cierre del modal vive en `PaginaInicio`
-  (mismo patrón que el resto del cromo, p. ej. `src/pages/PaginaInicio.jsx:25-27`); el componente del
+  (mismo patrón que el resto del cromo, p. ej. `src/pages/PaginaInicio.jsx:24-25`); el componente del
   asistente **no** tiene estado propio de conversación. Por eso AC-12 acota su `grep` al componente
   nuevo y no cuenta el `useState` de apertura de la página como lógica del asistente.
 
@@ -563,7 +563,7 @@ una constancia **manual opcional** con el protocolo de la 013, no un AC automát
 | Cero hexadecimales nuevos (solo **producción**) | `git status --porcelain`; `git diff --unified=0 -- '*.js' '*.jsx' ':(exclude)*.test.jsx' ':(exclude)*.test.js'` y revisión de las líneas añadidas (`^+`, excluyendo `+++`): 0 con `#`; el barrido **excluye las suites** porque copian **verbatim** el `className` heredado que AC-01 exige comparar **literalmente** (incluirlas daría un falso positivo garantizado; decisión del usuario 2026-10-19); los archivos nuevos **de producción** sin trackear no aparecen en `git diff`: se leen completos o se registran con `git add -N`; el `className` heredado del disparador no debe aparecer en el diff | **Fuente** |
 | M-3b (blur 12 px del disparador) | No se re-mide; si se constata, protocolo manual de la 013 | **Manual opcional** |
 | Cero lógica/red/dependencias | `grep` de motores, `fetch`, `api.config`, `onSubmit`, `onChange`, `useState`, `useReducer`, `localStorage`, `soporte@finapp.com` **en el componente nuevo del asistente** (no en `PaginaInicio`, que alberga el estado de apertura/cierre del cromo); `package.json` sin cambios; 013/015 sin cambios | **Fuente + Auto** |
-| No regresión | `npm test` (479 existentes + nuevas) y `npm run build` | **Auto + build** |
+| No regresión | `npm test` **518/518 en 33 archivos** (479 de la línea base + 39 nuevas) y `npm run build` verde | **Auto + build** |
 
 **Comandos previstos:** `npx vitest run <suite-nueva>`; `npm test`; `npm run build`;
 `git status --porcelain`; `git diff --unified=0 -- '*.js' '*.jsx' ':(exclude)*.test.jsx' ':(exclude)*.test.js' | grep '^+' | grep -v '^+++' | grep '#'` (sin coincidencias; el barrido **excluye las suites**, que copian verbatim el `className` heredado que AC-01 compara **literal**; `git diff` no ve archivos nuevos sin trackear: los de producción se leen completos o se registra con `git add -N`); `grep -n "onChange\|value=\|useState\|useReducer"` **en el componente nuevo del asistente**.
@@ -658,19 +658,17 @@ efecto observable o fuente; sin candidato no se fuerza `body`; contraste con pro
 ## 15. Cambios autorizados en `MEMORY.md` (los aplica el implementer)
 
 Regla autorizada: **solo ruta y estado**. La ruta obsoleta `specs/014/` pasa a
-`specs/014-asistente-de-ayuda/` donde aparezca, y el estado de la 014 pasa a
-**«en revisión (solo diseño)»**. El texto sobre hexadecimales se conserva **verbatim** en las líneas
-donde esté: la deuda de hex sigue **sin decidir** y esta spec **no la cubre**.
+`specs/014-asistente-de-ayuda/` donde aparezca, y el estado de la 014 queda en
+**«aprobada (2026-10-19)»**: la aprobación fue anterior a la implementación (commit `cfdd1af`). El
+texto sobre hexadecimales se conserva **verbatim** en las líneas donde esté: la deuda de hex sigue
+**sin decidir** y esta spec **no la cubre**.
 
-| Línea | Contenido actual (extracto) | Acción | Resultado tras la corrección |
+| Línea | Contenido inicial (extracto) | Acción aplicada | Resultado real |
 |---|---|---|---|
-| `MEMORY.md:27` | `- \`specs/014/spec-ambiguedades.md\` — sin planificar (botón «?» de \`PaginaInicio\`, «Usuario» del Header del dashboard, hex de JSX → tokens).` | **Se corrige** ruta y estado | `- \`specs/014-asistente-de-ayuda/spec-ambiguedades.md\` — en revisión (solo diseño): botón «?» de \`PaginaInicio\`, «Usuario» del Header del dashboard, hex de JSX → tokens.` (las palabras sobre hex **sobreviven verbatim**) |
-| `MEMORY.md:31` | `- **Spec 014:** redactar spec y planificar (botón «?» de \`PaginaInicio\`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos).` | **Se corrige** estado | `- **Spec 014:** en revisión (solo diseño); botón «?» de \`PaginaInicio\`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos.` (hex **verbatim**; ya no pide redactar spec) |
-| `MEMORY.md:37` | `- **Sin commitear (ajenos):** \`analicis-completo-cambios.md\`, \`specs/014/spec-ambiguedades.md\`.` | **No se toca** | Igual: es el registro de archivos ajenos sin commitear; no es ruta/estado de la 014. |
-| `MEMORY.md:41` | `- **Spec 014 — sin spec redactada:** intención del botón «?» de \`PaginaInicio\`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.` | **Se corrige** estado | `- **Spec 014 — en revisión (solo diseño):** intención del botón «?» de \`PaginaInicio\`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.` (hex **verbatim**) |
+| `MEMORY.md:27` | `- \`specs/014/spec-ambiguedades.md\` — sin planificar (botón «?» de \`PaginaInicio\`, «Usuario» del Header del dashboard, hex de JSX → tokens).` | Corregida **ruta y estado** en `cfdd1af`; quedó como línea de referencia de la 014 (no se añadió otra) | `- \`specs/014-asistente-de-ayuda/spec.md\` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de \`PaginaInicio\`, «Usuario» del Header del dashboard, hex de JSX → tokens.` (las palabras sobre hex **sobreviven verbatim**) |
+| `MEMORY.md:31` | `- **Spec 014:** redactar spec y planificar (botón «?» de \`PaginaInicio\`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos).` | `cfdd1af` fijó el estado **«aprobada (2026-10-19)»**; T10 añadió el estado de cierre | `- **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de \`PaginaInicio\`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos. T1–T10 hechas (2026-10-19); resultado **518/518 en 33 archivos**; pendiente el commit de cierre.` (hex **verbatim**) |
+| `MEMORY.md:37` | `- **Sin commitear (ajenos):** \`analicis-completo-cambios.md\`, \`specs/014/spec-ambiguedades.md\`.` | **No se tocó** | Igual: es el registro de archivos ajenos sin commitear; no es ruta/estado de la 014. |
+| `MEMORY.md:41` | `- **Spec 014 — sin spec redactada:** intención del botón «?» de \`PaginaInicio\`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.` | Corregida **estado** en `cfdd1af` | `- **Spec 014 — aprobada (2026-10-19):** intención del botón «?» de \`PaginaInicio\`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.` (hex **verbatim**) |
 
-**Línea de referencia final de la 014** (resume ruta y estado; no sustituye a las filas anteriores):
-
-```markdown
-- `specs/014-asistente-de-ayuda/spec.md` — en revisión (solo diseño).
-```
+**Sin línea de referencia adicional:** la fila `:27` ya ejerce esa función desde `cfdd1af`; por eso
+no se insertó una línea nueva ni se desplazaron las antiguas `:31` y `:41`.

@@ -8,9 +8,9 @@ incluye la migración de hexadecimales (DP-04) ni el «Usuario» del `Header` (D
 **Fase:** planificación. **Este documento no modifica `src/`**; define qué se creará, con qué
 mecanismo y cómo se verificará.
 
-**Línea base de partida (aportada por el orquestador, no re-medida por el planner):** `HEAD` en
-`24ce894`; `npm test` **479/479 en 31 archivos**; `npm run build` verde. **T1 la re-mide antes de
-tocar código**; sin esa medición no se declara nada (DP-12, AC-12).
+**Línea base de partida:** `HEAD` en `cfdd1af`; `npm test` **479/479 en 31 archivos**; `npm run build`
+verde, **re-medidos en T1**. Resultado final del cierre: **518/518 en 33 archivos** y build verde
+(DP-12, AC-12).
 
 **Referencias `archivo:línea`:** re-verificadas por el planner el **2026-10-19** sobre el árbol
 actual. El usuario edita a mano: **T1 las re-verifica** y lo que ya no exista se registra como «ya no
@@ -207,8 +207,8 @@ píldora `bg-emerald-primary/10 text-emerald-primary` daría ≈3,9:1 y **fallar
 - El planner **no puede** editar `MEMORY.md` (solo escribe en `specs/`); DP-13. La corrección la
   aplica el implementer en T10 con la tabla línea por línea de la spec §15: **solo ruta y estado**,
   texto de hexadecimales **verbatim**, `MEMORY.md:37` **intacto**.
-- **Se corrige por contenido, no por número**: al insertar la línea de referencia, `:31` y `:41`
-  pasan a `:32` y `:42`.
+- **Se corrige por contenido, no por número**: la fila `:27` queda como línea de referencia y no se
+  inserta una línea nueva, así que `:31` y `:41` mantienen su número.
 
 ### D12 — El barrido de hexadecimales se acota a producción (decisión del usuario, 2026-10-19)
 
@@ -294,12 +294,13 @@ y `src/styles/index.css.test.js`; `src/layout/LandingLayout.jsx`; `src/App.jsx`;
 | A — Estructura y literales | `npx vitest run src/components/domain/modales/AsistenteAyuda.test.jsx` | Panel/clases/scroll, cabecera, literales, `AC-04`, `AC-05` |
 | B — Estados y log | idem | `AC-06`, `AC-07`, `AC-08` |
 | C — Pie y ARIA | idem | `AC-03` (ARIA del diálogo), `AC-09` |
-| D — Cromo | idem | `AC-02`, `AC-03` (trampa): Esc con foco en el campo, «X», clic fuera, una acción = una llamada, retorno de foco, caso sin candidato |
+| D — Cromo | idem | `AC-02`, `AC-03` (trampa): `Tab` circular contenido en el panel, Esc con foco en el campo, «X», clic fuera, una acción = una llamada, retorno de foco, caso sin candidato |
 | E — Disparador | `npx vitest run src/pages/PaginaInicio.test.jsx` | `AC-01`: icono, `aria-label`, `className`, ausencia de `aria-haspopup`/`aria-expanded`/`?`, abre la ayuda, no «Ventana de acceso», `fetch` no llamado |
-| F — No regresión | `npm test` · `npm run build` | 479 existentes + las nuevas; build verde |
+| F — No regresión | `npm test` · `npm run build` | **518/518 en 33 archivos** (479 de la línea base + 39 nuevas); build verde |
 
 **Casos nuevos previstos:** ≈22 en `AsistenteAyuda.test.jsx` y ≈5 en `PaginaInicio.test.jsx`
-(≈27 en total). T10 compara **archivo por archivo** contra los 479/31 de la línea base, no solo el total.
+(≈27 en total). T10 compara **archivo por archivo** contra los 479/31 de la línea base, no solo el total;
+resultado real: **39 nuevas (518/518 en 33)**.
 
 **Roja-antes/verde-después:**
 
@@ -413,12 +414,11 @@ transversal (T1) y **CL-02/CL-03** los cubren los estados de T3/T4.
 ## 10. Cierre
 
 - **Suite y build:** `npm test` y `npm run build` verdes frente a la línea base (479/479 en 31
-  archivos); T10 compara archivo por archivo. Ninguna suite existente se edita.
-- **`MEMORY.md`:** se aplica §15 en T10 (solo ruta/estado; hex verbatim; `:37` intacto) y se añade la
-  línea de referencia final:
-  ```markdown
-  - `specs/014-asistente-de-ayuda/spec.md` — en revisión (solo diseño).
-  ```
+  archivos); resultado final **518/518 en 33 archivos**; T10 compara archivo por archivo. Ninguna
+  suite existente se edita.
+- **`MEMORY.md`:** §15 aplicada entre `cfdd1af` y T10 (solo ruta/estado; hex verbatim; `:37`
+  intacto); la fila `:27` queda como línea de referencia, sin añadir una línea nueva ni desplazar
+  `:31`/`:41`.
 - **Sin staging ni commit** desde el flujo de planificación; el commit lo decide el usuario tras las
   validaciones (regla de `AGENTS.md`).
 - **Fuera de alcance declarado:** la lógica del asistente, el teclado virtual/`visualViewport` y la

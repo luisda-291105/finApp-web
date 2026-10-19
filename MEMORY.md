@@ -28,13 +28,13 @@ antes de tocar código** y no revertir sus ediciones.
 
 ## Tareas faltantes
 
-- **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos.
+- **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos. T1–T10 hechas (2026-10-19); resultado **518/518 en 33 archivos**; pendiente el commit de cierre.
 - **Spec futura (P1):** compatibilidad de prefijos CSS en el build — se pierde el `backdrop-filter` sin prefijo en las **seis** superficies (hero + cinco `glass-surface`) y en `preview` computa `none`. Requiere reconstruir y medir el CSS resultante (013 §4.1).
 - **Deuda 013 — área segura:** `.safe-bottom` está aplicada, pero sin `viewport-fit=cover` el inset resuelve 0 y no hay efecto visible; una spec futura debe decidir el modo a sangre completa (013 CL-15/DP-27).
 - **Deuda CL-19 (spec 011):** la marca `location.state.focoEnDestino` no se limpia al consumirse; al volver «atrás» a una entrada marcada el foco se recoloca sin cierre. Requiere spec futura.
 - **Deuda DP-07 (spec 010):** animación de salida de los modales, pendiente.
 - **Backend real:** conectar autenticación y datos financieros (hoy demo: `TRIAL_ACTIVO = true`, sin persistencia). Definir contratos, manejo de errores y seguridad antes.
-- **Sin commitear (ajenos):** `analicis-completo-cambios.md`, `specs/014/spec-ambiguedades.md`.
+- **Sin commitear (ajenos):** `analicis-completo-cambios.md`, `specs/016/`.
 
 ## Preguntas por resolver
 

@@ -57,6 +57,9 @@ aplicable» sin recrearse; **no se ha editado ningún archivo**.
 ## T2 — Componente `AsistenteAyuda`: scrim, panel, cabecera y ARIA del diálogo
 
 **Etapa 2 · Depende de:** T1.
+**Estado:** ✅ **Hecha** (2026-10-19). `AsistenteAyuda.test.jsx` **10/10** (rojo-antes confirmado: el
+import no resolvía); `npm test` **489/489 en 32 archivos**; `npm run build` verde (CSS 60,02 kB ·
+JS 384,23 kB).
 **Alcance:** crear el componente de diseño con el estado por defecto y solo la estructura
 (scrim + panel + cabecera). Sin cuerpo, sin pie y sin cromo todavía.
 **Archivos:** **crear** `src/components/domain/modales/AsistenteAyuda.jsx` y
@@ -146,6 +149,7 @@ de la spec; los asertos de T2 pasan; el scrim no tiene filtro; no hay ningún `#
 ## T3 — Estado vacío: `TEXTO_VACIO`, sugerencias y chips
 
 **Etapa 2 · Depende de:** T2.
+**Estado:** ✅ **Hecha** (2026-10-19). `AsistenteAyuda.test.jsx` **14/14** (rojo-antes confirmado: 4 casos nuevos en rojo sobre el código de T2); `npm test` **493/493 en 32 archivos** (+4 sobre los 489 de T2); `npm run build` verde (CSS 60,02 kB · JS 384,23 kB).
 **Alcance:** añadir el cuerpo del estado `"vacio"` (por defecto): aviso, cuatro chips
 presentacionales y el **log vacío** (existe desde la apertura y queda sin hijos).
 **Archivos:** `src/components/domain/modales/AsistenteAyuda.jsx`,
@@ -194,6 +198,7 @@ de él; los chips no ejecutan nada al pulsarlos; los asertos de T2 siguen verdes
 ## T4 — Estado conversación: `TEXTO_EJEMPLO` y burbujas
 
 **Etapa 2 · Depende de:** T3.
+**Estado:** ✅ **Hecha** (2026-10-19). `AsistenteAyuda.test.jsx` **18/18** (rojo-antes confirmado: 4 casos nuevos en rojo sobre el código de T3); `npm test` **497/497 en 32 archivos** (+4 sobre los 493 de T3); `npm run build` verde (CSS 60,02 kB · JS 384,23 kB).
 **Alcance:** añadir la variante `estadoVisual="conversacion"`: `TEXTO_EJEMPLO` fuera del log y las
 cuatro burbujas **dentro** del log, con etiqueta de remitente `sr-only`. Sin chips en este estado.
 **Archivos:** `src/components/domain/modales/AsistenteAyuda.jsx`,
@@ -246,6 +251,7 @@ siguen verdes.
 ## T5 — Pie: aviso de reserva, campo y botón «Enviar» presentacionales
 
 **Etapa 2 · Depende de:** T4.
+**Estado:** ✅ **Hecha** (2026-10-19). `AsistenteAyuda.test.jsx` **23/23** (rojo-antes confirmado: 5 casos nuevos en rojo sobre el código de T4); `npm test` **502/502 en 32 archivos** (+5 sobre los 497 de T4); `npm run build` verde (CSS 60,02 kB · JS 384,23 kB).
 **Alcance:** añadir el pie con `AVISO_RESERVA`, la etiqueta, el campo editable sin estado y el botón
 «Enviar» sin handler. Ni `<form>` ni envío.
 **Archivos:** `src/components/domain/modales/AsistenteAyuda.jsx`,
@@ -290,6 +296,7 @@ genera mensajes ni estado, no hay `<form>` ni handler de envío, y el `grep` no 
 ## T6 — Cromo modal: trampa, Esc, clic fuera, deslizar y retorno de foco
 
 **Etapa 3 · Depende de:** T5.
+**Estado:** ✅ **Hecha** (2026-10-19). `AsistenteAyuda.test.jsx` **33/33** (rojo-antes confirmado: 4 casos nuevos en rojo sobre el código de T5: Esc ×2, retorno de foco y gesto móvil); `npm test` **512/512 en 32 archivos** (+10 sobre los 502 de T5); `npm run build` verde (CSS 60,02 kB · JS 384,23 kB). Gesto y foco reales quedan en validación manual (M-14-6).
 **Alcance:** dotar a la superficie del cromo congelado de 010/011 reutilizando las piezas comunes.
 **Archivos:** `src/components/domain/modales/AsistenteAyuda.jsx`,
 `src/components/domain/modales/AsistenteAyuda.test.jsx`.
@@ -341,6 +348,7 @@ inicial va al panel, el retorno devuelve el foco al disparador y sin candidato n
 ## T7 — Disparador de robot e integración en `PaginaInicio`
 
 **Etapa 3 · Depende de:** T6.
+**Estado:** ✅ **Hecha** (2026-10-19). `PaginaInicio.test.jsx` **5/5** (rojo-antes confirmado: 5/5 en rojo porque el disparador seguía siendo «Ayuda y preguntas frecuentes»); `AuthModal.test.jsx` 20/20; `npm test` **518/518 en 33 archivos** (+5 sobre los 512 de T6); `npm run build` verde (CSS 60,02 kB · JS 389,45 kB). El `className` del disparador no aparece en `git diff --unified=0`.
 **Alcance:** convertir el disparador en la entrada del asistente y montar el modal con
 `estadoVisual="vacio"`. **Solo** se editan el `aria-label`, el `onClick`, el `ref`, el icono y el
 estado nuevo; el `className` de `PaginaInicio.jsx:55` **no cambia**.
@@ -405,6 +413,7 @@ byte a byte el de hoy (no aparece en `git diff --unified=0 -- src/pages/PaginaIn
 ## T8 — Auditoría de fuente: hexadecimales, lógica, dependencias y specs cerradas
 
 **Etapa 4 · Depende de:** T7.
+**Estado:** ✅ **Hecha** (2026-10-19). Auditoría de fuente: **0** `#` en las líneas añadidas de producción y en `AsistenteAyuda.jsx`; **0** coincidencias de lógica/red en el componente; `package.json`, `package-lock.json`, `src/styles/index.css` y las suites de 010/011/012/013/015 intactos; **0** `backdrop-blur`; literales §4.3 exactos; `npm test` **518/518 en 33 archivos**; `npm run build` verde (CSS 60,02 kB · JS 389,45 kB). Sin staging ni commit.
 **Alcance:** verificación de fuente (sin cambios funcionales). Si aparece un hallazgo, se corrige en la
 tarea que corresponda y se re-ejecuta.
 **Archivos:** ninguno (solo lectura y comandos).
@@ -434,9 +443,29 @@ da 0; el punto 3 da **0** `#` en el componente de producción y **ninguna** suit
 ## T9 — Validación manual en navegador
 
 **Etapa 5 · Depende de:** T8.
-**Alcance:** medir en navegador lo que jsdom no puede. **Sin cambios de código** salvo que una medición
-lo exija (entonces se corrige en su tarea y se repite).
-**Archivos:** ninguno.
+**Estado:** ✅ **Hecha** (2026-10-19). Medición con **Brave 155.1.97.59 / `HeadlessChrome
+155.0.8059.85`** por CDP (`navigator.userAgent` registrado), `devicePixelRatio` 1, preferencias
+**normales** verificadas con `matchMedia` (`prefers-reduced-motion: reduce` → `false`;
+`prefers-reduced-transparency: reduce` → `false`). Anchos CSS reales: **320, 375, 1024, 1440, 720,
+512** (`window.innerWidth`). `conversacion` se midió con un **arnés temporal** fuera de `src/`
+(eliminado; la app solo monta `vacio`). **Sin cambios de código.**
+**Resultado:** M-14-1, M-14-2, M-14-4, M-14-5 y M-14-7 **pasan**; M-14-3 y M-14-6 **no realizadas**
+(sin dispositivo/teclado virtual; abajo, el motivo). `npm test` **518/518 en 33 archivos**; `npm run
+build` verde (CSS 60,02 kB · JS 389,45 kB). Sin staging ni commit.
+
+| ID | Método (navegador / viewport) | Resultado | Cifra o evidencia |
+|---|---|---|---|
+| **M-14-1** | Brave 155 CDP, `getComputedStyle` + rects + `scrollTop`; 320×812, 375×812, 1024×768, 1440×900 | **pasa** | 320: panel **510 px** (máx. 690,2 = 85vh), body `overflow-y: auto`, header 129 px y pie 111 px `shrink-0`; 375: panel **510 px** (337,5 = 90vw), body 268/268; 1024: **398 px** (máx. 652,8); 1440: **398 px** (máx. 765). Panel `overflow: hidden`; `scrollWidth` = `innerWidth` (sin desbordamiento horizontal); header/pie con la misma posición tras desplazar el body. |
+| **M-14-1** | Zoom 200 % (equivalencia CSS 1440×900 → **720×450**; y 1024×768 → **512×384**) | **pasa** | 720×450: panel **382,5 px** = 85vh; body 157/172 → `scrollTop` **15 px**; header 34,75–147,75 y pie 304,25–415,25 **sin moverse**. 512×384: panel **326,39 px** (máx. 326,4); body 100/172 → `scrollTop` **72 px**; header y pie fijos; 0 desbordamiento horizontal. |
+| **M-14-2** | Brave 155 CDP, muestreo de píxel real de la captura + `getComputedStyle`; 375×812 y 1440×900, normal | **pasa** | Fondo compuesto del panel muestreado `rgb(234,234,231)` (375) y `rgb(235,235,232)` (1440); con scroll `rgb(238,237,234)` / `rgb(238,237,235)`. **slate/panel 4,96:1** (375) y **5,00:1** (1440); con scroll 5,10/5,11. **bg-dark/panel 15,65:1** y **15,80:1**. **crema/esmeralda 4,87:1** (píldora y «Enviar»). Scrim semitransparente (`oklab(… / 0,7)`) sin nodos de texto propios (**0**). Todos ≥ 4,5:1. |
+| **M-14-3** | 375×812; teclado virtual | **no realizado** | No hay dispositivo ni emulación de teclado virtual (CDP no lo expone). Se comprobó que el pie y el aviso (566–598 px) quedan dentro del viewport y son `shrink-0`, pero **no** se midió la oclusión por teclado (CL-06, estrategia diferida). |
+| **M-14-4** | Brave 155 CDP, conteo por clases `glass-hero`/`glass-surface` con `backdropFilter` ≠ `none` + blobs `filter: blur()`; 1440×900 y 375×812, con/sin modal y con/sin scroll | **pasa** | Sin modal: **1/1** en el tope y **2/1** con scroll (`scrollY 400`). Con modal: **2/1** en el tope y **3/1** con scroll. Blob único: halo del Hero `blur(120px)`; **sin blobs nuevos**. Scrim `backdropFilter: none`, `backgroundColor` oklab con alfa 0,7, **0** nodos de texto propios. No se cuentan «Ver funciones» (`backdrop-blur-xs`) ni el robot (`backdrop-blur-md`): son controles/velos (013). |
+| **M-14-5** | Brave 155 CDP, rects; 375×812 y 1440×900 en `vacio` y `conversacion` (+320×812 en `conversacion`) | **pasa** | `vacio` 375: título 168–196, marca 202–226, nota 232–264; 1440: 268–296 / 302–326 / 332–348. `conversacion` 375: 110–138 / 144–168 / 174–206 (panel 626 px); 1440: 182–210 / 216–240 / 246–262; 320: 90–118 / 124–148 / 154–186. Los tres textos quedan **dentro del viewport sin scroll** y su posición **no cambia** al desplazar el body (header `shrink-0`). |
+| **M-14-6** | 375×812 con emulación táctil CDP; 1024×768; punteros `mouse` | **no realizado** (táctil) | La emulación táctil de CDP emite `pointercancel` al reconocer el *pan* (también en página en blanco), así que **no es una medición fiel** del gesto en dispositivo y no se declara pasa. Con puntero `mouse` (mismos listeners del hook): 150 px **cierra**, 80 px **no**, chip/input/«X» **no**, 1024×768 **no**. Falta constatarlo en dispositivo táctil real. |
+| **M-14-7** | Brave 155 CDP, `getComputedStyle(disparador).backdropFilter`; 640×900, 639×900, 375×812 | **pasa** (opcional, constancia voluntaria) | `blur(12px)` en los tres anchos; disparador 44×44 px. M-3b no se reabre. |
+
+**Cierre de T9:** no se tocó `src/` ni otras specs; el arnés temporal y el servidor de medición se
+retiraron. No hubo staging, commit ni `push`.
 
 **Protocolo:** navegador **Chromium ≥ 120** o **Firefox ≥ 121** (registrar `navigator.userAgent` y
 versión), ancho CSS real (`window.innerWidth`), preferencia verificada con `matchMedia(...).matches` y
@@ -465,37 +494,44 @@ medición.
 ## T10 — Cierre: suite, build y `MEMORY.md`
 
 **Etapa 6 · Depende de:** T9.
+**Estado:** ✅ **Hecha** (2026-10-19). `npm test` **518/518 en 33 archivos** (479 de la línea base + 39
+nuevas); `npm run build` verde (CSS 60,02 kB · JS 389,45 kB). Se mantienen **no realizadas** las celdas
+**M-14-3** (teclado virtual) y **M-14-6** (gesto táctil real) de T9: no se maquillan. Sin staging,
+commit ni `push`.
+Cierre posterior del reviewer (2026-10-19): añadido **1 caso** de contención de `Tab` en
+`AsistenteAyuda.test.jsx` (AC-03) —la suite pasa a **34/34** y el total a **518/518 en 33 archivos**— y
+sincronizada la tabla §15 de la spec con lo realmente aplicado en `MEMORY.md`.
 **Alcance:** cierre del cambio con la suite completa, el build y la corrección autorizada de
 `MEMORY.md` (§15). Solo ruta y estado; el texto de hexadecimales sobrevive **verbatim**.
-**Archivos:** `MEMORY.md`.
+**Archivos:** `MEMORY.md`; `AsistenteAyuda.test.jsx` (caso de contención de `Tab`, cierre posterior).
 
 **Comandos**
 
 ```bash
-npm test          # 479 existentes + las nuevas (comparar archivo por archivo con la línea base)
+npm test          # esperado: 518/518 en 33 archivos (479 de la línea base + 39 nuevas)
 npm run build     # verde
 git diff --stat
 ```
 
 **Correcciones en `MEMORY.md` (spec §15; localizar por contenido, no por número):**
 
-| Línea (hoy) | Acción | Resultado |
+| Línea (hoy) | Acción aplicada | Resultado real |
 |---|---|---|
-| `:27` | Corregir **ruta y estado** | ``- `specs/014-asistente-de-ayuda/spec-ambiguedades.md` — en revisión (solo diseño): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.`` |
-| `:31` | Corregir **estado** | ``- **Spec 014:** en revisión (solo diseño); botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos.`` |
-| `:41` | Corregir **estado** | ``- **Spec 014 — en revisión (solo diseño):** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.`` |
-| `:37` | **No se toca** | El registro «Sin commitear (ajenos)» queda intacto aunque contenga la ruta obsoleta |
-| — | **Añadir** la línea de referencia final, tras el `:27` corregido | ``- `specs/014-asistente-de-ayuda/spec.md` — en revisión (solo diseño).`` |
+| `:27` | Ruta y estado corregidos en `cfdd1af`; es la línea de referencia de la 014 | ``- `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.`` |
+| `:31` | Estado fijado en `cfdd1af` («aprobada») y cierre añadido en T10 | ``- **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): … T1–T10 hechas (2026-10-19); resultado **518/518 en 33 archivos**; pendiente el commit de cierre.`` |
+| `:41` | Estado corregido en `cfdd1af` | ``- **Spec 014 — aprobada (2026-10-19):** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.`` |
+| `:37` | **No se tocó** | El registro «Sin commitear (ajenos)» queda intacto aunque contenga la ruta obsoleta |
+| — | **No se añadió** línea de referencia | La fila `:27` ya la cumple; `:31` y `:41` no se desplazaron |
 
 Las palabras sobre hex (`hex de JSX → tokens`, `migración de hex de JSX a tokens: 72 clases en 10
-archivos`) se conservan **carácter a carácter**. Al insertar la línea nueva, las antiguas `:31` y
-`:41` pasan a `:32` y `:42`.
+archivos`) se conservan **carácter a carácter**. No se insertó línea nueva: `:31` y `:41` mantienen su
+número.
 
-**Cubre:** no regresión y §15 · AC-12 (parte `MEMORY.md` y specs cerradas) · CL-01, CL-12 · DP-04,
-DP-13.
+**Cubre:** no regresión y §15 · AC-03 (contención de `Tab`) · AC-12 (parte `MEMORY.md` y specs
+cerradas) · CL-01, CL-12 · DP-04, DP-13.
 **Prueba:** `npm test` y `npm run build` verdes; recuento comparado **archivo por archivo** con la
-línea base de T1; `git diff -- MEMORY.md` limitado a las cuatro filas de la tabla (ruta/estado en
-`:27`, `:31`, `:41` + línea de referencia), con el hex **verbatim** y `:37` sin hunk.
+línea base de T1; `git diff -- MEMORY.md` limitado a las tres líneas corregidas (`:27`, `:31`, `:41`),
+con el hex **verbatim** y `:37` sin hunk.
 **Hecho cuando:** `npm test` y `npm run build` pasan frente a la línea base; ninguna suite existente
 está editada (`git diff --stat` no las lista); `granularidad` de `MEMORY.md` coincide con la tabla
 §15; no se ha hecho staging ni commit.
