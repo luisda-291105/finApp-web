@@ -73,9 +73,11 @@ componentes (no existe `.reveal`, sí `.opacity-0`) y pasan después.
 **Comandos:**
 `npx vitest run src/components/domain/landing src/components/Hero.test.jsx src/hooks/useReveal.test.js src/styles/index.css.test.js`
 **Manual M-1 (navegador/versión, 1440×900 y 375×812, `reduced-motion: reduce`):** registrar
-`opacity`, `transform` y `transition-duration` de las cinco secciones (esperado `1`, `none`, `0s`) y
-confirmar que ninguna queda oculta. Con preferencia normal, confirmar que el revelado ocurre al
-entrar en viewport y que el sentido es vertical salvo **HowItWorks** (horizontal).
+`opacity`, `transform` y `transition-duration` de las cinco secciones: esperado `opacity: 1` y
+`transition-duration: 0s` en las cinco, y en `transform` **1 con `matrix(1, 0, 0, 1, 0, 0)` (hero) +
+4 con `none`** (sin desplazamiento en todos los casos); confirmar que ninguna queda oculta. Con
+preferencia normal, confirmar que el revelado ocurre al entrar en viewport y que el sentido es
+vertical salvo **HowItWorks** (horizontal).
 **Hecho cuando:** las cinco secciones usan `reveal`/`reveal-left` (+ `revealed` al revelarse), no
 queda ninguna utilidad en línea equivalente, las suites del bloque A pasan y M-1 está registrada.
 
@@ -172,12 +174,16 @@ actualizan **solo** las expectativas de estilo de sus suites.
 línea de `backdrop-blur-md`; actualizar la expectativa (y solo esa línea) las deja verdes.
 **Comandos:**
 `npx vitest run src/components/layout/BottomNav.test.jsx src/components/layout/SidebarResponsive.test.jsx src/components/layout/DashboardUserModal.test.jsx src/components/layout/DashboardDrawer.test.jsx`
-**Manual M-2, M-3a, M-3b (seis superficies):** en 1440×900, 1024×768, 640×900, 639×900 y 375×812,
-registrar `backdropFilter` por superficie:
-- normal >640px → `blur(24px) saturate(1.8)` en las seis;
-- normal ≤640px → `blur(14px) saturate(1.8)` en las seis;
-- `reduced-transparency: reduce` → **`none`** en las seis, en ambos anchos.
+**Manual M-2, M-3a, M-3b (conjunto de seis, cubierto entre contextos):** en 1440×900, 1024×768,
+640×900, 639×900 y 375×812, registrar `backdropFilter` y `backgroundColor` por superficie. A 1440 y
+1024 se miden **4 de 6** (hero, header, sidebar y modal; bottomNav y drawer no se renderizan); a 640,
+639 y 375 se miden **5 de 6** (hero, header, bottomNav, drawer y modal; sidebar no se renderiza). Las
+seis quedan cubiertas **entre contextos, no en una sola celda**.
+- normal >640px → `blur(24px) saturate(1.8)` en las 4 renderizadas;
+- normal ≤640px → `blur(14px) saturate(1.8)` en las 5 renderizadas;
+- `reduced-transparency: reduce` → **`none`** en las renderizadas, en ambos anchos.
 Registrar además el botón «?» de `PaginaInicio.jsx:55`: debe seguir en `blur(12px)` (sin cambios).
+M-3a/M-3b se miden en `dev`; en `preview`, P1 hace que `backdropFilter` compute `none` en las seis.
 **Hecho cuando:** las cinco superficies usan `glass-surface`, ninguna conserva `backdrop-blur-md` en
 el conjunto, las cuatro suites pasan con la expectativa actualizada, M-2/M-3a/M-3b están registradas
 y el control excluido no cambió.
@@ -340,10 +346,13 @@ aparece como **pendiente** con su motivo.
 
 **Resultado (2026-10-18):** tabla completa **M-1…M-9** registrada en `spec.md` §9.1.1 (navegador
 Brave 155.1.97.59 / `HeadlessChrome 155.0.8059.85`, anchos reales 1440/1024/640/639/375,
-preferencias verificadas con `matchMedia`). Verdes: M-1 (**pasa con nota**), M-2, M-3a, M-3b, M-4,
-M-6, M-7 y M-8 (≤2 superficies y ≤1 blob); de M-5 pasa la grilla de cuatro columnas. Pendientes, no
-verdes: **M-5 con *safe area*** (sin `viewport-fit=cover`, `padding-bottom` computado `0px`) y
-**M-9** (sin motor sin `backdrop-filter`).
+preferencias verificadas con `matchMedia`). Con veredicto `pasa`: M-1 (nota: `transform` con
+`matrix(1, 0, 0, 1, 0, 0)` en el hero y `none` en las otras cuatro), M-2, M-3a, M-3b, M-4, M-6, M-7 y
+M-8 (recuentos exactos: base 1/0, drawer 2/0, modal 2/0, landing 2/1); de M-5 pasa la grilla de cuatro
+columnas. Cobertura de M-2/M-3a/M-3b: **4 de 6** superficies a 1440/1024 y **5 de 6** a 640/639/375;
+las seis quedan cubiertas **entre contextos**. M-3a/M-3b medidos en `dev`; en `preview`, P1 computa
+`none` en las seis. Pendientes, no verdes: **M-5 con *safe area*** (sin `viewport-fit=cover`,
+`padding-bottom` computado `0px`) y **M-9** (sin motor sin `backdrop-filter`).
 
 ---
 

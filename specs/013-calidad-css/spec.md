@@ -18,9 +18,10 @@ en §8.3 de la 015). Nada del borrador anterior se pierde.
 
 **Resoluciones del usuario (2026-10-18) que se aplican en esta spec:**
 - **R4 (defecto del artefacto de build) = (b):** el defecto que el informe del reviewer llama **P1**
-  —el CSS **compilado** pierde el `backdrop-filter` sin prefijo de `.glass-hero`— queda **FUERA** del
-  alcance; se documenta como hallazgo con su evidencia (§4.1) y se remite a una **spec futura de
-  compatibilidad de prefijos CSS**. **No** genera requisito ni criterio de aceptación.
+  —el CSS **compilado** pierde el `backdrop-filter` sin prefijo en las **seis superficies** del
+  conjunto (`.glass-hero` y las cinco `.glass-surface`)— queda **FUERA** del alcance; se documenta
+  como hallazgo con su evidencia (§4.1) y se remite a una **spec futura de compatibilidad de prefijos
+  CSS**. **No** genera requisito ni criterio de aceptación.
 - **R5 (archivo de la petición) = sin objeto:** el archivo que la spec citaba fue **eliminado** por el
   usuario; los cinco puntos quedan citados **aquí**, en la cabecera.
 - **R6 (H-1) = EN ALCANCE, confirmado:** el ajuste de blur de `@media (max-width: 640px)` **deja de
@@ -688,7 +689,7 @@ recuentos documentados), **vive ahora en la Spec 015 §4**. Aquí solo queda la 
 | **AC-04** | RF-04 — transparencia reducida en **los dos contextos** (H-1, R6, M2) | El desenfoque de **todas** las superficies del conjunto = **`none`** con la preferencia activa, **tanto a 1440×900 (>640px) como a 375×812 (≤640px)** (hoy el hero lo recupera en ≤640px) | Fuente (orden/blindaje de los bloques, **sin cambiar valores**) + **M-2** con los dos tamaños | Fuente + Manual |
 | **AC-05** | RF-05 — blur y saturación en **>640px** (M1) | A 1440×900 las **seis** superficies del conjunto declaran blur en **20–30px** y saturación **160–200 %**; ninguna conserva 12px; velos y controles no cambian | Fuente (valor por superficie según el inventario de §4.3) + **M-3a**; las aserciones de estilo afectadas se actualizan (RF-15) | Fuente + Manual |
 | **AC-06** | RF-06 — contrato de la Spec 001 en ≤640px | La reducción a 12–16px sin alterar la saturación sigue declarada para `.glass-hero`, y el aserto de `index.css.test.js:63-69` sigue pasando **sin modificar** | Suite del CSS global **ampliada, no reescrita**: sus asertos actuales se conservan tal cual (CL-13) | Auto |
-| **AC-07** | RF-06 — **≤640px en las seis superficies** (R7, M1, agnóstico al mecanismo) | A 640×900 y a 375×812 las **seis** superficies del conjunto tienen blur computado en **12–16px** con la saturación **intacta**; el **control** `PaginaInicio.jsx:55` **no** cambia su blur; ningún otro uso de `backdrop-blur-md` fuera del conjunto se ve afectado | Fuente (efecto por superficie, **sin** presuponer el mecanismo; DP-25) + **M-3b**; asertos nuevos de `index.css.test.js` **agnósticos** al mecanismo y sin exigir que la regla viva en la hoja | Fuente + Manual |
+| **AC-07** | RF-06 — **≤640px en el conjunto** (5 de 6 superficies por celda; las seis entre contextos) (R7, M1, agnóstico al mecanismo) | A 640×900 y a 375×812 las **5 superficies renderizadas** del conjunto (hero, header, bottomNav, drawer y modal; la sidebar **no se renderiza** a esos anchos) tienen blur computado en **12–16px** con la saturación **intacta**; el **control** `PaginaInicio.jsx:55` **no** cambia su blur; ningún otro uso de `backdrop-blur-md` fuera del conjunto se ve afectado | Fuente (efecto por superficie, **sin** presuponer el mecanismo; DP-25) + **M-3b**; asertos nuevos de `index.css.test.js` **agnósticos** al mecanismo y sin exigir que la regla viva en la hoja | Fuente + Manual |
 | **AC-08** | RF-07 — radios del conjunto declarado | Las superficies **con esquinas** del conjunto tienen radio de 20–28px (hoy `AcordeonTarjetas.jsx:47` queda en 16px); las barras/paneles sin esquinas y el **cromo modal** (`DashboardUserModal.jsx:109`, `AuthModal.jsx:141`) **no** cambian; las esquinas anidadas quedan documentadas con criterio y las caras de la tarjeta virtual coinciden con el radio de su contenedor | Fuente (radio por superficie) + `grep` del radio del cromo modal (sin cambios) + **M-4** | Fuente + Manual |
 | **AC-09** | RF-08 — tarjeta sólida documentada | Existe la declaración documental de su naturaleza sólida y su motivo; la clase **no** se renombra, **no** gana desenfoque y su aspecto no cambia | Inspección del comentario/JSDoc + `grep` de desenfoque en esa regla + suites de `Card`, `Features` y `MiTarjetaVirtual` verdes | Auto + Fuente |
 | **AC-10** | RF-09 — área segura aplicada | La clase que usa la barra inferior **existe** en el CSS global (y la utilidad declarada tiene consumidor): no queda ninguna de las dos huérfana | Fuente cruzando hoja y componente + **M-5** (`paddingBottom` computado) | Fuente + Manual |
@@ -714,7 +715,7 @@ recuentos documentados), **vive ahora en la Spec 015 §4**. Aquí solo queda la 
 
 | Defecto | Requisito | Criterio |
 |---|---|---|
-| **P1 — el CSS compilado pierde el `backdrop-filter` sin prefijo de `.glass-hero`** | **Fuera de alcance (R4):** documentado en §4.1 y remitido a una **spec futura de build/compatibilidad de prefijos** | — (no genera AC; DP-14) |
+| **P1 — el CSS compilado pierde el `backdrop-filter` sin prefijo en las seis superficies del conjunto (`.glass-hero` + cinco `.glass-surface`)** | **Fuera de alcance (R4):** documentado en §4.1 y remitido a una **spec futura de build/compatibilidad de prefijos** | — (no genera AC; DP-14) |
 | **H-1 — el ajuste de ≤640px pisa la transparencia reducida** | RF-04 | AC-04 |
 | P2 — área segura no aplicada; prueba tautológica | RF-09 | AC-10 |
 | P3 — literales con token disponible; tokens sin consumidor | RF-11, RF-12 | AC-12, AC-13 |
@@ -830,11 +831,13 @@ agnóstico al mecanismo), DP-26 (inventario de blur corregido); 015 DP-06…DP-0
    `matchMedia("(prefers-reduced-transparency: reduce)").matches` → `true` (y análogamente para
    movimiento). Se declara el estado de **cada** preferencia en **cada** medición.
 4. **Valores a registrar** (siempre por elemento medido, con su selector o `data-*`):
-   `getComputedStyle(el).backdropFilter`, `getComputedStyle(el).webkitBackdropFilter`,
-   `getComputedStyle(el).borderRadius`, `getComputedStyle(el).paddingBottom`,
-   `getComputedStyle(el).color` y `getComputedStyle(el).backgroundColor`; en contraste, además, el
-   **ratio calculado** y el **fondo efectivo** supuesto (CL-08). Se adjunta **captura** de pantalla
-   por celda.
+   `getComputedStyle(el).backdropFilter`, `getComputedStyle(el).borderRadius`,
+   `getComputedStyle(el).paddingBottom`, `getComputedStyle(el).color` y
+   `getComputedStyle(el).backgroundColor`; en contraste, además, el **ratio calculado** y el **fondo
+   efectivo** supuesto (CL-08). El prefijo `-webkit-backdrop-filter` **no se registra como valor
+   computado**: en Chromium/Brave 155 no se expone en `getComputedStyle` ni en `element.style` (solo
+   existe `backdropFilter`); se verifica en la **hoja/regla CSS** o se declara **«no expuesto por el
+   motor»**. Se adjunta **captura** de pantalla por celda.
 5. **Registro del resultado:** una fila por celda medida, con **tamaño, preferencia, valor esperado,
    valor obtenido y veredicto** (`pasa` / `falla` / `no aplicable` / `pendiente`). Sin esa fila, la
    validación **no** se considera hecha.
@@ -844,21 +847,27 @@ agnóstico al mecanismo), DP-26 (inventario de blur corregido); 015 DP-06…DP-0
 | ID | Qué se mide | Tamaños | Preferencia | Valor a registrar | AC |
 |---|---|---|---|---|---|
 | **M-1** | Revelado con movimiento reducido: las cinco secciones en su estado final | 1440×900 y 375×812 | `reduced-motion: reduce` | `opacity`, `transform`, `transitionDuration` de cada sección; ausencia de contenido oculto | AC-02 |
-| **M-2** | Transparencia reducida: sin desenfoque en las seis superficies | 1440×900, 1024×768, 640×900, 639×900, 375×812 | `reduced-transparency: reduce` | `backdropFilter` (= `none`) y `backgroundColor` (fondo semisólido) por superficie | AC-04 |
+| **M-2** | Transparencia reducida: sin desenfoque en las superficies renderizadas del conjunto (**4 de 6** a 1440/1024; **5 de 6** a 640/639/375) | 1440×900, 1024×768, 640×900, 639×900, 375×812 | `reduced-transparency: reduce` | `backdropFilter` (= `none`) y `backgroundColor` (fondo semisólido) por superficie renderizada | AC-04 |
 | **M-3a** | Blur y saturación en ancho normal | 1440×900, 1024×768 | normal | `backdropFilter` de cada superficie (>640px: `blur(20–30px) saturate(160–200 %)`) | AC-05 |
 | **M-3b** | Blur reducido en ≤640px, saturación intacta y control sin cambios | 640×900, 639×900, 375×812 | normal | `backdropFilter` de cada superficie (12–16px, **misma** saturación que en ancho normal) **y** del botón «?» de `PaginaInicio.jsx:55` (sin cambios) | AC-07 |
 | **M-4** | Radios y esquinas anidadas | 1440×900 | normal | `borderRadius` por superficie y por esquina anidada; sin artefactos visibles en las esquinas de la tarjeta virtual | AC-08 |
 | **M-5** | Reserva del área segura | 375×812 (con y sin *safe area* simulada) | normal | `paddingBottom` computado de la barra y `env(safe-area-inset-bottom)` resuelto | AC-10 |
 | **M-6** | Contraste de la franja de métricas | 1440×900 | normal | `color` de la etiqueta, `backgroundColor` de la franja y **ratio calculado** | AC-14 |
 | **M-7** | Contraste de la barra inferior contra los cuatro fondos de prueba | 1440×900 y 375×812 | normal | `color` de cada etiqueta, fondo efectivo compuesto por F1–F4 (CL-08) y **ratio calculado** (peor de los cuatro) | AC-15 |
-| **M-8** | Capas de vidrio y blobs visibles | 1440×900, 375×812 (con menú y modal abiertos) | normal | número de superficies translúcidas superpuestas (≤3) y blobs visibles (≤2) | RF-16 |
+| **M-8** | Capas de vidrio y blobs visibles | 1440×900 y 375×812 (base, drawer/menú abierto, modal abierto y landing) | normal | número de superficies translúcidas superpuestas (≤3) y blobs visibles (≤2) | RF-16 |
 | **M-9** | Fallback sin soporte de desenfoque *(opcional)* | el que se declare | normal | fondo semisólido aplicado y legibilidad del texto | CL-04 |
 
 **Estado de ejecución (T9, 2026-10-18).** Navegador **Brave 155.1.97.59** (`HeadlessChrome
 155.0.8059.85`, por CDP); anchos CSS reales medidos con `window.innerWidth`: **1440, 1024, 640, 639 y
 375**; preferencias verificadas en cada celda con `matchMedia(...).matches === true`. Ejecutadas y
-registradas en §9.1.1: M-1 (**pasa con nota**: con movimiento reducido el `transform` computa la
-identidad), M-2, M-3a, M-3b, M-4, M-6, M-7 y M-8; de M-5 pasa la grilla de cuatro columnas.
+registradas en §9.1.1: M-1 (**`pasa`**; nota aparte: sin desplazamiento, con
+`matrix(1, 0, 0, 1, 0, 0)` en el hero y `none` en las otras cuatro secciones), M-2, M-3a, M-3b, M-4,
+M-6, M-7 y M-8; de M-5 pasa la grilla de cuatro columnas. La cobertura de M-2/M-3a/M-3b es **4 de 6**
+superficies a 1440 y 1024 y **5 de 6** a 640, 639 y 375: **las seis quedan cubiertas entre contextos,
+no en una sola celda** (§9.1.1). M-3a/M-3b se midieron en **`dev`**; en **`preview`**, P1 hace que
+`backdropFilter` compute **`none`** en las seis superficies (hallazgo fuera de alcance, §4.1).
+**`-webkitBackdropFilter` no es medible** en Chromium/Brave 155: no se expone en `getComputedStyle`
+ni en `element.style`; el prefijo se verifica en la hoja/regla CSS (§9-P.4).
 **No realizadas — declaradas pendientes, no verdes:** **M-5 con *safe area*** — el navegador usado
 (Chromium por CDP) no expone `setSafeAreaInsets`, así que no se pudo simular un inset positivo; sin
 `viewport-fit=cover`, el `padding-bottom` computado es **`0px`** (`env()` resuelve 0 y el respaldo
@@ -867,30 +876,54 @@ identidad), M-2, M-3a, M-3b, M-4, M-6, M-7 y M-8; de M-5 pasa la grilla de cuatr
 
 #### 9.1.1 Registro por celda (§9-P.5)
 
+> **Cobertura por celda.** El conjunto cerrado tiene **seis** superficies: `.glass-hero`, header,
+> sidebar, bottomNav, drawer y modal. No todas coexisten en cada ancho: a **1440 y 1024** se miden
+> **4 de 6** (hero, header, sidebar y modal; **bottomNav y drawer no se renderizan**); a **640, 639 y
+> 375** se miden **5 de 6** (hero, header, bottomNav, drawer y modal; **sidebar no se renderiza**).
+> Por tanto, **las seis quedan cubiertas entre contextos, no en una sola celda**. El botón «?»
+> (`PaginaInicio.jsx:55`) queda **fuera del conjunto** y conserva `blur(12px)`.
+>
+> **`-webkitBackdropFilter` no es medible:** en Chromium/Brave 155 no se expone en `getComputedStyle`
+> (ni en `element.style`); solo existe `backdropFilter`. El prefijo se verifica en la **hoja/regla
+> CSS** (§9-P.4) o se declara «no expuesto por el motor», nunca como valor computado.
+>
+> **Entorno de M-3a/M-3b:** medido en **`dev`**. En **`preview`**, P1 hace que `backdropFilter` compute
+> `none` en las **seis** superficies (hallazgo fuera de alcance, §4.1).
+
 | ID | Tamaño (ancho real) | Preferencia | Esperado | Obtenido | Veredicto |
 |---|---|---|---|---|---|
-| **M-1** | 1440×900 (1440) | `reduced-motion: reduce` verificada | Cinco secciones en estado final: `opacity` 1, sin desplazamiento, `transition-duration` `0s` | `opacity: 1`; `transform: matrix(1, 0, 0, 1, 0, 0)`; `transition-duration: 0s` en las cinco | **pasa con nota** |
-| **M-1** | 375×812 (375) | `reduced-motion: reduce` verificada | Ídem | Ídem | **pasa con nota** |
-| **M-2** | 1440×900 (1440) | `reduced-transparency: reduce` verificada | `backdropFilter` `none` en las seis superficies | `none` en las seis (`backdropFilter` y `-webkitBackdropFilter`) | **pasa** |
-| **M-2** | 1024×768 (1024) | `reduced-transparency: reduce` verificada | Ídem | `none` en las seis | **pasa** |
-| **M-2** | 640×900 (640) | `reduced-transparency: reduce` verificada | Ídem (la preferencia prevalece sobre ≤640px) | `none` en las seis | **pasa** |
-| **M-2** | 639×900 (639) | `reduced-transparency: reduce` verificada | Ídem | `none` en las seis | **pasa** |
-| **M-2** | 375×812 (375) | `reduced-transparency: reduce` verificada | Ídem | `none` en las seis | **pasa** |
-| **M-3a** | 1440×900 (1440) | normal | `blur(20–30px) saturate(160–200%)` en las seis | `blur(24px) saturate(1.8)` en las seis | **pasa** |
-| **M-3a** | 1024×768 (1024) | normal | Ídem | `blur(24px) saturate(1.8)` en las seis | **pasa** |
-| **M-3b** | 640×900 (640) | normal | `blur(12–16px)` con la saturación intacta en las seis | `blur(14px) saturate(1.8)` en las seis | **pasa** |
-| **M-3b** | 639×900 (639) | normal | Ídem | `blur(14px) saturate(1.8)` en las seis | **pasa** |
-| **M-3b** | 375×812 (375) | normal | Ídem | `blur(14px) saturate(1.8)` en las seis | **pasa** |
-| **M-4** | 1440×900 (1440) | normal | `borderRadius` 24px en superficies y caras anidadas | `24px` en contenedor y en las dos caras | **pasa** |
+| **M-1** | 1440×900 (1440) | `reduced-motion: reduce` verificada | Cinco secciones: `opacity: 1`, `transition-duration: 0s` y **sin desplazamiento**; en `transform`, **1 con `matrix(1, 0, 0, 1, 0, 0)` (hero) + 4 con `none`** | `opacity: 1` y `transition-duration: 0s` en las cinco; `transform`: `matrix(1, 0, 0, 1, 0, 0)` en el hero y `none` en las otras cuatro | **pasa** |
+| **M-1** | 375×812 (375) | `reduced-motion: reduce` verificada | Ídem | Ídem | **pasa** |
+| **M-2** | 1440×900 (1440) | `reduced-transparency: reduce` verificada | `backdropFilter: none` y fondo semisólido en las **4 superficies renderizadas**: hero, header, sidebar y modal; **bottomNav y drawer no se renderizan (no aplican)** | `none` en las 4; `backgroundColor`: hero `rgba(15, 17, 23, 0.92)`, header `rgba(247, 246, 242, 0.92)`, sidebar `rgba(15, 17, 23, 0.8)`, modal `rgba(247, 246, 242, 0.95)` | **pasa** |
+| **M-2** | 1024×768 (1024) | `reduced-transparency: reduce` verificada | Ídem (4 de 6: hero, header, sidebar y modal; bottomNav y drawer no aplican) | `none` en las 4; `backgroundColor`: hero `rgba(15, 17, 23, 0.92)`, header `rgba(247, 246, 242, 0.92)`, sidebar `rgba(15, 17, 23, 0.8)`, modal `rgba(247, 246, 242, 0.95)` | **pasa** |
+| **M-2** | 640×900 (640) | `reduced-transparency: reduce` verificada | `backdropFilter: none` y fondo semisólido en las **5 superficies renderizadas**: hero, header, bottomNav, drawer y modal; **sidebar no se renderiza (no aplica)**; la preferencia prevalece sobre ≤640px | `none` en las 5; `backgroundColor`: hero `rgba(15, 17, 23, 0.92)`, header `rgba(247, 246, 242, 0.92)`, bottomNav `rgba(15, 17, 23, 0.8)`, drawer `rgba(15, 17, 23, 0.95)`, modal `rgba(247, 246, 242, 0.95)` | **pasa** |
+| **M-2** | 639×900 (639) | `reduced-transparency: reduce` verificada | Ídem (5 de 6: hero, header, bottomNav, drawer y modal; sidebar no aplica) | `none` en las 5; `backgroundColor`: hero `rgba(15, 17, 23, 0.92)`, header `rgba(247, 246, 242, 0.92)`, bottomNav `rgba(15, 17, 23, 0.8)`, drawer `rgba(15, 17, 23, 0.95)`, modal `rgba(247, 246, 242, 0.95)` | **pasa** |
+| **M-2** | 375×812 (375) | `reduced-transparency: reduce` verificada | Ídem (5 de 6: hero, header, bottomNav, drawer y modal; sidebar no aplica) | `none` en las 5; `backgroundColor`: hero `rgba(15, 17, 23, 0.92)`, header `rgba(247, 246, 242, 0.92)`, bottomNav `rgba(15, 17, 23, 0.8)`, drawer `rgba(15, 17, 23, 0.95)`, modal `rgba(247, 246, 242, 0.95)` | **pasa** |
+| **M-3a** | 1440×900 (1440) | normal | `blur(24px) saturate(1.8)` — 20–30px y saturación 160–200 % — en las **4 superficies renderizadas**: hero, header, sidebar y modal; **bottomNav y drawer no se renderizan (no aplican)** | `blur(24px) saturate(1.8)` en las 4 | **pasa** |
+| **M-3a** | 1024×768 (1024) | normal | Ídem (4 de 6: hero, header, sidebar y modal; bottomNav y drawer no aplican) | `blur(24px) saturate(1.8)` en las 4 | **pasa** |
+| **M-3b** | 640×900 (640) | normal | `blur(14px) saturate(1.8)` — 12–16px con la saturación intacta — en las **5 superficies renderizadas**: hero, header, bottomNav, drawer y modal; **sidebar no se renderiza (no aplica)**; el botón «?» (fuera del conjunto) sigue en `blur(12px)` | `blur(14px) saturate(1.8)` en las 5; botón «?» `blur(12px)` | **pasa** |
+| **M-3b** | 639×900 (639) | normal | Ídem (5 de 6: hero, header, bottomNav, drawer y modal; sidebar no aplica) | `blur(14px) saturate(1.8)` en las 5; botón «?» `blur(12px)` | **pasa** |
+| **M-3b** | 375×812 (375) | normal | Ídem (5 de 6: hero, header, bottomNav, drawer y modal; sidebar no aplica) | `blur(14px) saturate(1.8)` en las 5; botón «?» `blur(12px)` | **pasa** |
+| **M-4** | 1440×900 (1440) | normal | `borderRadius` de **24px** en `.glass-hero`, `.glass-card`, acordeón de tarjetas, modal de tarjeta, contenedor de la tarjeta virtual y sus dos caras; `DashboardUserModal` conserva `rounded-2xl` (**16px**, congelado por DP-16) | `24px` en los elementos enumerados (contenedor y dos caras incluidas); `DashboardUserModal` `16px` | **pasa** |
 | **M-5** | 375×812 (375) | normal | Cuatro columnas iguales | 4 columnas de `93.75px` | **pasa** |
-| **M-5** | 375×812 (375) | normal, sin *safe area* | `paddingBottom` de la barra según el contrato de fuente | `0px` (sin `viewport-fit=cover`: `env()` resuelve 0, respaldo `1rem` no aplicado) | **pasa con nota** (CL-15/DP-27) |
+| **M-5** | 375×812 (375) | normal, sin *safe area* | `paddingBottom` de la barra según el contrato de fuente | `0px` (sin `viewport-fit=cover`: `env()` resuelve 0, respaldo `1rem` no aplicado; CL-15/DP-27) | **pasa** |
 | **M-5** | 375×812 (375) | normal, con *safe area* simulada | `paddingBottom` ≈ 34px y `env(safe-area-inset-bottom)` resuelto | No medido: el navegador por CDP no expone `setSafeAreaInsets` | **pendiente** |
 | **M-6** | 1440×900 (1440) | normal | Ratio ≥ 4,5:1 | `5,26:1` (`rgb(255, 255, 255)` sobre `rgb(26, 122, 94)`) | **pasa** |
 | **M-7** | 1440×900 (1440) | normal | Peor de F1–F4 ≥ 4,5:1 | Etiqueta clara **9,46:1**; mint e indicador **6,75:1** | **pasa** |
 | **M-7** | 375×812 (375) | normal | Ídem | Etiqueta clara **9,46:1**; mint e indicador **6,75:1** | **pasa** |
-| **M-8** | 1440×900 (1440) | normal, menú y modal abiertos | ≤3 superficies translúcidas y ≤2 blobs | **≤2 superficies** y **≤1 blob** | **pasa** |
-| **M-8** | 375×812 (375) | normal, menú y modal abiertos | Ídem | **≤2 superficies** y **≤1 blob** | **pasa** |
+| **M-8** | 1440×900 (1440) | normal, dashboard base | 1 superficie translúcida / 0 blobs | **1 / 0** | **pasa** |
+| **M-8** | 1440×900 (1440) | normal, modal abierto | 2 superficies / 0 blobs | **2 / 0** | **pasa** |
+| **M-8** | 1440×900 (1440) | normal, landing | 2 superficies / 1 blob | **2 / 1** | **pasa** |
+| **M-8** | 375×812 (375) | normal, dashboard base | 1 superficie / 0 blobs | **1 / 0** | **pasa** |
+| **M-8** | 375×812 (375) | normal, drawer abierto | 2 superficies / 0 blobs | **2 / 0** | **pasa** |
+| **M-8** | 375×812 (375) | normal, modal abierto | 2 superficies / 0 blobs | **2 / 0** | **pasa** |
 | **M-9** | — | normal | Fondo semisólido aplicado y texto legible | No ejecutada: no hay motor sin `backdrop-filter` en la máquina | **pendiente** |
+
+> **Notas de las filas.** **M-1:** la matriz identidad del hero es el estado «sin desplazamiento»
+> (equivalente a `none`); no se tocaron los selectores de movimiento reducido. **M-5 sin *safe
+> area*:** `pasa` con la limitación registrada en CL-15/DP-27 (sin `viewport-fit=cover`, `env()`
+> resuelve 0). **M-8:** recuentos exactos por estado: base **1 superficie / 0 blobs**; con drawer
+> **2 / 0**; con modal **2 / 0**; landing **2 / 1**.
 
 ### 9.2 Bloques de comandos
 
@@ -929,8 +962,8 @@ esos dobles (R1); esta spec **no** ejecuta ese bloque y **no** responde por la a
 **Validaciones declaradas NO automatizadas** (deben reportarse como medidas, no aplicables o
 pendientes, con §9-P): (1) contraste real de la franja y de la barra contra los fondos de prueba
 (M-6, M-7); (2) efecto real del movimiento reducido (M-1); (3) efecto real de la transparencia
-reducida en **los dos contextos** (M-2); (4) **blur computado a ≤640px** en las seis superficies
-(M-3b); (5) fallback sin soporte de desenfoque (M-9); (6) reserva real del área segura (M-5);
+reducida en **los dos contextos** (M-2); (4) **blur computado a ≤640px** en las superficies
+renderizadas del conjunto (**5 de 6**; M-3b); (5) fallback sin soporte de desenfoque (M-9); (6) reserva real del área segura (M-5);
 (7) aspecto tras el cambio de blur y radios y ausencia de artefactos en las esquinas anidadas (M-4);
 (8) límites Fluid Glass —tres superficies y dos blobs— (M-8); (9) gráfico decorativo del control
 activo (umbral de objeto gráfico), incluido el caso sin hover; (10) **«sin JS»**: no medible en
