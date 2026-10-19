@@ -81,7 +81,10 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
-/* Tarjetas de Features con estilo sutil y esquinas suaves */
+/* Tarjetas de Features con estilo sutil y esquinas suaves.
+   AC-09/RF-08: `glass-card` es una superficie SÓLIDA/OPACA, no vidrio: sin `backdrop-filter` ni
+   highlight; usa el fondo opaco y el radio del token `--radius-glass`. Conserva el nombre histórico
+   por compatibilidad con las clases y pruebas existentes. */
 .glass-card {
   background: #ffffff;
   border: 1px solid color-mix(in srgb, var(--color-border-line) 80%, transparent);

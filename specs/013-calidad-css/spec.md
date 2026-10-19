@@ -210,7 +210,7 @@ futura.
 > partir de los tokens y **coinciden** con los del reviewer. **H-1** (§4.2) es un **hallazgo propio**
 > del planner.
 
-### 4.1 P1 (informe del reviewer) — El CSS **compilado** pierde el `backdrop-filter` sin prefijo de `.glass-hero` — **FUERA DE ALCANCE (R4)**
+### 4.1 P1 (informe del reviewer) — El CSS **compilado** pierde el `backdrop-filter` sin prefijo en las **seis superficies** del conjunto (`.glass-hero` + cinco `.glass-surface`) — **FUERA DE ALCANCE (R4)**
 
 - **Hallazgo, tal como lo midió el reviewer:** en el CSS construido, la declaración
   `backdrop-filter` **sin prefijo** de `.glass-hero` **no sobrevive** al build (queda solo la
@@ -854,11 +854,43 @@ agnóstico al mecanismo), DP-26 (inventario de blur corregido); 015 DP-06…DP-0
 | **M-8** | Capas de vidrio y blobs visibles | 1440×900, 375×812 (con menú y modal abiertos) | normal | número de superficies translúcidas superpuestas (≤3) y blobs visibles (≤2) | RF-16 |
 | **M-9** | Fallback sin soporte de desenfoque *(opcional)* | el que se declare | normal | fondo semisólido aplicado y legibilidad del texto | CL-04 |
 
-**Estado de ejecución (T9, 2026-10-18).** Ejecutadas y registradas: M-1, M-2, M-3a, M-3b, M-4, M-6,
-M-7 y M-8. **No realizadas — declaradas pendientes, no verdes:** **M-5 con *safe area*** — el
-navegador usado (Chromium por CDP) no expone `setSafeAreaInsets`, así que no se pudo simular un inset
-positivo (sin notch, `padding-bottom` = 16px, respaldo `1rem`); **M-9** — no hay en la máquina un motor sin
-soporte de `backdrop-filter` para forzar el fallback.
+**Estado de ejecución (T9, 2026-10-18).** Navegador **Brave 155.1.97.59** (`HeadlessChrome
+155.0.8059.85`, por CDP); anchos CSS reales medidos con `window.innerWidth`: **1440, 1024, 640, 639 y
+375**; preferencias verificadas en cada celda con `matchMedia(...).matches === true`. Ejecutadas y
+registradas en §9.1.1: M-1 (**pasa con nota**: con movimiento reducido el `transform` computa la
+identidad), M-2, M-3a, M-3b, M-4, M-6, M-7 y M-8; de M-5 pasa la grilla de cuatro columnas.
+**No realizadas — declaradas pendientes, no verdes:** **M-5 con *safe area*** — el navegador usado
+(Chromium por CDP) no expone `setSafeAreaInsets`, así que no se pudo simular un inset positivo; sin
+`viewport-fit=cover`, el `padding-bottom` computado es **`0px`** (`env()` resuelve 0 y el respaldo
+`1rem` **no** se aplica; §4.4, CL-15, DP-27); **M-9** — no hay en la máquina un motor sin soporte de
+`backdrop-filter` para forzar el fallback.
+
+#### 9.1.1 Registro por celda (§9-P.5)
+
+| ID | Tamaño (ancho real) | Preferencia | Esperado | Obtenido | Veredicto |
+|---|---|---|---|---|---|
+| **M-1** | 1440×900 (1440) | `reduced-motion: reduce` verificada | Cinco secciones en estado final: `opacity` 1, sin desplazamiento, `transition-duration` `0s` | `opacity: 1`; `transform: matrix(1, 0, 0, 1, 0, 0)`; `transition-duration: 0s` en las cinco | **pasa con nota** |
+| **M-1** | 375×812 (375) | `reduced-motion: reduce` verificada | Ídem | Ídem | **pasa con nota** |
+| **M-2** | 1440×900 (1440) | `reduced-transparency: reduce` verificada | `backdropFilter` `none` en las seis superficies | `none` en las seis (`backdropFilter` y `-webkitBackdropFilter`) | **pasa** |
+| **M-2** | 1024×768 (1024) | `reduced-transparency: reduce` verificada | Ídem | `none` en las seis | **pasa** |
+| **M-2** | 640×900 (640) | `reduced-transparency: reduce` verificada | Ídem (la preferencia prevalece sobre ≤640px) | `none` en las seis | **pasa** |
+| **M-2** | 639×900 (639) | `reduced-transparency: reduce` verificada | Ídem | `none` en las seis | **pasa** |
+| **M-2** | 375×812 (375) | `reduced-transparency: reduce` verificada | Ídem | `none` en las seis | **pasa** |
+| **M-3a** | 1440×900 (1440) | normal | `blur(20–30px) saturate(160–200%)` en las seis | `blur(24px) saturate(1.8)` en las seis | **pasa** |
+| **M-3a** | 1024×768 (1024) | normal | Ídem | `blur(24px) saturate(1.8)` en las seis | **pasa** |
+| **M-3b** | 640×900 (640) | normal | `blur(12–16px)` con la saturación intacta en las seis | `blur(14px) saturate(1.8)` en las seis | **pasa** |
+| **M-3b** | 639×900 (639) | normal | Ídem | `blur(14px) saturate(1.8)` en las seis | **pasa** |
+| **M-3b** | 375×812 (375) | normal | Ídem | `blur(14px) saturate(1.8)` en las seis | **pasa** |
+| **M-4** | 1440×900 (1440) | normal | `borderRadius` 24px en superficies y caras anidadas | `24px` en contenedor y en las dos caras | **pasa** |
+| **M-5** | 375×812 (375) | normal | Cuatro columnas iguales | 4 columnas de `93.75px` | **pasa** |
+| **M-5** | 375×812 (375) | normal, sin *safe area* | `paddingBottom` de la barra según el contrato de fuente | `0px` (sin `viewport-fit=cover`: `env()` resuelve 0, respaldo `1rem` no aplicado) | **pasa con nota** (CL-15/DP-27) |
+| **M-5** | 375×812 (375) | normal, con *safe area* simulada | `paddingBottom` ≈ 34px y `env(safe-area-inset-bottom)` resuelto | No medido: el navegador por CDP no expone `setSafeAreaInsets` | **pendiente** |
+| **M-6** | 1440×900 (1440) | normal | Ratio ≥ 4,5:1 | `5,26:1` (`rgb(255, 255, 255)` sobre `rgb(26, 122, 94)`) | **pasa** |
+| **M-7** | 1440×900 (1440) | normal | Peor de F1–F4 ≥ 4,5:1 | Etiqueta clara **9,46:1**; mint e indicador **6,75:1** | **pasa** |
+| **M-7** | 375×812 (375) | normal | Ídem | Etiqueta clara **9,46:1**; mint e indicador **6,75:1** | **pasa** |
+| **M-8** | 1440×900 (1440) | normal, menú y modal abiertos | ≤3 superficies translúcidas y ≤2 blobs | **≤2 superficies** y **≤1 blob** | **pasa** |
+| **M-8** | 375×812 (375) | normal, menú y modal abiertos | Ídem | **≤2 superficies** y **≤1 blob** | **pasa** |
+| **M-9** | — | normal | Fondo semisólido aplicado y texto legible | No ejecutada: no hay motor sin `backdrop-filter` en la máquina | **pendiente** |
 
 ### 9.2 Bloques de comandos
 
@@ -931,7 +963,7 @@ para ≤640px (DP-25) debe **no** tocar el control excluido `PaginaInicio.jsx:55
 | **Q8 — Tokens sin consumidor** | Se retiran tres; `--color-cat-savings` queda como reserva documentada | **R8** ⇒ RF-12, AC-13, DP-08 |
 | **Q9 — Reparto de la petición** | **Separar la higiene en otra spec** | **Reparto 013/015** (§8.3): visual/CSS aquí; higiene, dobles y documentación en la 015 |
 
-**Estado:** `borrador` **por aprobación pendiente**, no por falta de información. Las **M1–M5** y los
+**Estado:** `aprobado` (2026-10-18) e **implementado**; ya no es borrador. Las **M1–M5** y los
 **cuatro detalles** que el reviewer dejó abiertos están aplicados (§4.3 inventario y barrido
 corregidos, §4.6 redacción de `--color-cat-savings`, §8.1 sin la fila duplicada de H-1, AC-07/CL-13
 agnósticos al mecanismo). **Preguntas abiertas: ninguna**; la única anotación es la **nota no

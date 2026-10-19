@@ -44,6 +44,9 @@ celda). Navegador de partida: **Chromium ≥ 120** o **Firefox ≥ 121**; se reg
 **Hecho cuando:** están registrados los números de línea base y el estado (existe / ya no aplicable)
 de **cada** referencia de la lista, sin haber editado ningún archivo.
 
+**Resultado (2026-10-18, medición previa a tocar código):** `npm test` **455/455 en 30 archivos**
+(0 fallos) · `npm run build` **verde**.
+
 ---
 
 ## T2 — Revelado y preferencias en las cinco secciones ✅
@@ -213,7 +216,7 @@ igual, las suites del bloque C pasan y M-4 está registrada.
 
 ---
 
-## T6 — Área segura aplicada y cuatro columnas ✅
+## T6 — Área segura aplicada y cuatro columnas — **parcial** (área segura pendiente)
 
 **Etapa 6 · Depende de:** T4.
 **Alcance:** usar la clase de área segura que ya existe y corregir la grilla; actualizar las
@@ -234,10 +237,17 @@ componente y verde al actualizar la expectativa; el aserto nuevo de la hoja pasa
 (utilidad ya existente) y protege contra su retirada.
 **Comandos:** `npx vitest run src/components/layout/BottomNav.test.jsx src/styles/index.css.test.js`
 **Manual M-5 (375×812, normal):** con *safe area* simulada (dispositivo con notch) registrar
-`padding-bottom` = **34px**; sin *safe area*, **16px** (respaldo `1rem`). Registrar también que los
-cuatro controles ocupan cuatro columnas iguales.
+`padding-bottom` ≈ **34px** — **pendiente**: el navegador por CDP no permite simular el inset; sin
+*safe area*, el computado es **`0px`** (sin `viewport-fit=cover`, `env()` resuelve 0 y el respaldo
+`1rem` **no** se aplica; §4.4, CL-15, DP-27). Registrar también que los cuatro controles ocupan
+cuatro columnas iguales (`93.75px` cada una a 375px).
 **Hecho cuando:** la barra usa `safe-bottom` y `grid-cols-4`, la suite y el aserto nuevo pasan y M-5
 está registrada.
+
+**Resultado (2026-10-18):** la barra usa `safe-bottom` y `grid-cols-4`; a 375px las cuatro columnas
+miden **`93.75px`** y el `padding-bottom` computado es **`0px`** (sin `viewport-fit=cover`). La
+mitad de **área segura con inset simulado** queda **pendiente, no verde** (M-5), porque el navegador
+usado no expone `setSafeAreaInsets`.
 
 ---
 
@@ -328,6 +338,13 @@ por celda (tamaño, preferencia, esperado, obtenido, veredicto).
 **Hecho cuando:** existe la tabla de M-1…M-9 con veredicto por celda, y cada validación no realizada
 aparece como **pendiente** con su motivo.
 
+**Resultado (2026-10-18):** tabla completa **M-1…M-9** registrada en `spec.md` §9.1.1 (navegador
+Brave 155.1.97.59 / `HeadlessChrome 155.0.8059.85`, anchos reales 1440/1024/640/639/375,
+preferencias verificadas con `matchMedia`). Verdes: M-1 (**pasa con nota**), M-2, M-3a, M-3b, M-4,
+M-6, M-7 y M-8 (≤2 superficies y ≤1 blob); de M-5 pasa la grilla de cuatro columnas. Pendientes, no
+verdes: **M-5 con *safe area*** (sin `viewport-fit=cover`, `padding-bottom` computado `0px`) y
+**M-9** (sin motor sin `backdrop-filter`).
+
 ---
 
 ## T10 — Cierre técnico y declaración de validaciones ✅
@@ -358,3 +375,6 @@ frente a la línea base de 455/30) · `npm run build` **verde** (CSS 58,74 kB ·
 `setSafeAreaInsets`) y M-9 (sin motor sin `backdrop-filter`), en `spec.md` §9.1. **Limitaciones
 registradas:** P1 afecta a las **seis** superficies (hero + cinco `.glass-surface`) y el área segura no
 tiene efecto observable sin `viewport-fit=cover` (`spec.md` §4.1, §4.4, CL-15 y DP-27).
+**Mantenimiento documental (aprobado por el usuario):** el commit de implementación actualizó
+`.agents/skills/fluid-glass/SKILL.md` para retirar los tokens `bg-dark-mid`/`bg-dark-end` y describir
+el gradiente del hero sin ellos; es mantenimiento documental, no cambio de código ni de alcance.
