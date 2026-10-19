@@ -520,7 +520,7 @@ git diff --stat
 | `:27` | Ruta y estado corregidos en `cfdd1af`; es la línea de referencia de la 014 | ``- `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.`` |
 | `:31` | Estado fijado en `cfdd1af` («aprobada») y cierre añadido en T10 | ``- **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): … T1–T10 hechas (2026-10-19); resultado **518/518 en 33 archivos**; pendiente el commit de cierre.`` |
 | `:41` | Estado corregido en `cfdd1af` | ``- **Spec 014 — aprobada (2026-10-19):** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.`` |
-| `:37` | **No se tocó** | El registro «Sin commitear (ajenos)» queda intacto aunque contenga la ruta obsoleta |
+| `:37` | **No se tocó** en `cfdd1af`; **sí se corrigió** después, con autorización expresa del usuario, en el commit de cierre (`7018cfa`) | El registro «Sin commitear (ajenos)» queda con `analicis-completo-cambios.md` y `specs/016/` |
 | — | **No se añadió** línea de referencia | La fila `:27` ya la cumple; `:31` y `:41` no se desplazaron |
 
 Las palabras sobre hex (`hex de JSX → tokens`, `migración de hex de JSX a tokens: 72 clases en 10
