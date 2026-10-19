@@ -24,11 +24,11 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/012-correcciones-menores/` — medición de `useBreakpoint`, clase muerta de `AuthModal`, fecha inválida en `LogMovimientos`. Cerrada (commit `8aa9f0f`).
 - `specs/013-calidad-css/spec.md` — visual/CSS (revelado, vidrio, radios, área segura, tokens y contraste). Cerrada (2026-10-18).
 - `specs/015-higiene-y-dobles/spec.md` — higiene de código, dobles de prueba y documentación. Cerrada (2026-10-18).
-- `specs/014/spec-ambiguedades.md` — sin planificar (botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens).
+- `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.
 
 ## Tareas faltantes
 
-- **Spec 014:** redactar spec y planificar (botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos).
+- **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos.
 - **Spec futura (P1):** compatibilidad de prefijos CSS en el build — se pierde el `backdrop-filter` sin prefijo en las **seis** superficies (hero + cinco `glass-surface`) y en `preview` computa `none`. Requiere reconstruir y medir el CSS resultante (013 §4.1).
 - **Deuda 013 — área segura:** `.safe-bottom` está aplicada, pero sin `viewport-fit=cover` el inset resuelve 0 y no hay efecto visible; una spec futura debe decidir el modo a sangre completa (013 CL-15/DP-27).
 - **Deuda CL-19 (spec 011):** la marca `location.state.focoEnDestino` no se limpia al consumirse; al volver «atrás» a una entrada marcada el foco se recoloca sin cierre. Requiere spec futura.
@@ -38,4 +38,4 @@ antes de tocar código** y no revertir sus ediciones.
 
 ## Preguntas por resolver
 
-- **Spec 014 — sin spec redactada:** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.
+- **Spec 014 — aprobada (2026-10-19):** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.
