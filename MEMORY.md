@@ -25,6 +25,7 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/013-calidad-css/spec.md` — visual/CSS (revelado, vidrio, radios, área segura, tokens y contraste). Cerrada (2026-10-18).
 - `specs/015-higiene-y-dobles/spec.md` — higiene de código, dobles de prueba y documentación. Cerrada (2026-10-18).
 - `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.
+- `specs/017-asistente-en-dashboard/` — aprobada (2026-10-20), plan y tareas escritos (10 tareas); implementación en curso.
 
 ## Tareas faltantes
 
