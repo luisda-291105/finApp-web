@@ -13,8 +13,6 @@
   --font-body: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
 
   --color-bg-dark: #0f1117;
-  --color-bg-dark-mid: #1a3a2e;
-  --color-bg-dark-end: #1a7a5e;
 
   --color-bg-cream: #f7f6f2;
   --color-emerald-primary: #1a7a5e;
@@ -25,10 +23,31 @@
 
   --color-cat-income: #60a5fa;
   --color-cat-expense: #f87171;
+  /* Reserva documentada de la paleta de categorías: sin consumidor hoy; no retirar. */
   --color-cat-savings: #6ee7c0;
   --color-cat-other: #c084fc;
 
   --radius-glass: 24px;
+}
+
+/* Utilidad para safe-area-inset-bottom con fallback */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Etiquetas de la barra de navegación inferior (BottomNav): visibles en
+   vertical y ocultas en landscape, donde el espacio vertical es escaso.
+   Reglas migradas desde el <style jsx> del componente (styled-jsx no está
+   instalado, así que el atributo jsx era inválido y el CSS no quedaba
+   encapsulado). */
+.bottom-nav-label {
+  display: block;
+}
+
+@media (orientation: landscape) {
+  .bottom-nav-label {
+    display: none;
+  }
 }
 
 :root {
@@ -55,58 +74,122 @@
   border-radius: var(--radius-glass);
 }
 
-/* Tarjetas de Features con estilo sutil y esquinas suaves */
+/* Superficies de vidrio del conjunto (header, sidebar, barra inferior y paneles modales).
+   Mismo contrato que .glass-hero: spec 001 RF5 y spec 013 RF-05/RF-06. */
+.glass-surface {
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* Tarjetas de Features con estilo sutil y esquinas suaves.
+   AC-09/RF-08: `glass-card` es una superficie SÓLIDA/OPACA, no vidrio: sin `backdrop-filter` ni
+   highlight; usa el fondo opaco y el radio del token `--radius-glass`. Conserva el nombre histórico
+   por compatibilidad con las clases y pruebas existentes. */
 .glass-card {
   background: #ffffff;
-  border: 1px solid rgba(224, 221, 216, 0.8);
+  border: 1px solid color-mix(in srgb, var(--color-border-line) 80%, transparent);
   border-radius: var(--radius-glass);
-  box-shadow: 0 4px 20px -2px rgba(15, 17, 23, 0.04);
+  box-shadow: 0 4px 20px -2px color-mix(in srgb, var(--color-bg-dark) 4%, transparent);
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.glass-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 32px -4px rgba(26, 122, 94, 0.12);
+@media (hover: hover) {
+  .glass-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px -4px color-mix(in srgb, var(--color-emerald-primary) 12%, transparent);
+  }
 }
 
 /* Fallback si el navegador no soporta backdrop-filter */
-@supports not (backdrop-filter: blur(1px)) {
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-hero {
     background: rgba(15, 17, 23, 0.88);
   }
 }
 
-/* Animaciones con IntersectionObserver */
-.reveal {
+/* Blur reducido en pantallas pequeñas para preservar rendimiento */
+@media (max-width: 640px) {
+  .glass-hero {
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+  }
+
+  .glass-surface {
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+  }
+}
+
+/* Transparencia reducida: fondo semisólido y sin backdrop-filter */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-hero {
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .glass-surface {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Movimiento reducido: contenido visible sin transformaciones ni transiciones */
+@media (prefers-reduced-motion: reduce) {
+  html.js .reveal,
+  html.js .reveal-left,
+  html.js .reveal-stagger > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Animaciones con IntersectionObserver: visibles por defecto; solo se ocultan
+   cuando hay JS activo (clase `js` en <html>), para no esconder contenido sin JS */
+.js .reveal {
   opacity: 0;
   transform: translateY(36px);
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal.revealed {
+.js .reveal.revealed {
   opacity: 1;
   transform: translateY(0);
 }
 
-.reveal-left {
+.js .reveal-left {
   opacity: 0;
   transform: translateX(-40px);
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal-left.revealed {
+.js .reveal-left.revealed {
   opacity: 1;
   transform: translateX(0);
 }
 
-.reveal-stagger > * {
+.js .reveal-stagger > * {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.reveal-stagger.revealed > *:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 90ms; }
-.reveal-stagger.revealed > *:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 180ms; }
-.reveal-stagger.revealed > *:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 270ms; }
-.reveal-stagger.revealed > *:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 360ms; }
-.reveal-stagger.revealed > *:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 450ms; }
+.js .reveal-stagger.revealed > * { opacity: 1; transform: translateY(0); transition-delay: calc(var(--i, 0) * 90ms); }
+
+/* Foco visible en interactivos con superficies Glass, con tokens del tema */
+.glass-hero :is(a, button, [role="button"], input, select, textarea):focus-visible,
+.glass-hero:is(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-mint-accent) 50%, transparent);
+  outline-offset: 2px;
+}
+
+.glass-card :is(a, button, [role="button"], input, select, textarea):focus-visible,
+.glass-card:is(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-emerald-primary) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Ocultar scrollbar sin afectar funcionalidad */
+.sidebar-scroll::-webkit-scrollbar { display: none; }
+.sidebar-scroll { -ms-overflow-style: none; scrollbar-width: none; }

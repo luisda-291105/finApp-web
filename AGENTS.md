@@ -13,8 +13,8 @@ trabajo y respuesta está en [`.agents/response-rules.md`](.agents/response-rule
 - `npm run build` — build de producción.
 - `npm test` — suite completa (`vitest run`).
 - `npx vitest run <ruta>` — pruebas de una ruta concreta.
-- No se usan librerías externas de animación; se usan CSS y APIs nativas como
-  `IntersectionObserver`.
+- Para scroll-reveal se usan CSS y `IntersectionObserver`; Framer Motion (instalado)
+  se reserva para hover/tap, modales, `layoutId` y contadores.
 
 ## Estructura actual
 
@@ -23,7 +23,11 @@ trabajo y respuesta está en [`.agents/response-rules.md`](.agents/response-rule
 - `src/config/` — `api.config.js` para endpoints y `app.config.js` para configuración.
 - `src/hooks/` — hooks reutilizables, como `useReveal`.
 - `src/styles/index.css` — tokens Tailwind `@theme` y estilos Fluid Glass.
-- `src/**/*.test.*` — pruebas colocadas junto al código relacionado.
+- `src/test/` — suites Vitest `*.test.js` y `*.test.jsx`, organizadas con la ruta
+  relativa del módulo probado (por ejemplo, `src/test/pages/` para módulos de
+  `src/pages/`). Las suites transversales sin capa principal clara y las de
+  infraestructura de pruebas van en la raíz de `src/test/`. Esta convención no abarca
+  otros formatos ni pruebas ejecutadas por herramientas distintas de Vitest.
 
 ## Reglas de trabajo
 
@@ -54,5 +58,6 @@ trabajo y respuesta está en [`.agents/response-rules.md`](.agents/response-rule
 3. **Commit** — solo si las validaciones aplicables pasan; limita el staging a los
    archivos del cambio y usa un mensaje corto, imperativo y en español.
 
-Para rutas, usa `MemoryRouter`. Los tests actuales incluyen archivos `.test.jsx` para
-componentes y `.test.js` para hooks; conserva la extensión apropiada al código probado.
+Para nuevas suites Vitest cubiertas por esta convención, usa únicamente `.test.jsx` para
+pruebas JSX y `.test.js` para JavaScript, y guárdalas bajo `src/test/` según la jerarquía
+indicada arriba. Para rutas, usa `MemoryRouter`.
