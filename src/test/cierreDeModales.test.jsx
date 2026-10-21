@@ -19,13 +19,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import FocusTrap from "focus-trap-react";
-import DashboardUserModal from "./DashboardUserModal";
-import DashboardDrawer from "./DashboardDrawer";
-import SidebarNavContenido from "./SidebarNavContenido";
-import DashboardLayout from "../../layout/DashboardLayout";
-import AuthModal from "../domain/modales/AuthModal";
-import ModalTarjeta from "../domain/modales/ModalTarjeta";
-import { TARJETAS_DEMO } from "../../data/tarjetasDemo";
+import DashboardUserModal from "../components/layout/DashboardUserModal";
+import DashboardDrawer from "../components/layout/DashboardDrawer";
+import SidebarNavContenido from "../components/layout/SidebarNavContenido";
+import DashboardLayout from "../layout/DashboardLayout";
+import AuthModal from "../components/domain/modales/AuthModal";
+import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
+import { TARJETAS_DEMO } from "../data/tarjetasDemo";
 
 // Mock de `framer-motion`: `motion.div` trivial con `forwardRef` (para que el `ref` del panel
 // llegue a la trampa REAL) y animaciones desactivadas en jsdom. NO se mockea `focus-trap-react`:
