@@ -15,6 +15,7 @@ import PaginaDashboardInicio from "./pages/PaginaDashboardInicio";
 import PaginaDashboardTransacciones from "./pages/PaginaDashboardTransacciones";
 import PaginaDashboardTarjetas from "./pages/PaginaDashboardTarjetas";
 import PaginaDashboardConfiguracion from "./pages/PaginaDashboardConfiguracion";
+import PaginaDashboardBolsillos from "./pages/PaginaDashboardBolsillos";
 import PaginaDashboardContactos from "./pages/PaginaDashboardContactos";
 import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
 
@@ -47,6 +48,7 @@ export default function App() {
           path="configuracion"
           element={<PaginaDashboardConfiguracion />}
         />
+        <Route path="bolsillos" element={<PaginaDashboardBolsillos />} />
         <Route path="contactos" element={<PaginaDashboardContactos />} />
         <Route path="correos" element={<PaginaDashboardCorreos />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

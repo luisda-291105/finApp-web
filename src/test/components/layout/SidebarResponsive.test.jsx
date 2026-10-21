@@ -87,7 +87,7 @@ describe("SidebarResponsive", () => {
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
       expect(navegacion).toBeTruthy();
       expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
-      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(5);
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(6);
       expect(navegacion.querySelector("button")).toBeNull();
       expect(pieAvatar).toBeTruthy();
       expect(pieAvatar).toHaveClass("shrink-0");
@@ -135,11 +135,11 @@ describe("SidebarResponsive", () => {
       expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
-    it("renderiza 5 enlaces de navegación con iconos y etiquetas", () => {
+    it("renderiza 6 enlaces de navegación con iconos y etiquetas", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(5);
+      expect(links).toHaveLength(6);
 
       // Usar getByRole con nombre más específico para el link de navegación "Inicio"
       const inicioLink = screen.getByRole("link", { name: /^Inicio$/i });
@@ -160,7 +160,7 @@ describe("SidebarResponsive", () => {
 
       const aside = getSidebarAside();
       const navSvgs = aside.querySelectorAll("a[href^='/dashboard'] svg");
-      expect(navSvgs.length).toBe(5);
+      expect(navSvgs.length).toBe(6);
       navSvgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -199,7 +199,7 @@ describe("SidebarResponsive", () => {
       expect(aside).toHaveClass("flex", "flex-col");
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
       expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
-      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(5);
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(6);
       expect(navegacion.querySelector("button")).toBeNull();
       expect(pieAvatar).toHaveClass("shrink-0");
       expect(pieAvatar.querySelector("hr[role='separator']")).toBeTruthy();

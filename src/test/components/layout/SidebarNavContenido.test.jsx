@@ -34,12 +34,12 @@ const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) 
 
 describe("SidebarNavContenido", () => {
   describe("renderizado de enlaces de navegación", () => {
-    it("renderiza 5 NavLink con href e iconos correctos", () => {
+    it("renderiza 6 NavLink con href e iconos correctos", () => {
       renderSidebarNavContenido();
 
-      // Verificar los cinco enlaces de la navegación lateral.
+      // Verificar los seis enlaces de la navegación lateral.
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(5);
+      expect(links).toHaveLength(6);
 
       // Verificar cada enlace con su ruta, icono y etiqueta
       const inicioLink = screen.getByRole("link", { name: /Inicio/i });
@@ -54,9 +54,13 @@ describe("SidebarNavContenido", () => {
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
 
+      const bolsillosLink = screen.getByRole("link", { name: /Bolsillos/i });
+      expect(bolsillosLink.getAttribute("href")).toBe("/dashboard/bolsillos");
+      expect(bolsillosLink.querySelector("svg.lucide-users")).toBeTruthy();
+
       const contactosLink = screen.getByRole("link", { name: /Contactos/i });
       expect(contactosLink.getAttribute("href")).toBe("/dashboard/contactos");
-      expect(contactosLink.querySelector("svg")).toBeTruthy();
+      expect(contactosLink.querySelector("svg.lucide-contact")).toBeTruthy();
 
       const correosLink = screen.getByRole("link", { name: /Correos/i });
       expect(correosLink.getAttribute("href")).toBe("/dashboard/correos");
@@ -69,7 +73,7 @@ describe("SidebarNavContenido", () => {
       // Buscar todos los svg dentro de los links de navegación
       const nav = screen.getByRole("navigation");
       const svgs = nav.querySelectorAll("a svg");
-      expect(svgs.length).toBe(5);
+      expect(svgs.length).toBe(6);
       svgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);

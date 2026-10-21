@@ -295,15 +295,16 @@ describe("DashboardDrawer", () => {
       );
 
       // Orden de tabulación: el cromo superior (la «X») precede al contenido del menú.
-      expect(focusables.length).toBe(7);
+      expect(focusables.length).toBe(8);
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar menú");
       expect(focusables[1].tagName).toBe("A"); // Inicio
       expect(focusables[2].tagName).toBe("A"); // Transacciones
       expect(focusables[3].tagName).toBe("A"); // Tarjetas
-      expect(focusables[4].getAttribute("href")).toBe("/dashboard/contactos");
-      expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
-      expect(focusables[6].tagName).toBe("BUTTON"); // Avatar
-      expect(focusables[6].getAttribute("aria-label")).toContain("Cuenta de");
+      expect(focusables[4].getAttribute("href")).toBe("/dashboard/bolsillos");
+      expect(focusables[5].getAttribute("href")).toBe("/dashboard/contactos");
+      expect(focusables[6].getAttribute("href")).toBe("/dashboard/correos");
+      expect(focusables[7].tagName).toBe("BUTTON"); // Avatar
+      expect(focusables[7].getAttribute("aria-label")).toContain("Cuenta de");
     });
 
     it("mantiene el avatar después de los cinco enlaces y dentro del flujo del menú", () => {
@@ -314,7 +315,7 @@ describe("DashboardDrawer", () => {
       const links = [...nav.querySelectorAll("a[href]")];
       const avatar = nav.querySelector("button[aria-label^='Cuenta de']");
 
-      expect(links).toHaveLength(5);
+      expect(links).toHaveLength(6);
       expect(nav.lastElementChild).toBe(avatar);
       expect(avatar).toBeTruthy();
       expect(avatar.className).not.toMatch(/\b(?:fixed|sticky|absolute|bottom-0|mt-auto)\b/);
@@ -425,9 +426,9 @@ describe("DashboardDrawer", () => {
       const nav = panel.querySelector("nav[aria-label='Navegación principal del dashboard']");
       expect(nav).toBeTruthy();
 
-      // Verificar los cinco enlaces (NavLink renderiza <a> con href).
+      // Verificar los enlaces (NavLink renderiza <a> con href).
       const links = panel.querySelectorAll("a[href]");
-      expect(links.length).toBe(5);
+      expect(links.length).toBe(6);
 
       // Verificar avatar button
       const avatarButton = panel.querySelector("button[aria-label*='Cuenta de']");

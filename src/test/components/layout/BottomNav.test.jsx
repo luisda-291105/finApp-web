@@ -235,6 +235,9 @@ describe("BottomNav", () => {
 
     fireEvent.click(screen.getByText("Contactos"));
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/contactos");
+
+    const botonContactos = screen.getByText("Contactos").closest("button");
+    expect(botonContactos.querySelector("svg.lucide-contact")).toBeTruthy();
   });
 
   it("fuera del rango de 470px a 750px (p. ej. 375px) solo muestra 3 items + Menú y usa grid-cols-4", () => {

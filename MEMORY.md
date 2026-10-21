@@ -27,9 +27,11 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.
 - `specs/016/` — aprobada y cerrada (2026-10-20); T1–T6 completas. Regresión final: 554/554 pruebas en 39 archivos, build correcto y revisión visual responsive; T6 corrigió contraste/nombres accesibles de la navegación lateral.
 - `specs/017-asistente-en-dashboard/` — implementada; 536 pruebas y build correctos; revisión visual realizada, área segura real pendiente.
+- `specs/021-bolsillos-grupales/` — bolsillos grupales (`/dashboard/bolsillos`), fuentes compartidas, métricas colectivas, simulación de compartir entrada/invitación y reasignación de icono de Contactos (`Contact`) y Bolsillos (`Users`). Cerrada (2026-10-21).
 
 ## Tareas faltantes
 
+- **Spec 021:** cerrada (2026-10-21); T1–T6 completadas. Se creó la vista `/dashboard/bolsillos` con tarjetas de equipo, fuentes compartidas, balance total y botón con feedback de copiado. Se reasignó el icono de Contactos a `Contact` (sidebar y bottom nav responsivo) y se asignó `Users` a Bolsillos. Validación con 561/561 pruebas pasando en 40 suites y build exitoso sin errores.
 - **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos. T1–T10 hechas (2026-10-19); resultado **518/518 en 33 archivos**; cerrada (2026-10-19) con el commit de cierre `7018cfa`.
 - **Spec 020:** cerrada (2026-10-21); T1–T4 completadas. Homogeneización del botón disparador del asistente en el Dashboard con la landing (`cursor-pointer`, `hover:scale-105`, `transition-all`, `hover:bg-emerald-hover`). Validación con 556/556 pruebas pasando y build exitoso.
 - **Spec 018:** cerrada (2026-10-21); T1–T7 completadas. Ocultamiento de la barra de scroll (`.sidebar-scroll`), cierre automático en sidebar móvil vía `alCerrarSidebar`, adaptación dinámica en `BottomNav` mostrando el 4.º ítem del sidebar (Contactos) de 470px a 750px (grid-cols-5). Validación con 556/556 pruebas pasando y build exitoso.

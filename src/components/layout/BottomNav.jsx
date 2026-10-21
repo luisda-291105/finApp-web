@@ -13,7 +13,7 @@ import {
   Home,
   Receipt,
   CreditCard,
-  Users,
+  Contact,
   MoreHorizontal,
 } from "lucide-react";
 
@@ -27,7 +27,7 @@ const itemsBase = [
 const itemSidebarExtra = {
   ruta: "/dashboard/contactos",
   etiqueta: "Contactos",
-  icono: Users,
+  icono: Contact,
 };
 
 function verificarRangoPantalla() {
