@@ -11,7 +11,7 @@ import { StrictMode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import DashboardDrawer from "./DashboardDrawer";
 import SidebarNavContenido from "./SidebarNavContenido";
 
@@ -90,6 +90,11 @@ const obtenerPanel = () => document.body.querySelector("#dashboard-drawer-panel"
 
 const obtenerBackdrop = () =>
   document.body.querySelector('div.fixed.inset-0.bg-bg-dark\\/80[aria-hidden="true"]');
+
+function RutaActual() {
+  const ubicacion = useLocation();
+  return <output data-testid="ruta-actual">{ubicacion.pathname}</output>;
+}
 
 /** Espera a que la trampa real (delayInitialFocus) enfoque el contenedor del panel. */
 const esperarFocoEnPanel = async (panel) => {
@@ -281,7 +286,7 @@ describe("DashboardDrawer", () => {
       document.body.removeChild(externo);
     });
 
-    it("elementos enfocables: la «X» + 3 enlaces + el avatar del menú (5), en orden", () => {
+    it("elementos enfocables: la «X» + 5 enlaces + el avatar del menú (7), en orden", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -290,13 +295,30 @@ describe("DashboardDrawer", () => {
       );
 
       // Orden de tabulación: el cromo superior (la «X») precede al contenido del menú.
-      expect(focusables.length).toBe(5);
+      expect(focusables.length).toBe(7);
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar menú");
       expect(focusables[1].tagName).toBe("A"); // Inicio
       expect(focusables[2].tagName).toBe("A"); // Transacciones
       expect(focusables[3].tagName).toBe("A"); // Tarjetas
-      expect(focusables[4].tagName).toBe("BUTTON"); // Avatar
-      expect(focusables[4].getAttribute("aria-label")).toContain("Cuenta de");
+      expect(focusables[4].getAttribute("href")).toBe("/dashboard/contactos");
+      expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
+      expect(focusables[6].tagName).toBe("BUTTON"); // Avatar
+      expect(focusables[6].getAttribute("aria-label")).toContain("Cuenta de");
+    });
+
+    it("mantiene el avatar después de los cinco enlaces y dentro del flujo del menú", () => {
+      renderDrawer({ abierto: true });
+
+      const panel = obtenerPanel();
+      const nav = panel.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const links = [...nav.querySelectorAll("a[href]")];
+      const avatar = nav.querySelector("button[aria-label^='Cuenta de']");
+
+      expect(links).toHaveLength(5);
+      expect(nav.lastElementChild).toBe(avatar);
+      expect(avatar).toBeTruthy();
+      expect(avatar.className).not.toMatch(/\b(?:fixed|sticky|absolute|bottom-0|mt-auto)\b/);
+      expect(nav.className).not.toMatch(/\b(?:min-h-full|h-full)\b/);
     });
 
     it("el contenedor del panel queda fuera del ciclo de Tab (tabindex=-1)", () => {
@@ -403,13 +425,37 @@ describe("DashboardDrawer", () => {
       const nav = panel.querySelector("nav[aria-label='Navegación principal del dashboard']");
       expect(nav).toBeTruthy();
 
-      // Verificar 3 enlaces (NavLink renderiza <a> con href)
+      // Verificar los cinco enlaces (NavLink renderiza <a> con href).
       const links = panel.querySelectorAll("a[href]");
-      expect(links.length).toBe(3);
+      expect(links.length).toBe(5);
 
       // Verificar avatar button
       const avatarButton = panel.querySelector("button[aria-label*='Cuenta de']");
       expect(avatarButton).toBeTruthy();
+    });
+
+    it.each([
+      ["Contactos", "/dashboard/contactos"],
+      ["Correos", "/dashboard/correos"],
+    ])("permite llegar a %s desde el menú móvil", async (etiqueta, ruta) => {
+      const usuario = userEvent.setup();
+      render(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <DashboardDrawer
+            abierto
+            alCerrar={vi.fn()}
+            children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
+          />
+          <RutaActual />
+        </MemoryRouter>
+      );
+      await esperarFocoEnPanel(obtenerPanel());
+
+      await usuario.click(screen.getByRole("link", { name: etiqueta }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("ruta-actual")).toHaveTextContent(ruta);
+      });
     });
   });
 

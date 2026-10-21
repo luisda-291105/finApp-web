@@ -75,6 +75,26 @@ describe("SidebarResponsive", () => {
   });
 
   describe("estado expandida (colapsada=false)", () => {
+    it("separa el avatar al pie del grupo desplazable de enlaces", () => {
+      renderSidebarResponsive({ colapsada: false });
+
+      const aside = getSidebarAside();
+      const navegacion = aside.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const pieAvatar = navegacion?.nextElementSibling;
+      const distribucion = navegacion?.parentElement;
+
+      expect(aside).toHaveClass("flex", "flex-col");
+      expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
+      expect(navegacion).toBeTruthy();
+      expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(5);
+      expect(navegacion.querySelector("button")).toBeNull();
+      expect(pieAvatar).toBeTruthy();
+      expect(pieAvatar).toHaveClass("shrink-0");
+      expect(pieAvatar.querySelector("hr[role='separator']")).toBeTruthy();
+      expect(pieAvatar.querySelector("button[aria-label^='Cuenta de']")).toBeTruthy();
+    });
+
     it("tiene ancho 256px (w-64) cuando expandida", () => {
       renderSidebarResponsive({ colapsada: false });
 
@@ -115,11 +135,11 @@ describe("SidebarResponsive", () => {
       expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
-    it("renderiza 3 enlaces de navegación con iconos y etiquetas", () => {
+    it("renderiza 5 enlaces de navegación con iconos y etiquetas", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(3);
+      expect(links).toHaveLength(5);
 
       // Usar getByRole con nombre más específico para el link de navegación "Inicio"
       const inicioLink = screen.getByRole("link", { name: /^Inicio$/i });
@@ -140,7 +160,7 @@ describe("SidebarResponsive", () => {
 
       const aside = getSidebarAside();
       const navSvgs = aside.querySelectorAll("a[href^='/dashboard'] svg");
-      expect(navSvgs.length).toBe(3);
+      expect(navSvgs.length).toBe(5);
       navSvgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -167,6 +187,26 @@ describe("SidebarResponsive", () => {
   });
 
   describe("estado colapsada (colapsada=true)", () => {
+    it("mantiene el avatar en un bloque de pie separado al colapsar", () => {
+      renderSidebarResponsive({ colapsada: true });
+
+      const aside = getSidebarAside();
+      const navegacion = aside.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const pieAvatar = navegacion?.nextElementSibling;
+      const distribucion = navegacion?.parentElement;
+      const botonAvatar = pieAvatar?.querySelector("button[aria-label^='Cuenta de']");
+
+      expect(aside).toHaveClass("flex", "flex-col");
+      expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
+      expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(5);
+      expect(navegacion.querySelector("button")).toBeNull();
+      expect(pieAvatar).toHaveClass("shrink-0");
+      expect(pieAvatar.querySelector("hr[role='separator']")).toBeTruthy();
+      expect(botonAvatar).toBeTruthy();
+      expect(botonAvatar.querySelector(".flex-1")).toHaveClass("hidden");
+    });
+
     it("tiene ancho 72px cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
@@ -306,7 +346,7 @@ describe("SidebarResponsive", () => {
 
       const activeLink = screen.getByRole("link", { name: /Transacciones/i });
       expect(activeLink).toHaveClass("bg-emerald-primary/10");
-      expect(activeLink).toHaveClass("text-emerald-primary");
+      expect(activeLink).toHaveClass("text-mint-accent");
       expect(activeLink).toHaveClass("font-medium");
     });
 
@@ -314,7 +354,7 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
 
       const inactiveLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(inactiveLink).toHaveClass("text-slate-text");
+      expect(inactiveLink).toHaveClass("text-bg-cream/70");
       expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
     });
   });

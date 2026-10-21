@@ -9,10 +9,15 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import SidebarNavContenido from "./SidebarNavContenido";
 
 afterEach(cleanup);
+
+function RutaActual() {
+  const ubicacion = useLocation();
+  return <output data-testid="ruta-actual">{ubicacion.pathname}</output>;
+}
 
 const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) => {
   const defaultProps = {
@@ -29,12 +34,12 @@ const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) 
 
 describe("SidebarNavContenido", () => {
   describe("renderizado de enlaces de navegación", () => {
-    it("renderiza 3 NavLink con href e iconos correctos", () => {
+    it("renderiza 5 NavLink con href e iconos correctos", () => {
       renderSidebarNavContenido();
 
-      // Verificar 3 enlaces (conjunto vigente de la navegación lateral)
+      // Verificar los cinco enlaces de la navegación lateral.
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(3);
+      expect(links).toHaveLength(5);
 
       // Verificar cada enlace con su ruta, icono y etiqueta
       const inicioLink = screen.getByRole("link", { name: /Inicio/i });
@@ -48,6 +53,14 @@ describe("SidebarNavContenido", () => {
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
+
+      const contactosLink = screen.getByRole("link", { name: /Contactos/i });
+      expect(contactosLink.getAttribute("href")).toBe("/dashboard/contactos");
+      expect(contactosLink.querySelector("svg")).toBeTruthy();
+
+      const correosLink = screen.getByRole("link", { name: /Correos/i });
+      expect(correosLink.getAttribute("href")).toBe("/dashboard/correos");
+      expect(correosLink.querySelector("svg")).toBeTruthy();
     });
 
     it("iconos tienen flex-shrink-0 w-6 h-6", () => {
@@ -56,7 +69,7 @@ describe("SidebarNavContenido", () => {
       // Buscar todos los svg dentro de los links de navegación
       const nav = screen.getByRole("navigation");
       const svgs = nav.querySelectorAll("a svg");
-      expect(svgs.length).toBe(3);
+      expect(svgs.length).toBe(5);
       svgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -166,6 +179,23 @@ describe("SidebarNavContenido", () => {
       // Si llegamos aquí sin errores, el componente es stateless
       expect(screen.getByRole("navigation")).toBeTruthy();
     });
+
+    it.each([
+      ["Contactos", "/dashboard/contactos"],
+      ["Correos", "/dashboard/correos"],
+    ])("navega desde la sidebar de escritorio a %s", async (etiqueta, ruta) => {
+      const usuario = userEvent.setup();
+      render(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <SidebarNavContenido alAbrirUserModal={vi.fn()} />
+          <RutaActual />
+        </MemoryRouter>
+      );
+
+      await usuario.click(screen.getByRole("link", { name: etiqueta }));
+
+      expect(screen.getByTestId("ruta-actual")).toHaveTextContent(ruta);
+    });
   });
 
   describe("accesibilidad", () => {
@@ -174,6 +204,17 @@ describe("SidebarNavContenido", () => {
 
       const nav = screen.getByRole("navigation");
       expect(nav.getAttribute("aria-label")).toBe("Navegación principal del dashboard");
+    });
+
+    it("conserva nombres accesibles cuando la sidebar está colapsada", () => {
+      renderSidebarNavContenido({ colapsada: true });
+
+      ["Inicio", "Transacciones", "Tarjetas", "Contactos", "Correos"].forEach((etiqueta) => {
+        expect(screen.getByRole("link", { name: etiqueta })).toHaveAttribute(
+          "aria-label",
+          etiqueta
+        );
+      });
     });
 
     it("iconos tienen aria-hidden=true", () => {
@@ -193,6 +234,12 @@ describe("SidebarNavContenido", () => {
       expect(avatarButton.getAttribute("aria-label")).toBe("Cuenta de Usuario Demo");
     });
 
+    it("el correo del avatar usa texto con contraste adecuado sobre la sidebar oscura", () => {
+      renderSidebarNavContenido();
+
+      expect(screen.getByText("demo@finapp.local")).toHaveClass("text-bg-cream/70");
+    });
+
     it("separador tiene aria-hidden=true", () => {
       renderSidebarNavContenido();
 
@@ -208,7 +255,7 @@ describe("SidebarNavContenido", () => {
 
       const activeLink = screen.getByRole("link", { name: /Transacciones/i });
       expect(activeLink.classList.contains("bg-emerald-primary/10")).toBe(true);
-      expect(activeLink.classList.contains("text-emerald-primary")).toBe(true);
+      expect(activeLink.classList.contains("text-mint-accent")).toBe(true);
       expect(activeLink.classList.contains("font-medium")).toBe(true);
     });
 
@@ -216,7 +263,7 @@ describe("SidebarNavContenido", () => {
       renderSidebarNavContenido({}, ["/dashboard"]);
 
       const inactiveLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(inactiveLink.classList.contains("text-slate-text")).toBe(true);
+      expect(inactiveLink.classList.contains("text-bg-cream/70")).toBe(true);
       expect(inactiveLink.classList.contains("hover:bg-emerald-primary/5")).toBe(true);
     });
 

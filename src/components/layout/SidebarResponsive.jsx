@@ -1,7 +1,7 @@
 /**
  * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
  * @funciones  SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal })
- * @datos      enlaces fijos (3); avatar de usuario desde el contenido compartido; el cierre de sesión vive en DashboardUserModal
+ * @datos      5 enlaces compartidos; avatar desde SidebarNavContenido; el cierre de sesión vive en DashboardUserModal
  * @eventos    click en enlaces, click en logo toggle, click en avatar
  * @estados    colapsada (boolean, controlada desde padre via useBreakpoint)
  * @usadoPor   DashboardLayout
@@ -61,9 +61,13 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
         </button>
       </div>
 
-      {/* Navegación principal - usa SidebarNavContenido */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <SidebarNavContenido alAbrirUserModal={alAbrirUserModal} colapsada={colapsada} />
+      {/* Enlaces desplazables y avatar separado al pie */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <SidebarNavContenido
+          alAbrirUserModal={alAbrirUserModal}
+          colapsada={colapsada}
+          avatarSeparado
+        />
       </div>
     </aside>
   );
