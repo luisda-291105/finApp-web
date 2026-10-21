@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
+import { BotMessageSquare } from "lucide-react";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useFocoEnVistaDestino } from "../hooks/useFocoEnVistaDestino";
 
@@ -10,6 +11,7 @@ import BottomNav from "../components/layout/BottomNav";
 import DashboardUserModal from "../components/layout/DashboardUserModal";
 import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
+import AsistenteAyuda from "../components/domain/modales/AsistenteAyuda";
 import { getUsuarioMock } from "../config/app.config";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
@@ -19,6 +21,8 @@ const SELECTOR_CONTROL_LATERAL = 'aside[role="navigation"] button';
 const SELECTOR_CONTROL_MOVIL = 'button[aria-label="Abrir menú"]';
 /** La superficie global abierta y su contenedor: nunca son candidatos del respaldo (RF-14). */
 const SELECTOR_DIALOGO = '[role="dialog"]';
+/** El disparador del asistente no participa en el respaldo de foco del cruce (D-6). */
+const SELECTOR_EXCLUIDO_RESPALDO = '[data-respaldo-foco="excluir"]';
 /** Selector real del «primer control enfocable» (estilo de `ModalTarjeta.jsx`, RF-05). */
 const SELECTOR_ENFOCABLE =
   'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -42,14 +46,15 @@ function clasificarOrigenDeFoco(nodo) {
   return { origen: null, nodo: null };
 }
 
-/** Valida un candidato del respaldo del cruce (RF-05): enfocable, conectado y fuera de un diálogo. */
+/** Valida un candidato del respaldo del cruce (RF-05), excluyendo controles marcados. */
 function esCandidatoDeCruce(nodo) {
   return (
     nodo instanceof HTMLElement &&
     nodo !== document.body &&
     nodo.isConnected &&
     !nodo.disabled &&
-    !nodo.closest(SELECTOR_DIALOGO)
+    !nodo.closest(SELECTOR_DIALOGO) &&
+    !nodo.closest(SELECTOR_EXCLUIDO_RESPALDO)
   );
 }
 
@@ -83,7 +88,7 @@ function trasladarFocoDeCruce(esMovil) {
 /**doc
  * @uso        Layout del dashboard con dos versiones de vista (móvil / pantallas grandes)
  * @funciones  DashboardLayout()
- * @datos      Orquesta SidebarResponsive, DashboardDrawer (menú de móvil), BottomNav, Container, Outlet, DashboardUserModal
+ * @datos      Orquesta navegación, superficies globales y el asistente de ayuda en Outlet context
  * @eventos    Cruce del corte de 768px en ambos sentidos (con el recuerdo del origen por `focusin`):
  *             con el panel superpuesto abierto lo cierra y traslada el foco al control lateral; sin
  *             panel, traslada solo si el foco pertenecía a la navegación que se desmonta (RF-12/
@@ -92,8 +97,9 @@ function trasladarFocoDeCruce(esMovil) {
  *             RF-07/RF-13) y pasa un `triggerRef` estable al modal para el retorno de foco (RF-08).
  *             Cierre que navega: con la marca `focoEnDestino` en el estado de la ruta,
  *             `useFocoEnVistaDestino` coloca el foco una sola vez tras el render del destino, en el
- *             control estable de la versión de vista (botón «Menú» / navegación lateral; RF-15)
- * @estados    mobileMenuAbierto (móvil), userModalAbierto (global)
+ *             control estable de la versión de vista (botón «Menú» / navegación lateral; RF-15).
+ *             Abrir el asistente cierra las demás superficies y devuelve el foco al robot.
+ * @estados    mobileMenuAbierto (móvil), userModalAbierto y ayudaAbierta (global)
  * @usadoPor   App.jsx (rutas /dashboard/*)
 
  * DashboardLayout
@@ -117,8 +123,11 @@ export default function DashboardLayout() {
 
   const [mobileMenuAbierto, setMobileMenuAbierto] = useState(false);
   const [userModalAbierto, setUserModalAbierto] = useState(false);
+  const [ayudaAbierta, setAyudaAbierta] = useState(false);
 
   const bottomNavMenuRef = useRef(null);
+  const asistenteTriggerRef = useRef(null);
+  const cierreDetalleRef = useRef(null);
   // Recuerdo del último foco dentro de una navegación (`{ origen, nodo }`): permite saber, al
   // cruzar, si el elemento enfocado pertenecía a la navegación que se desmonta (M5 del plan 011).
   const origenFocoRef = useRef({ origen: null, nodo: null });
@@ -139,6 +148,17 @@ export default function DashboardLayout() {
   };
   const alCerrarUserModal = () => setUserModalAbierto(false);
   const usuario = getUsuarioMock();
+
+  const registrarCierreDetalle = useCallback((cerrar) => {
+    cierreDetalleRef.current = cerrar;
+  }, []);
+  const alAbrirAsistente = () => {
+    cierreDetalleRef.current?.();
+    setMobileMenuAbierto(false);
+    setUserModalAbierto(false);
+    setAyudaAbierta(true);
+  };
+  const alCerrarAsistente = () => setAyudaAbierta(false);
 
   // Único listener `focusin` sobre `document` (registrado una vez al montar, retirado al
   // desmontar): mantiene el recuerdo del origen del foco para el cruce del corte.
@@ -195,7 +215,7 @@ export default function DashboardLayout() {
       >
         <Container>
           <main className="pb-20">
-            <Outlet />
+            <Outlet context={{ registrarCierreDetalle }} />
           </main>
         </Container>
       </div>
@@ -229,6 +249,24 @@ export default function DashboardLayout() {
         alCerrar={alCerrarUserModal}
         triggerRef={bottomNavMenuRef}
       />
+
+      <AsistenteAyuda
+        abierto={ayudaAbierta}
+        estadoVisual="vacio"
+        alCerrar={alCerrarAsistente}
+        triggerRef={asistenteTriggerRef}
+      />
+
+      <button
+        ref={asistenteTriggerRef}
+        type="button"
+        aria-label="Abrir el asistente de ayuda"
+        data-respaldo-foco="excluir"
+        onClick={alAbrirAsistente}
+        className="fixed right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border-line/30 bg-emerald-primary text-bg-cream shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-dark bottom-[calc(60px_+_env(safe-area-inset-bottom,0px)_+_16px)]"
+      >
+        <BotMessageSquare size={20} aria-hidden="true" />
+      </button>
     </>
   );
 }

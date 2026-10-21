@@ -6,11 +6,12 @@
  * @datos      Lee TARJETAS_DEMO desde src/data/tarjetasDemo.js (fuente única, 5 tarjetas);
  *             no transforma datos ni consulta backend
  * @eventos    onSeleccionarTarjeta(tarjeta) del acordeón/grid abre el modal;
- *             onCerrar del modal vuelve a null (el retorno del foco lo gestiona ModalTarjeta)
+ *             onCerrar del modal vuelve a null; registra el cierre del detalle en el layout
  * @estados    tarjetaActiva (objeto tarjeta | null) - null = modal cerrado
- * @usadoPor   PaginaDashboardTarjetas (/dashboard/tarjetas, spec 005)
+ * @usadoPor   PaginaDashboardTarjetas (/dashboard/tarjetas) y DashboardLayout vía Outlet context
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import AcordeonTarjetas from "../components/domain/dashboard/AcordeonTarjetas";
 import GridTarjetas from "../components/domain/dashboard/GridTarjetas";
 import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
@@ -29,6 +30,14 @@ import { TARJETAS_DEMO } from "../data/tarjetasDemo";
  */
 export default function PanelTarjetas() {
   const [tarjetaActiva, setTarjetaActiva] = useState(null);
+  const contexto = useOutletContext();
+  const registrarCierreDetalle = contexto?.registrarCierreDetalle;
+
+  useEffect(() => {
+    if (!registrarCierreDetalle) return undefined;
+    registrarCierreDetalle(() => setTarjetaActiva(null));
+    return () => registrarCierreDetalle(null);
+  }, [registrarCierreDetalle]);
 
   return (
     <div className="space-y-6">
