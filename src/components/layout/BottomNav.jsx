@@ -1,46 +1,83 @@
 /**
- * @uso        Barra de navegación inferior para móvil (4 controles: 3 ítems de navegación + «Menú», safe-area, indicador activo, landscape)
+ * @uso        Barra de navegación inferior para móvil (4 controles en móvil estándar: 3 ítems + «Menú»; 5 controles entre 470px y 750px con el 4.º ítem del sidebar: Contactos)
  * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef })
  * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu (callback menú)
- * @eventos    click en ítems 1-3 → alNavegar(ruta), click en «Menú» (4.º control) → alAbrirMenu()
- * @estados    Ninguno (componente controlado vía props)
+ * @eventos    click en ítems de navegación → alNavegar(ruta), click en «Menú» → alAbrirMenu()
+ * @estados    mostrarExtra (boolean, según ancho de pantalla 470px a 750px)
  * @usadoPor   DashboardLayout (navegación inferior de móvil)
  */
 
+import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import {
   Home,
   Receipt,
   CreditCard,
+  Users,
   MoreHorizontal,
 } from "lucide-react";
 
-const items = [
+const itemsBase = [
   { ruta: "/dashboard", etiqueta: "Inicio", icono: Home },
   { ruta: "/dashboard/transacciones", etiqueta: "Transacciones", icono: Receipt },
-  { ruta: "/dashboard/tarjetas", etiqueta: "Tarjetas", icono: CreditCard }
+  { ruta: "/dashboard/tarjetas", etiqueta: "Tarjetas", icono: CreditCard },
 ];
+
+/** 4.º ítem proveniente del sidebar, mostrado en pantalla de 470px a 750px */
+const itemSidebarExtra = {
+  ruta: "/dashboard/contactos",
+  etiqueta: "Contactos",
+  icono: Users,
+};
+
+function verificarRangoPantalla() {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth >= 470 && window.innerWidth <= 750;
+}
 
 /**
  * BottomNav
- * Barra de navegación inferior fija para móvil con 4 controles equidistantes
- * (3 ítems de navegación + botón «Menú»).
+ * Barra de navegación inferior fija para móvil.
+ * Por defecto muestra 4 controles (3 ítems de navegación + botón «Menú»).
+ * En el rango de pantalla entre 470px y 750px, muestra un 4.º ítem del sidebar («Contactos»)
+ * totalizando 5 controles equidistantes (4 navegación + «Menú»).
  * Incluye safe-area (safe-bottom), indicador activo en el item seleccionado,
  * y media query landscape que oculta las etiquetas.
+ *
  * @param {Object} props
  * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/transacciones")
- * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en los ítems 1-3
- * @param {() => void} props.alAbrirMenu - Callback al hacer click en «Menú» (4.º control)
- * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón «Menú» (4.º control), usado para focus trap return
+ * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en los ítems de navegación
+ * @param {() => void} props.alAbrirMenu - Callback al hacer click en «Menú»
+ * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón «Menú», usado para focus trap return
  */
 export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef }) {
+  const [mostrarExtra, setMostrarExtra] = useState(verificarRangoPantalla);
+
+  useEffect(() => {
+    const alRedimensionar = () => {
+      setMostrarExtra(verificarRangoPantalla());
+    };
+
+    window.addEventListener("resize", alRedimensionar);
+    alRedimensionar();
+
+    return () => {
+      window.removeEventListener("resize", alRedimensionar);
+    };
+  }, []);
+
+  const itemsVisibles = mostrarExtra ? [...itemsBase, itemSidebarExtra] : itemsBase;
+
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid grid-cols-4"
+      className={clsx(
+        "fixed bottom-0 left-0 right-0 z-50 bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid",
+        mostrarExtra ? "grid-cols-5" : "grid-cols-4"
+      )}
       role="navigation"
       aria-label="Navegación principal móvil"
     >
-      {items.map(({ ruta, etiqueta, icono: Icono }) => (
+      {itemsVisibles.map(({ ruta, etiqueta, icono: Icono }) => (
         <button
           key={ruta}
           type="button"
@@ -65,7 +102,8 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
           )}
         </button>
       ))}
-      {/* 4.º control: Menú */}
+
+      {/* Control: Menú */}
       <button
         type="button"
         ref={menuTriggerRef}

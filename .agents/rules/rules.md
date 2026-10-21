@@ -55,8 +55,14 @@ ajeno.
 
 - Usa Vitest y Testing Library. Ejecuta `npm test`; para una selección concreta usa
   `npx vitest run <ruta>`.
-- Coloca las pruebas junto al código probado y sigue las extensiones existentes
-  (`*.test.jsx` para componentes JSX, `*.test.js` para hooks JS).
+- Las suites Vitest `*.test.js` y `*.test.jsx` dentro de `src/` se centralizan bajo
+  `src/test/`, conservando la ruta relativa del módulo probado (por ejemplo,
+  `src/pages/Foo.jsx` corresponde a `src/test/pages/Foo.test.jsx`). Las suites
+  transversales sin capa principal clara y las que prueban la infraestructura de tests
+  van en la raíz de `src/test/`, sin duplicarlas por capa.
+- Esta convención solo cubre suites Vitest `.test.js` y `.test.jsx`; no incluye otros
+  formatos ni pruebas ejecutadas por otras herramientas. El patrón vigente
+  `src/**/*.test.{js,jsx}` también descubre suites dentro de `src/test/`.
 - Usa `MemoryRouter` al probar rutas.
 - `npm run build` debe pasar para cambios de código antes de cerrar la tarea.
 - Los límites de capas y blobs no cuentan actualmente con pruebas automáticas dedicadas:

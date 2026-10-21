@@ -237,7 +237,10 @@ export default function DashboardLayout() {
           alCerrar={() => setMobileMenuAbierto(false)}
           triggerRef={bottomNavMenuRef}
         >
-          <SidebarNavContenido alAbrirUserModal={alAbrirUserModal} />
+          <SidebarNavContenido
+            alAbrirUserModal={alAbrirUserModal}
+            alCerrarSidebar={() => setMobileMenuAbierto(false)}
+          />
         </DashboardDrawer>
       )}
 

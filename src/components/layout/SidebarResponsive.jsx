@@ -1,17 +1,14 @@
-/**
+import clsx from "clsx";
+import SidebarNavContenido from "./SidebarNavContenido";
+
+/** SidebarResponsive
  * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
  * @funciones  SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal })
  * @datos      5 enlaces compartidos; avatar desde SidebarNavContenido; el cierre de sesión vive en DashboardUserModal
  * @eventos    click en enlaces, click en logo toggle, click en avatar
  * @estados    colapsada (boolean, controlada desde padre via useBreakpoint)
  * @usadoPor   DashboardLayout
- */
-
-import clsx from "clsx";
-import SidebarNavContenido from "./SidebarNavContenido";
-
-/**
- * SidebarResponsive
+ * 
  * Navegación lateral fija de pantallas grandes (≥768px), colapsable, con fondo dark glass y navegación compartida.
  * El estado colapsado/expandido se controla desde el padre (DashboardLayout via useBreakpoint).
  * El logo no navega: solo alterna colapso.
@@ -21,6 +18,7 @@ import SidebarNavContenido from "./SidebarNavContenido";
  * @param {() => void} props.alToggleColapso - Callback al click en el área del logo
  * @param {() => void} props.alAbrirUserModal - Callback al click en el avatar de usuario
  */
+
 export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal }) {
   return (
     <aside

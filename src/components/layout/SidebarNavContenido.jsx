@@ -30,6 +30,7 @@ export default function SidebarNavContenido({
   alAbrirUserModal,
   colapsada = false,
   avatarSeparado = false,
+  alCerrarSidebar,
 }) {
   const usuario = getUsuarioMock();
 
@@ -47,6 +48,9 @@ export default function SidebarNavContenido({
       to={ruta}
       end={Boolean(exacto)}
       aria-label={etiqueta}
+      onClick={() => {
+        if (alCerrarSidebar) alCerrarSidebar();
+      }}
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors min-w-0 ${
           isActive
@@ -84,7 +88,7 @@ export default function SidebarNavContenido({
     return (
       <>
         <nav
-          className="flex flex-col flex-1 min-h-0 overflow-y-auto"
+          className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll"
           aria-label="Navegación principal del dashboard"
         >
           {enlacesNavegacion}
@@ -98,7 +102,7 @@ export default function SidebarNavContenido({
   }
 
   return (
-    <nav className="flex flex-col" aria-label="Navegación principal del dashboard">
+    <nav className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll" aria-label="Navegación principal del dashboard">
       {enlacesNavegacion}
       <hr role="separator" className="border-border-line/20 my-3" aria-hidden="true" />
       {bloqueAvatar}

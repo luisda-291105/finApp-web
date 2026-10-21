@@ -215,4 +215,38 @@ describe("BottomNav", () => {
     const nav = screen.getByRole("navigation");
     expect(nav).toHaveAttribute("aria-label", "Navegación principal móvil");
   });
+
+  it("en rango de 470px a 750px muestra el 4.º ítem del sidebar (Contactos) y usa grid-cols-5", () => {
+    window.innerWidth = 500;
+    render(<BottomNav {...propsBase} />);
+
+    const botones = screen.getAllByRole("button");
+    expect(botones).toHaveLength(5);
+
+    expect(screen.getByText("Inicio")).toBeDefined();
+    expect(screen.getByText("Transacciones")).toBeDefined();
+    expect(screen.getByText("Tarjetas")).toBeDefined();
+    expect(screen.getByText("Contactos")).toBeDefined();
+    expect(screen.getByText("Menú")).toBeDefined();
+
+    const nav = screen.getByRole("navigation");
+    expect(nav).toHaveClass("grid-cols-5");
+    expect(nav).not.toHaveClass("grid-cols-4");
+
+    fireEvent.click(screen.getByText("Contactos"));
+    expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/contactos");
+  });
+
+  it("fuera del rango de 470px a 750px (p. ej. 375px) solo muestra 3 items + Menú y usa grid-cols-4", () => {
+    window.innerWidth = 375;
+    render(<BottomNav {...propsBase} />);
+
+    const botones = screen.getAllByRole("button");
+    expect(botones).toHaveLength(4);
+    expect(screen.queryByText("Contactos")).toBeNull();
+
+    const nav = screen.getByRole("navigation");
+    expect(nav).toHaveClass("grid-cols-4");
+    expect(nav).not.toHaveClass("grid-cols-5");
+  });
 });

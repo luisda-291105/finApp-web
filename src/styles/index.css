@@ -189,3 +189,7 @@
   outline: 3px solid color-mix(in srgb, var(--color-emerald-primary) 40%, transparent);
   outline-offset: 2px;
 }
+
+/* Ocultar scrollbar sin afectar funcionalidad */
+.sidebar-scroll::-webkit-scrollbar { display: none; }
+.sidebar-scroll { -ms-overflow-style: none; scrollbar-width: none; }
