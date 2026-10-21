@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { BotonCerrar } from "./BotonCerrar";
+import { BotonCerrar } from "../../../components/ui/BotonCerrar";
 
 describe("BotonCerrar", () => {
   it("renderiza un <button type='button'> con el aria-label específico recibido", () => {

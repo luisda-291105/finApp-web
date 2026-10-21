@@ -10,7 +10,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import SidebarNavContenido from "./SidebarNavContenido";
+import SidebarNavContenido from "../../../components/layout/SidebarNavContenido";
 
 afterEach(cleanup);
 

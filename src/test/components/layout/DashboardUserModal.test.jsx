@@ -11,7 +11,7 @@ import { cleanup, render, screen, waitFor, act } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import DashboardUserModal from "./DashboardUserModal";
+import DashboardUserModal from "../../../components/layout/DashboardUserModal";
 
 // Mock de framer-motion: motion.div trivial con forwardRef para que el ref del focus trap
 // real llegue al nodo del panel. NO se mockea focus-trap-react: la trampa debe ser real.
