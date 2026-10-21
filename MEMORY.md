@@ -31,6 +31,7 @@ antes de tocar código** y no revertir sus ediciones.
 ## Tareas faltantes
 
 - **Spec 014:** aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header en modo dashboard, migración de hex de JSX a tokens: 72 clases en 10 archivos. T1–T10 hechas (2026-10-19); resultado **518/518 en 33 archivos**; cerrada (2026-10-19) con el commit de cierre `7018cfa`.
+- **Spec 020:** cerrada (2026-10-21); T1–T4 completadas. Homogeneización del botón disparador del asistente en el Dashboard con la landing (`cursor-pointer`, `hover:scale-105`, `transition-all`, `hover:bg-emerald-hover`). Validación con 556/556 pruebas pasando y build exitoso.
 - **Spec 018:** cerrada (2026-10-21); T1–T7 completadas. Ocultamiento de la barra de scroll (`.sidebar-scroll`), cierre automático en sidebar móvil vía `alCerrarSidebar`, adaptación dinámica en `BottomNav` mostrando el 4.º ítem del sidebar (Contactos) de 470px a 750px (grid-cols-5). Validación con 556/556 pruebas pasando y build exitoso.
 - **Spec 019:** cerrada (2026-10-20); T1–T9 completadas. Se centralizaron las 39 suites bajo
   `src/test/` y se actualizaron las guías; validación final: 554/554 pruebas y build correctos.

@@ -266,7 +266,7 @@ export default function DashboardLayout() {
         aria-label="Abrir el asistente de ayuda"
         data-respaldo-foco="excluir"
         onClick={alAbrirAsistente}
-        className="fixed right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border-line/30 bg-emerald-primary text-bg-cream shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-dark bottom-[calc(60px_+_env(safe-area-inset-bottom,0px)_+_16px)]"
+        className="fixed right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border-line/30 bg-emerald-primary hover:bg-emerald-hover text-bg-cream shadow-xl transition-all cursor-pointer hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-dark bottom-[calc(60px_+_env(safe-area-inset-bottom,0px)_+_16px)]"
       >
         <BotMessageSquare size={20} aria-hidden="true" />
       </button>

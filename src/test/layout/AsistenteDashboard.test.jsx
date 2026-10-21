@@ -192,7 +192,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
     expect(scrim.className).not.toMatch(/backdrop-(blur|filter)|glass-surface/);
   });
 
-  it("expone robot accesible con icono, tamaño y clases tokenizadas sin efectos de hover", () => {
+  it("expone robot accesible con icono, tamaño, clases tokenizadas y microinteracción de hover y escala", () => {
     renderDashboard();
     const disparador = obtenerDisparador();
     const icono = disparador.querySelector("svg");
@@ -208,10 +208,14 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
     expect(disparador.className).toContain("w-11");
     expect(disparador.className).toContain("h-11");
     expect(disparador.className).toContain("z-40");
+    expect(disparador.className).toContain("cursor-pointer");
+    expect(disparador.className).toContain("transition-all");
+    expect(disparador.className).toContain("hover:scale-105");
+    expect(disparador.className).toContain("hover:bg-emerald-hover");
     expect(disparador.className).toContain("focus-visible:ring-2");
     expect(disparador.className).toContain("focus-visible:ring-mint-accent/60");
     expect(disparador.className).not.toMatch(
-      /hover:|scale-|transform|transition|duration-|#|backdrop-|glass-|text-(?:white|black|slate-\d+)|bg-(?:black|white|slate-\d+)/
+      /#|backdrop-|glass-|text-(?:white|black|slate-\d+)|bg-(?:black|white|slate-\d+)/
     );
   });
 
