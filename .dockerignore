@@ -1,0 +1,28 @@
+# Dependencias (se instalan dentro del contenedor)
+node_modules
+
+# Build local (no necesario en el contexto Docker)
+dist
+
+# Git
+.git
+.gitignore
+
+# Archivos de entorno locales (secretos)
+.env
+.env.local
+.env.*.local
+
+# Documentación y archivos de proyecto
+README.md
+MEMORY.md
+AGENTS.md
+doc/
+
+# Specs y tests (no se necesitan en producción)
+specs/
+
+# IDEs y herramientas
+.vscode
+.opencode
+.agents
