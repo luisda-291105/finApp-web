@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import LogMovimientos, { formatearFechaCorta } from "./LogMovimientos";
-import { MOVIMIENTOS_DEMO } from "../../../data/tarjetasDemo";
+import LogMovimientos, { formatearFechaCorta } from "../../../../components/domain/dashboard/LogMovimientos";
+import { MOVIMIENTOS_DEMO } from "../../../../data/tarjetasDemo";
 
 describe("LogMovimientos (spec 004, RF8-RF10)", () => {
   it("renderiza los movimientos del fixture con fecha, descripción, categoría y monto con signo", () => {

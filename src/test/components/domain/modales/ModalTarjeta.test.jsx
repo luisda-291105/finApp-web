@@ -13,8 +13,8 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useReducedMotion } from "framer-motion";
-import ModalTarjeta from "./domain/modales/ModalTarjeta";
-import { TARJETAS_DEMO, MOVIMIENTOS_DEMO } from "../data/tarjetasDemo";
+import ModalTarjeta from "../../../../components/domain/modales/ModalTarjeta";
+import { TARJETAS_DEMO, MOVIMIENTOS_DEMO } from "../../../../data/tarjetasDemo";
 
 // Mock parcial de framer-motion: motion.div trivial y useReducedMotion controlable
 vi.mock("framer-motion", async () => {

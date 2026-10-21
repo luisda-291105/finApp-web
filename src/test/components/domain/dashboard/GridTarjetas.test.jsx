@@ -1,8 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
-import GridTarjetas from "./GridTarjetas";
-import { TARJETAS_DEMO } from "../../../data/tarjetasDemo";
+import GridTarjetas from "../../../../components/domain/dashboard/GridTarjetas";
+import { TARJETAS_DEMO } from "../../../../data/tarjetasDemo";
 
 describe("GridTarjetas (tablet/desktop)", () => {
   it("renderiza las 5 tarjetas con frente completo visible (titular, número, expiración, entidad)", () => {

@@ -12,23 +12,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import DashboardLayout from "./DashboardLayout";
-import { useBreakpoint } from "../hooks/useBreakpoint";
-import SidebarResponsive from "../components/layout/SidebarResponsive";
-import DashboardDrawer from "../components/layout/DashboardDrawer";
-import BottomNav from "../components/layout/BottomNav";
-import DashboardUserModal from "../components/layout/DashboardUserModal";
-import SidebarNavContenido from "../components/layout/SidebarNavContenido";
-import Container from "../components/layout/Container";
+import DashboardLayout from "../../layout/DashboardLayout";
+import { useBreakpoint } from "../../hooks/useBreakpoint";
+import SidebarResponsive from "../../components/layout/SidebarResponsive";
+import DashboardDrawer from "../../components/layout/DashboardDrawer";
+import BottomNav from "../../components/layout/BottomNav";
+import DashboardUserModal from "../../components/layout/DashboardUserModal";
+import SidebarNavContenido from "../../components/layout/SidebarNavContenido";
+import Container from "../../components/layout/Container";
 
 // La lógica de versión de vista se mockea con su contrato real de 4 props (sin isTablet)
-vi.mock("../hooks/useBreakpoint", () => ({
+vi.mock("../../hooks/useBreakpoint", () => ({
   useBreakpoint: vi.fn(),
 }));
 
 // Mock de la navegación lateral: aside con role de navegación + el control de colapso real
 // (permite verificar el traslado de foco al cruzar el corte).
-vi.mock("../components/layout/SidebarResponsive", () => ({
+vi.mock("../../components/layout/SidebarResponsive", () => ({
   default: vi.fn(({ colapsada, alToggleColapso, alAbrirUserModal, ...rest }) => (
     <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
       <button type="button" data-testid="sidebar-toggle" onClick={alToggleColapso} />
@@ -37,7 +37,7 @@ vi.mock("../components/layout/SidebarResponsive", () => ({
 }));
 
 // Drawer exclusivo de móvil: solo monta el panel cuando está abierto
-vi.mock("../components/layout/DashboardDrawer", () => ({
+vi.mock("../../components/layout/DashboardDrawer", () => ({
   default: vi.fn(({ abierto, children }) =>
     abierto ? <div data-testid="dashboard-drawer">{children}</div> : null
   ),
@@ -45,7 +45,7 @@ vi.mock("../components/layout/DashboardDrawer", () => ({
 
 // BottomNav: refleja el botón «Menú» real, que recibe menuTriggerRef (control estable de
 // retorno de foco en móvil, spec 010 rf-08/AC-08).
-vi.mock("../components/layout/BottomNav", () => ({
+vi.mock("../../components/layout/BottomNav", () => ({
   default: vi.fn(({ menuTriggerRef }) => (
     <nav data-testid="bottom-nav">
       <button
@@ -60,7 +60,7 @@ vi.mock("../components/layout/BottomNav", () => ({
 
 // DashboardUserModal: el mock expone el contrato real (abierto, triggerRef) para poder
 // comprobar que el layout cierra el menú antes de abrirlo y le pasa el control estable.
-vi.mock("../components/layout/DashboardUserModal", () => ({
+vi.mock("../../components/layout/DashboardUserModal", () => ({
   default: vi.fn(({ abierto }) => (
     <div
       data-testid={abierto ? "user-modal-open" : "user-modal-closed"}
@@ -69,15 +69,15 @@ vi.mock("../components/layout/DashboardUserModal", () => ({
   )),
 }));
 
-vi.mock("../components/layout/SidebarNavContenido", () => ({
+vi.mock("../../components/layout/SidebarNavContenido", () => ({
   default: vi.fn(() => <nav data-testid="sidebar-nav-contenido" />),
 }));
 
-vi.mock("../components/layout/Container", () => ({
+vi.mock("../../components/layout/Container", () => ({
   default: vi.fn(({ children }) => <div data-testid="container">{children}</div>),
 }));
 
-vi.mock("../config/app.config", () => ({
+vi.mock("../../config/app.config", () => ({
   getUsuarioMock: vi.fn(() => ({
     nombre: "Usuario Demo",
     iniciales: "UD",

@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const rutaCss = join(dirname(fileURLToPath(import.meta.url)), "index.css");
+const rutaCss = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "index.css");
 const css = readFileSync(rutaCss, "utf8");
-const rutaHtml = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "index.html");
+const rutaHtml = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "index.html");
 const html = readFileSync(rutaHtml, "utf8");
 
 describe("RF2 — prefers-reduced-transparency en index.css", () => {

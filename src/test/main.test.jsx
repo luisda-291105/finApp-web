@@ -28,7 +28,7 @@ describe("main.jsx", () => {
   });
 
   it("monta BrowserRouter con las future flags v7 activadas", async () => {
-    await import("./main.jsx");
+    await import("../main.jsx");
 
     expect(createRootSpy).toHaveBeenCalledWith(document.getElementById("root"));
     expect(renderSpy).toHaveBeenCalledTimes(1);

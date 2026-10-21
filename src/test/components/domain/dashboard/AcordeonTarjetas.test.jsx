@@ -10,8 +10,8 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useReducedMotion } from "framer-motion";
-import AcordeonTarjetas from "./AcordeonTarjetas";
-import { TARJETAS_DEMO } from "../../../data/tarjetasDemo";
+import AcordeonTarjetas from "../../../../components/domain/dashboard/AcordeonTarjetas";
+import { TARJETAS_DEMO } from "../../../../data/tarjetasDemo";
 
 // Mock parcial de framer-motion: motion.div trivial y useReducedMotion controlable
 vi.mock("framer-motion", async () => {

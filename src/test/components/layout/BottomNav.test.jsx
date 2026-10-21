@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import BottomNav from "./BottomNav";
+import BottomNav from "../../../components/layout/BottomNav";
 
 describe("BottomNav", () => {
   const propsBase = {

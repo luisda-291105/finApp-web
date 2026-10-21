@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import Features from "./Features";
+import Features from "../../../../components/domain/landing/Features";
 
 describe("Features", () => {
   it("renderiza las 5 tarjetas de funcionalidades vía Card con clase glass-card efectiva", () => {

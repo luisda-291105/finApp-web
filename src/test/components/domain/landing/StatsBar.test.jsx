@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import StatsBar from "./StatsBar";
+import StatsBar from "../../../../components/domain/landing/StatsBar";
 
 describe("StatsBar", () => {
   beforeEach(() => {

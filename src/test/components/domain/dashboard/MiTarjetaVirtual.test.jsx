@@ -10,7 +10,7 @@ import { StrictMode } from "react";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import MiTarjetaVirtual from "./MiTarjetaVirtual";
+import MiTarjetaVirtual from "../../../../components/domain/dashboard/MiTarjetaVirtual";
 
 // Mock de useReducedMotion de Framer Motion
 vi.mock("framer-motion", async () => {

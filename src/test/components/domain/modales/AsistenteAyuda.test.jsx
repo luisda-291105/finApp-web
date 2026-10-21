@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import AsistenteAyuda from "./AsistenteAyuda";
+import AsistenteAyuda from "../../../../components/domain/modales/AsistenteAyuda";
 
 // Literales copiados carácter a carácter de la spec 014 §4.3 (no importados del componente,
 // para que la prueba no sea tautológica).

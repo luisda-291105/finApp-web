@@ -11,9 +11,9 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import AuthModal from "./AuthModal";
-import PaginaLogin from "../../../pages/PaginaLogin";
-import PaginaInicio from "../../../pages/PaginaInicio";
+import AuthModal from "../../../../components/domain/modales/AuthModal";
+import PaginaLogin from "../../../../pages/PaginaLogin";
+import PaginaInicio from "../../../../pages/PaginaInicio";
 
 /**
  * Mock **local** de `config/app.config` para los casos nuevos de la spec 011 (Tarea 8). El cierre
@@ -24,7 +24,7 @@ import PaginaInicio from "../../../pages/PaginaInicio";
  */
 const estadoTrial = vi.hoisted(() => ({ activo: null }));
 
-vi.mock("../../../config/app.config", async (importOriginal) => {
+vi.mock("../../../../config/app.config", async (importOriginal) => {
   const real = await importOriginal();
   return {
     ...real,

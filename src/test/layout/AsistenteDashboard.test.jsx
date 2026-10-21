@@ -10,12 +10,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import DashboardLayout from "./DashboardLayout";
-import PanelTarjetas from "../pages/PanelTarjetas";
-import { useBreakpoint } from "../hooks/useBreakpoint";
-import SidebarResponsive from "../components/layout/SidebarResponsive";
+import DashboardLayout from "../../layout/DashboardLayout";
+import PanelTarjetas from "../../pages/PanelTarjetas";
+import { useBreakpoint } from "../../hooks/useBreakpoint";
+import SidebarResponsive from "../../components/layout/SidebarResponsive";
 
-vi.mock("../hooks/useBreakpoint", () => ({
+vi.mock("../../hooks/useBreakpoint", () => ({
   useBreakpoint: vi.fn(),
 }));
 
@@ -72,7 +72,7 @@ vi.mock("framer-motion", async () => {
   };
 });
 
-vi.mock("../components/layout/SidebarResponsive", () => ({
+vi.mock("../../components/layout/SidebarResponsive", () => ({
   default: vi.fn(({ alAbrirUserModal, ...rest }) => (
     <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
       <button

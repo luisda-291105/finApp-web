@@ -12,8 +12,8 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import DashboardDrawer from "./DashboardDrawer";
-import SidebarNavContenido from "./SidebarNavContenido";
+import DashboardDrawer from "../../../components/layout/DashboardDrawer";
+import SidebarNavContenido from "../../../components/layout/SidebarNavContenido";
 
 // NO se mockea focus-trap-react: la trampa del menú debe crearse de verdad (spec 010, T5).
 // El mock de framer-motion solo evita animaciones en jsdom; `motion.div` reenvía el `ref`

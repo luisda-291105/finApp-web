@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import ModalFuentes from "./ModalFuentes";
+import ModalFuentes from "../../../../components/domain/modales/ModalFuentes";
 
 /** Fija el breakpoint requerido por el hook compartido de retorno de foco. */
 const fijarViewport = (ancho) => {

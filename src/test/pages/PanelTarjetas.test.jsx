@@ -10,8 +10,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import PanelTarjetas from "./PanelTarjetas";
-import { TARJETAS_DEMO, MOVIMIENTOS_DEMO } from "../data/tarjetasDemo";
+import PanelTarjetas from "../../pages/PanelTarjetas";
+import { TARJETAS_DEMO, MOVIMIENTOS_DEMO } from "../../data/tarjetasDemo";
 
 // Mock parcial de framer-motion: motion.div trivial con forwardRef (el ref del
 // diálogo debe llegar al DOM para foco/trap) y useReducedMotion fijo en false

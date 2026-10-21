@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import PaginaDashboardCorreos from "./PaginaDashboardCorreos";
+import PaginaDashboardCorreos from "../../pages/PaginaDashboardCorreos";
 
 describe("PaginaDashboardCorreos", () => {
   it("presenta el propósito de la sección como demostración y sin listas ni acciones", () => {

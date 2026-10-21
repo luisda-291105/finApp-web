@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import PaginaInicio from "./PaginaInicio";
+import PaginaInicio from "../../pages/PaginaInicio";
 
 // Literal heredado del disparador (src/pages/PaginaInicio.jsx): se copia verbatim para el aserto
 // literal de AC-01. Es un valor heredado, no un hexadecimal nuevo.
