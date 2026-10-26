@@ -139,7 +139,7 @@ export default function PaginaDashboardBolsillos() {
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
           <h1 id="bolsillos-titulo" className="mt-1 font-display text-3xl font-medium text-bg-dark">
-            Bolsillos Grupales
+             Grupos
           </h1>
           <p className="mt-1 text-sm text-slate-text">
             Gestiona fondos colaborativos, fuentes compartidas y aportes de tu equipo.
@@ -153,7 +153,7 @@ export default function PaginaDashboardBolsillos() {
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-primary hover:bg-emerald-hover text-bg-cream text-sm font-medium shadow-md transition-all cursor-pointer hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>Nuevo bolsillo</span>
+          <span>Nuevo Grupo</span>
         </button>
       </div>
 
@@ -163,7 +163,7 @@ export default function PaginaDashboardBolsillos() {
           role="status"
           className="p-4 rounded-xl bg-emerald-primary/10 border border-emerald-primary/20 text-sm text-bg-dark flex items-center justify-between"
         >
-          <span>Funcionalidad de creación en modo demostración. Los bolsillos actuales reflejan el estado del equipo.</span>
+          <span>Funcionalidad de creación en modo demostración. Los grupos actuales reflejan el estado del equipo.</span>
           <button
             type="button"
             onClick={() => setMensajeCrear(false)}
@@ -205,7 +205,7 @@ export default function PaginaDashboardBolsillos() {
             <Users className="w-6 h-6" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-text uppercase tracking-wider">Bolsillos Activos</p>
+            <p className="text-xs font-medium text-slate-text uppercase tracking-wider">Grupos Activos</p>
             <p className="text-2xl font-bold text-bg-dark truncate mt-0.5">{grupos.length}</p>
           </div>
         </Card>
@@ -221,9 +221,9 @@ export default function PaginaDashboardBolsillos() {
         </Card>
       </div>
 
-      {/* Listado de tarjetas de bolsillos de equipo */}
+      {/* Listado de tarjetas de grupos de equipo */}
       <div>
-        <h2 className="text-lg font-semibold text-bg-dark mb-4">Bolsillos del Equipo</h2>
+        <h2 className="text-lg font-semibold text-bg-dark mb-4">Grupos del Equipo</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {grupos.map((bolsillo) => {
             const porcentaje = Math.min(100, Math.round((bolsillo.balance / bolsillo.meta) * 100));
