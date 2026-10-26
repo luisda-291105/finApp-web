@@ -1,16 +1,39 @@
 /**
- * @uso        Página de Bolsillos Grupales del dashboard: gestión colaborativa de fondos y fuentes
+ * @uso        Pagina de Bolsillos Grupales conectada al backend (grupos)
  * @funciones  PaginaDashboardBolsillos()
- * @datos      Datos simulados de bolsillos de equipo, balances colectivos y miembros
- * @eventos    click en «Compartir entrada» (copia enlace y muestra feedback temporal), click en «Nuevo bolsillo»
- * @estados    bolsilloCompartidoId (id del bolsillo con feedback activo), feedbackCopia (string de confirmación)
+ * @datos      Obtiene grupos desde grupoServicio.obtenerGrupos()
+ * @eventos    click en Compartir entrada, click en Nuevo bolsillo
+ * @estados    grupos (array), cargando (boolean), error (string), feedbackCopia (string), mensajeCrear (boolean)
  * @usadoPor   App.jsx (ruta /dashboard/bolsillos)
  */
 
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { Users, Share2, Plus, Wallet, TrendingUp, Check, ShieldCheck } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import clsx from "clsx";
+import { obtenerGrupos } from "../services/grupoServicio";
+
+function normalizarGrupo(grupo, index) {
+  return {
+    id: grupo.idGrupo || grupo.id || `grupo-${index}`,
+    nombre: grupo.nombre || "Grupo sin nombre",
+    descripcion: grupo.descripcion || grupo.detalle || "Sin descripción",
+    balance: Number(grupo.balance || grupo.saldo || grupo.total || 0),
+    meta: Number(grupo.meta || grupo.objetivo || 0),
+    fuenteCompartida: grupo.fuenteCompartida || grupo.fuente || "-",
+    miembros: Array.isArray(grupo.miembros)
+      ? grupo.miembros.map((miembro, mIndex) => ({
+          id: miembro.idUsuario || miembro.id || `m-${index}-${mIndex}`,
+          iniciales:
+            miembro.iniciales ||
+            (miembro.nombre ? String(miembro.nombre).slice(0, 2).toUpperCase() : "U"),
+          nombre: miembro.nombre || "Miembro",
+          rol: miembro.rol || "Miembro",
+        }))
+      : [],
+  };
+}
 
 const BOLSILLOS_MOCK = [
   {
@@ -58,11 +81,41 @@ const BOLSILLOS_MOCK = [
 ];
 
 export default function PaginaDashboardBolsillos() {
+  const [grupos, setGrupos] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
   const [feedbackCopia, setFeedbackCopia] = useState(null);
   const [mensajeCrear, setMensajeCrear] = useState(false);
 
-  const balanceTotal = BOLSILLOS_MOCK.reduce((acc, b) => acc + b.balance, 0);
-  const metaTotal = BOLSILLOS_MOCK.reduce((acc, b) => acc + b.meta, 0);
+  useEffect(() => {
+    const cargarGrupos = async () => {
+      try {
+        setCargando(true);
+        setError("");
+        const respuesta = await obtenerGrupos();
+        let lista = [];
+        if (Array.isArray(respuesta)) {
+          lista = respuesta;
+        } else if (respuesta && Array.isArray(respuesta.data)) {
+          lista = respuesta.data;
+        } else if (respuesta && Array.isArray(respuesta.content)) {
+          lista = respuesta.content;
+        }
+        setGrupos(lista.map((grupo, index) => normalizarGrupo(grupo, index)));
+      } catch (err) {
+        setError(err?.message || "Error al cargar grupos");
+        setGrupos([]);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarGrupos();
+  }, []);
+
+  const listaGrupos = grupos.length > 0 ? grupos : [];
+  const balanceTotal = listaGrupos.reduce((acc, b) => acc + (Number(b.balance) || 0), 0);
+  const metaTotal = listaGrupos.reduce((acc, b) => acc + (Number(b.meta) || 0), 0);
 
   const alCompartirEntrada = async (bolsillo) => {
     const urlCompartida = `${window.location.origin}/dashboard/bolsillos?invitacion=${bolsillo.id}`;
@@ -153,7 +206,7 @@ export default function PaginaDashboardBolsillos() {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-medium text-slate-text uppercase tracking-wider">Bolsillos Activos</p>
-            <p className="text-2xl font-bold text-bg-dark truncate mt-0.5">{BOLSILLOS_MOCK.length}</p>
+            <p className="text-2xl font-bold text-bg-dark truncate mt-0.5">{grupos.length}</p>
           </div>
         </Card>
 
@@ -172,7 +225,7 @@ export default function PaginaDashboardBolsillos() {
       <div>
         <h2 className="text-lg font-semibold text-bg-dark mb-4">Bolsillos del Equipo</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {BOLSILLOS_MOCK.map((bolsillo) => {
+          {grupos.map((bolsillo) => {
             const porcentaje = Math.min(100, Math.round((bolsillo.balance / bolsillo.meta) * 100));
             const esCopiado = feedbackCopia === bolsillo.id;
 

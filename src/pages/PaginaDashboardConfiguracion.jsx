@@ -1,11 +1,13 @@
 /**
- * @uso        Página de configuración con acceso al registro demostrativo de fuentes
+ * @uso        Página de configuración
  * @funciones  PaginaDashboardConfiguracion()
  * @datos      Contenido fijo; no usa backend ni persistencia
- * @eventos    Apertura y cierre del modal Fuentes
+ * @eventos    Apertura y cierre del modal Fuentes, click en Agregar configuración
  * @estados    modalFuentesAbierto, disparadorFuentesRef
  * @usadoPor   App.jsx (ruta /dashboard/configuracion)
  */
+
+import { Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Card } from "../components/ui/Card";
 import ModalFuentes from "../components/domain/modales/ModalFuentes";
