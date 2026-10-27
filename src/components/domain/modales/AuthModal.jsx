@@ -13,11 +13,13 @@
  * @usadoPor   PaginaInicio, PaginaLogin
  */
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FocusTrap from "focus-trap-react";
-import { getEndpoint } from "../../../config/api.config";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
+import { crearUsuario, obtenerUsuarioPorId } from "../../../services/usuarioServicio";
+import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
@@ -51,7 +53,10 @@ function crearOpcionesTrampa(refPanel) {
  */
 export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) {
   const panelRef = useRef(null);
+  const navigate = useNavigate();
+  const { guardarUsuario } = useUsuarioActivo();
   const [modo, setModo] = useState(modoInicial);
+  const [idUsuario, setIdUsuario] = useState("");
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
@@ -75,6 +80,17 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
     setMensaje("");
   }, [modoInicial, abierto]);
 
+  useEffect(() => {
+    if (!abierto) {
+      setIdUsuario("");
+      setNombre("");
+      setCorreo("");
+      setContrasena("");
+      setMensaje("");
+      setCargando(false);
+    }
+  }, [abierto]);
+
   if (!abierto) return null;
 
   const manejarClicExterior = (evento) => {
@@ -90,40 +106,82 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
     setMensaje("");
 
     try {
-      const rutaEndpoint = modo === "login" ? "auth.login" : "auth.registro";
-      const url = getEndpoint(rutaEndpoint);
+      if (modo === "login") {
+        const idUsuarioLimpio = idUsuario.trim();
 
-      let respuesta;
-      try {
-        respuesta = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            modo === "login"
-              ? { correo, contrasena }
-              : { nombre, correo, contrasena }
-          ),
-        });
-      } catch (error) {
-        setMensaje(
-          "No se pudo conectar con el backend. El servicio aún no está disponible."
-        );
+        if (!idUsuarioLimpio) {
+          setMensaje("Ingresa tu cédula o identificación.");
+          setCargando(false);
+          return;
+        }
+
+        if (contrasena.length < 1) {
+          setMensaje("Ingresa tu contraseña.");
+          setCargando(false);
+          return;
+        }
+
+        try {
+          const usuario = await obtenerUsuarioPorId(idUsuarioLimpio);
+          if (usuario?.idUsuario) {
+            guardarUsuario(usuario);
+            console.log("Login con idUsuario:", usuario);
+            setMensaje("¡Inicio de sesión exitoso!");
+            setCargando(false);
+            alCerrar();
+            navigate("/dashboard");
+            return;
+          }
+        } catch (error) {
+          console.error("Error al buscar usuario por idUsuario:", error);
+        }
+
+        setMensaje("No se encontró un usuario con esa identificación.");
         setCargando(false);
         return;
       }
 
-      if (respuesta.ok) {
-        setMensaje("¡Operación exitosa!");
-        setTimeout(() => alCerrar(), 1200);
-      } else {
-        setMensaje(
-          modo === "login"
-            ? "Error al iniciar sesión. Verifica tus credenciales."
-            : "Error al crear la cuenta. Intenta de nuevo."
-        );
+      const idUsuarioLimpio = idUsuario.trim();
+      const nombreLimpio = nombre.trim();
+
+      if (!idUsuarioLimpio) {
+        setMensaje("Ingresa tu cédula o identificación.");
+        setCargando(false);
+        return;
       }
+      if (!nombreLimpio) {
+        setMensaje("Ingresa tu nombre.");
+        setCargando(false);
+        return;
+      }
+      if (contrasena.length < 8) {
+        setMensaje("La contraseña debe tener al menos 8 caracteres.");
+        setCargando(false);
+        return;
+      }
+
+      const fechaCreacion = new Date().toISOString().split("T")[0];
+
+      const respuesta = await crearUsuario({
+        idUsuario: idUsuarioLimpio,
+        nombre: nombreLimpio,
+        contrasena,
+        fechaCreacion,
+      });
+
+      console.log("Registro desde AuthModal:", respuesta);
+
+      if (respuesta?.idUsuario) {
+        guardarUsuario(respuesta);
+      }
+
+      setMensaje("¡Usuario creado correctamente!");
+      setCargando(false);
+      alCerrar();
+      navigate("/dashboard");
     } catch (error) {
-      setMensaje("Error al procesar la solicitud: " + error.message);
+      console.error("Error en registro desde AuthModal:", error);
+      setMensaje(error?.message || "Error al crear la cuenta. Intenta de nuevo.");
     } finally {
       setCargando(false);
     }
@@ -185,34 +243,51 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
           {/* Formulario */}
           <form onSubmit={manejarEnvio} className="space-y-4">
             {modo === "registro" && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-white/70 mb-1.5">
+                    Cédula / Identificación
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={idUsuario}
+                    onChange={(e) => setIdUsuario(e.target.value)}
+                    placeholder="1234567890"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/70 mb-1.5">
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Juan Pérez"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                  />
+                </div>
+              </>
+            )}
+
+            {modo === "login" && (
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5">
-                  Nombre completo
+                  Cédula / Identificación
                 </label>
                 <input
                   type="text"
                   required
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Juan Pérez"
+                  value={idUsuario}
+                  onChange={(e) => setIdUsuario(e.target.value)}
+                  placeholder="1234567890"
                   className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
                 />
               </div>
             )}
-
-            <div>
-              <label className="block text-xs font-medium text-white/70 mb-1.5">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                required
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                placeholder="tu@correo.com"
-                className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
-              />
-            </div>
 
             <div>
               <label className="block text-xs font-medium text-white/70 mb-1.5">
@@ -224,12 +299,19 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
                 value={contrasena}
                 onChange={(e) => setContrasena(e.target.value)}
                 placeholder="••••••••"
+                minLength={8}
                 className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
               />
+              {modo === "registro" && (
+                <p className="mt-1 text-xs text-white/40">Mínimo 8 caracteres</p>
+              )}
             </div>
 
             {mensaje && (
-              <div className="p-3 bg-[#1a7a5e]/20 border border-[#1a7a5e]/50 rounded-xl text-xs text-[#6ee7c0]">
+              <div
+                role="alert"
+                className="p-3 bg-[#1a7a5e]/20 border border-[#1a7a5e]/50 rounded-xl text-xs text-[#6ee7c0]"
+              >
                 {mensaje}
               </div>
             )}
@@ -243,7 +325,7 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
                 ? "Procesando..."
                 : modo === "login"
                 ? "Entrar a mi cuenta"
-                : "Crear cuenta gratis"}
+                : "Crear cuenta"}
             </button>
           </form>
         </div>

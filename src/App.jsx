@@ -18,6 +18,7 @@ import PaginaDashboardConfiguracion from "./pages/PaginaDashboardConfiguracion";
 import PaginaDashboardBolsillos from "./pages/PaginaDashboardBolsillos";
 import PaginaDashboardContactos from "./pages/PaginaDashboardContactos";
 import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
+import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 
 /**
  * App
@@ -25,35 +26,37 @@ import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
  */
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<PaginaInicio />} />
-      <Route path="/inicio" element={<Navigate to="/" replace />} />
-      <Route path="/login" element={<PaginaLogin />} />
-      <Route
-        path="/dashboard"
-        element={
-          TRIAL_ACTIVO ? <DashboardLayout /> : <Navigate to="/login" replace />
-        }
-      >
-        <Route index element={<PaginaDashboardInicio />} />
+    <UsuarioActivoProvider>
+      <Routes>
+        <Route path="/" element={<PaginaInicio />} />
+        <Route path="/inicio" element={<Navigate to="/" replace />} />
+        <Route path="/login" element={<PaginaLogin />} />
         <Route
-          path="transacciones"
-          element={<PaginaDashboardTransacciones />}
-        />
-        <Route
-          path="tarjetas"
-          element={<PaginaDashboardTarjetas />}
-        />
-        <Route
-          path="configuracion"
-          element={<PaginaDashboardConfiguracion />}
-        />
-        <Route path="bolsillos" element={<PaginaDashboardBolsillos />} />
-        <Route path="contactos" element={<PaginaDashboardContactos />} />
-        <Route path="correos" element={<PaginaDashboardCorreos />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          path="/dashboard"
+          element={
+            TRIAL_ACTIVO ? <DashboardLayout /> : <Navigate to="/login" replace />
+          }
+        >
+          <Route index element={<PaginaDashboardInicio />} />
+          <Route
+            path="transacciones"
+            element={<PaginaDashboardTransacciones />}
+          />
+          <Route
+            path="tarjetas"
+            element={<PaginaDashboardTarjetas />}
+          />
+          <Route
+            path="configuracion"
+            element={<PaginaDashboardConfiguracion />}
+          />
+          <Route path="bolsillos" element={<PaginaDashboardBolsillos />} />
+          <Route path="contactos" element={<PaginaDashboardContactos />} />
+          <Route path="correos" element={<PaginaDashboardCorreos />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </UsuarioActivoProvider>
   );
 }
