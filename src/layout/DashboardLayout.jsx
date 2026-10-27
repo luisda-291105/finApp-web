@@ -12,7 +12,6 @@ import DashboardUserModal from "../components/layout/DashboardUserModal";
 import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import AsistenteAyuda from "../components/domain/modales/AsistenteAyuda";
-import { getUsuarioMock } from "../config/app.config";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
 const SELECTOR_NAVEGACION_LATERAL = 'aside[role="navigation"]';
@@ -147,7 +146,6 @@ export default function DashboardLayout() {
     setUserModalAbierto(true);
   };
   const alCerrarUserModal = () => setUserModalAbierto(false);
-  const usuario = getUsuarioMock();
 
   const registrarCierreDetalle = useCallback((cerrar) => {
     cierreDetalleRef.current = cerrar;

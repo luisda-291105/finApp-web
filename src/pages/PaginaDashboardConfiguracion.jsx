@@ -1,17 +1,16 @@
 /**
  * @uso        Página de configuración
  * @funciones  PaginaDashboardConfiguracion()
- * @datos      Contenido fijo; no usa backend ni persistencia
- * @eventos    Apertura y cierre del modal Fuentes, click en Agregar configuración
- * @estados    modalFuentesAbierto, disparadorFuentesRef
+ * @datos      Usuario activo de UsuarioActivoContext (nombre e identificación); resto de contenido fijo
+ * @eventos    Apertura del modal de perfil y del modal Fuentes, click en Registrar fuentes
+ * @estados    modalFuentesAbierto, usuarioAbierto, disparadorFuentesRef, triggerUsuarioRef
  * @usadoPor   App.jsx (ruta /dashboard/configuracion)
  */
 
-import { Plus, UserPlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Card } from "../components/ui/Card";
 import ModalFuentes from "../components/domain/modales/ModalFuentes";
-import ModalCrearUsuario from "../components/domain/modales/ModalCrearUsuario";
+import ModalPerfilUsuario from "../components/domain/modales/ModalPerfilUsuario";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 
 export default function PaginaDashboardConfiguracion() {
@@ -19,7 +18,6 @@ export default function PaginaDashboardConfiguracion() {
   const [usuarioAbierto, setUsuarioAbierto] = useState(false);
   const disparadorFuentesRef = useRef(null);
   const triggerUsuarioRef = useRef(null);
-  const [mensajeUsuario, setMensajeUsuario] = useState("");
   const { usuario } = useUsuarioActivo();
 
   return (
@@ -37,31 +35,25 @@ export default function PaginaDashboardConfiguracion() {
       </Card>
 
       <Card className="space-y-3 p-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-display text-lg font-semibold text-bg-dark">Usuarios</h2>
-            <p className="text-sm text-slate-text">
-              Crea usuarios para vincularlos con grupos, contactos, fuentes y tarjetas.
+        <div>
+          <h2 className="font-display text-lg font-semibold text-bg-dark">Perfil</h2>
+          <p className="text-sm text-slate-text">
+            Ver y editar información básica de tu usuario.
+          </p>
+          {usuario && (
+            <p className="mt-1 text-xs text-emerald-primary">
+              Usuario activo: {usuario.nombre} ({usuario.idUsuario})
             </p>
-            {usuario && (
-              <p className="mt-1 text-xs text-emerald-primary">
-                Usuario activo: {usuario.nombre} ({usuario.idUsuario})
-              </p>
-            )}
-          </div>
-          <button
-            ref={triggerUsuarioRef}
-            type="button"
-            onClick={() => setUsuarioAbierto(true)}
-            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-primary hover:underline"
-          >
-            <UserPlus className="w-4 h-4" aria-hidden="true" />
-            Crear usuario
-          </button>
+          )}
         </div>
-        {mensajeUsuario && (
-          <p className="text-sm text-emerald-primary">{mensajeUsuario}</p>
-        )}
+        <button
+          ref={triggerUsuarioRef}
+          type="button"
+          onClick={() => setUsuarioAbierto(true)}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-primary hover:bg-emerald-hover text-bg-cream text-sm font-medium shadow-md transition-all cursor-pointer hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
+        >
+          Ver perfil
+        </button>
       </Card>
 
       <Card className="p-6">
@@ -83,15 +75,10 @@ export default function PaginaDashboardConfiguracion() {
         </div>
       </Card>
 
-      <ModalCrearUsuario
+      <ModalPerfilUsuario
         abierto={usuarioAbierto}
         alCerrar={() => setUsuarioAbierto(false)}
         triggerRef={triggerUsuarioRef}
-        alCreado={(respuesta) => {
-          console.log("Usuario creado:", respuesta);
-          setMensajeUsuario("Usuario creado correctamente");
-          setTimeout(() => setMensajeUsuario(""), 3000);
-        }}
       />
 
       <ModalFuentes

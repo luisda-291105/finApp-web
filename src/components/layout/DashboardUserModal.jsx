@@ -2,7 +2,8 @@
  * @uso        Modal de cuenta (portal) con las CUATRO formas de cierre (spec 010): «X» superior,
  *             Esc, toque/clic fuera y deslizar hacia abajo (solo móvil)
  * @funciones  DashboardUserModal({ abierto, alCerrar, triggerRef })
- * @datos      Slots fijos por defecto: header "Cuenta" con «X», profile → Configuración, logout → /
+ * @datos      Header con nombre dinámico del usuario activo o «Cuenta de Usuario Demo», correo
+ *             «No registrado» de solo lectura, profile → Configuración, logout → /
  * @eventos    clic en overlay, Esc (useCierreConEsc), gesto (useDeslizarParaCerrar) → alCerrar;
  *             clic en slots → navegación + alCerrar; al cerrar, la devolución de foco se delega en
  *             `useRetornoDeFoco` (transición abierta → cerrada)
@@ -22,6 +23,7 @@ import { BotonCerrar } from "../ui/BotonCerrar";
 import { useCierreConEsc } from "../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../hooks/useRetornoDeFoco";
+import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
@@ -50,7 +52,8 @@ function crearOpcionesTrampa(refPanel) {
  *   comprobación del resultado —disparador conectado → elemento previo conectado → respaldo— y
  *   respaldo **por versión de vista** (móvil → botón «Menú»; ≥768px → control de la navegación
  *   lateral); nunca termina en `body`.
- * - Slots fijos: header "Cuenta", botón Configuración (navega a /dashboard/configuracion),
+ * - Header con el nombre del usuario activo («Cuenta de Usuario Demo» si no existe) y el correo
+ *   «No registrado» de solo lectura; botón Configuración (navega a /dashboard/configuracion) y
  *   botón Salir del demo (navega a / con replace).
  * @param {Object} props
  * @param {boolean} props.abierto - Visibilidad del modal
@@ -61,6 +64,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const navigate = useNavigate();
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
+  const { usuario } = useUsuarioActivo();
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });
@@ -115,7 +119,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         {/* Header con el único control visible de cierre */}
         <header className="flex items-center justify-between px-5 py-4 border-b border-border-line/30">
           <h2 id="user-modal-title" className="font-display text-lg font-semibold text-bg-dark">
-            Cuenta
+            {usuario?.nombre || "Cuenta de Usuario Demo"}
           </h2>
           <BotonCerrar
             ariaLabel="Cerrar Cuenta"
@@ -123,6 +127,12 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
             className="text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
           />
         </header>
+
+        {/* Correo de solo lectura (se gestionará con el registro de fuentes) */}
+        <div className="px-5 py-3 border-b border-border-line/30">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-text">Correo</p>
+          <p className="text-sm text-bg-dark">No registrado</p>
+        </div>
 
         {/* Profile: Configuración */}
         <div className="px-4 py-3">

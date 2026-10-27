@@ -2,7 +2,7 @@
  * @uso        Tests de DashboardLayout (dos versiones de vista, márgenes, menú de móvil, recomposición)
  * @funciones  Composición por versión (móvil <768 / pantallas grandes ≥768), margen sin prefijo lg:,
  *             main sin padding superior, drawer de móvil sin esMobile, modal global, resize
- * @datos      Mocks: useBreakpoint (4 props), componentes hijos de layout, getUsuarioMock
+ * @datos      Mocks: useBreakpoint (4 props) y componentes hijos de layout
  * @eventos    Navegación BottomNav, apertura de menú de móvil, apertura del modal, resize del corte
  * @estados    mobileMenuAbierto, userModalAbierto
  * @usadoPor   Vitest suite
@@ -75,14 +75,6 @@ vi.mock("../../components/layout/SidebarNavContenido", () => ({
 
 vi.mock("../../components/layout/Container", () => ({
   default: vi.fn(({ children }) => <div data-testid="container">{children}</div>),
-}));
-
-vi.mock("../../config/app.config", () => ({
-  getUsuarioMock: vi.fn(() => ({
-    nombre: "Usuario Demo",
-    iniciales: "UD",
-    email: "demo@finapp.local",
-  })),
 }));
 
 // Estados del hook mock. Partición complementaria: isMobile === !isDesktop.

@@ -11,8 +11,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import SidebarNavContenido from "../../../components/layout/SidebarNavContenido";
+import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.localStorage.getItem.mockReset();
+  window.localStorage.setItem.mockClear();
+});
 
 function RutaActual() {
   const ubicacion = useLocation();
@@ -105,7 +110,7 @@ describe("SidebarNavContenido", () => {
       expect(hr.classList.contains("my-3")).toBe(true);
     });
 
-    it("renderiza avatar con iniciales de getUsuarioMock()", () => {
+    it("renderiza avatar con el respaldo del contexto sin usuario activo", () => {
       renderSidebarNavContenido();
 
       // El avatar es un botón que contiene las iniciales
@@ -121,9 +126,33 @@ describe("SidebarNavContenido", () => {
       expect(avatarCircle).toBeTruthy();
       expect(avatarCircle.textContent).toContain("UD");
 
-      // Verificar nombre y email
-      expect(avatarButton.textContent).toContain("Usuario Demo");
-      expect(avatarButton.textContent).toContain("demo@finapp.local");
+      // Verificar nombre y correo no registrado
+      expect(avatarButton.textContent).toContain("Cuenta de Usuario Demo");
+      expect(avatarButton.textContent).toContain("No registrado");
+    });
+
+    it("muestra el usuario activo del contexto con iniciales derivadas del nombre", async () => {
+      window.localStorage.getItem.mockReturnValue(
+        JSON.stringify({ idUsuario: "123", nombre: "Ana María Ruiz" })
+      );
+
+      render(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <UsuarioActivoProvider>
+            <SidebarNavContenido alAbrirUserModal={vi.fn()} />
+          </UsuarioActivoProvider>
+        </MemoryRouter>
+      );
+
+      const avatarButton = await screen.findByRole("button", {
+        name: "Cuenta de Ana María Ruiz",
+      });
+
+      expect(avatarButton.textContent).toContain("Ana María Ruiz");
+      expect(avatarButton.querySelector(".w-10.h-10.rounded-full").textContent).toBe("AM");
+      expect(avatarButton.textContent).toContain("No registrado");
+      expect(avatarButton.textContent).not.toContain("demo@finapp.local");
+      expect(avatarButton.getAttribute("aria-label")).toBe("Cuenta de Ana María Ruiz");
     });
 
     it("avatar tiene clases correctas: w-10 h-10 rounded-full bg-emerald-primary flex items-center justify-center text-bg-cream font-medium", () => {
@@ -241,7 +270,7 @@ describe("SidebarNavContenido", () => {
     it("el correo del avatar usa texto con contraste adecuado sobre la sidebar oscura", () => {
       renderSidebarNavContenido();
 
-      expect(screen.getByText("demo@finapp.local")).toHaveClass("text-bg-cream/70");
+      expect(screen.getByText("No registrado")).toHaveClass("text-bg-cream/70");
     });
 
     it("separador tiene aria-hidden=true", () => {

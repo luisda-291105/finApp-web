@@ -1,14 +1,22 @@
 /**
  * @uso        Contexto para mantener el usuario activo (sin autenticación)
  * @funciones  UsuarioActivoProvider, useUsuarioActivo
- * @datos      usuario (objeto con idUsuario, nombre, fechaCreacion), guardarUsuario, limpiarUsuario
+ * @datos      usuario (objeto con idUsuario, nombre, fechaCreacion), guardarUsuario, limpiarUsuario;
+ *             valor por defecto seguro (usuario null y funciones no-op) fuera del provider
  * @eventos    Ninguno
  * @estados    usuario (desde localStorage o null)
  * @usadoPor   App.jsx y componentes que necesiten relacionar con id_usuario
  */
 import { createContext, useContext, useEffect, useState } from "react";
 
-const UsuarioActivoContext = createContext(null);
+/** Valor seguro cuando un componente se monta sin `UsuarioActivoProvider` (pruebas/aislados). */
+const contextoPorDefecto = {
+  usuario: null,
+  guardarUsuario: () => {},
+  limpiarUsuario: () => {},
+};
+
+const UsuarioActivoContext = createContext(contextoPorDefecto);
 
 const CLAVE_ALMACEN = "finapp_usuario_activo";
 
@@ -59,9 +67,5 @@ export function UsuarioActivoProvider({ children }) {
 }
 
 export function useUsuarioActivo() {
-  const contexto = useContext(UsuarioActivoContext);
-  if (contexto === null) {
-    throw new Error("useUsuarioActivo debe usarse dentro de UsuarioActivoProvider");
-  }
-  return contexto;
+  return useContext(UsuarioActivoContext);
 }

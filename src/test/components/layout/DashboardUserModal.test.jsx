@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import DashboardUserModal from "../../../components/layout/DashboardUserModal";
+import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
 
 // Mock de framer-motion: motion.div trivial con forwardRef para que el ref del focus trap
 // real llegue al nodo del panel. NO se mockea focus-trap-react: la trampa debe ser real.
@@ -142,7 +143,41 @@ describe("DashboardUserModal", () => {
       expect(dialog.getAttribute("aria-labelledby")).toBe("user-modal-title");
       const titulo = document.getElementById("user-modal-title");
       expect(titulo).toBeTruthy();
-      expect(titulo.textContent).toBe("Cuenta");
+      expect(titulo.textContent).toBe("Cuenta de Usuario Demo");
+    });
+  });
+
+  describe("perfil dinámico (spec 024)", () => {
+    it("muestra el nombre del usuario activo y el correo «No registrado»", async () => {
+      window.localStorage.getItem.mockReturnValue(
+        JSON.stringify({
+          idUsuario: "123456",
+          nombre: "Ana Pérez",
+          fechaCreacion: "2026-01-15",
+        }),
+      );
+
+      render(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <UsuarioActivoProvider>
+            <DashboardUserModal abierto alCerrar={vi.fn()} triggerRef={{ current: null }} />
+          </UsuarioActivoProvider>
+        </MemoryRouter>,
+      );
+
+      const dialog = screen.getByRole("dialog");
+      await waitFor(() => {
+        expect(document.getElementById("user-modal-title").textContent).toBe("Ana Pérez");
+      });
+      expect(dialog.textContent).toContain("Correo");
+      expect(dialog.textContent).toContain("No registrado");
+    });
+
+    it("usa «Cuenta de Usuario Demo» como respaldo sin usuario activo", () => {
+      renderModal();
+      expect(document.getElementById("user-modal-title").textContent).toBe(
+        "Cuenta de Usuario Demo",
+      );
     });
   });
 

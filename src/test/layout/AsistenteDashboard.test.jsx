@@ -77,7 +77,7 @@ vi.mock("../../components/layout/SidebarResponsive", () => ({
     <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
       <button
         type="button"
-        aria-label="Cuenta de Usuario Demo"
+        aria-label="Abrir cuenta de usuario"
         onClick={alAbrirUserModal}
       />
     </aside>
@@ -162,7 +162,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
       <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
         <button
           type="button"
-          aria-label="Cuenta de Usuario Demo"
+          aria-label="Abrir cuenta de usuario"
           onClick={alAbrirUserModal}
         />
       </aside>
@@ -352,7 +352,7 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
       <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
         <button
           type="button"
-          aria-label="Cuenta de Usuario Demo"
+          aria-label="Abrir cuenta de usuario"
           onClick={alAbrirUserModal}
         />
       </aside>
@@ -380,8 +380,8 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
     const user = userEvent.setup();
     renderDashboard();
     await user.click(screen.getByRole("button", { name: "Abrir menú" }));
-    await user.click(screen.getByRole("button", { name: "Cuenta de Usuario Demo" }));
-    expect(screen.getByRole("dialog", { name: "Cuenta" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Abrir cuenta de usuario" }));
+    expect(screen.getByRole("dialog", { name: "Cuenta de Usuario Demo" })).toBeInTheDocument();
 
     fireEvent.click(obtenerDisparador());
 
@@ -390,7 +390,7 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
       expect(dialogo).toContainElement(document.activeElement);
     });
-    expect(screen.queryByRole("dialog", { name: "Cuenta" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Cuenta de Usuario Demo" })).not.toBeInTheDocument();
   });
 
   it("al abrir el asistente cierra el detalle de tarjeta desde su dueño", async () => {

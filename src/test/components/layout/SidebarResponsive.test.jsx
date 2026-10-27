@@ -168,14 +168,15 @@ describe("SidebarResponsive", () => {
       });
     });
 
-    it("renderiza avatar de usuario con iniciales UD al final", () => {
+    it("renderiza el avatar de usuario con el respaldo del contexto al final", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
       expect(avatarButton).toBeTruthy();
       expect(avatarButton.textContent).toContain("UD");
-      expect(avatarButton.textContent).toContain("Usuario Demo");
-      expect(avatarButton.textContent).toContain("demo@finapp.local");
+      expect(avatarButton.textContent).toContain("Cuenta de Usuario Demo");
+      expect(avatarButton.textContent).toContain("No registrado");
+      expect(avatarButton.textContent).not.toContain("demo@finapp.local");
     });
 
     it("avatar tiene clases correctas: w-10 h-10 rounded-full bg-emerald-primary", () => {

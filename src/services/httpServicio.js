@@ -33,6 +33,36 @@ async function obtenerJson(respuesta) {
 }
 
 /**
+ * leerRespuesta
+ * Lee el cuerpo de la respuesta y lanza un error con el mensaje del backend cuando el estado
+ * HTTP no es correcto (4xx/5xx). Los errores quedan registrados en consola.
+ * @param {Response} respuesta - Respuesta de `fetch`
+ * @param {string} url - URL solicitada (para el log)
+ * @param {string} metodo - Método HTTP (para el log)
+ * @returns {Promise<any>} Cuerpo ya interpretado
+ * @throws {Error} Con el mensaje del backend o `Error HTTP <status>`
+ */
+async function leerRespuesta(respuesta, url, metodo) {
+  if (respuesta.ok) return obtenerJson(respuesta);
+
+  const datos = await obtenerJson(respuesta);
+  console.error("[HTTP][ERROR]", {
+    url,
+    metodo,
+    status: respuesta.status,
+    statusText: respuesta.statusText,
+    datos,
+  });
+
+  const mensaje =
+    datos && typeof datos === "object"
+      ? datos.mensaje || datos.message || datos.error || `Error HTTP ${respuesta.status}`
+      : datos || `Error HTTP ${respuesta.status}`;
+
+  throw new Error(mensaje);
+}
+
+/**
  * obtener
  * Realiza petición GET a una ruta relativa o URL completa.
  * @param {string} rutaRelativa
@@ -40,7 +70,8 @@ async function obtenerJson(respuesta) {
  * @returns {Promise<any>}
  */
 export async function obtener(rutaRelativa, opciones = {}) {
-  const respuesta = await fetch(construirUrl(rutaRelativa), {
+  const url = construirUrl(rutaRelativa);
+  const respuesta = await fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -48,7 +79,7 @@ export async function obtener(rutaRelativa, opciones = {}) {
     },
     ...opciones,
   });
-  return obtenerJson(respuesta);
+  return leerRespuesta(respuesta, url, "GET");
 }
 
 /**
@@ -60,7 +91,8 @@ export async function obtener(rutaRelativa, opciones = {}) {
  * @returns {Promise<any>}
  */
 export async function crear(rutaRelativa, cuerpo, opciones = {}) {
-  const respuesta = await fetch(construirUrl(rutaRelativa), {
+  const url = construirUrl(rutaRelativa);
+  const respuesta = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -69,7 +101,7 @@ export async function crear(rutaRelativa, cuerpo, opciones = {}) {
     body: JSON.stringify(cuerpo),
     ...opciones,
   });
-  return obtenerJson(respuesta);
+  return leerRespuesta(respuesta, url, "POST");
 }
 
 /**
@@ -81,7 +113,8 @@ export async function crear(rutaRelativa, cuerpo, opciones = {}) {
  * @returns {Promise<any>}
  */
 export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
-  const respuesta = await fetch(construirUrl(rutaRelativa), {
+  const url = construirUrl(rutaRelativa);
+  const respuesta = await fetch(url, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -90,7 +123,7 @@ export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
     body: JSON.stringify(cuerpo),
     ...opciones,
   });
-  return obtenerJson(respuesta);
+  return leerRespuesta(respuesta, url, "PUT");
 }
 
 /**
@@ -101,7 +134,8 @@ export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
  * @returns {Promise<any>}
  */
 export async function eliminar(rutaRelativa, opciones = {}) {
-  const respuesta = await fetch(construirUrl(rutaRelativa), {
+  const url = construirUrl(rutaRelativa);
+  const respuesta = await fetch(url, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -109,7 +143,7 @@ export async function eliminar(rutaRelativa, opciones = {}) {
     },
     ...opciones,
   });
-  return obtenerJson(respuesta);
+  return leerRespuesta(respuesta, url, "DELETE");
 }
 
 export { obtenerJson };

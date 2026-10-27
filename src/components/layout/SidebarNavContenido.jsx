@@ -1,7 +1,8 @@
 /**
  * @uso        Contenido compartido de navegación: 6 enlaces y avatar → modal
  * @funciones  SidebarNavContenido({ alAbrirUserModal, colapsada, avatarSeparado })
- * @datos      6 NavLink fijos + avatar via getUsuarioMock()
+ * @datos      6 NavLink fijos + avatar con el usuario activo de UsuarioActivoContext (nombre,
+ *             iniciales derivadas y correo «No registrado»)
  * @eventos    click enlaces (navegan), click avatar → alAbrirUserModal
  * @estados    Ninguno (stateless)
  * @usadoPor   SidebarResponsive (avatar al pie), DashboardDrawer (avatar tras los enlaces)
@@ -9,8 +10,33 @@
 
 import { NavLink } from "react-router-dom";
 import { Home, Receipt, CreditCard, Users, Contact, Mail } from "lucide-react";
-import { getUsuarioMock } from "../../config/app.config";
+import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 import clsx from "clsx";
+
+/** Nombre mostrado cuando no hay usuario activo con nombre. */
+const NOMBRE_RESPALDO = "Cuenta de Usuario Demo";
+
+/**
+ * calcularIniciales
+ * Deriva las iniciales del nombre: primera letra de las dos primeras palabras, en mayúscula.
+ * Tolera acentos, espacios múltiples y nombres de una sola palabra (una sola inicial).
+ * @param {string} [nombre]
+ * @returns {string} Iniciales o «UD» cuando no hay nombre
+ */
+function calcularIniciales(nombre) {
+  const palabras = String(nombre || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (palabras.length === 0) return "UD";
+
+  return palabras
+    .slice(0, 2)
+    .map((palabra) => palabra.charAt(0))
+    .join("")
+    .toUpperCase();
+}
 
 /**
  * SidebarNavContenido
@@ -32,7 +58,11 @@ export default function SidebarNavContenido({
   avatarSeparado = false,
   alCerrarSidebar,
 }) {
-  const usuario = getUsuarioMock();
+  const { usuario } = useUsuarioActivo();
+  const nombreUsuario = String(usuario?.nombre || "").trim();
+  const nombre = nombreUsuario || NOMBRE_RESPALDO;
+  const iniciales = nombreUsuario ? calcularIniciales(nombreUsuario) : "UD";
+  const correo = "No registrado";
 
   const enlaces = [
     { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },
@@ -70,17 +100,17 @@ export default function SidebarNavContenido({
       type="button"
       onClick={alAbrirUserModal}
       className="flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
-      aria-label={`Cuenta de ${usuario.nombre}`}
+      aria-label={`Cuenta de ${nombre}`}
     >
       <div
         className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-primary flex items-center justify-center text-bg-cream font-medium"
         aria-hidden="true"
       >
-        {usuario.iniciales}
+        {iniciales}
       </div>
       <div className={clsx("flex-1 min-w-0 truncate text-left", colapsada && "hidden")}>
-        <p className="font-medium text-white truncate">{usuario.nombre}</p>
-        <p className="text-xs text-bg-cream/70 truncate">{usuario.email}</p>
+        <p className="font-medium text-white truncate">{nombre}</p>
+        <p className="text-xs text-bg-cream/70 truncate">{correo}</p>
       </div>
     </button>
   );
