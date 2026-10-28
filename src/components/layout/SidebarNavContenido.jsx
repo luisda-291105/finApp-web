@@ -100,7 +100,7 @@ export default function SidebarNavContenido({
       type="button"
       onClick={alAbrirUserModal}
       className="flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
-      aria-label={`Cuenta de ${nombre}`}
+      aria-label={nombreUsuario ? `Cuenta de ${nombre}` : nombre}
     >
       <div
         className="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-primary flex items-center justify-center text-bg-cream font-medium"
