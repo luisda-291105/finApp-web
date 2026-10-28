@@ -11,6 +11,59 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import PaginaDashboardBolsillos from "../../pages/PaginaDashboardBolsillos";
 
+const renderConDatos = async (ui) => {
+  await act(async () => {
+    render(ui);
+  });
+};
+
+vi.mock("../../services/grupoServicio", () => ({
+  obtenerGrupos: vi.fn(() => Promise.resolve([
+    {
+      id: "bolsillo-1",
+      nombre: "Gastos de Oficina",
+      descripcion: "Suministros, licencias comunes y servicios de coworking del equipo.",
+      balance: 4250.0,
+      meta: 5000.0,
+      fuenteCompartida: "Cuenta Operativa BBVA",
+      miembros: [
+        { id: "m1", iniciales: "JD", nombre: "Juan Daniel", rol: "Admin" },
+        { id: "m2", iniciales: "ML", nombre: "María López", rol: "Editor" },
+        { id: "m3", iniciales: "AR", nombre: "Ana Rivas", rol: "Miembro" },
+        { id: "m4", iniciales: "CP", nombre: "Carlos Peña", rol: "Miembro" },
+      ],
+    },
+    {
+      id: "bolsillo-2",
+      nombre: "Viaje y Retiro de Equipo",
+      descripcion: "Aportes conjuntos para el retiro anual y actividades de integración.",
+      balance: 8100.0,
+      meta: 10000.0,
+      fuenteCompartida: "Fondo Santander Ahorro",
+      miembros: [
+        { id: "m1", iniciales: "JD", nombre: "Juan Daniel", rol: "Admin" },
+        { id: "m5", iniciales: "SR", nombre: "Sofía Ruiz", rol: "Editor" },
+        { id: "m6", iniciales: "VT", nombre: "Valeria Torres", rol: "Miembro" },
+        { id: "m7", iniciales: "NM", nombre: "Nicolás Mora", rol: "Miembro" },
+        { id: "m8", iniciales: "EL", nombre: "Elena Lara", rol: "Miembro" },
+      ],
+    },
+    {
+      id: "bolsillo-3",
+      nombre: "Fondo Común de Innovación",
+      descripcion: "Presupuesto compartido para prototipado, cursos y herramientas de I+D.",
+      balance: 2500.0,
+      meta: 3000.0,
+      fuenteCompartida: "Billetera Digital Stripe",
+      miembros: [
+        { id: "m1", iniciales: "JD", nombre: "Juan Daniel", rol: "Admin" },
+        { id: "m3", iniciales: "AR", nombre: "Ana Rivas", rol: "Editor" },
+        { id: "m9", iniciales: "KL", nombre: "Kevin Lozano", rol: "Miembro" },
+      ],
+    },
+  ])),
+}));
+
 describe("PaginaDashboardBolsillos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -20,8 +73,8 @@ describe("PaginaDashboardBolsillos", () => {
     vi.restoreAllMocks();
   });
 
-  it("renderiza la cabecera y el título accesible de la página", () => {
-    render(<PaginaDashboardBolsillos />);
+  it("renderiza la cabecera y el título accesible de la página", async () => {
+    await renderConDatos(<PaginaDashboardBolsillos />);
 
     const titulo = screen.getByRole("heading", { level: 1, name: "Bolsillos Grupales" });
     expect(titulo).toBeInTheDocument();
@@ -29,8 +82,8 @@ describe("PaginaDashboardBolsillos", () => {
     expect(screen.getByRole("button", { name: "Crear nuevo bolsillo grupal" })).toBeInTheDocument();
   });
 
-  it("muestra las cuatro métricas de resumen colectivo", () => {
-    render(<PaginaDashboardBolsillos />);
+  it("muestra las cuatro métricas de resumen colectivo", async () => {
+    await renderConDatos(<PaginaDashboardBolsillos />);
 
     expect(screen.getByText("Balance Colectivo")).toBeInTheDocument();
     expect(screen.getByText("Meta Total")).toBeInTheDocument();
@@ -42,8 +95,8 @@ describe("PaginaDashboardBolsillos", () => {
     expect(screen.getByText("3 cuentas")).toBeInTheDocument();
   });
 
-  it("renderiza las tarjetas de bolsillos de equipo con sus fuentes y progreso", () => {
-    render(<PaginaDashboardBolsillos />);
+  it("renderiza las tarjetas de bolsillos de equipo con sus fuentes y progreso", async () => {
+    await renderConDatos(<PaginaDashboardBolsillos />);
 
     expect(screen.getByText("Gastos de Oficina")).toBeInTheDocument();
     expect(screen.getByText("Viaje y Retiro de Equipo")).toBeInTheDocument();
@@ -63,7 +116,7 @@ describe("PaginaDashboardBolsillos", () => {
   });
 
   it("permite simular la copia del enlace de entrada con feedback visual accesible", async () => {
-    render(<PaginaDashboardBolsillos />);
+    await renderConDatos(<PaginaDashboardBolsillos />);
 
     const botonCompartir = screen.getByRole("button", {
       name: "Compartir entrada de Gastos de Oficina",
@@ -78,8 +131,8 @@ describe("PaginaDashboardBolsillos", () => {
     expect(screen.getByText("¡Copiado!")).toBeInTheDocument();
   });
 
-  it("muestra aviso informativo al hacer click en 'Nuevo bolsillo'", () => {
-    render(<PaginaDashboardBolsillos />);
+  it("muestra aviso informativo al hacer click en 'Nuevo bolsillo'", async () => {
+    await renderConDatos(<PaginaDashboardBolsillos />);
 
     const botonNuevo = screen.getByRole("button", { name: "Crear nuevo bolsillo grupal" });
     fireEvent.click(botonNuevo);
