@@ -8,11 +8,13 @@
  */
 
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Users, Share2, Plus, Wallet, TrendingUp, Check, ShieldCheck } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import clsx from "clsx";
-import { obtenerGrupos } from "../services/grupoServicio";
+import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
+import { useUsuarioActivo } from "../context/UsuarioActivoContext";
+import { obtenerGruposPorUsuario } from "../services/grupoServicio";
 
 function normalizarGrupo(grupo, index) {
   return {
@@ -81,37 +83,35 @@ const BOLSILLOS_MOCK = [
 ];
 
 export default function PaginaDashboardBolsillos() {
+  const { usuario } = useUsuarioActivo();
   const [grupos, setGrupos] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [feedbackCopia, setFeedbackCopia] = useState(null);
-  const [mensajeCrear, setMensajeCrear] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const disparadorRef = useRef(null);
 
-  useEffect(() => {
-    const cargarGrupos = async () => {
-      try {
-        setCargando(true);
-        setError("");
-        const respuesta = await obtenerGrupos();
-        let lista = [];
-        if (Array.isArray(respuesta)) {
-          lista = respuesta;
-        } else if (respuesta && Array.isArray(respuesta.data)) {
-          lista = respuesta.data;
-        } else if (respuesta && Array.isArray(respuesta.content)) {
-          lista = respuesta.content;
-        }
-        setGrupos(lista.map((grupo, index) => normalizarGrupo(grupo, index)));
-      } catch (err) {
-        setError(err?.message || "Error al cargar grupos");
-        setGrupos([]);
-      } finally {
-        setCargando(false);
-      }
-    };
+  const cargarGrupos = useCallback(async () => {
+    if (!usuario?.idUsuario) {
+      setGrupos([]);
+      setCargando(false);
+      return;
+    }
+    try {
+      setCargando(true);
+      setError("");
+      const respuesta = await obtenerGruposPorUsuario(usuario.idUsuario);
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      setGrupos(lista.map((grupo, index) => normalizarGrupo(grupo, index)));
+    } catch (fallo) {
+      setError(fallo?.message || "No se pudieron cargar tus grupos.");
+      setGrupos([]);
+    } finally {
+      setCargando(false);
+    }
+  }, [usuario?.idUsuario]);
 
-    cargarGrupos();
-  }, []);
+  useEffect(() => { cargarGrupos(); }, [cargarGrupos]);
 
   const listaGrupos = grupos.length > 0 ? grupos : [];
   const balanceTotal = listaGrupos.reduce((acc, b) => acc + (Number(b.balance) || 0), 0);
@@ -139,7 +139,7 @@ export default function PaginaDashboardBolsillos() {
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
           <h1 id="bolsillos-titulo" className="mt-1 font-display text-3xl font-medium text-bg-dark">
-             Grupos
+            Bolsillos Grupales
           </h1>
           <p className="mt-1 text-sm text-slate-text">
             Gestiona fondos colaborativos, fuentes compartidas y aportes de tu equipo.
@@ -148,7 +148,8 @@ export default function PaginaDashboardBolsillos() {
 
         <button
           type="button"
-          onClick={() => setMensajeCrear(true)}
+          ref={disparadorRef}
+          onClick={() => setModalAbierto(true)}
           aria-label="Crear nuevo bolsillo grupal"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-primary hover:bg-emerald-hover text-bg-cream text-sm font-medium shadow-md transition-all cursor-pointer hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
         >
@@ -157,22 +158,8 @@ export default function PaginaDashboardBolsillos() {
         </button>
       </div>
 
-      {/* Aviso informativo de creación de demo */}
-      {mensajeCrear && (
-        <div
-          role="status"
-          className="p-4 rounded-xl bg-emerald-primary/10 border border-emerald-primary/20 text-sm text-bg-dark flex items-center justify-between"
-        >
-          <span>Funcionalidad de creación en modo demostración. Los grupos actuales reflejan el estado del equipo.</span>
-          <button
-            type="button"
-            onClick={() => setMensajeCrear(false)}
-            className="text-xs font-semibold text-emerald-primary hover:underline ml-4"
-          >
-            Entendido
-          </button>
-        </div>
-      )}
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {!usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para consultar y crear grupos.</p>}
 
       {/* Resumen métrico grupal */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -205,7 +192,7 @@ export default function PaginaDashboardBolsillos() {
             <Users className="w-6 h-6" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-slate-text uppercase tracking-wider">Grupos Activos</p>
+            <p className="text-xs font-medium text-slate-text uppercase tracking-wider">Bolsillos Activos</p>
             <p className="text-2xl font-bold text-bg-dark truncate mt-0.5">{grupos.length}</p>
           </div>
         </Card>
@@ -333,6 +320,7 @@ export default function PaginaDashboardBolsillos() {
           })}
         </div>
       </div>
+      <ModalRegistroEntidad tipo="grupo" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarGrupos} />
     </section>
   );
 }

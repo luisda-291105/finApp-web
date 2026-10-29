@@ -30,6 +30,11 @@ export async function obtenerGrupos() {
   return obtener(rutaBase);
 }
 
+/** Consulta únicamente los grupos asociados al usuario indicado. */
+export async function obtenerGruposPorUsuario(idUsuario) {
+  return obtener(`${rutaBase}/usuario/${encodeURIComponent(idUsuario)}`);
+}
+
 /**
  * obtenerGrupoPorUsuario
  * Consulta grupos por id de usuario.

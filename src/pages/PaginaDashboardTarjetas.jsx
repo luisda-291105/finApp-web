@@ -8,9 +8,42 @@
  */
 
 import { Plus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Card } from "../components/ui/Card";
+import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
+import { useUsuarioActivo } from "../context/UsuarioActivoContext";
+import { obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
 import PanelTarjetas from "./PanelTarjetas";
 
 export default function PaginaDashboardTarjetas() {
+  const { usuario } = useUsuarioActivo();
+  const [tarjetas, setTarjetas] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const disparadorRef = useRef(null);
+
+  const cargarTarjetas = useCallback(async () => {
+    if (!usuario?.idUsuario) {
+      setTarjetas([]);
+      setCargando(false);
+      return;
+    }
+    try {
+      setCargando(true);
+      setError("");
+      const respuesta = await obtenerTarjetasPorUsuario(usuario.idUsuario);
+      setTarjetas(Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || []);
+    } catch (fallo) {
+      setTarjetas([]);
+      setError(fallo?.message || "No se pudieron cargar tus tarjetas.");
+    } finally {
+      setCargando(false);
+    }
+  }, [usuario?.idUsuario]);
+
+  useEffect(() => { cargarTarjetas(); }, [cargarTarjetas]);
+
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -25,7 +58,9 @@ export default function PaginaDashboardTarjetas() {
         </div>
 
         <button
+          ref={disparadorRef}
           type="button"
+          onClick={() => setModalAbierto(true)}
           aria-label="Agregar nueva tarjeta"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-primary hover:bg-emerald-hover text-bg-cream text-sm font-medium shadow-md transition-all cursor-pointer hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
         >
@@ -33,7 +68,16 @@ export default function PaginaDashboardTarjetas() {
           <span>Nueva tarjeta</span>
         </button>
       </div>
+      <Card className="space-y-4 p-6">
+        <h2 className="font-display text-lg font-semibold text-bg-dark">Tarjetas registradas</h2>
+        {cargando && <p role="status" className="text-sm text-slate-text">Cargando tarjetas...</p>}
+        {!cargando && error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+        {!cargando && !error && !usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para ver tus tarjetas.</p>}
+        {!cargando && !error && usuario?.idUsuario && tarjetas.length === 0 && <p className="text-sm text-slate-text">Todavía no tienes tarjetas registradas.</p>}
+        {!cargando && !error && tarjetas.length > 0 && <ul className="divide-y divide-border-line/30">{tarjetas.map((tarjeta, index) => <li key={tarjeta.idTarjeta || index} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="font-medium text-bg-dark">{tarjeta.titular} · {tarjeta.entidad}</span><span className="text-sm text-slate-text">•••• {String(tarjeta.numero || "").replace(/\s/g, "").slice(-4)} · vence {tarjeta.expiracion}</span></li>)}</ul>}
+      </Card>
       <PanelTarjetas />
+      <ModalRegistroEntidad tipo="tarjeta" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarTarjetas} />
     </section>
   );
 }

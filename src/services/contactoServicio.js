@@ -30,6 +30,11 @@ export async function obtenerContactos() {
   return obtener(rutaBase);
 }
 
+/** Consulta únicamente los contactos asociados al usuario indicado. */
+export async function obtenerContactosPorUsuario(idUsuario) {
+  return obtener(`${rutaBase}/usuario/${encodeURIComponent(idUsuario)}`);
+}
+
 /**
  * obtenerContactoPorId
  * Consulta un contacto por su id.

@@ -30,6 +30,12 @@ export async function obtenerFuentes() {
   return obtener(rutaBase);
 }
 
+/** Consulta únicamente las fuentes asociadas al usuario indicado. */
+export async function obtenerFuentesPorUsuario(idUsuario) {
+  const ruta = `${getEndpoint("fuente.porUsuario")}/${encodeURIComponent(idUsuario)}`;
+  return obtener(ruta);
+}
+
 /**
  * obtenerFuentePorUsuario
  * Consulta fuentes por id de usuario.
