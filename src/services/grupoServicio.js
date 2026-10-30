@@ -35,6 +35,18 @@ export async function obtenerGruposPorUsuario(idUsuario) {
   return obtener(`${rutaBase}/usuario/${encodeURIComponent(idUsuario)}`);
 }
 
+/** Vincula una fuente del usuario activo a uno de sus grupos. */
+export async function vincularFuenteAGrupo(idGrupo, idFuente, idUsuario) {
+  const ruta = `${rutaBase}/${encodeURIComponent(idGrupo)}/fuentes/${encodeURIComponent(idFuente)}?idUsuario=${encodeURIComponent(idUsuario)}`;
+  return actualizar(ruta, {});
+}
+
+/** Desvincula una fuente de un grupo sin borrar el registro de la cuenta. */
+export async function desvincularFuenteDeGrupo(idGrupo, idFuente, idUsuario) {
+  const ruta = `${rutaBase}/${encodeURIComponent(idGrupo)}/fuentes/${encodeURIComponent(idFuente)}?idUsuario=${encodeURIComponent(idUsuario)}`;
+  return eliminar(ruta);
+}
+
 /**
  * obtenerGrupoPorUsuario
  * Consulta grupos por id de usuario.
@@ -74,8 +86,8 @@ export async function obtenerGrupoPorId(idGrupo) {
  * @param {string} idGrupo
  * @returns {Promise<any>}
  */
-export async function eliminarGrupo(idGrupo) {
-  const ruta = `${rutaBase}/${idGrupo}`;
+export async function eliminarGrupo(idGrupo, idUsuario) {
+  const ruta = `${rutaBase}/${encodeURIComponent(idGrupo)}?idUsuario=${encodeURIComponent(idUsuario)}`;
   return eliminar(ruta);
 }
 
@@ -86,7 +98,7 @@ export async function eliminarGrupo(idGrupo) {
  * @param {Object} grupo
  * @returns {Promise<any>}
  */
-export async function actualizarGrupo(idGrupo, grupo) {
-  const ruta = `${rutaBase}/${idGrupo}`;
+export async function actualizarGrupo(idGrupo, grupo, idUsuario) {
+  const ruta = `${rutaBase}/${encodeURIComponent(idGrupo)}?idUsuario=${encodeURIComponent(idUsuario)}`;
   return actualizar(ruta, grupo);
 }

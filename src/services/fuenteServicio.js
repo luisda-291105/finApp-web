@@ -75,8 +75,8 @@ export async function obtenerFuentePorId(idFuente) {
  * @param {string} idFuente
  * @returns {Promise<any>}
  */
-export async function eliminarFuente(idFuente) {
-  const ruta = `${rutaBase}/${idFuente}`;
+export async function eliminarFuente(idFuente, idUsuario) {
+  const ruta = `${rutaBase}/${encodeURIComponent(idFuente)}?idUsuario=${encodeURIComponent(idUsuario)}`;
   return eliminar(ruta);
 }
 
@@ -87,7 +87,7 @@ export async function eliminarFuente(idFuente) {
  * @param {Object} fuente
  * @returns {Promise<any>}
  */
-export async function actualizarFuente(idFuente, fuente) {
-  const ruta = `${rutaBase}/${idFuente}`;
+export async function actualizarFuente(idFuente, fuente, idUsuario) {
+  const ruta = `${rutaBase}/${encodeURIComponent(idFuente)}?idUsuario=${encodeURIComponent(idUsuario)}`;
   return actualizar(ruta, fuente);
 }

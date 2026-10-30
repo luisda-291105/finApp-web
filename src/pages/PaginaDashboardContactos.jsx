@@ -7,7 +7,7 @@
  * @usadoPor   App.jsx (/dashboard/contactos)
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Mail, Phone, Plus, StickyNote, UserRound } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
@@ -64,12 +64,25 @@ export default function PaginaDashboardContactos() {
         {!cargando && !error && !usuario?.idUsuario && <p className="text-slate-text">Inicia sesión para consultar tus contactos.</p>}
         {!cargando && !error && usuario?.idUsuario && contactos.length === 0 && <p className="text-slate-text">Todavía no tienes contactos registrados.</p>}
         {!cargando && !error && contactos.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border-line/30"><th className="py-2 pr-4 text-left font-medium text-slate-text">Nombre</th><th className="py-2 pr-4 text-left font-medium text-slate-text">Teléfono</th><th className="py-2 text-left font-medium text-slate-text">Notas</th></tr></thead>
-              <tbody>{contactos.map((contacto, index) => <tr key={contacto.idContacto || index} className="border-b border-border-line/20"><td className="py-2 pr-4 text-bg-dark">{contacto.nombre || "-"}</td><td className="py-2 pr-4 text-slate-text">{contacto.telefono || "-"}</td><td className="py-2 text-slate-text">{contacto.notas || "-"}</td></tr>)}</tbody>
-            </table>
-          </div>
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Contactos registrados">
+            {contactos.map((contacto, index) => (
+              <li key={contacto.idContacto || index}>
+                <article className="h-full rounded-xl border border-border-line/30 bg-bg-cream/70 p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-primary/10 text-emerald-primary">
+                      <UserRound className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <h2 className="min-w-0 truncate font-display text-lg font-semibold text-bg-dark">{contacto.nombre || "Contacto sin nombre"}</h2>
+                  </div>
+                  <dl className="mt-4 space-y-3 text-sm">
+                    <div className="flex items-start gap-2 text-slate-text"><Phone className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><div><dt className="sr-only">Teléfono</dt><dd>{contacto.telefono || "Sin teléfono"}</dd></div></div>
+                    {contacto.correo && <div className="flex items-start gap-2 text-slate-text"><Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><div><dt className="sr-only">Correo</dt><dd className="break-all">{contacto.correo}</dd></div></div>}
+                    <div className="flex items-start gap-2 text-slate-text"><StickyNote className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><div><dt className="sr-only">Notas</dt><dd>{contacto.notas || "Sin notas"}</dd></div></div>
+                  </dl>
+                </article>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
       <ModalRegistroEntidad tipo="contacto" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarContactos} />

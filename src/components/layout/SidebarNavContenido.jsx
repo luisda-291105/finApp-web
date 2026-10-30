@@ -68,7 +68,7 @@ export default function SidebarNavContenido({
     { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },
     { ruta: "/dashboard/transacciones", icono: Receipt, etiqueta: "Transacciones" },
     { ruta: "/dashboard/tarjetas", icono: CreditCard, etiqueta: "Tarjetas" },
-    { ruta: "/dashboard/bolsillos", icono: Users, etiqueta: "Grupos" },
+    { ruta: "/dashboard/bolsillos", icono: Users, etiqueta: "Bolsillos" },
     { ruta: "/dashboard/contactos", icono: Contact, etiqueta: "Contactos" },
     { ruta: "/dashboard/correos", icono: Mail, etiqueta: "Correos" },
   ];

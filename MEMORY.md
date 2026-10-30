@@ -29,8 +29,17 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/017-asistente-en-dashboard/` — implementada; 536 pruebas y build correctos; revisión visual realizada, área segura real pendiente.
 - `specs/021-bolsillos-grupales/` — bolsillos grupales (`/dashboard/bolsillos`), fuentes compartidas, métricas colectivas, simulación de compartir entrada/invitación y reasignación de icono de Contactos (`Contact`) y Bolsillos (`Users`). Cerrada (2026-10-21).
 - `specs/024-perfil-modal/` — modal de perfil (spec aprobada 2026-10-27). Reutiliza `ModalCrearUsuario` como perfil, activa el bloque «Perfil» en Configuración y muestra nombre dinámico/correo no registrado en `DashboardUserModal`. Implementada; validación pendiente de suites ajenas.
+- `specs/026-mostar-ya-registrados/` — registros existentes por usuario; tarjetas y contactos en tarjetas visuales, correos Gmail en filas y fuentes renombradas en Configuración. Transacciones fuera de alcance por falta de endpoint/modelo.
+- `specs/027-fuente-grupo/` — asociación persistente grupo-fuente, modal de detalle, chat/invitaciones de demostración, pestaña de solicitudes y edición/eliminación de fuentes registradas.
+- `specs/028-corregir-tests-fallidos/` — corrige las expectativas obsoletas y los mocks incompletos encontrados en la suite completa del 2026-10-29.
+- `specs/029-mostrar/` — implementada: modal común para grupo, correo, tarjeta y perfil; validación Luhn/vencimiento/CVV, edición/eliminación de grupos por usuario, consulta Gmail por una sola fuente, PUT de perfil con campos autorizados y fuentes apiladas en móvil. Movimientos muestran estado vacío; validación visual de navegador pendiente.
 
 ## Tareas faltantes
+
+- **Spec 026:** implementación lista y build correcto; `npm run test` reporta 9 archivos fallidos, 13 tests fallidos y una suite que no carga. La corrección queda en spec 028. Revisión visual en navegador pendiente.
+- **Spec 028:** corregidos mocks y expectativas, y restaurado el contrato AC-22 de `AuthModal` (los campos persisten al cerrar). Validado con 81/81 tests focalizados, 583/583 en 43 archivos y build correcto.
+- **Spec 027:** completada. Relación grupo-fuente persistente con validación de usuario; Configuración permite editar/eliminar fuentes; el modal de grupo muestra fuentes y chat/invitaciones de demostración, y Solicitudes usa ejemplos claramente rotulados. Validado: 589/589 frontend, build y 7/7 pruebas Maven. Revisión visual pendiente porque Computer Use no pudo determinar la URL de la ventana.
+- **Spec 029:** implementada. Validación: suite frontend 595/595 en 43 archivos, build correcto y backend 10/10. `git diff --check` limpio. Revisión visual realizada a 320 px: tarjetas, Configuración y modal de perfil se adaptan al viewport.
 
 - **Spec 024:** implementada (2026-10-27). `ModalCrearUsuario` pasa a ser modal de perfil (lectura + «Modificar» limitado a cédula, nombre y contraseña; correo/teléfono «No registrado»), `PaginaDashboardConfiguracion` muestra «Perfil» con botón «Ver perfil», y `DashboardUserModal` usa nombre dinámico con respaldo «Cuenta de Usuario Demo» y correo «No registrado». Se añadió default seguro a `useUsuarioActivo` (usuario null y funciones no-op sin provider). Validado: ModalPerfil, DashboardUserModal, Configuración y AsistenteDashboard en verde; build correcto. `npm test` sigue con 36 fallos ajenos (AuthModal sin Router, placeholders de App y textos de Bolsillos/Correos/Contactos/Sidebar) ya presentes antes del cambio; `cierreDeModales` mantiene sus 8 fallos previos de AuthModal.
 

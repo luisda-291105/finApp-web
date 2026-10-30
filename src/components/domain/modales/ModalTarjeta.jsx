@@ -22,6 +22,7 @@ import { MOVIMIENTOS_DEMO } from "../../../data/tarjetasDemo";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
+import ModalDetalleRegistro from "./ModalDetalleRegistro";
 
 const SELECTOR_FOCOABLES =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -44,7 +45,7 @@ const SELECTOR_FOCOABLES =
  * - Solo tokens de estilos (backdrop `bg-bg-dark/60`, superficie `glass-card`);
  *   sin hexadecimales nuevos.
  */
-export default function ModalTarjeta({ tarjeta, onCerrar }) {
+export default function ModalTarjeta({ tarjeta, onCerrar, registrada = false, triggerRef }) {
   const reducirMovimiento = useReducedMotion();
   const refDialogo = useRef(null);
 
@@ -68,15 +69,15 @@ export default function ModalTarjeta({ tarjeta, onCerrar }) {
   // hace la pieza y la devolución se consume una sola vez en la transición abierta → cerrada; sin
   // `triggerRef` propio, el activador es el elemento capturado y, si falta, el respaldo estable de la
   // versión de vista (RF-05).
-  useRetornoDeFoco({ activo: Boolean(tarjeta) });
+  useRetornoDeFoco({ activo: Boolean(tarjeta) && !registrada });
 
   // Esc: mecanismo único compartido por las cuatro superficies; la capa de este panel es 50
   // (plan §2.3-M1). La trampa manual de Tab/Shift+Tab se conserva (RF-12).
-  useCierreConEsc({ activo: Boolean(tarjeta), zIndex: 50, alCerrar: onCerrar });
+  useCierreConEsc({ activo: Boolean(tarjeta) && !registrada, zIndex: 50, alCerrar: onCerrar });
 
   // Gesto de deslizar hacia abajo (solo móvil, punteros nativos). No arranca sobre controles
   // interactivos (incluido el flip de la tarjeta) ni con el panel desplazado (CL-09).
-  useDeslizarParaCerrar({ activo: Boolean(tarjeta), refPanel: refDialogo, alCerrar: onCerrar });
+  useDeslizarParaCerrar({ activo: Boolean(tarjeta) && !registrada, refPanel: refDialogo, alCerrar: onCerrar });
 
   const atraparTab = (e) => {
     if (e.key !== "Tab") return;
@@ -95,9 +96,20 @@ export default function ModalTarjeta({ tarjeta, onCerrar }) {
 
   const transicion = reducirMovimiento ? { duration: 0 } : { duration: 0.2 };
   const numeroEnmascarado = tarjeta
-    ? `•••• ${tarjeta.numero.replace(/\s/g, "").slice(-4)}`
+    ? `•••• ${String(tarjeta.numero || "").replace(/\D/g, "").slice(-4)}`
     : "";
 
+  if (registrada) {
+    return (
+      <ModalDetalleRegistro abierto={Boolean(tarjeta)} titulo={`Tarjeta de ${tarjeta?.titular || "Titular"}`} alCerrar={onCerrar} triggerRef={triggerRef} ancho="max-w-md">
+        {tarjeta && <>
+          <MiTarjetaVirtual titular={tarjeta.titular} numero={numeroEnmascarado} expiracion={tarjeta.expiracion} cvv="" entidad={tarjeta.entidad} colorTema={tarjeta.colorTema || "azul"} flipDeshabilitado />
+          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-xs uppercase tracking-wider text-slate-text">Titular</dt><dd>{tarjeta.titular}</dd></div><div><dt className="text-xs uppercase tracking-wider text-slate-text">Número</dt><dd className="font-mono">{numeroEnmascarado}</dd></div><div><dt className="text-xs uppercase tracking-wider text-slate-text">Expira</dt><dd>{tarjeta.expiracion}</dd></div><div><dt className="text-xs uppercase tracking-wider text-slate-text">Entidad</dt><dd>{tarjeta.entidad || "Sin entidad"}</dd></div></dl>
+          <h3 className="mt-6 mb-2 font-display text-base font-semibold">Movimientos</h3><p className="rounded-xl border border-border-line/40 p-4 text-sm text-slate-text">Esta tarjeta todavía no tiene movimientos registrados.</p>
+        </>}
+      </ModalDetalleRegistro>
+    );
+  }
   return (
     <AnimatePresence>
       {tarjeta ? (

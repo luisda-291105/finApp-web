@@ -12,7 +12,7 @@ import { Card } from "../components/ui/Card";
 import ModalFuentes from "../components/domain/modales/ModalFuentes";
 import ModalPerfilUsuario from "../components/domain/modales/ModalPerfilUsuario";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
-import { obtenerFuentesPorUsuario } from "../services/fuenteServicio";
+import { actualizarFuente, eliminarFuente, obtenerFuentesPorUsuario } from "../services/fuenteServicio";
 
 export default function PaginaDashboardConfiguracion() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);
@@ -20,6 +20,9 @@ export default function PaginaDashboardConfiguracion() {
   const [fuentes, setFuentes] = useState([]);
   const [cargandoFuentes, setCargandoFuentes] = useState(true);
   const [errorFuentes, setErrorFuentes] = useState("");
+  const [fuenteEditando, setFuenteEditando] = useState(null);
+  const [fuenteEliminando, setFuenteEliminando] = useState(null);
+  const [operacionFuente, setOperacionFuente] = useState(false);
 
   const disparadorFuentesRef = useRef(null);
   const triggerUsuarioRef = useRef(null);
@@ -63,6 +66,44 @@ export default function PaginaDashboardConfiguracion() {
     ]);
   };
 
+  const guardarEdicionFuente = async (evento) => {
+    evento.preventDefault();
+    if (!fuenteEditando || !usuario?.idUsuario || operacionFuente) return;
+    setOperacionFuente(true);
+    setErrorFuentes("");
+    try {
+      const payload = {
+        tipo: fuenteEditando.tipo.trim().toUpperCase(),
+        contenido: fuenteEditando.contenido.trim(),
+        estado: fuenteEditando.estado,
+        usuario: { idUsuario: usuario.idUsuario },
+      };
+      const respuesta = await actualizarFuente(fuenteEditando.idFuente, payload, usuario.idUsuario);
+      const guardada = respuesta?.data || respuesta || { ...fuenteEditando, ...payload };
+      setFuentes((actuales) => actuales.map((fuente) => fuente.idFuente === fuenteEditando.idFuente ? { ...fuente, ...guardada } : fuente));
+      setFuenteEditando(null);
+    } catch (fallo) {
+      setErrorFuentes(fallo?.message || "No se pudo actualizar la fuente.");
+    } finally {
+      setOperacionFuente(false);
+    }
+  };
+
+  const confirmarEliminacionFuente = async () => {
+    if (!fuenteEliminando || !usuario?.idUsuario || operacionFuente) return;
+    setOperacionFuente(true);
+    setErrorFuentes("");
+    try {
+      await eliminarFuente(fuenteEliminando.idFuente, usuario.idUsuario);
+      setFuentes((actuales) => actuales.filter((fuente) => fuente.idFuente !== fuenteEliminando.idFuente));
+      setFuenteEliminando(null);
+    } catch (fallo) {
+      setErrorFuentes(fallo?.message || "No se pudo eliminar la fuente.");
+    } finally {
+      setOperacionFuente(false);
+    }
+  };
+
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
       <div>
@@ -103,10 +144,10 @@ export default function PaginaDashboardConfiguracion() {
         <div className="border-t border-border-line/60 pt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="font-display text-xl font-semibold text-bg-dark">
-              Registro de fuentes
+              Fuentes registradas
             </h2>
             <p className="mt-1 text-sm text-slate-text">
-              Reúne y administra tus fuentes financieras vinculadas (correos, teléfonos y más).
+              Consulta y administra las fuentes asociadas a tu usuario.
             </p>
           </div>
           <button
@@ -126,7 +167,7 @@ export default function PaginaDashboardConfiguracion() {
           )}
 
           {!cargandoFuentes && errorFuentes && (
-            <p className="text-xs text-red-600">{errorFuentes}</p>
+            <p role="alert" className="text-xs text-red-600">{errorFuentes}</p>
           )}
 
           {!cargandoFuentes && !errorFuentes && fuentes.length === 0 && (
@@ -136,7 +177,8 @@ export default function PaginaDashboardConfiguracion() {
           )}
 
           {!cargandoFuentes && !errorFuentes && fuentes.length > 0 && (
-            <div className="overflow-x-auto">
+            <>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-line/30">
@@ -152,6 +194,7 @@ export default function PaginaDashboardConfiguracion() {
                     <th className="text-left py-2 font-medium text-slate-text">
                       Fecha
                     </th>
+                    <th className="text-left py-2 pl-4 font-medium text-slate-text">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,6 +203,16 @@ export default function PaginaDashboardConfiguracion() {
                       key={fuente.idFuente || `fuente-${index}`}
                       className="border-b border-border-line/20"
                     >
+                      {fuenteEditando?.idFuente === fuente.idFuente ? (
+                        <>
+                          <td className="py-2.5 pr-4"><label className="sr-only" htmlFor={`fuente-tipo-${fuente.idFuente}`}>Tipo de {fuente.contenido}</label><select id={`fuente-tipo-${fuente.idFuente}`} value={fuenteEditando.tipo} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, tipo: evento.target.value }))} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-2 text-sm"><option value="CORREO">CORREO</option><option value="TELEFONO">TELEFONO</option><option value="OTRO">OTRO</option></select></td>
+                          <td className="py-2.5 pr-4"><label className="sr-only" htmlFor={`fuente-contenido-${fuente.idFuente}`}>Contenido de la fuente</label><input id={`fuente-contenido-${fuente.idFuente}`} value={fuenteEditando.contenido} maxLength={255} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, contenido: evento.target.value }))} className="min-h-10 w-full rounded-lg border border-border-line bg-bg-cream px-2 text-sm" /></td>
+                          <td className="py-2.5 pr-4"><label className="sr-only" htmlFor={`fuente-estado-${fuente.idFuente}`}>Estado</label><select id={`fuente-estado-${fuente.idFuente}`} value={String(fuenteEditando.estado !== false)} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, estado: evento.target.value === "true" }))} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-2 text-sm"><option value="true">Activo</option><option value="false">Inactivo</option></select></td>
+                          <td className="py-2.5 text-xs text-slate-text">{fuente.fechaCreacion || "-"}</td>
+                          <td className="py-2.5 pl-4"><form onSubmit={guardarEdicionFuente} className="flex flex-wrap gap-2"><button type="submit" disabled={operacionFuente || !fuenteEditando.contenido.trim()} className="min-h-9 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">Guardar</button><button type="button" disabled={operacionFuente} onClick={() => setFuenteEditando(null)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-slate-text hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Cancelar</button></form></td>
+                        </>
+                      ) : (
+                        <>
                       <td className="py-2.5 pr-4 font-medium text-bg-dark">
                         <span className="inline-block px-2 py-0.5 rounded text-xs bg-emerald-primary/10 text-emerald-primary">
                           {fuente.tipo || "OTRO"}
@@ -182,11 +235,34 @@ export default function PaginaDashboardConfiguracion() {
                       <td className="py-2.5 text-xs text-slate-text">
                         {fuente.fechaCreacion || "-"}
                       </td>
+                      <td className="py-2.5 pl-4">
+                        {fuenteEliminando?.idFuente === fuente.idFuente ? (
+                          <div className="flex flex-wrap items-center gap-2"><span className="text-xs text-slate-text">¿Eliminar esta fuente?</span><button type="button" disabled={operacionFuente} onClick={confirmarEliminacionFuente} className="min-h-9 rounded-lg bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 disabled:opacity-50">Confirmar</button><button type="button" disabled={operacionFuente} onClick={() => setFuenteEliminando(null)} className="min-h-9 rounded-lg px-2 text-xs font-medium text-slate-text hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Cancelar</button></div>
+                        ) : (
+                          <div className="flex gap-2"><button type="button" aria-label={`Editar fuente ${fuente.contenido}`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-9 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido}`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-9 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700">Eliminar</button></div>
+                        )}
+                      </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <ul className="space-y-3 md:hidden" aria-label="Fuentes registradas en móvil">
+              {fuentes.map((fuente) => <li key={`movil-${fuente.idFuente}`} className="min-w-0 rounded-xl border border-border-line/40 bg-bg-cream/60 p-3">
+                {fuenteEditando?.idFuente === fuente.idFuente ? <form onSubmit={guardarEdicionFuente} className="space-y-3">
+                  <label className="grid gap-1 text-xs text-slate-text">Tipo<select aria-label={`Tipo de ${fuente.contenido} en móvil`} value={fuenteEditando.tipo} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, tipo: evento.target.value }))} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-2 text-sm"><option value="CORREO">CORREO</option><option value="TELEFONO">TELEFONO</option><option value="OTRO">OTRO</option></select></label>
+                  <label className="grid gap-1 text-xs text-slate-text">Contenido<input aria-label="Contenido de la fuente en móvil" value={fuenteEditando.contenido} maxLength={255} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, contenido: evento.target.value }))} className="min-h-10 min-w-0 w-full rounded-lg border border-border-line bg-bg-cream px-2 text-sm" /></label>
+                  <label className="grid gap-1 text-xs text-slate-text">Estado en móvil<select aria-label="Estado de la fuente en móvil" value={String(fuenteEditando.estado !== false)} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, estado: evento.target.value === "true" }))} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-2 text-sm"><option value="true">Activo</option><option value="false">Inactivo</option></select></label>
+                  <p className="text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p><div className="flex flex-wrap gap-2"><button type="submit" disabled={operacionFuente || !fuenteEditando.contenido.trim()} aria-label="Guardar cambios de fuente en móvil" className="min-h-10 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream disabled:opacity-50">Guardar</button><button type="button" disabled={operacionFuente} onClick={() => setFuenteEditando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div>
+                </form> : <>
+                  <p className="text-xs uppercase tracking-wide text-slate-text">{fuente.tipo || "OTRO"} · {fuente.estado !== false ? "Activo" : "Inactivo"}</p><p className="mt-1 break-all text-sm font-medium text-bg-dark">{fuente.contenido || "-"}</p><p className="mt-1 text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p>
+                  {fuenteEliminando?.idFuente === fuente.idFuente ? <div className="mt-3 flex flex-wrap items-center gap-2"><span className="text-xs text-slate-text">¿Eliminar esta fuente?</span><button type="button" disabled={operacionFuente} onClick={confirmarEliminacionFuente} aria-label={`Confirmar eliminación de ${fuente.contenido}`} className="min-h-10 rounded-lg bg-red-700 px-3 text-xs font-semibold text-white">Confirmar</button><button type="button" onClick={() => setFuenteEliminando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div> : <div className="mt-3 flex flex-wrap gap-2"><button type="button" aria-label={`Editar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Eliminar</button></div>}
+                </>}
+              </li>)}
+            </ul>
+            </>
           )}
         </div>
       </Card>

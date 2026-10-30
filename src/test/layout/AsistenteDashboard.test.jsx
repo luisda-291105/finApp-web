@@ -380,7 +380,7 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
     const user = userEvent.setup();
     renderDashboard();
     await user.click(screen.getByRole("button", { name: "Abrir menú" }));
-    await user.click(screen.getByRole("button", { name: "Abrir cuenta de usuario" }));
+    await user.click(screen.getByRole("button", { name: "Cuenta de Usuario Demo" }));
     expect(screen.getByRole("dialog", { name: "Cuenta de Usuario Demo" })).toBeInTheDocument();
 
     fireEvent.click(obtenerDisparador());

@@ -7,7 +7,7 @@
  * @estados    N/A
  * @usadoPor   vitest (npm run test)
  */
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -22,14 +22,6 @@ function renderRuta(ruta) {
     </MemoryRouter>
   );
 }
-
-const TITULARES_FIXTURE = [
-  "MARÍA GARCÍA",
-  "ANA MARTÍNEZ",
-  "CARLOS RUIZ",
-  "LUCÍA FERNÁNDEZ",
-  "DIEGO TORRES",
-];
 
 describe("rutas de la aplicación", () => {
   it("muestra siempre la landing en la raíz, con independencia del trial", () => {
@@ -69,43 +61,19 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByRole("heading", { name: "Transacciones" })).toBeDefined();
   });
 
-  it("muestra el conjunto fluido de tarjetas demo en la sección tarjetas (spec 004)", () => {
+  it("muestra los registros de tarjetas por usuario y el estado sin sesión", () => {
     renderRuta("/dashboard/tarjetas");
 
     expect(screen.getByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
-
-    // Doble render por breakpoints: acordeón móvil + grid tablet/escritorio
-    const listas = screen.getAllByRole("list", { name: "Tarjetas de demostración" });
-    const acordeon = listas.find((el) => el.className.includes("sm:hidden"));
-    const grid = listas.find(
-      (el) => el.className.includes("hidden") && el.className.includes("sm:grid")
-    );
-    expect(acordeon).toBeTruthy();
-    expect(grid).toBeTruthy();
-
-    // Las 5 tarjetas del fixture accesibles desde el grid
-    TITULARES_FIXTURE.forEach((titular) => {
-      expect(
-        within(grid).getByRole("button", {
-          name: `Ver detalle de la tarjeta de ${titular}`,
-        })
-      ).toBeTruthy();
-    });
-
-    // Secciones antiguas eliminadas
-    expect(screen.queryByText("Ejemplos de diseño")).toBeNull();
-    expect(screen.queryByText("Tus otras tarjetas")).toBeNull();
-    expect(screen.queryByText("Tarjeta Oro")).toBeNull();
-
-    expect(screen.getByText("Datos de demostración")).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Tarjetas registradas" })).toBeDefined();
+    expect(screen.getByText("Inicia sesión para ver tus tarjetas.")).toBeDefined();
+    expect(screen.queryByText("Datos de demostración")).toBeNull();
   });
 
-  it("no muestra el placeholder en la sección tarjetas", () => {
+  it("muestra la descripción de gestión en la sección tarjetas", () => {
     renderRuta("/dashboard/tarjetas");
 
-    expect(
-      screen.queryByText("Administra tus tarjetas y revisa sus saldos.")
-    ).toBeNull();
+    expect(screen.getByText("Administra tus tarjetas y revisa sus saldos.")).toBeDefined();
   });
 
   it("conserva las tres cifras en la sección inicio", () => {
@@ -120,8 +88,8 @@ describe("rutas de la aplicación", () => {
     renderRuta("/dashboard/transacciones");
 
     expect(
-      screen.getByText("Consulta y organiza tus movimientos recientes.")
-    ).toBeDefined();
+      screen.getAllByText("Consulta y organiza tus movimientos recientes.", { selector: "p" }).length
+    ).toBeGreaterThan(0);
   });
 
   it("conserva el placeholder en configuración", () => {

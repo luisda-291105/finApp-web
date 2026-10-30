@@ -172,9 +172,9 @@ describe("AuthModal", () => {
       const usuario = userEvent.setup();
       renderModal({ alCerrar });
 
-      const correo = screen.getByPlaceholderText("tu@correo.com");
-      await usuario.click(correo);
-      expect(document.activeElement).toBe(correo);
+      const identificacion = screen.getByPlaceholderText("1234567890");
+      await usuario.click(identificacion);
+      expect(document.activeElement).toBe(identificacion);
 
       await usuario.keyboard("{Escape}");
       expect(alCerrar).toHaveBeenCalledTimes(1);
@@ -248,10 +248,10 @@ describe("AuthModal", () => {
       renderModal({ alCerrar });
       await esperarFocoEnContenedor(obtenerDialogo());
 
-      const correo = screen.getByPlaceholderText("tu@correo.com");
-      dispararPuntero(correo, "pointerdown", { clientY: 0 });
-      dispararPuntero(correo, "pointermove", { clientY: 200 });
-      dispararPuntero(correo, "pointerup", { clientY: 200 });
+      const identificacion = screen.getByPlaceholderText("1234567890");
+      dispararPuntero(identificacion, "pointerdown", { clientY: 0 });
+      dispararPuntero(identificacion, "pointermove", { clientY: 200 });
+      dispararPuntero(identificacion, "pointerup", { clientY: 200 });
 
       expect(alCerrar).not.toHaveBeenCalled();
     });
@@ -273,18 +273,18 @@ describe("AuthModal", () => {
 
   describe("AC-22: cerrar NO borra lo escrito", () => {
     const escribirCampos = async (usuario) => {
+      await usuario.type(screen.getByPlaceholderText("1234567890"), "12345678");
       await usuario.type(screen.getByPlaceholderText("Juan Pérez"), "Ana Pérez");
-      await usuario.type(screen.getByPlaceholderText("tu@correo.com"), "ana@correo.com");
       await usuario.type(screen.getByPlaceholderText("••••••••"), "secreta123");
     };
 
     const comprobarCamposConservados = () => {
+      expect(screen.getByPlaceholderText("1234567890").value).toBe("12345678");
       expect(screen.getByPlaceholderText("Juan Pérez").value).toBe("Ana Pérez");
-      expect(screen.getByPlaceholderText("tu@correo.com").value).toBe("ana@correo.com");
       expect(screen.getByPlaceholderText("••••••••").value).toBe("secreta123");
     };
 
-    it("conserva nombre, correo y contraseña al cerrar con la «X» y reabrir", async () => {
+    it("conserva identificación, nombre y contraseña al cerrar con la «X» y reabrir", async () => {
       const usuario = userEvent.setup();
       const alCerrar = vi.fn();
       const { rerender } = render(

@@ -1,7 +1,7 @@
 /**
  * @uso        Página de tarjetas del dashboard
  * @funciones  PaginaDashboardTarjetas()
- * @datos      Sin datos propios; PanelTarjetas lee TARJETAS_DEMO del fixture
+ * @datos      Tarjetas registradas consultadas por el usuario activo
  * @eventos    click en Nueva tarjeta
  * @estados    Ninguno
  * @usadoPor   App.jsx (ruta /dashboard/tarjetas)
@@ -13,7 +13,7 @@ import { Card } from "../components/ui/Card";
 import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
-import PanelTarjetas from "./PanelTarjetas";
+import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
 
 export default function PaginaDashboardTarjetas() {
   const { usuario } = useUsuarioActivo();
@@ -21,7 +21,14 @@ export default function PaginaDashboardTarjetas() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [tarjetaSeleccionada, setTarjetaSeleccionada] = useState(null);
+  const disparadorDetalleRef = useRef(null);
   const disparadorRef = useRef(null);
+
+  const enmascararNumero = (numero) => {
+    const digitos = String(numero || "").replace(/\s/g, "");
+    return "•••• " + (digitos.slice(-4) || "••••");
+  };
 
   const cargarTarjetas = useCallback(async () => {
     if (!usuario?.idUsuario) {
@@ -74,9 +81,29 @@ export default function PaginaDashboardTarjetas() {
         {!cargando && error && <p role="alert" className="text-sm text-red-600">{error}</p>}
         {!cargando && !error && !usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para ver tus tarjetas.</p>}
         {!cargando && !error && usuario?.idUsuario && tarjetas.length === 0 && <p className="text-sm text-slate-text">Todavía no tienes tarjetas registradas.</p>}
-        {!cargando && !error && tarjetas.length > 0 && <ul className="divide-y divide-border-line/30">{tarjetas.map((tarjeta, index) => <li key={tarjeta.idTarjeta || index} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="font-medium text-bg-dark">{tarjeta.titular} · {tarjeta.entidad}</span><span className="text-sm text-slate-text">•••• {String(tarjeta.numero || "").replace(/\s/g, "").slice(-4)} · vence {tarjeta.expiracion}</span></li>)}</ul>}
+        {!cargando && !error && tarjetas.length > 0 && (
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Tarjetas registradas">
+            {tarjetas.map((tarjeta, index) => (
+              <li key={tarjeta.idTarjeta || index}>
+                <button type="button" onClick={(evento) => { disparadorDetalleRef.current = evento.currentTarget; setTarjetaSeleccionada(tarjeta); }} aria-label={`Ver tarjeta de ${tarjeta.titular || "Titular"}`} className="flex min-h-44 w-full flex-col justify-between rounded-2xl bg-emerald-primary p-5 text-left text-bg-cream shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium uppercase tracking-wider text-bg-cream/75">{tarjeta.entidad || "Tarjeta"}</p>
+                      <h3 className="mt-1 truncate font-display text-lg font-semibold">{tarjeta.titular || "Titular"}</h3>
+                    </div>
+                    <span aria-hidden="true" className="rounded-md border border-bg-cream/50 px-2 py-1 text-[10px] font-semibold uppercase">FinApp</span>
+                  </div>
+                  <div>
+                    <p className="font-mono text-lg tracking-widest" aria-label="Número de tarjeta enmascarado">{enmascararNumero(tarjeta.numero)}</p>
+                    <p className="mt-2 text-xs text-bg-cream/80">Vence {tarjeta.expiracion || "Sin fecha"}</p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
-      <PanelTarjetas />
+      <ModalTarjeta tarjeta={tarjetaSeleccionada} registrada triggerRef={disparadorDetalleRef} onCerrar={() => setTarjetaSeleccionada(null)} />
       <ModalRegistroEntidad tipo="tarjeta" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarTarjetas} />
     </section>
   );

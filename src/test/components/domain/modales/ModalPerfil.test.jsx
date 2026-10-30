@@ -16,10 +16,11 @@ import {
   UsuarioActivoProvider,
   useUsuarioActivo,
 } from "../../../../context/UsuarioActivoContext";
-import { actualizarUsuario } from "../../../../services/usuarioServicio";
+import { actualizarUsuario, crearUsuario } from "../../../../services/usuarioServicio";
 
 vi.mock("../../../../services/usuarioServicio", () => ({
   actualizarUsuario: vi.fn(),
+  crearUsuario: vi.fn(),
 }));
 
 const USUARIO = {
@@ -65,7 +66,7 @@ const abrirPerfil = async () => {
   await usuario.click(screen.getByRole("button", { name: "Abrir perfil" }));
   const dialogo = screen.getByRole("dialog", { name: "Perfil" });
   await waitFor(() => {
-    expect(within(dialogo).getByLabelText("Nombre")).toHaveValue(USUARIO.nombre);
+    expect(within(dialogo).getByText(USUARIO.nombre)).toBeInTheDocument();
   });
   return { usuario, dialogo };
 };
@@ -82,6 +83,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   actualizarUsuario.mockReset();
+  crearUsuario.mockReset();
   window.localStorage.getItem.mockReset();
   window.localStorage.setItem.mockClear();
 });
@@ -90,49 +92,29 @@ describe("ModalPerfilUsuario (perfil)", () => {
   it("abre con los datos del usuario activo y la contraseña vacía", async () => {
     const { dialogo } = await abrirPerfil();
 
-    expect(within(dialogo).getByLabelText("Cédula / Identificación")).toHaveValue(
-      USUARIO.idUsuario,
-    );
-    expect(within(dialogo).getByLabelText("Nombre")).toHaveValue(USUARIO.nombre);
-    expect(within(dialogo).getByLabelText("Contraseña")).toHaveValue("");
+    expect(within(dialogo).getByText(`Identificación: ${USUARIO.idUsuario}`)).toBeInTheDocument();
+    expect(within(dialogo).queryByLabelText("Contraseña")).toBeNull();
     expect(dialogo).toHaveAttribute("aria-modal", "true");
   });
 
   it("muestra Correo y Teléfono como «No registrado» y no son editables", async () => {
     const { dialogo } = await abrirPerfil();
 
-    const correo = within(dialogo).getByLabelText("Correo");
-    const telefono = within(dialogo).getByLabelText("Teléfono");
-
-    expect(correo).toHaveValue("No registrado");
-    expect(telefono).toHaveValue("No registrado");
-    expect(correo).toHaveAttribute("readonly");
-    expect(telefono).toHaveAttribute("readonly");
-    expect(correo).toHaveAttribute("tabindex", "-1");
-    expect(telefono).toHaveAttribute("tabindex", "-1");
+    expect(within(dialogo).getByText("Correo y teléfono: No registrados")).toBeInTheDocument();
+    expect(within(dialogo).queryByLabelText("Correo")).toBeNull();
+    expect(within(dialogo).queryByLabelText("Teléfono")).toBeNull();
   });
 
   it("«Modificar» habilita solo Cédula/Identificación, Nombre y Contraseña", async () => {
     const { usuario, dialogo } = await abrirPerfil();
 
+    await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
     const idUsuario = within(dialogo).getByLabelText("Cédula / Identificación");
     const nombre = within(dialogo).getByLabelText("Nombre");
     const contrasena = within(dialogo).getByLabelText("Contraseña");
-    const correo = within(dialogo).getByLabelText("Correo");
-    const telefono = within(dialogo).getByLabelText("Teléfono");
-
-    // Antes de modificar, los tres campos son de solo lectura
-    expect(idUsuario).toHaveAttribute("readonly");
-    expect(nombre).toHaveAttribute("readonly");
-    expect(contrasena).toHaveAttribute("readonly");
-
-    await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
-
     expect(idUsuario).not.toHaveAttribute("readonly");
     expect(nombre).not.toHaveAttribute("readonly");
     expect(contrasena).not.toHaveAttribute("readonly");
-    expect(correo).toHaveAttribute("readonly");
-    expect(telefono).toHaveAttribute("readonly");
     expect(contrasena).toHaveAttribute("placeholder", "Nueva contraseña");
     expect(within(dialogo).getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
     expect(within(dialogo).queryByRole("button", { name: "Modificar" })).toBeNull();
@@ -147,18 +129,13 @@ describe("ModalPerfilUsuario (perfil)", () => {
     await usuario.clear(nombre);
     await usuario.type(nombre, "Ana Actualizada");
 
+    await usuario.type(within(dialogo).getByLabelText("Contraseña"), "clave-segura");
     await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() => {
-      expect(actualizarUsuario).toHaveBeenCalledWith(
-        USUARIO.idUsuario,
-        expect.objectContaining({
-          idUsuario: USUARIO.idUsuario,
-          nombre: "Ana Actualizada",
-          contrasena: "",
-          fechaCreacion: USUARIO.fechaCreacion,
-        }),
-      );
+      expect(actualizarUsuario).toHaveBeenCalledWith(USUARIO.idUsuario, {
+        idUsuario: USUARIO.idUsuario, nombre: "Ana Actualizada", contrasena: "clave-segura",
+      });
     });
 
     await waitFor(() => {
@@ -194,11 +171,13 @@ describe("ModalPerfilUsuario (perfil)", () => {
 
   it("si la actualización falla, registra el error, muestra role=alert y mantiene el modal abierto", async () => {
     actualizarUsuario.mockRejectedValueOnce(new Error("Error HTTP 409"));
+    crearUsuario.mockRejectedValueOnce(new Error("Error HTTP 409"));
     const espiaError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const { usuario, dialogo } = await abrirPerfil();
 
     await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
+    await usuario.type(within(dialogo).getByLabelText("Contraseña"), "secreto123");
     await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
 
     const alerta = await within(dialogo).findByRole("alert");

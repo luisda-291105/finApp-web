@@ -8,9 +8,9 @@
  *   renderiza el contenedor (por defecto, `div`).
  * @usadoPor   Features, PaginaDashboardInicio, PaginaDashboardTransacciones, PaginaDashboardConfiguracion
  */
-export function Card({ children, className = "", como: Tag = "div" }) {
+export function Card({ children, className = "", como: Tag = "div", ...props }) {
   return (
-    <Tag className={"glass-card " + className}>
+    <Tag className={"glass-card " + className} {...props}>
       {children}
     </Tag>
   );

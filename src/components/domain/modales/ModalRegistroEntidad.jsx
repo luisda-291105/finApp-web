@@ -45,6 +45,23 @@ function generarId() {
   return globalThis.crypto?.randomUUID?.() || `finapp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function validarTarjeta(valores) {
+  const numero = String(valores.numero || '').replace(/[\s-]/g, '');
+  if (!valores.titular.trim()) return { campo: 'titular', mensaje: 'El titular es obligatorio.' };
+  if (!/^\d{13,19}$/.test(numero)) return { campo: 'numero', mensaje: 'El número debe tener entre 13 y 19 dígitos.' };
+  let suma = 0; let duplicar = false;
+  for (let indice = numero.length - 1; indice >= 0; indice -= 1) {
+    let digito = Number(numero[indice]);
+    if (duplicar) { digito *= 2; if (digito > 9) digito -= 9; }
+    suma += digito; duplicar = !duplicar;
+  }
+  if (suma % 10 !== 0) return { campo: 'numero', mensaje: 'El número de tarjeta no es válido.' };
+  const vencimiento = new Date(`${valores.expiracion}T00:00:00`);
+  if (!valores.expiracion || Number.isNaN(vencimiento.getTime()) || vencimiento <= new Date()) return { campo: 'expiracion', mensaje: 'La fecha de vencimiento debe ser futura.' };
+  if (!/^\d{3,4}$/.test(valores.cvv || '')) return { campo: 'cvv', mensaje: 'El CVV debe tener 3 o 4 dígitos.' };
+  return null;
+}
+
 function fechaLocal() {
   const hoy = new Date();
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
@@ -60,6 +77,7 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
   const { usuario } = useUsuarioActivo();
   const [valores, setValores] = useState(configuracion?.inicial || {});
   const [error, setError] = useState("");
+  const [campoConError, setCampoConError] = useState("");
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
@@ -79,12 +97,22 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
       setError("Inicia sesión para registrar datos en tu cuenta.");
       return;
     }
+    if (tipo === "tarjeta") {
+      const errorTarjeta = validarTarjeta(valores);
+      if (errorTarjeta) {
+        setError(errorTarjeta.mensaje);
+        setCampoConError(errorTarjeta.campo);
+        document.getElementById(`registro-tarjeta-${errorTarjeta.campo}`)?.focus();
+        return;
+      }
+      setCampoConError("");
+    }
     setCargando(true);
     setError("");
     try {
       const payload = {
         ...valores,
-        ...(tipo === "tarjeta" && { idTarjeta: generarId() }),
+        ...(tipo === "tarjeta" && { numero: valores.numero.replace(/[\s-]/g, ''), idTarjeta: generarId() }),
         ...(tipo === "contacto" && { idContacto: generarId() }),
         ...(tipo === "grupo" && { idGrupo: generarId(), estado: true }),
         fechaCreacion: fechaLocal(),
@@ -115,7 +143,7 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
             {configuracion.campos.map(([campo, etiqueta, tipoCampo]) => (
               <div key={campo} className="flex flex-col gap-1.5">
                 <label htmlFor={`registro-${tipo}-${campo}`} className="text-sm font-medium">{etiqueta}</label>
-                <input id={`registro-${tipo}-${campo}`} required type={tipoCampo} value={valores[campo]} onChange={(e) => cambiar(campo, e.target.value)} maxLength={campo === "numero" ? 100 : 255} disabled={cargando} className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50" />
+                <input id={`registro-${tipo}-${campo}`} required type={tipoCampo} value={valores[campo]} aria-invalid={campoConError === campo} aria-describedby={campoConError === campo ? "registro-tarjeta-error" : undefined} onChange={(e) => { cambiar(campo, e.target.value); if (campoConError === campo) { setCampoConError(""); setError(""); } }} maxLength={campo === "numero" ? 100 : 255} disabled={cargando} className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50" />
               </div>
             ))}
             {tipo === "tarjeta" && (
@@ -126,7 +154,7 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
                 </select>
               </div>
             )}
-            {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
+            {error && <p id={tipo === "tarjeta" ? "registro-tarjeta-error" : undefined} role="alert" className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={cargando} className="rounded-xl bg-emerald-primary px-4 py-2.5 font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
               {cargando ? "Guardando..." : "Guardar registro"}
             </button>

@@ -28,8 +28,9 @@ export function UsuarioActivoProvider({ children }) {
       const guardado = localStorage.getItem(CLAVE_ALMACEN);
       if (guardado) {
         const parseado = JSON.parse(guardado);
-        if (parseado?.idUsuario) {
-          setUsuario(parseado);
+        const id = parseado?.idUsuario || parseado?.id || parseado?.id_usuario;
+        if (id) {
+          setUsuario({ ...parseado, idUsuario: id });
         }
       }
     } catch (error) {
@@ -38,13 +39,18 @@ export function UsuarioActivoProvider({ children }) {
   }, []);
 
   const guardarUsuario = (usuarioNuevo) => {
-    if (!usuarioNuevo?.idUsuario) {
-      console.error("guardarUsuario: usuarioNuevo.idUsuario es obligatorio", usuarioNuevo);
+    const id = usuarioNuevo?.idUsuario || usuarioNuevo?.id || usuarioNuevo?.id_usuario;
+    if (!id) {
+      console.error("guardarUsuario: idUsuario es obligatorio", usuarioNuevo);
       return;
     }
-    setUsuario(usuarioNuevo);
+    const normalizado = {
+      ...usuarioNuevo,
+      idUsuario: id,
+    };
+    setUsuario(normalizado);
     try {
-      localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(usuarioNuevo));
+      localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(normalizado));
     } catch (error) {
       console.error("Error al guardar usuario activo en localStorage:", error);
     }

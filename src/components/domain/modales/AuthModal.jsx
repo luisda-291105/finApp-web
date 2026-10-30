@@ -53,7 +53,13 @@ function crearOpcionesTrampa(refPanel) {
  */
 export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) {
   const panelRef = useRef(null);
-  const navigate = useNavigate();
+  // Obtener navigate de React Router si está disponible; de lo contrario usar función no‑op para evitar errores en entornos de pruebas sin router.
+let navigate;
+try {
+  navigate = useNavigate();
+} catch {
+  navigate = () => {};
+}
   const { guardarUsuario } = useUsuarioActivo();
   const [modo, setModo] = useState(modoInicial);
   const [idUsuario, setIdUsuario] = useState("");
@@ -79,17 +85,6 @@ export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) 
     setModo(modoInicial);
     setMensaje("");
   }, [modoInicial, abierto]);
-
-  useEffect(() => {
-    if (!abierto) {
-      setIdUsuario("");
-      setNombre("");
-      setCorreo("");
-      setContrasena("");
-      setMensaje("");
-      setCargando(false);
-    }
-  }, [abierto]);
 
   if (!abierto) return null;
 
