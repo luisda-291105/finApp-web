@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaDashboardTarjetas from "../../pages/PaginaDashboardTarjetas";
@@ -38,6 +38,7 @@ describe("PaginaDashboardTarjetas", () => {
     expect(await screen.findByRole("heading", { name: "Ana Pérez" })).toBeInTheDocument();
     expect(obtenerTarjetasPorUsuario).toHaveBeenCalledWith("usuario-prueba");
     expect(screen.getByLabelText("Número de tarjeta enmascarado")).toHaveTextContent("•••• 1111");
+    expect(screen.getByText("Vence 12/28")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent(TARJETA.numero);
     expect(document.body).not.toHaveTextContent(TARJETA.cvv);
   });
@@ -51,19 +52,25 @@ describe("PaginaDashboardTarjetas", () => {
     expect(dialogo).toHaveTextContent("no tiene movimientos registrados");
     expect(dialogo).not.toHaveTextContent(TARJETA.numero);
     expect(dialogo).not.toHaveTextContent(TARJETA.cvv);
+
+    const tarjetaVirtual = within(dialogo).getByRole("button", { name: "Ver reverso de la tarjeta virtual" });
+    await usuario.click(tarjetaVirtual);
+    expect(tarjetaVirtual).toHaveAttribute("aria-pressed", "true");
+    expect(dialogo).not.toHaveTextContent(TARJETA.cvv);
   });
 
-  it("no envía una tarjeta con número que no supera Luhn", async () => {
+  it("no envía una tarjeta con número menor a 14 dígitos y no ofrece tema visual", async () => {
     const usuario = userEvent.setup();
     render(<PaginaDashboardTarjetas />);
     await usuario.click(screen.getByRole("button", { name: "Agregar nueva tarjeta" }));
+    expect(screen.queryByLabelText("Tema visual")).not.toBeInTheDocument();
     await usuario.type(screen.getByLabelText("Titular"), "Ana Pérez");
-    await usuario.type(screen.getByLabelText("Número de tarjeta"), "4111111111111112");
-    await usuario.type(screen.getByLabelText("Fecha de expiración"), "2030-12-31");
+    await usuario.type(screen.getByLabelText("Número de tarjeta"), "4111111111111");
+    await usuario.type(screen.getByLabelText("Vencimiento (MM/AA)"), "12/30");
     await usuario.type(screen.getByLabelText("CVV"), "123");
     await usuario.type(screen.getByLabelText("Entidad financiera"), "Banco FinApp");
     await usuario.click(screen.getByRole("button", { name: "Guardar registro" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("no es válido");
+    expect(await screen.findByRole("alert")).toHaveTextContent("14 a 19");
     expect(screen.getByLabelText("Número de tarjeta")).toHaveFocus();
     expect(crearTarjeta).not.toHaveBeenCalled();
   });

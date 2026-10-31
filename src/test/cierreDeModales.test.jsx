@@ -5,8 +5,8 @@
  *             menú con «Cuenta» (AC-11), cruce de versión de vista con el modal real (AC-14), una
  *             sola superficie/trampa y Esc con dos capas forzadas
  * @funciones  render, screen, within, waitFor, userEvent, act
- * @datos      Superficies REALES montadas con lo mínimo de su entorno (MemoryRouter, fixture de
- *             tarjetas y viewport explícito); NO se mockea focus-trap-react (RF-18, AC-19). La
+ * @datos      Superficies REALES montadas con lo mínimo de su entorno (MemoryRouter, tarjeta
+ *             registrada de prueba y viewport explícito); NO se mockea focus-trap-react (RF-18, AC-19). La
  *             convivencia usa un mock controlable de matchMedia para forzar el cruce del corte
  * @eventos    «X», Esc, clic fuera y gestos de puntero (deslizar hacia abajo solo en móvil);
  *             Tab/Shift+Tab sobre la trampa real
@@ -25,7 +25,13 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import DashboardLayout from "../layout/DashboardLayout";
 import AuthModal from "../components/domain/modales/AuthModal";
 import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
-import { TARJETAS_DEMO } from "../data/tarjetasDemo";
+
+const TARJETA_REGISTRADA = {
+  titular: "Ana Pérez",
+  numero: "4111111111111111",
+  expiracion: "12/30",
+  entidad: "Banco FinApp",
+};
 
 // Mock de `framer-motion`: `motion.div` trivial con `forwardRef` (para que el `ref` del panel
 // llegue a la trampa REAL) y animaciones desactivadas en jsdom. NO se mockea `focus-trap-react`:
@@ -241,10 +247,10 @@ const SUPERFICIES = [
   },
   {
     nombre: "ModalTarjeta (detalle de tarjeta)",
-    botonCerrar: "Cerrar detalle de tarjeta",
-    gesto: true,
+    botonCerrar: "Cerrar Tarjeta de Ana Pérez",
+    gesto: false,
     montar: (alCerrar) => {
-      render(<ModalTarjeta tarjeta={TARJETAS_DEMO[0]} onCerrar={alCerrar} />);
+      render(<ModalTarjeta tarjeta={TARJETA_REGISTRADA} onCerrar={alCerrar} />);
       const panel = screen.getByRole("dialog");
       return { panel, capaExterior: panel.parentElement };
     },
@@ -430,13 +436,13 @@ describe("Esc con dos capas forzadas — defensa CL-02", () => {
     expect(cerrarAcceso).toHaveBeenCalledTimes(1);
   });
 
-  it("en empate de capa (z-50) cierra solo la montada más tarde, con una sola llamada", async () => {
+  it("el detalle de tarjeta (z-60) se cierra antes que el acceso (z-50)", async () => {
     const cerrarAcceso = vi.fn();
     const cerrarTarjeta = vi.fn();
 
     function EmpateDeCapa() {
       const [accesoAbierto, setAccesoAbierto] = useState(true);
-      const [tarjeta, setTarjeta] = useState(TARJETAS_DEMO[0]);
+      const [tarjeta, setTarjeta] = useState(TARJETA_REGISTRADA);
       return (
         <>
           <AuthModal
@@ -459,7 +465,7 @@ describe("Esc con dos capas forzadas — defensa CL-02", () => {
 
     render(<EmpateDeCapa />);
 
-    // Ambas declaran capa 50 (empate) ⇒ gana la montada más tarde (ModalTarjeta).
+    // El detalle compartido queda sobre el modal de acceso.
     await userEvent.keyboard("{Escape}");
 
     expect(cerrarTarjeta).toHaveBeenCalledTimes(1);
@@ -552,7 +558,7 @@ const SUPERFICIES_PARIDAD = [
     nombre: "ModalTarjeta (detalle de tarjeta)",
     montar: () => {
       function Arnes() {
-        const [tarjeta, setTarjeta] = useState(TARJETAS_DEMO[0]);
+        const [tarjeta, setTarjeta] = useState(TARJETA_REGISTRADA);
         return <ModalTarjeta tarjeta={tarjeta} onCerrar={() => setTarjeta(null)} />;
       }
       render(<Arnes />);

@@ -19,10 +19,10 @@ import { crearGrupo } from "../../../services/grupoServicio";
 const CONFIGURACION = {
   tarjeta: {
     titulo: "Registrar tarjeta",
-    inicial: { titular: "", numero: "", expiracion: "", cvv: "", entidad: "", colorTema: "azul" },
+    inicial: { titular: "", numero: "", expiracion: "", cvv: "", entidad: "" },
     campos: [
       ["titular", "Titular", "text"], ["numero", "Número de tarjeta", "text"],
-      ["expiracion", "Fecha de expiración", "date"], ["cvv", "CVV", "password"],
+      ["expiracion", "Vencimiento (MM/AA)", "text"], ["cvv", "CVV", "password"],
       ["entidad", "Entidad financiera", "text"],
     ],
     crear: crearTarjeta,
@@ -46,20 +46,34 @@ function generarId() {
 }
 
 function validarTarjeta(valores) {
-  const numero = String(valores.numero || '').replace(/[\s-]/g, '');
-  if (!valores.titular.trim()) return { campo: 'titular', mensaje: 'El titular es obligatorio.' };
-  if (!/^\d{13,19}$/.test(numero)) return { campo: 'numero', mensaje: 'El número debe tener entre 13 y 19 dígitos.' };
-  let suma = 0; let duplicar = false;
-  for (let indice = numero.length - 1; indice >= 0; indice -= 1) {
-    let digito = Number(numero[indice]);
-    if (duplicar) { digito *= 2; if (digito > 9) digito -= 9; }
-    suma += digito; duplicar = !duplicar;
+  if (typeof valores.titular !== "string" || !valores.titular.trim()) {
+    return { campo: "titular", mensaje: "El titular es obligatorio y debe ser texto." };
   }
-  if (suma % 10 !== 0) return { campo: 'numero', mensaje: 'El número de tarjeta no es válido.' };
-  const vencimiento = new Date(`${valores.expiracion}T00:00:00`);
-  if (!valores.expiracion || Number.isNaN(vencimiento.getTime()) || vencimiento <= new Date()) return { campo: 'expiracion', mensaje: 'La fecha de vencimiento debe ser futura.' };
-  if (!/^\d{3,4}$/.test(valores.cvv || '')) return { campo: 'cvv', mensaje: 'El CVV debe tener 3 o 4 dígitos.' };
+  if (!/^\d{14,19}$/.test(valores.numero || "")) {
+    return { campo: "numero", mensaje: "El número debe contener solo dígitos (14 a 19)." };
+  }
+  const vencimiento = /^(0[1-9]|1[0-2])\/(\d{2})$/.exec(valores.expiracion || "");
+  if (!vencimiento) {
+    return { campo: "expiracion", mensaje: "Usa el formato MM/AA, por ejemplo 08/29." };
+  }
+  const mes = Number(vencimiento[1]);
+  const anio = 2000 + Number(vencimiento[2]);
+  const hoy = new Date();
+  if (anio < hoy.getFullYear() || (anio === hoy.getFullYear() && mes < hoy.getMonth() + 1)) {
+    return { campo: "expiracion", mensaje: "La fecha de vencimiento debe ser el mes actual o uno futuro." };
+  }
+  if (!/^\d{3}$/.test(valores.cvv || "")) {
+    return { campo: "cvv", mensaje: "El CVV debe tener exactamente 3 dígitos." };
+  }
+  if (typeof valores.entidad !== "string" || !valores.entidad.trim()) {
+    return { campo: "entidad", mensaje: "La entidad financiera es obligatoria." };
+  }
   return null;
+}
+
+function convertirVencimientoAFecha(mesAnio) {
+  const [, mes, anio] = /^(\d{2})\/(\d{2})$/.exec(mesAnio);
+  return `20${anio}-${mes}-01`;
 }
 
 function fechaLocal() {
@@ -112,7 +126,12 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
     try {
       const payload = {
         ...valores,
-        ...(tipo === "tarjeta" && { numero: valores.numero.replace(/[\s-]/g, ''), idTarjeta: generarId() }),
+        ...(tipo === "tarjeta" && {
+          titular: valores.titular.trim(),
+          expiracion: convertirVencimientoAFecha(valores.expiracion),
+          colorTema: "azul",
+          idTarjeta: generarId(),
+        }),
         ...(tipo === "contacto" && { idContacto: generarId() }),
         ...(tipo === "grupo" && { idGrupo: generarId(), estado: true }),
         fechaCreacion: fechaLocal(),
@@ -139,21 +158,27 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
             </div>
             <BotonCerrar ariaLabel={`Cerrar ${configuracion.titulo.toLowerCase()}`} alCerrar={alCerrar} />
           </header>
-          <form onSubmit={enviar} className="space-y-4">
+          <form onSubmit={enviar} noValidate={tipo === "tarjeta"} className="space-y-4">
             {configuracion.campos.map(([campo, etiqueta, tipoCampo]) => (
               <div key={campo} className="flex flex-col gap-1.5">
                 <label htmlFor={`registro-${tipo}-${campo}`} className="text-sm font-medium">{etiqueta}</label>
-                <input id={`registro-${tipo}-${campo}`} required type={tipoCampo} value={valores[campo]} aria-invalid={campoConError === campo} aria-describedby={campoConError === campo ? "registro-tarjeta-error" : undefined} onChange={(e) => { cambiar(campo, e.target.value); if (campoConError === campo) { setCampoConError(""); setError(""); } }} maxLength={campo === "numero" ? 100 : 255} disabled={cargando} className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50" />
+              <input
+                id={`registro-${tipo}-${campo}`}
+                required
+                type={tipoCampo}
+                inputMode={tipo === "tarjeta" && ["numero", "expiracion", "cvv"].includes(campo) ? "numeric" : undefined}
+                placeholder={campo === "expiracion" && tipo === "tarjeta" ? "MM/AA" : undefined}
+                pattern={campo === "numero" && tipo === "tarjeta" ? "[0-9]{14,19}" : campo === "expiracion" && tipo === "tarjeta" ? "(0[1-9]|1[0-2])/[0-9]{2}" : campo === "cvv" && tipo === "tarjeta" ? "[0-9]{3}" : undefined}
+                value={valores[campo]}
+                aria-invalid={campoConError === campo}
+                aria-describedby={campoConError === campo ? "registro-tarjeta-error" : undefined}
+                onChange={(e) => { cambiar(campo, e.target.value); if (campoConError === campo) { setCampoConError(""); setError(""); } }}
+                maxLength={campo === "numero" ? 19 : campo === "expiracion" && tipo === "tarjeta" ? 5 : campo === "cvv" && tipo === "tarjeta" ? 3 : 255}
+                disabled={cargando}
+                className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
+              />
               </div>
             ))}
-            {tipo === "tarjeta" && (
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="registro-tarjeta-color" className="text-sm font-medium">Tema visual</label>
-                <select id="registro-tarjeta-color" value={valores.colorTema} onChange={(e) => cambiar("colorTema", e.target.value)} className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2">
-                  <option value="azul">Azul</option><option value="menta">Menta</option><option value="morado">Morado</option>
-                </select>
-              </div>
-            )}
             {error && <p id={tipo === "tarjeta" ? "registro-tarjeta-error" : undefined} role="alert" className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={cargando} className="rounded-xl bg-emerald-primary px-4 py-2.5 font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
               {cargando ? "Guardando..." : "Guardar registro"}
