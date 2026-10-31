@@ -11,7 +11,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import DashboardLayout from "../../layout/DashboardLayout";
-import PanelTarjetas from "../../pages/PanelTarjetas";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import SidebarResponsive from "../../components/layout/SidebarResponsive";
 
@@ -111,7 +110,7 @@ function LayoutTree({ initialPath = "/dashboard" }) {
         <Route path="/dashboard/*" element={<DashboardLayout />}>
           <Route index element={<ContenidoDashboard etiqueta="Inicio" />} />
           <Route path="transacciones" element={<ContenidoDashboard etiqueta="Transacciones" />} />
-          <Route path="tarjetas" element={<PanelTarjetas />} />
+          <Route path="tarjetas" element={<ContenidoDashboard etiqueta="Tarjetas" />} />
           <Route path="configuracion" element={<ContenidoDashboard etiqueta="Configuración" />} />
         </Route>
       </Routes>
@@ -391,26 +390,6 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
       expect(dialogo).toContainElement(document.activeElement);
     });
     expect(screen.queryByRole("dialog", { name: "Cuenta de Usuario Demo" })).not.toBeInTheDocument();
-  });
-
-  it("al abrir el asistente cierra el detalle de tarjeta desde su dueño", async () => {
-    const user = userEvent.setup();
-    renderDashboard("/dashboard/tarjetas");
-    const listas = screen.getAllByRole("list", { name: "Tarjetas de demostración" });
-    const grid = listas.find((lista) => lista.className.includes("sm:grid"));
-    await user.click(
-      within(grid).getByRole("button", { name: "Ver detalle de la tarjeta de MARÍA GARCÍA" })
-    );
-    expect(screen.getByRole("dialog", { name: "Tarjeta de MARÍA GARCÍA" })).toBeInTheDocument();
-
-    fireEvent.click(obtenerDisparador());
-
-    await waitFor(() => {
-      const dialogo = screen.getByRole("dialog", { name: "Asistente de ayuda" });
-      expect(screen.getAllByRole("dialog")).toHaveLength(1);
-      expect(dialogo).toContainElement(document.activeElement);
-    });
-    expect(screen.queryByRole("dialog", { name: /^Tarjeta de / })).not.toBeInTheDocument();
   });
 
   it("excluye el robot del respaldo de foco al cruzar de móvil a escritorio", () => {

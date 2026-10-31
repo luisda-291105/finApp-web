@@ -33,6 +33,9 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/027-fuente-grupo/` — asociación persistente grupo-fuente, modal de detalle, chat/invitaciones de demostración, pestaña de solicitudes y edición/eliminación de fuentes registradas.
 - `specs/028-corregir-tests-fallidos/` — corrige las expectativas obsoletas y los mocks incompletos encontrados en la suite completa del 2026-10-29.
 - `specs/029-mostrar/` — implementada: modal común para grupo, correo, tarjeta y perfil; validación Luhn/vencimiento/CVV, edición/eliminación de grupos por usuario, consulta Gmail por una sola fuente, PUT de perfil con campos autorizados y fuentes apiladas en móvil. Movimientos muestran estado vacío; validación visual de navegador pendiente.
+- `specs/030-arreglo-animaciones-tarjetas/` — aplicada elevación hover y compresión tap a tarjetas registradas con `prefers-reduced-motion`.
+- `specs/031-integridad-tarjetas/` — corrige validación del alta a titular textual, número de 14–19 dígitos, vencimiento MM/AA compatible con `LocalDate` y CVV de 3 dígitos; retira el selector de tema visual y mantiene el flip en el detalle registrado sin exponer CVV.
+- `specs/032-limpieza-codigo/` — implementada: retirados módulos sin uso y flujo demo antiguo de tarjetas; simplificados modal, API de `MiTarjetaVirtual` y comentarios, preservando el flip registrado. Build correcto; pruebas no ejecutadas.
 
 ## Tareas faltantes
 
