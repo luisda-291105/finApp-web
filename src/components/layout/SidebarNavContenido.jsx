@@ -63,7 +63,7 @@ export default function SidebarNavContenido({
   const nombreUsuario = String(usuario?.nombre || "").trim();
   const nombre = nombreUsuario || NOMBRE_RESPALDO;
   const iniciales = nombreUsuario ? calcularIniciales(nombreUsuario) : "UD";
-  const correo = "No registrado";
+  const correo = usuario?.correo || "No registrado";
 
   const enlaces = [
     { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },

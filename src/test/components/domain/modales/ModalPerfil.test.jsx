@@ -100,7 +100,8 @@ describe("ModalPerfilUsuario (perfil)", () => {
   it("muestra Correo y Teléfono como «No registrado» y no son editables", async () => {
     const { dialogo } = await abrirPerfil();
 
-    expect(within(dialogo).getByText("Correo y teléfono: No registrados")).toBeInTheDocument();
+    expect(within(dialogo).getByText("Correo: No registrado")).toBeInTheDocument();
+    expect(within(dialogo).getByText("Teléfono: No registrado")).toBeInTheDocument();
     expect(within(dialogo).queryByLabelText("Correo")).toBeNull();
     expect(within(dialogo).queryByLabelText("Teléfono")).toBeNull();
   });

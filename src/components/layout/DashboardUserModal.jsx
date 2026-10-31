@@ -131,7 +131,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         {/* Correo de solo lectura (se gestionará con el registro de fuentes) */}
         <div className="px-5 py-3 border-b border-border-line/30">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-text">Correo</p>
-          <p className="text-sm text-bg-dark">No registrado</p>
+          <p className="text-sm text-bg-dark">{usuario?.correo || "No registrado"}</p>
         </div>
 
         {/* Profile: Configuración */}
