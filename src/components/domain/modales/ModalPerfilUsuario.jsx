@@ -25,8 +25,8 @@ function fechaLocalISO() {
 /** Clases del campo según esté habilitado o bloqueado en solo lectura. */
 function clasesCampo(bloqueado) {
   return `w-full rounded-xl border border-border-line px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary ${bloqueado
-      ? "bg-border-line/10 text-slate-text cursor-not-allowed"
-      : "bg-bg-cream text-bg-dark"
+    ? "bg-border-line/10 text-slate-text cursor-not-allowed"
+    : "bg-bg-cream text-bg-dark"
     }`;
 }
 
@@ -135,7 +135,13 @@ export default function ModalPerfilUsuario({ abierto, alCerrar, triggerRef }) {
     <ModalDetalleRegistro abierto={abierto} titulo="Perfil" alCerrar={cerrar} triggerRef={triggerRef} ancho="max-w-md">
       <section aria-describedby="perfil-descripcion">
         <p id="perfil-descripcion" className="mb-4 text-sm text-slate-text">Consulta y modifica la información básica de tu usuario.</p>
-        {!modoEdicion && <div className="mb-4 rounded-2xl border border-border-line/40 bg-bg-cream/70 p-4"><p className="text-xs uppercase tracking-wide text-slate-text">Cuenta</p><p className="mt-1 font-medium text-bg-dark">{nombre || "Nombre no registrado"}</p><p className="mt-1 text-sm text-slate-text">Identificación: {idUsuario || "No registrada"}</p><p className="mt-1 text-sm text-slate-text">Correo: {usuario?.correo || "No registrado"}</p><p className="mt-1 text-sm text-slate-text">Teléfono: {usuario?.telefono || "No registrado"}</p></div>}
+        {!modoEdicion && <div className="mb-4 rounded-2xl border border-border-line/40 bg-bg-cream/70 p-4">
+          <p className="text-xs uppercase tracking-wide text-slate-text">Cuenta</p>
+          <p className="mt-1 font-medium text-bg-dark">{nombre || "Nombre no registrado"}</p>
+          <p className="mt-1 text-sm text-slate-text">Identificación: {idUsuario || "No registrada"}</p>
+          <p className="mt-1 text-sm text-slate-text">Correo: {correo || "No registrado"}</p>
+          <p className="mt-1 text-sm text-slate-text">Teléfono: {telefono || "No registrado"}</p>
+        </div>}
         {modoEdicion ? <form onSubmit={manejarSubmit} className="flex flex-col gap-4 px-1 py-2">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="perfil-id" className="text-sm font-medium text-bg-dark">
