@@ -3,19 +3,26 @@
  * @funciones  PaginaDashboardTarjetas()
  * @datos      Tarjetas registradas consultadas por el usuario activo
  * @eventos    click en Nueva tarjeta
- * @estados    Ninguno
+ * @estados    reducirMovimiento (useReducedMotion) - desactiva hover/tap animados si el usuario lo solicita
  * @usadoPor   App.jsx (ruta /dashboard/tarjetas)
  */
 
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Card } from "../components/ui/Card";
 import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
 import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
 
+function mostrarVencimiento(vencimiento) {
+  const fecha = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(vencimiento || "");
+  return fecha ? `${fecha[2]}/${fecha[1].slice(-2)}` : vencimiento || "";
+}
+
 export default function PaginaDashboardTarjetas() {
+  const reducirMovimiento = useReducedMotion();
   const { usuario } = useUsuarioActivo();
   const [tarjetas, setTarjetas] = useState([]);
   const [cargando, setCargando] = useState(false);
@@ -40,7 +47,12 @@ export default function PaginaDashboardTarjetas() {
       setCargando(true);
       setError("");
       const respuesta = await obtenerTarjetasPorUsuario(usuario.idUsuario);
-      setTarjetas(Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || []);
+      const datos = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      const registros = Array.isArray(datos) ? datos : [];
+      setTarjetas(registros.map((tarjeta) => ({
+        ...tarjeta,
+        expiracion: mostrarVencimiento(tarjeta.expiracion),
+      })));
     } catch (fallo) {
       setTarjetas([]);
       setError(fallo?.message || "No se pudieron cargar tus tarjetas.");
@@ -53,6 +65,7 @@ export default function PaginaDashboardTarjetas() {
 
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
+      {/* header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
@@ -75,6 +88,8 @@ export default function PaginaDashboardTarjetas() {
           <span>Nueva tarjeta</span>
         </button>
       </div>
+
+      {/* tarjetas registradas / cargando */}
       <Card className="space-y-4 p-6">
         <h2 className="font-display text-lg font-semibold text-bg-dark">Tarjetas registradas</h2>
         {cargando && <p role="status" className="text-sm text-slate-text">Cargando tarjetas...</p>}
@@ -85,7 +100,22 @@ export default function PaginaDashboardTarjetas() {
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Tarjetas registradas">
             {tarjetas.map((tarjeta, index) => (
               <li key={tarjeta.idTarjeta || index}>
-                <button type="button" onClick={(evento) => { disparadorDetalleRef.current = evento.currentTarget; setTarjetaSeleccionada(tarjeta); }} aria-label={`Ver tarjeta de ${tarjeta.titular || "Titular"}`} className="flex min-h-44 w-full flex-col justify-between rounded-2xl bg-emerald-primary p-5 text-left text-bg-cream shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">
+                <motion.button
+                  type="button"
+                  onClick={(evento) => {
+                    disparadorDetalleRef.current = evento.currentTarget;
+                    setTarjetaSeleccionada(tarjeta);
+                  }}
+                  aria-label={`Ver tarjeta de ${tarjeta.titular || "Titular"}`}
+                  className="flex min-h-44 w-full flex-col justify-between rounded-2xl bg-emerald-primary p-5 text-left text-bg-cream shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
+                  whileHover={reducirMovimiento ? undefined : { y: -4 }}
+                  whileTap={reducirMovimiento ? undefined : { scale: 0.99 }}
+                  transition={
+                    reducirMovimiento
+                      ? { duration: 0 }
+                      : { duration: 0.25, ease: [0.22, 1, 0.36, 1] }
+                  }
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-xs font-medium uppercase tracking-wider text-bg-cream/75">{tarjeta.entidad || "Tarjeta"}</p>
@@ -97,13 +127,13 @@ export default function PaginaDashboardTarjetas() {
                     <p className="font-mono text-lg tracking-widest" aria-label="Número de tarjeta enmascarado">{enmascararNumero(tarjeta.numero)}</p>
                     <p className="mt-2 text-xs text-bg-cream/80">Vence {tarjeta.expiracion || "Sin fecha"}</p>
                   </div>
-                </button>
+                </motion.button>
               </li>
             ))}
           </ul>
         )}
       </Card>
-      <ModalTarjeta tarjeta={tarjetaSeleccionada} registrada triggerRef={disparadorDetalleRef} onCerrar={() => setTarjetaSeleccionada(null)} />
+      <ModalTarjeta tarjeta={tarjetaSeleccionada} triggerRef={disparadorDetalleRef} onCerrar={() => setTarjetaSeleccionada(null)} />
       <ModalRegistroEntidad tipo="tarjeta" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarTarjetas} />
     </section>
   );
