@@ -2,6 +2,26 @@ He recopilado la idea que fuimos definiendo y la separé del estado técnico act
 
  # FinApp
 
+## Conectar Gmail
+
+La página **Correos** consulta los mensajes recibidos en las direcciones activas de tipo
+`CORREO`. Para habilitar Gmail:
+
+1. En un proyecto de Google Cloud, habilita Gmail API y configura la pantalla de
+   consentimiento OAuth.
+2. Crea un ID de cliente OAuth para una aplicación web y autoriza el origen local de
+   Vite (por defecto `http://localhost:5173`) y el dominio de producción.
+3. Copia `.env.example` a `.env` y completa `VITE_GOOGLE_CLIENT_ID`.
+4. Autoriza Gmail desde la página Correos.
+
+FinApp solicita el alcance restringido de solo lectura `gmail.readonly`, que permite leer
+la bandeja completa. La consulta de FinApp se limita a los mensajes recientes de la bandeja
+de entrada que coincidan con las direcciones registradas como fuentes. El token vive solo en
+memoria del navegador y los mensajes no se guardan ni se envían al backend. Las categorías de contabilidad y entretenimiento
+se infieren desde el remitente, asunto y fragmento; la categoría importante también usa la
+etiqueta de importancia de Gmail. Una aplicación pública que solicite este alcance debe
+completar la verificación OAuth de Google.
+
  ## Visión
 
  **FinApp busca ayudar a una persona a organizar, comprender y gestionar su vida digital y financiera desde un solo lugar.**

@@ -1,9 +1,10 @@
 /**
  * @uso        Centraliza interruptores de comportamiento de la aplicación
- * @funciones  N/A
- * @datos      Valores de configuración en tiempo de compilación
- * @eventos    N/A
  * @estados    TRIAL_ACTIVO controla la protección de rutas
- * @usadoPor   App.jsx, LoginPage.jsx
+ * @usadoPor   App.jsx, PaginaLogin.jsx, componentes de header/usuario
  */
+
+// TRIAL_ACTIVO = true mientras el backend no esté listo.
+// En producción, esta bandera debe controlarse por variable de entorno
+// y el dashboard debe requerir autenticación real.
 export const TRIAL_ACTIVO = true;
