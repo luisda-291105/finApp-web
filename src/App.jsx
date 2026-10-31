@@ -19,6 +19,7 @@ import PaginaDashboardBolsillos from "./pages/PaginaDashboardBolsillos";
 import PaginaDashboardContactos from "./pages/PaginaDashboardContactos";
 import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
+import { TemaProvider } from "./context/TemaContext";
 
 /**
  * App
@@ -26,8 +27,9 @@ import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
  */
 export default function App() {
   return (
-    <UsuarioActivoProvider>
-      <Routes>
+    <TemaProvider>
+      <UsuarioActivoProvider>
+        <Routes>
         <Route path="/" element={<PaginaInicio />} />
         <Route path="/inicio" element={<Navigate to="/" replace />} />
         <Route path="/login" element={<PaginaLogin />} />
@@ -56,7 +58,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </UsuarioActivoProvider>
+        </Routes>
+      </UsuarioActivoProvider>
+    </TemaProvider>
   );
 }

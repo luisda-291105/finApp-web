@@ -42,7 +42,7 @@ export default function MiTarjetaVirtual({ titular, numero, expiracion, cvv = ""
         aria-label={volteada ? "Ver frente de la tarjeta virtual" : "Ver reverso de la tarjeta virtual"}
         onClick={alternarGiro}
         onKeyDown={manejarTeclado}
-        className="group relative mx-auto aspect-[8/5] w-full max-w-xs cursor-pointer glass-card"
+        className="group relative mx-auto aspect-[8/5] w-full max-w-xs cursor-pointer rounded-2xl border border-border-line bg-transparent shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
         style={{ transformStyle: "preserve-3d" }}
         animate={{ rotateY: volteada ? 180 : 0 }}
         transition={transitionConfig}
@@ -51,7 +51,7 @@ export default function MiTarjetaVirtual({ titular, numero, expiracion, cvv = ""
       >
         {/* tarjeta virtual frente */}
         <div className="absolute inset-0 rounded-[inherit] overflow-hidden" style={{ backfaceVisibility: "hidden" }} aria-hidden={volteada} data-testid="tarjeta-frente">
-          <div className="relative h-full min-h-[200px] from-cat-income via-cat-income/85 to-cat-income/70 text-black p-6 flex flex-col justify-between">
+          <div className="relative h-full min-h-[200px] bg-slate-100 text-bg-dark p-6 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="flex h-7 w-10 items-center justify-center rounded-lg bg-slate-300 p-2.5" aria-hidden="true" data-testid="chip-emv">
                 <svg className="w-5 h-5 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

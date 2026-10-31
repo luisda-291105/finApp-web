@@ -107,7 +107,7 @@ export default function PaginaDashboardTarjetas() {
                     setTarjetaSeleccionada(tarjeta);
                   }}
                   aria-label={`Ver tarjeta de ${tarjeta.titular || "Titular"}`}
-                  className="flex min-h-44 w-full flex-col justify-between rounded-2xl bg-emerald-primary p-5 text-left text-bg-cream shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
+                  className="flex min-h-44 w-full flex-col justify-between rounded-2xl border border-border-line bg-transparent p-5 text-left text-bg-dark shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
                   whileHover={reducirMovimiento ? undefined : { y: -4 }}
                   whileTap={reducirMovimiento ? undefined : { scale: 0.99 }}
                   transition={
@@ -118,14 +118,14 @@ export default function PaginaDashboardTarjetas() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-medium uppercase tracking-wider text-bg-cream/75">{tarjeta.entidad || "Tarjeta"}</p>
+                      <p className="truncate text-xs font-medium uppercase tracking-wider text-bg-dark/70">{tarjeta.entidad || "Tarjeta"}</p>
                       <h3 className="mt-1 truncate font-display text-lg font-semibold">{tarjeta.titular || "Titular"}</h3>
                     </div>
-                    <span aria-hidden="true" className="rounded-md border border-bg-cream/50 px-2 py-1 text-[10px] font-semibold uppercase">FinApp</span>
+                    <span aria-hidden="true" className="rounded-md border border-border-line px-2 py-1 text-[10px] font-semibold uppercase">FinApp</span>
                   </div>
                   <div>
                     <p className="font-mono text-lg tracking-widest" aria-label="Número de tarjeta enmascarado">{enmascararNumero(tarjeta.numero)}</p>
-                    <p className="mt-2 text-xs text-bg-cream/80">Vence {tarjeta.expiracion || "Sin fecha"}</p>
+                    <p className="mt-2 text-xs text-bg-dark/80">Vence {tarjeta.expiracion || "Sin fecha"}</p>
                   </div>
                 </motion.button>
               </li>

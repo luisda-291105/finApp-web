@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import SidebarNavContenido from "./SidebarNavContenido";
+import { useTema } from "../../context/TemaContext";
 
 /** SidebarResponsive
  * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
@@ -20,11 +21,13 @@ import SidebarNavContenido from "./SidebarNavContenido";
  */
 
 export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal }) {
+  const { tema } = useTema();
+  const temaClaro = tema === "claro";
   return (
     <aside
       className={clsx(
         "fixed left-0 top-0 h-screen z-40 transition-all duration-300",
-        "bg-bg-dark/80 glass-surface border-r border-border-line/20",
+        temaClaro ? "bg-bg-cream/95 glass-surface border-r border-border-line/70 shadow-lg" : "bg-bg-dark/80 glass-surface border-r border-border-line/20",
         "flex flex-col overflow-hidden",
         colapsada ? "w-[72px]" : "w-64",
       )}
@@ -33,14 +36,15 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
       data-collapsed={colapsada}
     >
       {/* Área del logo / toggle colapso */}
-      <div className="flex items-center px-3 py-4 border-b border-border-line/20 min-h-[64px] overflow-hidden">
+      <div className={clsx("flex items-center px-3 py-4 border-b min-h-[64px] overflow-hidden", temaClaro ? "border-border-line/70" : "border-border-line/20")}>
         <button
           type="button"
           onClick={alToggleColapso}
           className={clsx(
             "flex items-center w-full min-w-0 rounded-lg transition-colors",
             "hover:bg-emerald-primary/10 focus-visible:outline-none",
-            "focus-visible:ring-2 focus-visible:ring-mint-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-dark",
+            "focus-visible:ring-2 focus-visible:ring-mint-accent/50 focus-visible:ring-offset-2",
+            temaClaro ? "focus-visible:ring-offset-bg-cream" : "focus-visible:ring-offset-bg-dark",
             colapsada ? "justify-center" : "justify-start gap-0",
           )}
           aria-expanded={!colapsada}
@@ -51,7 +55,7 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
               F
             </span>
           ) : (
-            <span className="flex items-center whitespace-nowrap font-display text-xl font-medium text-bg-cream">
+            <span className={clsx("flex items-center whitespace-nowrap font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
               <span className="text-emerald-primary">Fin</span>
               <span>App</span>
             </span>
@@ -65,6 +69,7 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
           alAbrirUserModal={alAbrirUserModal}
           colapsada={colapsada}
           avatarSeparado
+          temaClaro={temaClaro}
         />
       </div>
     </aside>

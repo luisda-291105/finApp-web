@@ -57,6 +57,7 @@ export default function SidebarNavContenido({
   colapsada = false,
   avatarSeparado = false,
   alCerrarSidebar,
+  temaClaro = false,
 }) {
   const { usuario } = useUsuarioActivo();
   const nombreUsuario = String(usuario?.nombre || "").trim();
@@ -85,8 +86,8 @@ export default function SidebarNavContenido({
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors min-w-0 ${
           isActive
-            ? "bg-emerald-primary/10 text-mint-accent font-medium"
-            : "text-bg-cream/70 hover:bg-emerald-primary/5"
+            ? temaClaro ? "bg-emerald-primary/10 text-emerald-primary font-medium" : "bg-emerald-primary/10 text-mint-accent font-medium"
+            : temaClaro ? "text-slate-text hover:bg-emerald-primary/5" : "text-bg-cream hover:bg-emerald-primary/5"
         }`
       }
     >
@@ -109,8 +110,8 @@ export default function SidebarNavContenido({
         {iniciales}
       </div>
       <div className={clsx("flex-1 min-w-0 truncate text-left", colapsada && "hidden")}>
-        <p className="font-medium text-white truncate">{nombre}</p>
-        <p className="text-xs text-bg-cream/70 truncate">{correo}</p>
+        <p className={clsx("font-medium truncate", temaClaro ? "text-bg-dark" : "text-white")}>{nombre}</p>
+        <p className={clsx("text-xs truncate", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>{correo}</p>
       </div>
     </button>
   );
@@ -125,7 +126,7 @@ export default function SidebarNavContenido({
           {enlacesNavegacion}
         </nav>
         <div className="shrink-0">
-          <hr role="separator" className="border-border-line/20 my-3" aria-hidden="true" />
+          <hr role="separator" className={clsx("my-3", temaClaro ? "border-border-line/70" : "border-border-line/20")} aria-hidden="true" />
           {bloqueAvatar}
         </div>
       </>
@@ -135,7 +136,7 @@ export default function SidebarNavContenido({
   return (
     <nav className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll" aria-label="Navegación principal del dashboard">
       {enlacesNavegacion}
-      <hr role="separator" className="border-border-line/20 my-3" aria-hidden="true" />
+      <hr role="separator" className={clsx("my-3", temaClaro ? "border-border-line/70" : "border-border-line/20")} aria-hidden="true" />
       {bloqueAvatar}
     </nav>
   );

@@ -12,7 +12,9 @@ import { Card } from "../components/ui/Card";
 import ModalFuentes from "../components/domain/modales/ModalFuentes";
 import ModalPerfilUsuario from "../components/domain/modales/ModalPerfilUsuario";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
+import { useTema } from "../context/TemaContext";
 import { actualizarFuente, eliminarFuente, obtenerFuentesPorUsuario } from "../services/fuenteServicio";
+import { Moon, Sun } from "lucide-react";
 
 export default function PaginaDashboardConfiguracion() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);
@@ -27,6 +29,7 @@ export default function PaginaDashboardConfiguracion() {
   const disparadorFuentesRef = useRef(null);
   const triggerUsuarioRef = useRef(null);
   const { usuario } = useUsuarioActivo();
+  const { tema, alternarTema } = useTema();
 
   const cargarFuentes = async () => {
     try {
@@ -116,6 +119,27 @@ export default function PaginaDashboardConfiguracion() {
         <p className="text-slate-text">
           Ajusta tus preferencias de cuenta y seguridad.
         </p>
+      </Card>
+
+      <Card className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-display text-lg font-semibold text-bg-dark">Apariencia</h2>
+          <p className="text-sm text-slate-text">Elige el tema claro u oscuro para FinApp.</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={tema === "oscuro"}
+          aria-label="Modo oscuro"
+          onClick={alternarTema}
+          className="inline-flex min-h-11 items-center gap-3 self-start rounded-full border border-border-line px-4 py-2 text-sm font-medium text-bg-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary sm:self-auto"
+        >
+          {tema === "oscuro" ? <Moon className="h-4 w-4" aria-hidden="true" /> : <Sun className="h-4 w-4" aria-hidden="true" />}
+          <span>{tema === "oscuro" ? "Modo oscuro" : "Modo claro"}</span>
+          <span aria-hidden="true" className={`relative h-6 w-11 rounded-full transition-colors ${tema === "oscuro" ? "bg-emerald-primary" : "bg-slate-text/30"}`}>
+            <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${tema === "oscuro" ? "translate-x-6" : "translate-x-1"}`} />
+          </span>
+        </button>
       </Card>
 
       <Card className="space-y-3 p-6">

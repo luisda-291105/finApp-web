@@ -58,6 +58,10 @@ function validarTarjeta(valores) {
   }
   const mes = Number(vencimiento[1]);
   const anio = 2000 + Number(vencimiento[2]);
+  const diasDelMes = new Date(anio, mes, 0).getDate();
+  if (diasDelMes < 28 || diasDelMes > 31) {
+    return { campo: "expiracion", mensaje: "El mes de vencimiento debe tener entre 28 y 31 días." };
+  }
   const hoy = new Date();
   if (anio < hoy.getFullYear() || (anio === hoy.getFullYear() && mes < hoy.getMonth() + 1)) {
     return { campo: "expiracion", mensaje: "La fecha de vencimiento debe ser el mes actual o uno futuro." };
@@ -74,6 +78,20 @@ function validarTarjeta(valores) {
 function convertirVencimientoAFecha(mesAnio) {
   const [, mes, anio] = /^(\d{2})\/(\d{2})$/.exec(mesAnio);
   return `20${anio}-${mes}-01`;
+}
+
+function formatearVencimiento(valor) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 4);
+  if (digitos.length < 2) return digitos;
+  const mes = digitos.slice(0, 2);
+  return digitos.length === 2 ? `${mes}/` : `${mes}/${digitos.slice(2)}`;
+}
+
+function completarVencimientoAlSalir(valor) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 4);
+  if (digitos.length === 1) return `0${digitos}/`;
+  if (digitos.length === 2) return `${digitos}/`;
+  return digitos.length > 2 ? `${digitos.slice(0, 2)}/${digitos.slice(2)}` : digitos;
 }
 
 function fechaLocal() {
@@ -129,7 +147,6 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
         ...(tipo === "tarjeta" && {
           titular: valores.titular.trim(),
           expiracion: convertirVencimientoAFecha(valores.expiracion),
-          colorTema: "azul",
           idTarjeta: generarId(),
         }),
         ...(tipo === "contacto" && { idContacto: generarId() }),
@@ -172,7 +189,18 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
                 value={valores[campo]}
                 aria-invalid={campoConError === campo}
                 aria-describedby={campoConError === campo ? "registro-tarjeta-error" : undefined}
-                onChange={(e) => { cambiar(campo, e.target.value); if (campoConError === campo) { setCampoConError(""); setError(""); } }}
+                onChange={(e) => {
+                  const valor = tipo === "tarjeta" && campo === "expiracion"
+                    ? formatearVencimiento(e.target.value)
+                    : tipo === "tarjeta" && ["numero", "cvv"].includes(campo)
+                      ? e.target.value.replace(/\D/g, "").slice(0, campo === "cvv" ? 3 : 19)
+                      : e.target.value;
+                  cambiar(campo, valor);
+                  if (campoConError === campo) { setCampoConError(""); setError(""); }
+                }}
+                onBlur={tipo === "tarjeta" && campo === "expiracion"
+                  ? (e) => cambiar(campo, completarVencimientoAlSalir(e.target.value))
+                  : undefined}
                 maxLength={campo === "numero" ? 19 : campo === "expiracion" && tipo === "tarjeta" ? 5 : campo === "cvv" && tipo === "tarjeta" ? 3 : 255}
                 disabled={cargando}
                 className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"

@@ -63,7 +63,7 @@ function crearOpcionesTrampa(refPanel) {
  * @param {React.ReactNode} props.children - Contenido a renderizar (ej. SidebarNavContenido)
  * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Ref al elemento trigger para retorno de foco
  */
-export default function DashboardDrawer({ abierto, alCerrar, children, triggerRef }) {
+export default function DashboardDrawer({ abierto, alCerrar, children, triggerRef, temaClaro = false }) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
 
@@ -105,7 +105,8 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
           aria-label="Menú de navegación"
           tabIndex={-1}
           className={clsx(
-            "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col bg-bg-dark/95 glass-surface border-l border-border-line/20 z-55 outline-none"
+            "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col glass-surface border-l z-55 outline-none",
+            temaClaro ? "bg-bg-cream/95 border-border-line/70 shadow-xl" : "bg-bg-dark/95 border-border-line/20"
           )}
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
@@ -118,7 +119,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
             <BotonCerrar
               ariaLabel="Cerrar menú"
               alCerrar={alCerrar}
-              className="text-bg-cream hover:text-mint-accent hover:bg-emerald-primary/10 focus-visible:ring-mint-accent"
+              className={temaClaro ? "text-bg-dark hover:text-emerald-primary hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary" : "text-bg-cream hover:text-mint-accent hover:bg-emerald-primary/10 focus-visible:ring-mint-accent"}
             />
           </div>
 

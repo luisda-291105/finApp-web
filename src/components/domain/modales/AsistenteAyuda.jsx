@@ -1,59 +1,25 @@
 /**
- * @uso        Superficie modal de diseño del asistente de ayuda de la landing (solo diseño, spec 014)
- * @funciones  AsistenteAyuda({ abierto, estadoVisual, alCerrar, triggerRef })
- * @datos      Literales fijos de la spec 014 §4.3 y la conversación de muestra (estática); sin datos externos
- * @eventos    Sin eventos propios de lógica; cierra por «X», Esc, clic fuera y deslizar (cromo 010/011)
- * @estados    Ninguno propio: `estadoVisual` es una prop presentacional ('vacio' | 'conversacion')
- * @usadoPor   PaginaInicio
+ * @uso        Asistente de chat del dashboard con respuestas basadas en fuentes
+ * @funciones  AsistenteAyuda({ abierto, alCerrar, triggerRef })
+ * @datos      Mantiene mensajes solo en memoria; consulta el backend para generar respuestas
+ * @eventos    Enviar pregunta o sugerencia, cancelar petición y cerrar el diálogo
+ * @estados    mensajes, entrada, cargando, error, consultaFallida
+ * @usadoPor   DashboardLayout
  */
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
 import { BotonCerrar } from "../../ui/BotonCerrar";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
+import { conversarConAsistente } from "../../../services/asistenteServicio";
 
-const TITULO = "Asistente de ayuda";
-const MARCA_DEMO = "Demostración · No es una IA real";
-const NOTA_DISENO = "Vista de diseño: contenido de ejemplo; aún no responde preguntas.";
-const TEXTO_VACIO =
-  "Aún no hay mensajes. Cuando la ayuda esté activa, podrás elegir una sugerencia o escribir una pregunta.";
 const SUGERENCIAS = [
-  "¿Cómo entro al panel?",
   "¿Dónde veo mis tarjetas?",
-  "¿Se guardan mis datos?",
-  "¿Cómo salgo del demo?",
+  "¿Cómo cambio la apariencia?",
+  "¿Qué datos consulta este chat?",
 ];
-const TEXTO_EJEMPLO = "Conversación de ejemplo";
-const CONVERSACION = [
-  { remitente: "tu", texto: "¿Cómo entro al panel?" },
-  {
-    remitente: "asistente",
-    texto:
-      "En esta demo el panel se abre directamente desde la portada. Dentro, la barra lateral te permite ir a Inicio, Transacciones y Tarjetas.",
-  },
-  { remitente: "tu", texto: "¿Se guardan mis datos?" },
-  {
-    remitente: "asistente",
-    texto:
-      "Esta es una demostración: no hay backend ni datos financieros reales. Las cifras y las tarjetas que ves son de ejemplo.",
-  },
-];
-const ARIA_CERRAR = "Cerrar asistente de ayuda";
-const ARIA_LOG = "Mensajes del asistente";
-const AVISO_RESERVA =
-  "Cuando la ayuda esté activa, si tu pregunta no coincide verás una respuesta de reserva.";
-const LABEL_ENTRADA = "Tu pregunta";
-const PLACEHOLDER = "Escribe una pregunta…";
-const BOTON_ENVIAR = "Enviar";
 
-/**
- * Opciones REALES de `focus-trap` (spec 010 §2.2; mismo patrón que `AuthModal.jsx:29-36`).
- * `allowOutsideClick: true` hace efectivo el clic exterior (la trampa no cancela ni consume el
- * evento) SIN desactivarse; `escapeDeactivates: false` deja Esc al único manejador común
- * (`useCierreConEsc`); el foco inicial va al contenedor del diálogo y el retorno de foco es manual
- * (`returnFocusOnDeactivate: false`, lo gobierna `useRetornoDeFoco`).
- */
 function crearOpcionesTrampa(refPanel) {
   return {
     allowOutsideClick: true,
@@ -63,164 +29,198 @@ function crearOpcionesTrampa(refPanel) {
   };
 }
 
-/**
- * AsistenteAyuda
- * - Solo diseño (spec 014): no hay motor, guion, estado de conversación ni red. `abierto` es el
- *   único control; `estadoVisual` ('vacio' por defecto | 'conversacion') es presentacional.
- * - `abierto === false` → no renderiza nada (mismo patrón que `AuthModal`).
- * - Accesibilidad: `role="dialog"` + `aria-modal` en el panel, nombre accesible por
- *   `aria-labelledby="asistente-titulo"` y descripción por
- *   `aria-describedby="asistente-marca asistente-nota asistente-reserva"`; foco inicial en el
- *   contenedor del diálogo (`tabIndex={-1}`, fuera del ciclo de Tab).
- * - El scrim NO lleva `backdrop-filter` (no cuenta como superficie Fluid Glass; spec 014 DP-10) y no
- *   se marca `aria-hidden` porque contiene al diálogo.
- * - Único color por tokens de `src/styles/index.css`; sin hexadecimales nuevos.
- * @param {Object} props
- * @param {boolean} props.abierto - Control de visibilidad
- * @param {'vacio' | 'conversacion'} [props.estadoVisual] - Variante estática de diseño
- * @param {() => void} props.alCerrar - Callback de cierre
- * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Disparador al que devolver el foco
- * @returns {JSX.Element | null} Superficie modal o `null` si está cerrada
- */
-export default function AsistenteAyuda({ abierto, estadoVisual = "vacio", alCerrar, triggerRef }) {
+export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
+  const logRef = useRef(null);
+  const peticionRef = useRef(null);
+  const [mensajes, setMensajes] = useState([]);
+  const [entrada, setEntrada] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+  const [consultaFallida, setConsultaFallida] = useState("");
 
-  // Cromo congelado de 010/011, registrado antes del retorno condicional (regla de hooks).
-  // Esc: capa del panel (z-60); gesto: solo móvil y sobre el panel; foco: transición abierta → cerrada.
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });
   useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar });
   useRetornoDeFoco({ activo: abierto, triggerRef });
 
+  useEffect(() => {
+    if (!abierto) {
+      peticionRef.current?.abort();
+      peticionRef.current = null;
+      setCargando(false);
+    }
+  }, [abierto]);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [mensajes, cargando, error]);
+
   if (!abierto) return null;
 
-  const manejarClicExterior = (evento) => {
-    // Solo cierra si el clic cae directamente en la capa exterior (no en el panel)
-    if (evento.target === evento.currentTarget) {
-      alCerrar();
+  const enviarMensaje = async (texto, incluirEnConversacion = true) => {
+    const pregunta = String(texto || "").trim();
+    if (!pregunta || cargando || pregunta.length > 500) return;
+
+    const historial = mensajes.slice(-8).map(({ rol, contenido }) => ({ rol, contenido }));
+    if (incluirEnConversacion) {
+      setMensajes((actuales) => [...actuales, { rol: "user", contenido: pregunta }]);
     }
+    setEntrada("");
+    setError("");
+    setConsultaFallida("");
+    setCargando(true);
+
+    const controlador = new AbortController();
+    peticionRef.current = controlador;
+    try {
+      const datos = await conversarConAsistente({ mensaje: pregunta, historial }, controlador.signal);
+      setMensajes((actuales) => [...actuales, {
+        rol: "assistant",
+        contenido: datos.respuesta,
+        fuentes: datos.fuentes || [],
+        aviso: datos.aviso || "",
+      }]);
+    } catch (fallo) {
+      if (fallo.name !== "AbortError") {
+        setError(fallo.message || "No se pudo obtener una respuesta.");
+        setConsultaFallida(pregunta);
+      }
+    } finally {
+      if (peticionRef.current === controlador) {
+        peticionRef.current = null;
+        setCargando(false);
+      }
+    }
+  };
+
+  const enviarFormulario = (evento) => {
+    evento.preventDefault();
+    void enviarMensaje(entrada);
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-dark/70"
-      onClick={manejarClicExterior}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg-dark/70 p-4"
+      onClick={(evento) => evento.target === evento.currentTarget && !cargando && alCerrar()}
     >
       <FocusTrap focusTrapOptions={crearOpcionesTrampa(panelRef)}>
-        <div
+        <section
           ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="asistente-titulo"
-          aria-describedby="asistente-marca asistente-nota asistente-reserva"
+          aria-describedby="asistente-aviso"
           tabIndex={-1}
-          className="relative z-60 w-[90vw] max-w-md max-h-[85vh] overflow-hidden outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-3xl shadow-xl flex flex-col"
+          className="glass-surface relative flex max-h-[85vh] w-[90vw] max-w-md flex-col overflow-hidden rounded-3xl border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none"
         >
-          {/* Cabecera fija, fuera del área scrolleable (marca y nota siempre visibles) */}
-          <header className="shrink-0 flex items-start justify-between gap-3 px-5 py-4 border-b border-border-line/30">
-            <div className="flex flex-col gap-1.5">
-              <h2
-                id="asistente-titulo"
-                className="font-display text-lg font-semibold text-bg-dark"
-              >
-                {TITULO}
-              </h2>
-              <span
-                id="asistente-marca"
-                className="self-start rounded-full bg-emerald-primary px-2.5 py-1 text-xs font-medium text-bg-cream"
-              >
-                {MARCA_DEMO}
-              </span>
-              <p id="asistente-nota" className="text-xs text-slate-text">
-                {NOTA_DISENO}
-              </p>
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-line/30 px-5 py-4">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <h2 id="asistente-titulo" className="font-display text-lg font-semibold">Asistente de FinApp</h2>
+              <p className="text-xs text-slate-text">Respuestas con documentación y búsqueda pública.</p>
             </div>
             <BotonCerrar
-              ariaLabel={ARIA_CERRAR}
+              ariaLabel="Cerrar asistente de ayuda"
               alCerrar={alCerrar}
               className="shrink-0 text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
             />
           </header>
-          {/* Único scroll: el panel es overflow-hidden y solo este body scrollea (DP-06) */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
-            {estadoVisual === "vacio" && (
-              <>
-                <p className="text-sm text-slate-text">{TEXTO_VACIO}</p>
+
+          <div
+            ref={logRef}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-atomic="false"
+            aria-label="Mensajes del asistente"
+            className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
+          >
+            {mensajes.length === 0 ? (
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-slate-text">
+                  Pregunta sobre cómo usar FinApp o solicita información pública actual.
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {SUGERENCIAS.map((sugerencia) => (
                     <button
                       key={sugerencia}
                       type="button"
-                      aria-disabled="true"
-                      className="rounded-full border border-border-line/60 bg-bg-cream px-3 py-1.5 text-left text-xs text-bg-dark"
+                      disabled={cargando}
+                      onClick={() => void enviarMensaje(sugerencia)}
+                      className="rounded-full border border-border-line/60 bg-bg-cream px-3 py-1.5 text-left text-xs text-bg-dark hover:border-emerald-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
                     >
                       {sugerencia}
                     </button>
                   ))}
                 </div>
-              </>
-            )}
-            {estadoVisual === "conversacion" && (
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-text">
-                {TEXTO_EJEMPLO}
-              </p>
-            )}
-            {/* Log solo de mensajes: fuera quedan el aviso y las sugerencias (RF-08) */}
-            <div
-              role="log"
-              aria-live="polite"
-              aria-relevant="additions"
-              aria-atomic="false"
-              aria-label={ARIA_LOG}
-              className="flex flex-col gap-3"
-            >
-              {estadoVisual === "conversacion" &&
-                CONVERSACION.map(({ remitente, texto }, indice) => (
-                  <div
-                    key={indice}
-                    className={remitente === "tu" ? "flex justify-end" : "flex justify-start"}
-                  >
-                    <p
-                      className={
-                        remitente === "tu"
-                          ? "max-w-[85%] rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream"
-                          : "max-w-[85%] rounded-2xl rounded-bl-md border border-border-line/40 bg-bg-cream px-3.5 py-2.5 text-sm text-bg-dark"
-                      }
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {mensajes.map((mensaje, indice) => (
+                  <div key={`${mensaje.rol}-${indice}`} className={mensaje.rol === "user" ? "flex justify-end" : "flex justify-start"}>
+                    <div className={mensaje.rol === "user"
+                      ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream"
+                      : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/40 bg-bg-cream px-3.5 py-2.5 text-sm text-bg-dark"}
                     >
-                      <span className="sr-only">
-                        {remitente === "tu" ? "Tú" : "Asistente"}
-                      </span>{" "}
-                      {texto}
-                    </p>
+                      <p>{mensaje.contenido}</p>
+                      {mensaje.fuentes?.length > 0 && (
+                        <div className="mt-3 border-t border-border-line/50 pt-2 text-xs">
+                          <p className="mb-1 font-semibold">Fuentes</p>
+                          <ul className="flex flex-col gap-1">
+                            {mensaje.fuentes.map((fuente) => (
+                              <li key={fuente.id}>
+                                {fuente.url ? (
+                                  <a href={fuente.url} target="_blank" rel="noreferrer" className="text-emerald-primary underline underline-offset-2">
+                                    [{fuente.id}] {fuente.titulo}
+                                  </a>
+                                ) : (
+                                  <span>[{fuente.id}] {fuente.titulo}</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
+                    </div>
                   </div>
                 ))}
-            </div>
+                {cargando && <p role="status" className="text-sm text-slate-text">Buscando fuentes y preparando respuesta…</p>}
+              </div>
+            )}
           </div>
-          {/* Pie fijo, fuera del área scrolleable: aviso, campo y «Enviar» (T5) */}
-          <footer className="shrink-0 px-5 py-4 border-t border-border-line/30 flex flex-col gap-2">
-            <p id="asistente-reserva" className="text-xs text-slate-text">
-              {AVISO_RESERVA}
+
+          <footer className="flex shrink-0 flex-col gap-2 border-t border-border-line/30 px-5 py-4">
+            <p id="asistente-aviso" className="text-xs text-slate-text">
+              No escribas datos personales, números de tarjeta, CVV ni contraseñas. El chat no consulta tu cuenta.
             </p>
-            <div className="flex items-center gap-2">
-              <label htmlFor="asistente-entrada" className="sr-only">
-                {LABEL_ENTRADA}
-              </label>
-              {/* Campo no controlado: editable solo para foco y teclado, sin estado ni envío */}
+            {error && (
+              <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <span>{error}</span>
+                {consultaFallida && <button type="button" onClick={() => void enviarMensaje(consultaFallida, false)} className="font-semibold underline">Reintentar</button>}
+              </div>
+            )}
+            <form onSubmit={enviarFormulario} className="flex items-center gap-2">
+              <label htmlFor="asistente-entrada" className="sr-only">Tu pregunta</label>
               <input
                 id="asistente-entrada"
                 type="text"
-                placeholder={PLACEHOLDER}
-                className="min-w-0 flex-1 rounded-xl border border-border-line/60 bg-bg-cream px-3 py-2 text-sm text-bg-dark placeholder:text-slate-text outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                value={entrada}
+                maxLength={500}
+                onChange={(evento) => setEntrada(evento.target.value)}
+                placeholder="Escribe una pregunta…"
+                disabled={cargando}
+                className="min-w-0 flex-1 rounded-xl border border-border-line/60 bg-bg-cream px-3 py-2 text-sm text-bg-dark placeholder:text-slate-text outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60"
               />
               <button
-                type="button"
-                aria-disabled="true"
-                className="shrink-0 rounded-xl bg-emerald-primary px-4 py-2 text-sm font-medium text-bg-cream"
+                type="submit"
+                disabled={cargando || !entrada.trim()}
+                className="shrink-0 rounded-xl bg-emerald-primary px-4 py-2 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
               >
-                {BOTON_ENVIAR}
+                {cargando ? "Enviando…" : "Enviar"}
               </button>
-            </div>
+            </form>
           </footer>
-        </div>
+        </section>
       </FocusTrap>
     </div>
   );

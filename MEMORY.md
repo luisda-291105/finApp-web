@@ -36,6 +36,9 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/030-arreglo-animaciones-tarjetas/` — aplicada elevación hover y compresión tap a tarjetas registradas con `prefers-reduced-motion`.
 - `specs/031-integridad-tarjetas/` — corrige validación del alta a titular textual, número de 14–19 dígitos, vencimiento MM/AA compatible con `LocalDate` y CVV de 3 dígitos; retira el selector de tema visual y mantiene el flip en el detalle registrado sin exponer CVV.
 - `specs/032-limpieza-codigo/` — implementada: retirados módulos sin uso y flujo demo antiguo de tarjetas; simplificados modal, API de `MiTarjetaVirtual` y comentarios, preservando el flip registrado. Build correcto; pruebas no ejecutadas.
+- `specs/033-validacion-tarjetas/` — vencimiento `MM/AA` con cero y `/` automáticos; entrada numérica para número/CVV, CVV de 3 dígitos; `colorTema` retirado del contrato frontend/backend y script SQL manual para eliminar la columna persistente.
+- `specs/034-temas-y-tarjetas/` — implementada: el vencimiento agrega el cero al perder foco; tarjetas con frente transparente y borde, sidebar con estilo por tema; Configuración ofrece modo claro/oscuro persistente. Build correcto; revisión en navegador y pruebas pendientes.
+- `specs/035-agente-chat/` — implementada: chat del dashboard conectado a `finApp-backend`, documentación local, NVIDIA NIM y búsqueda pública Tavily opcional; claves solo en el entorno backend. El usuario obtendrá las claves; acceso trial de NVIDIA no garantiza uso estable ni licencia de producción. Build frontend/compilación backend pendientes de validación; pruebas no ejecutadas.
 
 ## Tareas faltantes
 

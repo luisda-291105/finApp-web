@@ -54,6 +54,31 @@
   font-family: var(--font-body);
 }
 
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --color-bg-cream: #171b23;
+  --color-slate-text: #b4bdca;
+  --color-border-line: #39414e;
+}
+
+:root[data-tema="oscuro"] body {
+  background-color: var(--color-bg-cream);
+  color: #f7f6f2;
+}
+
+:root[data-tema="oscuro"] .text-bg-dark { color: #f7f6f2; }
+:root[data-tema="oscuro"] .text-bg-dark\/70 { color: rgb(247 246 242 / 70%); }
+:root[data-tema="oscuro"] .text-bg-dark\/80 { color: rgb(247 246 242 / 80%); }
+:root[data-tema="oscuro"] .text-bg-cream { color: #f7f6f2; }
+:root[data-tema="oscuro"] .text-bg-cream\/70 { color: rgb(247 246 242 / 70%); }
+:root[data-tema="oscuro"] .glass-card { background: #202630; color: #f7f6f2; border-color: #39414e; }
+:root[data-tema="oscuro"] .bg-white { background-color: #252c37; }
+:root[data-tema="oscuro"] .bg-slate-100 { background-color: #252c37; }
+:root[data-tema="oscuro"] .bg-slate-300 { background-color: #556071; }
+:root[data-tema="oscuro"] :is(.bg-red-50, .bg-red-100) { background-color: #3a2024; }
+:root[data-tema="oscuro"] :is(.border-red-200, .border-red-700\/30) { border-color: #71363d; }
+:root[data-tema="oscuro"] :is(.text-red-700, .text-red-900) { color: #fca5a5; }
+
 /* Grilla técnica del Hero */
 .hero-grid {
   background-image: 

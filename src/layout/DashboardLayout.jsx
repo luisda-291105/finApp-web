@@ -12,6 +12,7 @@ import DashboardUserModal from "../components/layout/DashboardUserModal";
 import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import AsistenteAyuda from "../components/domain/modales/AsistenteAyuda";
+import { useTema } from "../context/TemaContext";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
 const SELECTOR_NAVEGACION_LATERAL = 'aside[role="navigation"]';
@@ -116,6 +117,8 @@ function trasladarFocoDeCruce(esMovil) {
 
 
 export default function DashboardLayout() {
+  const { tema } = useTema();
+  const temaClaro = tema === "claro";
   const { isMobile, isDesktop, sidebarColapsada, toggleSidebar } = useBreakpoint();
   const navigate = useNavigate();
   const location = useLocation();
@@ -234,10 +237,12 @@ export default function DashboardLayout() {
           abierto={mobileMenuAbierto}
           alCerrar={() => setMobileMenuAbierto(false)}
           triggerRef={bottomNavMenuRef}
+          temaClaro={temaClaro}
         >
           <SidebarNavContenido
             alAbrirUserModal={alAbrirUserModal}
             alCerrarSidebar={() => setMobileMenuAbierto(false)}
+            temaClaro={temaClaro}
           />
         </DashboardDrawer>
       )}
