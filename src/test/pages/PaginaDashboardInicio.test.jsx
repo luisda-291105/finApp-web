@@ -411,4 +411,238 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
     });
   });
+
+  describe("ciclo de guardado y descarte de muestra (T4)", () => {
+    const activarMovil = () => {
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 375 });
+      window.matchMedia = mockMatchMedia(false);
+    };
+
+    const abrirModalEn = async () => {
+      renderPagina();
+      await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+      return screen.getByRole("dialog");
+    };
+
+    /** Reabre el modal en la misma instancia de la página (conserva `muestras`). */
+    const reabrirModal = async () => {
+      await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+      return screen.getByRole("dialog");
+    };
+
+    /** Rellena los campos del borrador con los datos indicados. */
+    const rellenarBorrador = async ({ titulo, fuente, tipo }) => {
+      if (titulo !== undefined) {
+        await userEvent.type(screen.getByLabelText("Título de la muestra"), titulo);
+      }
+      if (fuente !== undefined) {
+        await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
+      }
+      if (tipo !== undefined) {
+        await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
+      }
+    };
+
+    const obtenerBotonGuardar = () => screen.getByRole("button", { name: "guardar muestra" });
+
+    describe("guardado válido (AC-8, AC-11)", () => {
+      it("añade la muestra, cierra el modal y restablece los campos a los placeholders", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Ahorros del mes", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+
+        await waitFor(() => {
+          expect(obtenerPanel()).toBeNull();
+          expect(obtenerOverlay()).toBeNull();
+        });
+
+        // La próxima apertura muestra el formulario vacío (AC-11).
+        await reabrirModal();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
+        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
+      });
+
+      it("la muestra añadida queda en la lista y los guardados anteriores permanecen intactos", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Primera", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        // Segunda muestra distinta, acumulada sin reemplazar la primera.
+        await reabrirModal();
+        await rellenarBorrador({ titulo: "Segunda", fuente: "transacciones", tipo: "grafica" });
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        // El triple de la primera sigue presente: el reintento choca con duplicado.
+        await reabrirModal();
+        await rellenarBorrador({ titulo: "Primera", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+        expect(obtenerPanel()).not.toBeNull();
+      });
+
+      it("guardar un duplicado con el título normalizado con trim no añade ni cierra (AC-17)", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "  Gastos fijos  ", fuente: "gastos", tipo: "metrica" });
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        await reabrirModal();
+        await rellenarBorrador({ titulo: "Gastos fijos", fuente: "gastos", tipo: "metrica" });
+        await userEvent.click(obtenerBotonGuardar());
+        expect(obtenerPanel()).not.toBeNull();
+      });
+    });
+
+    describe("formulario incompleto (AC-16)", () => {
+      it("guardar sin título no añade, mantiene el modal abierto y sin mensajes", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+
+        expect(obtenerPanel()).not.toBeNull();
+        expect(obtenerOverlay()).not.toBeNull();
+        expect(screen.queryByRole("alert")).toBeNull();
+        const panel = screen.getByRole("dialog");
+        expect(panel.textContent.toLowerCase()).not.toContain("error");
+        expect(panel.textContent.toLowerCase()).not.toContain("incompleto");
+        // El borrador se conserva para permitir corregir y reintentar.
+        expect(screen.getByLabelText("Fuente")).toHaveValue("bolsillos");
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("tarjeta");
+      });
+
+      it("guardar con un título de solo espacios es formulario incompleto", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "   ", fuente: "tarjetas", tipo: "metrica" });
+        await userEvent.click(obtenerBotonGuardar());
+
+        expect(obtenerPanel()).not.toBeNull();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("   ");
+      });
+
+      it("guardar con la fuente en su placeholder no añade y mantiene el modal abierto", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Sin fuente", tipo: "metrica" });
+        await userEvent.click(obtenerBotonGuardar());
+
+        expect(obtenerPanel()).not.toBeNull();
+        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+      });
+
+      it("guardar con el tipo en su placeholder no añade y mantiene el modal abierto", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Sin tipo", fuente: "ingresos" });
+        await userEvent.click(obtenerBotonGuardar());
+
+        expect(obtenerPanel()).not.toBeNull();
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
+      });
+    });
+
+    describe("muestra duplicada (AC-17)", () => {
+      it("guardar un triple ya existente no añade ni cierra, y modificar el título permite reintentar", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Presupuesto", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        // Triple idéntico: duplicado, el modal permanece abierto sin mensajes.
+        await reabrirModal();
+        await rellenarBorrador({ titulo: "Presupuesto", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+        expect(obtenerPanel()).not.toBeNull();
+        expect(obtenerOverlay()).not.toBeNull();
+        expect(screen.queryByRole("alert")).toBeNull();
+
+        // Reintento con el título modificado: se añade y el modal se cierra.
+        const campoTitulo = screen.getByLabelText("Título de la muestra");
+        await userEvent.clear(campoTitulo);
+        await userEvent.type(campoTitulo, "Presupuesto (copia)");
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+      });
+    });
+
+    describe("descarte al cerrar sin guardar (AC-18)", () => {
+      it("cerrar con la «X» descarta el borrador: la próxima apertura está vacía", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Se descarta", fuente: "ingresos", tipo: "grafica" });
+        await userEvent.click(screen.getByRole("button", { name: "Cerrar creación de muestra" }));
+        expect(obtenerPanel()).toBeNull();
+
+        await reabrirModal();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
+        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
+      });
+
+      it("cerrar con Esc descarta el borrador: la próxima apertura está vacía", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Se descarta", fuente: "tarjetas", tipo: "metrica" });
+        await userEvent.keyboard("{Escape}");
+        expect(obtenerPanel()).toBeNull();
+
+        await reabrirModal();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
+        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
+      });
+
+      it("cerrar con clic fuera descarta el borrador: la próxima apertura está vacía", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Se descarta", fuente: "gastos", tipo: "mapa_calor" });
+        await userEvent.click(obtenerOverlay());
+        expect(obtenerPanel()).toBeNull();
+
+        await reabrirModal();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
+        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
+      });
+
+      it("deslizar hacia abajo en móvil descarta el borrador: la próxima apertura está vacía", async () => {
+        activarMovil();
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Se descarta", fuente: "bolsillos", tipo: "grafica" });
+
+        const panel = screen.getByRole("dialog");
+        dispararPuntero(panel, "pointerdown", { clientY: 0 });
+        dispararPuntero(panel, "pointermove", { clientY: 160 });
+        dispararPuntero(panel, "pointerup", { clientY: 160 });
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        await reabrirModal();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
+        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
+      });
+
+      it("cerrar sin guardar no altera las muestras ya añadidas", async () => {
+        await abrirModalEn();
+        await rellenarBorrador({ titulo: "Guardada antes", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        // Borrador que se descarta con Esc; la lista no debe cambiar.
+        await reabrirModal();
+        await rellenarBorrador({ titulo: "Borrador perdido", fuente: "tarjetas", tipo: "grafica" });
+        await userEvent.keyboard("{Escape}");
+        expect(obtenerPanel()).toBeNull();
+
+        // La próxima apertura está vacía y el borrador descartado no se añadió.
+        await reabrirModal();
+        expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
+        await rellenarBorrador({ titulo: "Borrador perdido", fuente: "tarjetas", tipo: "grafica" });
+        await userEvent.click(obtenerBotonGuardar());
+        await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+        // La muestra guardada antes del cierre queda intacta (sigue detectándose).
+        await reabrirModal();
+        await rellenarBorrador({ titulo: "Guardada antes", fuente: "bolsillos", tipo: "tarjeta" });
+        await userEvent.click(obtenerBotonGuardar());
+        expect(obtenerPanel()).not.toBeNull();
+      });
+    });
+  });
 });

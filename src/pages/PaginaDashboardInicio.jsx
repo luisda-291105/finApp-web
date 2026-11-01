@@ -1,15 +1,16 @@
 /**
  * @uso        Página de inicio del dashboard: vista de «muestras» creadas por el usuario
  * @funciones  PaginaDashboardInicio()
- * @datos      Estado local `muestras` (lista vacía al iniciar; se llena con el ciclo de
- *             guardado de T4 y se renderiza en T6) y `borrador` del formulario de creación
- *             ({ titulo, fuente, tipo }; vacío = placeholders); modal «Crear muestra» con
- *             5 fuentes demo del propio modal, cada una con su destino de redirección
- *             (RF-05, se usará en T8), y 4 tipos de visualización (RF-06). Sin backend ni
- *             persistencia (TRIAL_ACTIVO, demo)
+ * @datos      Estado local `muestras` (lista vacía al iniciar; el guardado añade al final,
+ *             orden de creación; la persistencia en localStorage llega en T5) y `borrador`
+ *             del formulario de creación ({ titulo, fuente, tipo }; vacío = placeholders);
+ *             modal «Crear muestra» con 5 fuentes demo del propio modal, cada una con su
+ *             destino de redirección (RF-05, se usará en T8), y 4 tipos de visualización
+ *             (RF-06). Sin backend ni persistencia (TRIAL_ACTIVO, demo)
  * @eventos    clic en «crear muestra» abre el modal; cierres por «X», Esc, clic fuera y
- *             deslizar hacia abajo (móvil); `alCambiarBorrador` mantiene controlado el
- *             borrador; el botón «guardar muestra» completa su ciclo en T4
+ *             deslizar hacia abajo (móvil) descartan el borrador (RF-11); `alCambiarBorrador`
+ *             mantiene controlado el borrador; «guardar muestra» valida (completo y sin
+ *             duplicado), añade al final, cierra y restablece los campos (RF-07/RF-09/RF-10)
  * @estados    muestras (lista vacía al iniciar), borrador (título/fuente/tipo vacíos al
  *             iniciar), modalAbierto (booleano)
  * @usadoPor   App.jsx (ruta /dashboard)
@@ -48,6 +49,36 @@ const TIPOS_VISUALIZACION = [
   { valor: "mapa_calor", etiqueta: "Mapa de calor" },
 ];
 
+/** Borrador inicial del formulario: los tres campos vacíos muestran su placeholder. */
+const BORRADOR_VACIO = { titulo: "", fuente: "", tipo: "" };
+
+/**
+ * Normaliza el título recortando los espacios de los extremos (decisión 12 de la spec
+ * 037): el título de solo espacios queda vacío.
+ */
+const normalizarTitulo = (titulo) => titulo.trim();
+
+/**
+ * El borrador está completo cuando el título tiene contenido tras normalizar y la
+ * fuente y el tipo salieron de su placeholder (RF-09).
+ */
+const esBorradorCompleto = (borrador) =>
+  normalizarTitulo(borrador.titulo) !== "" &&
+  borrador.fuente !== "" &&
+  borrador.tipo !== "";
+
+/**
+ * Detecta la muestra duplicada por el triple título (normalizado) + fuente + tipo, con
+ * los valores internos de cada muestra (RF-10).
+ */
+const esMuestraDuplicada = (muestras, titulo, fuente, tipo) =>
+  muestras.some(
+    (muestra) =>
+      normalizarTitulo(muestra.titulo) === titulo &&
+      muestra.fuente === fuente &&
+      muestra.tipo === tipo
+  );
+
 /** Opciones de la trampa de foco (spec 010 §2.2). */
 function crearOpcionesTrampa(refPanel) {
   return {
@@ -59,11 +90,11 @@ function crearOpcionesTrampa(refPanel) {
 }
 
 export default function PaginaDashboardInicio() {
-  // Muestras creadas por el usuario: lista vacía al iniciar; el guardado (añadir al
-  // final, orden de creación) se completa en T4 y el renderizado por tipo en T6.
+  // Muestras creadas por el usuario: lista vacía al iniciar; cada guardado añade al
+  // final (orden de creación, RF-07) y el renderizado por tipo llega en T6.
   const [muestras, setMuestras] = useState([]);
   // Borrador del formulario de creación: los tres campos vacíos muestran sus placeholders.
-  const [borrador, setBorrador] = useState({ titulo: "", fuente: "", tipo: "" });
+  const [borrador, setBorrador] = useState(BORRADOR_VACIO);
   const [modalAbierto, setModalAbierto] = useState(false);
 
   // Ref al disparador para la devolución de foco al cerrar el modal.
@@ -72,11 +103,36 @@ export default function PaginaDashboardInicio() {
   const panelRef = useRef(null);
 
   const alCrearMuestra = () => setModalAbierto(true);
-  const alCerrarModal = () => setModalAbierto(false);
+
+  // Cierre por cualquier vía (X, Esc, clic fuera o deslizar): descarta el borrador de modo
+  // que la próxima apertura muestre el formulario vacío (RF-11, decisión aprobada).
+  const alCerrarModal = () => {
+    setModalAbierto(false);
+    setBorrador(BORRADOR_VACIO);
+  };
 
   // Actualiza un campo del borrador del formulario de creación de muestra.
   const alCambiarBorrador = (campo, valor) =>
     setBorrador((previo) => ({ ...previo, [campo]: valor }));
+
+  // Guardar muestra (RF-07): con formulario completo y sin duplicado añade la nueva
+  // muestra al final, cierra el modal y restablece los campos. Con formulario incompleto
+  // (RF-09) o duplicado (RF-10) no añade, no cierra y no muestra mensajes: el borrador
+  // se conserva para permitir corregir y reintentar.
+  const alGuardarMuestra = () => {
+    if (!esBorradorCompleto(borrador)) {
+      return;
+    }
+
+    const titulo = normalizarTitulo(borrador.titulo);
+    const { fuente, tipo } = borrador;
+    if (esMuestraDuplicada(muestras, titulo, fuente, tipo)) {
+      return;
+    }
+
+    setMuestras((previas) => [...previas, { titulo, fuente, tipo }]);
+    alCerrarModal();
+  };
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
   useCierreConEsc({ activo: modalAbierto, zIndex: 60, alCerrar: alCerrarModal });
@@ -180,9 +236,10 @@ export default function PaginaDashboardInicio() {
               </select>
             </div>
 
-            {/* El ciclo de validación/añadir/cerrar/reset del guardado llega en T4 */}
+            {/* Guardar: valida (completo y sin duplicado), añade al final y cierra */}
             <button
               type="button"
+              onClick={alGuardarMuestra}
               className="w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent cursor-pointer"
             >
               guardar muestra
