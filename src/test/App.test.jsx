@@ -31,7 +31,7 @@ describe("rutas de la aplicación", () => {
       screen.getByRole("heading", { name: /Controla tu dinero/ })
     ).toBeDefined();
     // Es la landing (PaginaInicio), no el dashboard
-    expect(screen.queryByRole("heading", { name: "Tu dinero, en equilibrio." })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "dashboard" })).toBeNull();
   });
 
   it("redirige /inicio a la landing (/)", () => {
@@ -52,7 +52,8 @@ describe("rutas de la aplicación", () => {
   it("permite abrir el dashboard directamente durante el trial", () => {
     renderRuta("/dashboard");
 
-    expect(screen.getByRole("heading", { name: "Tu dinero, en equilibrio." })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "crear muestra" })).toBeDefined();
   });
 
   it("permite abrir una subruta de dashboard durante el trial", () => {
@@ -76,12 +77,13 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByText("Administra tus tarjetas y revisa sus saldos.")).toBeDefined();
   });
 
-  it("conserva las tres cifras en la sección inicio", () => {
+  it("no renderiza las 3 cards fijas por defecto en la sección inicio", () => {
     renderRuta("/dashboard");
 
-    expect(screen.getByText("Balance disponible")).toBeDefined();
-    expect(screen.getByText("Ingresos del mes")).toBeDefined();
-    expect(screen.getByText("Gastos del mes")).toBeDefined();
+    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(screen.queryByText("Balance disponible")).toBeNull();
+    expect(screen.queryByText("Ingresos del mes")).toBeNull();
+    expect(screen.queryByText("Gastos del mes")).toBeNull();
   });
 
   it("conserva el placeholder en transacciones", () => {
@@ -111,7 +113,7 @@ describe("rutas de la aplicación", () => {
     );
 
     // El catch-all interno de /dashboard/* sigue llevando al inicio del dashboard
-    expect(screen.getByRole("heading", { name: "Tu dinero, en equilibrio." })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
   });
 });
 
@@ -151,9 +153,7 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
   /** La navegación se completa cuando la vista de destino ya está renderizada. */
   const esperarDestinoDashboard = async () => {
     await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: "Tu dinero, en equilibrio." })
-      ).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "dashboard" })).toBeTruthy();
     });
   };
 

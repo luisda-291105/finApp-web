@@ -9,8 +9,16 @@
  *             y `borrador` del formulario de creación ({ titulo, fuente, tipo }; vacío =
  *             placeholders); modal «Crear muestra» con 5 fuentes demo del propio modal,
  *             cada una con su destino de redirección (RF-05, se usará en T8), y 4 tipos
- *             de visualización (RF-06). Sin backend ni endpoints (TRIAL_ACTIVO, demo;
- *             la migración del localStorage al backend es deuda documentada)
+ *             de visualización (RF-06). Cada muestra se mapea al DOM según su tipo con
+ *             representaciones simuladas de CSS/HTML y valores demo fijos por fuente
+ *             (VALORES_DEMO): tarjeta con el título + monto es-MX, gráfica de barras con
+ *             serie fija, métrica con variación demo y mapa de calor 7 × 5 con
+ *             intensidades fijas; una muestra sin valor válido degrada a «Sin datos
+ *             disponibles» (RF-08/RF-14; esa condición no es producible desde la UI y se
+ *             cubre por prueba de unidad). Sin backend ni endpoints (TRIAL_ACTIVO, demo;
+ *             la migración del localStorage al backend es deuda documentada). El estilo
+ *             neutro de la lista lo sustituye la superficie mixta y la rejilla
+ *             responsiva de T7; el clic con redirección llega en T8
  * @eventos    clic en «crear muestra» abre el modal; cierres por «X», Esc, clic fuera y
  *             deslizar hacia abajo (móvil) descartan el borrador (RF-11); `alCambiarBorrador`
  *             mantiene controlado el borrador; «guardar muestra» valida (completo y sin
@@ -45,13 +53,67 @@ const FUENTES_DEMO = [
 
 /**
  * Tipos de visualización del selector de tipo (RF-06), todos simulados con CSS/HTML
- * (sin librerías de gráficos); el renderizado por tipo llega en T6.
+ * (sin librerías de gráficos); cada tipo se mapea al DOM en RF-08.
  */
 const TIPOS_VISUALIZACION = [
   { valor: "tarjeta", etiqueta: "Tarjeta" },
   { valor: "grafica", etiqueta: "Gráfica" },
   { valor: "metrica", etiqueta: "Métrica" },
   { valor: "mapa_calor", etiqueta: "Mapa de calor" },
+];
+
+/**
+ * Valores demostrativos fijos por fuente (decisión 5 de la spec 037, AC-31): el número
+ * que muestra cada muestra según su fuente, formateado con la convención del repo.
+ * Números de maqueta, no datos financieros reales.
+ */
+const VALORES_DEMO = {
+  bolsillos: 2300,
+  transacciones: 5800,
+  ingresos: 4250,
+  gastos: 1820.75,
+  tarjetas: 890.4,
+};
+
+/** Variación demostrativa del tipo métrica (decisiones 13 y 14 de la spec 037). */
+const VARIACION_METRICA_DEMO = "+12.4 %";
+
+/** Único texto de estado vacío de la spec: muestra sin valor válido (RF-14). */
+const TEXTO_SIN_DATOS = "Sin datos disponibles";
+
+/**
+ * Serie fija de la gráfica demostrativa (RF-08, AC-13): 5 barras con alturas porcentuales
+ * fijas sobre la caja de la gráfica y una etiqueta mínima simulada por barra.
+ */
+const SERIE_GRAFICA_DEMO = [
+  { etiqueta: "L", altura: 35 },
+  { etiqueta: "M", altura: 60 },
+  { etiqueta: "X", altura: 45 },
+  { etiqueta: "J", altura: 85 },
+  { etiqueta: "V", altura: 55 },
+];
+
+/**
+ * Intensidades simuladas del mapa de calor demostrativo (RF-08, AC-15): 7 filas de días
+ * × 5 franjas horarias, con niveles de 0 a 4 fijos.
+ */
+const INTENSIDADES_MAPA_DEMO = [
+  [1, 2, 0, 3, 4],
+  [0, 1, 2, 2, 1],
+  [3, 0, 1, 4, 2],
+  [2, 2, 1, 0, 3],
+  [1, 3, 2, 4, 0],
+  [4, 1, 0, 2, 2],
+  [0, 2, 3, 1, 4],
+];
+
+/** Clases de token por cada nivel de intensidad del mapa de calor (0 a 4). */
+const CLASES_INTENSIDAD = [
+  "bg-emerald-primary/10",
+  "bg-emerald-primary/30",
+  "bg-emerald-primary/50",
+  "bg-emerald-primary/70",
+  "bg-emerald-primary/90",
 ];
 
 /** Borrador inicial del formulario: los tres campos vacíos muestran su placeholder. */

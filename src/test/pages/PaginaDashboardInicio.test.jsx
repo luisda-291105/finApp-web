@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, act } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, act, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -763,8 +763,8 @@ describe("PaginaDashboardInicio (T5 — persistencia simulada en localStorage)",
       ]);
 
       renderPagina();
-      // La lista aún no se renderiza (llega en T6): la restauración se verifica con el
-      // estado, intentando volver a guardar el triple de una muestra restaurada.
+      // La restauración en orden se verifica con el estado (el render de las muestras
+      // existe desde T6), intentando volver a guardar el triple de una restaurada.
       await abrirModal();
       await userEvent.type(screen.getByLabelText("Título de la muestra"), "Primera");
       await userEvent.selectOptions(screen.getByLabelText("Fuente"), "bolsillos");
@@ -960,5 +960,148 @@ describe("PaginaDashboardInicio (T5 — persistencia simulada en localStorage)",
     expect(fetchDoble).not.toHaveBeenCalled();
 
     vi.unstubAllGlobals();
+  });
+});
+
+describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () => {
+  beforeEach(() => {
+    window.localStorage.getItem.mockReset();
+    window.localStorage.setItem.mockClear();
+  });
+
+  afterEach(() => {
+    window.localStorage.getItem.mockReset();
+  });
+
+  /** Crea una muestra desde el flujo normal de la UI y espera el cierre del modal. */
+  const crearMuestra = async ({ titulo, fuente, tipo }) => {
+    await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+    await userEvent.type(screen.getByLabelText("Título de la muestra"), titulo);
+    await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
+    await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
+    await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
+    await waitFor(() => expect(obtenerPanel()).toBeNull());
+  };
+
+  describe("tarjeta (AC-12, AC-31)", () => {
+    it("muestra el título de la muestra y el valor demo de su fuente en formato es-MX", async () => {
+      renderPagina();
+      await crearMuestra({ titulo: "Ahorros del mes", fuente: "bolsillos", tipo: "tarjeta" });
+
+      expect(screen.getByRole("heading", { name: "Ahorros del mes" })).toBeInTheDocument();
+      expect(screen.getByText("$2,300.00")).toBeInTheDocument();
+    });
+
+    it("cada fuente demo presenta su valor fijo formateado con es-MX y 2 decimales (AC-31)", async () => {
+      renderPagina();
+      await crearMuestra({ titulo: "Ahorros del mes", fuente: "bolsillos", tipo: "tarjeta" });
+      await crearMuestra({ titulo: "Movimientos del mes", fuente: "transacciones", tipo: "tarjeta" });
+      await crearMuestra({ titulo: "Sueldos del mes", fuente: "ingresos", tipo: "tarjeta" });
+      await crearMuestra({ titulo: "Gastos fijos del mes", fuente: "gastos", tipo: "tarjeta" });
+      await crearMuestra({ titulo: "Uso de tarjeta", fuente: "tarjetas", tipo: "tarjeta" });
+
+      expect(screen.getByText("$2,300.00")).toBeInTheDocument();
+      expect(screen.getByText("$5,800.00")).toBeInTheDocument();
+      expect(screen.getByText("$4,250.00")).toBeInTheDocument();
+      expect(screen.getByText("$1,820.75")).toBeInTheDocument();
+      expect(screen.getByText("$890.40")).toBeInTheDocument();
+    });
+  });
+
+  describe("gráfica (AC-13)", () => {
+    it("renderiza 5 barras con la serie fija y etiquetas mínimas, sin librerías", async () => {
+      renderPagina();
+      await crearMuestra({ titulo: "Rendimiento semanal", fuente: "bolsillos", tipo: "grafica" });
+
+      const grafica = screen.getByRole("img", { name: "Gráfica de demostración con serie fija" });
+      const barras = within(grafica).getAllByTestId("barra-grafica");
+      expect(barras).toHaveLength(5);
+      // Serie fija: la representación no depende de datos dinámicos.
+      expect(barras.map((barra) => barra.style.height)).toEqual([
+        "35%",
+        "60%",
+        "45%",
+        "85%",
+        "55%",
+      ]);
+      // Etiquetas mínimas simuladas (días de la semana) en el orden de la serie.
+      expect(
+        within(grafica)
+          .getAllByText(/^[LMXJV]$/)
+          .map((etiqueta) => etiqueta.textContent)
+      ).toEqual(["L", "M", "X", "J", "V"]);
+    });
+  });
+
+  describe("métrica (AC-14)", () => {
+    it("muestra el valor destacado de la fuente con la variación demostrativa «+12.4 %»", async () => {
+      renderPagina();
+      await crearMuestra({ titulo: "Ingresos del mes", fuente: "ingresos", tipo: "metrica" });
+
+      expect(screen.getByText("$4,250.00")).toBeInTheDocument();
+      expect(screen.getByText("+12.4 %")).toBeInTheDocument();
+    });
+  });
+
+  describe("mapa de calor (AC-15)", () => {
+    it("renderiza la cuadrícula 7 × 5 con intensidades simuladas en tokens", async () => {
+      renderPagina();
+      await crearMuestra({ titulo: "Actividad por franjas", fuente: "transacciones", tipo: "mapa_calor" });
+
+      const mapa = screen.getByRole("img", {
+        name: "Mapa de calor de demostración (7 días × 5 franjas)",
+      });
+      const celdas = within(mapa).getAllByTestId("celda-mapa-calor");
+      expect(celdas).toHaveLength(35); // 7 días × 5 franjas
+      expect(mapa.classList.contains("grid-cols-5")).toBe(true); // 5 franjas por fila
+      const clasesIntensidad = new Set(
+        celdas.map((celda) => /bg-emerald-primary\/\d+/.exec(celda.className)?.[0])
+      );
+      expect(clasesIntensidad.size).toBeGreaterThan(1);
+    });
+  });
+
+  describe("acumuladas y orden de creación (AC-9, AC-10)", () => {
+    it("las muestras coexisten y cada nueva se añade al final, sin reemplazo", async () => {
+      renderPagina();
+      await crearMuestra({ titulo: "Primera muestra", fuente: "bolsillos", tipo: "tarjeta" });
+      await crearMuestra({ titulo: "Segunda muestra", fuente: "gastos", tipo: "grafica" });
+      await crearMuestra({ titulo: "Tercera muestra", fuente: "tarjetas", tipo: "metrica" });
+
+      // Todas permanecen visibles (AC-9).
+      expect(screen.getByRole("heading", { name: "Primera muestra" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Segunda muestra" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Tercera muestra" })).toBeInTheDocument();
+
+      // Orden de creación: el DOM respeta el orden en que se guardaron (AC-10).
+      const lista = screen.getByTestId("lista-muestras");
+      const titulos = [...lista.querySelectorAll("li h2")].map((titulo) => titulo.textContent);
+      expect(titulos).toEqual(["Primera muestra", "Segunda muestra", "Tercera muestra"]);
+    });
+  });
+
+  describe("render defensivo «Sin datos disponibles» (RF-14, AC-26)", () => {
+    it("una muestra sin valor válido (fuente ausente en la tabla demo) renderiza el estado vacío", () => {
+      // Prueba de unidad: no existe flujo de UI que produzca una muestra sin valor
+      // (todas las fuentes demo tienen valor fijo), por lo que se monta el render
+      // con una muestra restaurada con una fuente sin valor.
+      window.localStorage.getItem.mockReturnValue(
+        JSON.stringify([{ titulo: "Fuente huérfana", fuente: "inexistente", tipo: "tarjeta" }])
+      );
+      renderPagina();
+
+      expect(screen.getByText("Sin datos disponibles")).toBeInTheDocument();
+      // La muestra sigue identificable por su título (la activación llega en T8).
+      expect(screen.getByRole("heading", { name: "Fuente huérfana" })).toBeInTheDocument();
+    });
+
+    it("una muestra con un tipo no conocido renderiza el mismo estado vacío defensivo", () => {
+      window.localStorage.getItem.mockReturnValue(
+        JSON.stringify([{ titulo: "Contenido raro", fuente: "bolsillos", tipo: "desconocido" }])
+      );
+      renderPagina();
+
+      expect(screen.getByText("Sin datos disponibles")).toBeInTheDocument();
+    });
   });
 });
