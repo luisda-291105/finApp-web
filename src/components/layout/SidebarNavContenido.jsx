@@ -64,7 +64,7 @@ export default function SidebarNavContenido({
   const nombreUsuario = String(usuario?.nombre || "").trim();
   const nombre = nombreUsuario || NOMBRE_RESPALDO;
   const iniciales = nombreUsuario ? calcularIniciales(nombreUsuario) : "UD";
-  const { correo } = useFuentesUsuario(usuario?.idUsuario);
+  const { correo , telefono} = useFuentesUsuario(usuario?.idUsuario);
 
   const enlaces = [
     { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },
@@ -112,7 +112,8 @@ export default function SidebarNavContenido({
       </div>
       <div className={clsx("flex-1 min-w-0 truncate text-left", colapsada && "hidden")}>
         <p className={clsx("font-medium truncate", temaClaro ? "text-bg-dark" : "text-white")}>{nombre}</p>
-        <p className={clsx("text-xs truncate", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>{correo || "No registrado"}</p>
+        <p className={clsx("text-xs truncate", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>{correo || "correo No registrado"}</p>
+        <p className={clsx("text-xs truncate", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>{telefono || "teléfono No registrado"}</p>
       </div>
     </button>
   );
