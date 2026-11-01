@@ -646,3 +646,319 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
     });
   });
 });
+
+describe("PaginaDashboardInicio (T5 — persistencia simulada en localStorage)", () => {
+  const CLAVE_MUESTRAS = "finapp_muestras_dashboard";
+  let descriptorAlmacenSeguro;
+
+  beforeEach(() => {
+    // Por defecto, sin sembrar datos entre pruebas (el almacén simulado del setup no
+    // guarda nada: leer devuelve undefined y escribir no persiste entre pruebas).
+    window.localStorage.getItem.mockReset();
+    window.localStorage.setItem.mockClear();
+    window.localStorage.removeItem.mockClear();
+    window.localStorage.clear.mockClear();
+    descriptorAlmacenSeguro = Object.getOwnPropertyDescriptor(window, "localStorage");
+  });
+
+  afterEach(() => {
+    // Restaura el descriptor si alguna prueba sustituyó el almacenamiento, limpia
+    // posibles semillas de lectura y retira los espias creados en la prueba.
+    if (descriptorAlmacenSeguro) {
+      Object.defineProperty(window, "localStorage", descriptorAlmacenSeguro);
+      descriptorAlmacenSeguro = null;
+    }
+    window.localStorage.getItem.mockReset();
+    vi.restoreAllMocks();
+  });
+
+  /** Abre el modal «Crear muestra» en la instancia actual de la página. */
+  const abrirModal = async () => {
+    await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+    return screen.getByRole("dialog");
+  };
+
+  /** Rellena el borrador con los datos indicados y pulsa «guardar muestra». */
+  const rellenarYGuardar = async ({ titulo, fuente, tipo }) => {
+    if (titulo !== undefined) {
+      const campoTitulo = screen.getByLabelText("Título de la muestra");
+      await userEvent.clear(campoTitulo);
+      await userEvent.type(campoTitulo, titulo);
+    }
+    if (fuente !== undefined) {
+      await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
+    }
+    if (tipo !== undefined) {
+      await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
+    }
+    await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
+  };
+
+  /** Siembra la lectura simulada: al montar, getItem devuelve el contenido indicado. */
+  const sembrarLectura = (contenido) => {
+    window.localStorage.getItem.mockReturnValue(JSON.stringify(contenido));
+  };
+
+  describe("escritura de la lista completa (AC-27)", () => {
+    it("al guardar una muestra escribe la lista completa en JSON bajo la clave", async () => {
+      const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
+
+      renderPagina();
+      await abrirModal();
+      // Título con espacios en los extremos: se persiste normalizado (patrón T4).
+      await rellenarYGuardar({
+        titulo: "  Ahorros de verano  ",
+        fuente: "bolsillos",
+        tipo: "tarjeta",
+      });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      expect(espiaSetItem).toHaveBeenCalledTimes(1);
+      expect(espiaSetItem).toHaveBeenCalledWith(
+        CLAVE_MUESTRAS,
+        JSON.stringify([{ titulo: "Ahorros de verano", fuente: "bolsillos", tipo: "tarjeta" }])
+      );
+    });
+
+    it("un segundo guardado escribe la lista acumulada completa, no un delta", async () => {
+      const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Primera", fuente: "transacciones", tipo: "grafica" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Segunda", fuente: "ingresos", tipo: "metrica" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      expect(espiaSetItem).toHaveBeenCalledTimes(2);
+      expect(espiaSetItem).nthCalledWith(
+        2,
+        CLAVE_MUESTRAS,
+        JSON.stringify([
+          { titulo: "Primera", fuente: "transacciones", tipo: "grafica" },
+          { titulo: "Segunda", fuente: "ingresos", tipo: "metrica" },
+        ])
+      );
+    });
+
+    it("guardar con formulario incompleto no escribe en localStorage", async () => {
+      const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ fuente: "gastos", tipo: "mapa_calor" });
+
+      expect(obtenerPanel()).not.toBeNull();
+      expect(espiaSetItem).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("carga inicial al montar desde localStorage (AC-28)", () => {
+    it("restaura las muestras persistidas en el orden guardado", async () => {
+      sembrarLectura([
+        { titulo: "Primera", fuente: "bolsillos", tipo: "tarjeta" },
+        { titulo: "Segunda", fuente: "transacciones", tipo: "grafica" },
+      ]);
+
+      renderPagina();
+      // La lista aún no se renderiza (llega en T6): la restauración se verifica con el
+      // estado, intentando volver a guardar el triple de una muestra restaurada.
+      await abrirModal();
+      await userEvent.type(screen.getByLabelText("Título de la muestra"), "Primera");
+      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "bolsillos");
+      await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
+      await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
+
+      // Duplicado: la muestra restaurada está en el estado; el modal permanece abierto
+      // y el intento no escribe.
+      expect(obtenerPanel()).not.toBeNull();
+      expect(window.localStorage.setItem).not.toHaveBeenCalled();
+
+      // Un guardado nuevo escribe la lista completa preservando el orden guardado.
+      await rellenarYGuardar({ titulo: "Nueva muestra", fuente: "tarjetas", tipo: "metrica" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      expect(window.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(window.localStorage.setItem).toHaveBeenCalledWith(
+        CLAVE_MUESTRAS,
+        JSON.stringify([
+          { titulo: "Primera", fuente: "bolsillos", tipo: "tarjeta" },
+          { titulo: "Segunda", fuente: "transacciones", tipo: "grafica" },
+          { titulo: "Nueva muestra", fuente: "tarjetas", tipo: "metrica" },
+        ])
+      );
+    });
+
+    it("con JSON inválido arranca con la lista vacía, sin crash y con registro en consola", async () => {
+      window.localStorage.getItem.mockReturnValue("{no es json válido");
+      const espiaError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Recuperada", fuente: "bolsillos", tipo: "tarjeta" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      // Arrancó vacía: el guardado no chocó con duplicado y la escritura contiene
+      // únicamente la muestra nueva.
+      expect(window.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(window.localStorage.setItem).toHaveBeenCalledWith(
+        CLAVE_MUESTRAS,
+        JSON.stringify([{ titulo: "Recuperada", fuente: "bolsillos", tipo: "tarjeta" }])
+      );
+      expect(espiaError).toHaveBeenCalled();
+    });
+
+    it("con un valor persistido que no es un array arranca con la lista vacía sin crash", async () => {
+      sembrarLectura({ titulo: "No es lista" });
+      const espiaError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Inusual", fuente: "tarjetas", tipo: "metrica" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      expect(window.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(window.localStorage.setItem).toHaveBeenCalledWith(
+        CLAVE_MUESTRAS,
+        JSON.stringify([{ titulo: "Inusual", fuente: "tarjetas", tipo: "metrica" }])
+      );
+      // El JSON era válido y la lectura no lanzó excepción: no se registra error.
+      expect(espiaError).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("fallback sin localStorage o con errores (AC-29)", () => {
+    it("si setItem lanza excepción el guardado añade en memoria y no persiste al recargar", async () => {
+      const espiaSetItem = vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
+      const espiaError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Solo memoria", fuente: "gastos", tipo: "grafica" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      // Se intentó persistir, falló, se registró en consola y la página no crasheó.
+      expect(espiaSetItem).toHaveBeenCalled();
+      expect(espiaError).toHaveBeenCalled();
+
+      // La muestra vive en memoria: reintentar el mismo triple choca con duplicado.
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Solo memoria", fuente: "gastos", tipo: "grafica" });
+      expect(obtenerPanel()).not.toBeNull();
+
+      // Al recargar (monta una página nueva), el estado no vino del almacén: arranca
+      // vacía y el mismo triple se puede añadir de nuevo.
+      cleanup();
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Solo memoria", fuente: "gastos", tipo: "grafica" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+    });
+
+    it("si getItem lanza excepción arranca con lista vacía sin crash y con registro en consola", async () => {
+      window.localStorage.getItem.mockImplementation(() => {
+        throw new Error("Acceso denegado");
+      });
+      const espiaError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Fresca", fuente: "bolsillos", tipo: "mapa_calor" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      expect(window.localStorage.getItem).toHaveBeenCalled();
+      expect(espiaError).toHaveBeenCalled();
+
+      // Arrancó vacía: la escritura contiene únicamente la muestra nueva (el guardado
+      // escribe la lista completa desde el estado, degradando a memoria sin crash).
+      expect(window.localStorage.setItem).toHaveBeenCalledTimes(1);
+      expect(window.localStorage.setItem).toHaveBeenCalledWith(
+        CLAVE_MUESTRAS,
+        JSON.stringify([{ titulo: "Fresca", fuente: "bolsillos", tipo: "mapa_calor" }])
+      );
+    });
+
+    it("sin localStorage disponible la página funciona en memoria sin crash y sin persistir", async () => {
+      // Simula un entorno donde el acceso al almacenamiento no está disponible.
+      Object.defineProperty(window, "localStorage", {
+        configurable: true,
+        get: () => undefined,
+      });
+      const espiaError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      expect(() => renderPagina()).not.toThrow();
+
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Sin almacén", fuente: "bolsillos", tipo: "tarjeta" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      expect(espiaError).toHaveBeenCalled();
+
+      // La muestra vive en memoria: reintentar el mismo triple choca con duplicado.
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Sin almacén", fuente: "bolsillos", tipo: "tarjeta" });
+      expect(obtenerPanel()).not.toBeNull();
+
+      // Al recargar la página sigue el degradado: mismo triple añadible de nuevo.
+      cleanup();
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Sin almacén", fuente: "bolsillos", tipo: "tarjeta" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+      // Restaura el almacén para el resto de pruebas.
+      Object.defineProperty(window, "localStorage", descriptorAlmacenSeguro);
+      descriptorAlmacenSeguro = null;
+      expect(window.localStorage.getItem).toBeDefined();
+    });
+
+    it("cerrar el modal sin guardar no escribe en localStorage", async () => {
+      const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
+
+      renderPagina();
+      await abrirModal();
+      await userEvent.type(screen.getByLabelText("Título de la muestra"), "Se descarta");
+      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "ingresos");
+      await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "grafica");
+      await userEvent.click(screen.getByRole("button", { name: "Cerrar creación de muestra" }));
+      expect(obtenerPanel()).toBeNull();
+
+      expect(espiaSetItem).not.toHaveBeenCalled();
+    });
+
+    it("guardar una muestra duplicada no vuelve a escribir en localStorage", async () => {
+      const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
+
+      renderPagina();
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Duplicada", fuente: "transacciones", tipo: "tarjeta" });
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+      expect(espiaSetItem).toHaveBeenCalledTimes(1);
+
+      // Reintento con el mismo triple: duplicado, sin escritura adicional.
+      await abrirModal();
+      await rellenarYGuardar({ titulo: "Duplicada", fuente: "transacciones", tipo: "tarjeta" });
+      expect(obtenerPanel()).not.toBeNull();
+      expect(espiaSetItem).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("el ciclo de persistencia (carga al montar y guardado) no llama a fetch ni endpoints (AC-30)", async () => {
+    const fetchDoble = vi.fn();
+    vi.stubGlobal("fetch", fetchDoble);
+    sembrarLectura([{ titulo: "Previas", fuente: "tarjetas", tipo: "metrica" }]);
+
+    renderPagina(); // carga inicial desde localStorage
+    await abrirModal();
+    await rellenarYGuardar({ titulo: "Nueva sin red", fuente: "ingresos", tipo: "grafica" });
+    await waitFor(() => expect(obtenerPanel()).toBeNull());
+
+    expect(fetchDoble).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+});

@@ -1,22 +1,27 @@
 /**
  * @uso        Página de inicio del dashboard: vista de «muestras» creadas por el usuario
  * @funciones  PaginaDashboardInicio()
- * @datos      Estado local `muestras` (lista vacía al iniciar; el guardado añade al final,
- *             orden de creación; la persistencia en localStorage llega en T5) y `borrador`
- *             del formulario de creación ({ titulo, fuente, tipo }; vacío = placeholders);
- *             modal «Crear muestra» con 5 fuentes demo del propio modal, cada una con su
- *             destino de redirección (RF-05, se usará en T8), y 4 tipos de visualización
- *             (RF-06). Sin backend ni persistencia (TRIAL_ACTIVO, demo)
+ * @datos      Estado local `muestras` ({ titulo, fuente, tipo }; se restaura al montar
+ *             desde localStorage con la clave finapp_muestras_dashboard — JSON con
+ *             try/catch y validación de array, patrón de UsuarioActivoContext, RF-15 —
+ *             y se persiste al guardar con la lista completa; si el almacén no está
+ *             disponible o falla, la página funciona en memoria sin persistir, AC-29)
+ *             y `borrador` del formulario de creación ({ titulo, fuente, tipo }; vacío =
+ *             placeholders); modal «Crear muestra» con 5 fuentes demo del propio modal,
+ *             cada una con su destino de redirección (RF-05, se usará en T8), y 4 tipos
+ *             de visualización (RF-06). Sin backend ni endpoints (TRIAL_ACTIVO, demo;
+ *             la migración del localStorage al backend es deuda documentada)
  * @eventos    clic en «crear muestra» abre el modal; cierres por «X», Esc, clic fuera y
  *             deslizar hacia abajo (móvil) descartan el borrador (RF-11); `alCambiarBorrador`
  *             mantiene controlado el borrador; «guardar muestra» valida (completo y sin
- *             duplicado), añade al final, cierra y restablece los campos (RF-07/RF-09/RF-10)
- * @estados    muestras (lista vacía al iniciar), borrador (título/fuente/tipo vacíos al
- *             iniciar), modalAbierto (booleano)
+ *             duplicado), añade al final, persiste la lista completa en localStorage y
+ *             cierra restableciendo los campos (RF-07/RF-09/RF-10/RF-15)
+ * @estados    muestras (carga al montar desde localStorage o lista vacía), borrador
+ *             (título/fuente/tipo vacíos al iniciar), modalAbierto (booleano)
  * @usadoPor   App.jsx (ruta /dashboard)
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
@@ -79,6 +84,43 @@ const esMuestraDuplicada = (muestras, titulo, fuente, tipo) =>
       muestra.tipo === tipo
   );
 
+/** Clave de almacenamiento simulado de las muestras (RF-15): prefijo finapp_ del repo. */
+const CLAVE_ALMACEN = "finapp_muestras_dashboard";
+
+/**
+ * Lectura segura de las muestras persistidas (RF-15, patrón de UsuarioActivoContext):
+ * JSON con validación defensiva — JSON inválido o no-array devuelve null y la página
+ * arranca con su estado en memoria (AC-28). Si localStorage no está disponible o la
+ * lectura falla, registra el error y degrada a memoria sin crash (AC-29).
+ */
+const leerMuestrasPersistidas = () => {
+  try {
+    const guardado = localStorage.getItem(CLAVE_ALMACEN);
+    if (!guardado) {
+      return null;
+    }
+    const parseado = JSON.parse(guardado);
+    return Array.isArray(parseado) ? parseado : null;
+  } catch (error) {
+    console.error("Error al leer muestras desde localStorage:", error);
+    return null;
+  }
+};
+
+/**
+ * Escritura segura de la lista COMPLETA de muestras (AC-27, patrón de
+ * UsuarioActivoContext): JSON bajo la clave del módulo. Si localStorage no está
+ * disponible o falla la escritura, registra el error: la página sigue funcionando con
+ * su estado en memoria y al recargar no hay persistencia (AC-29).
+ */
+const persistirMuestras = (listado) => {
+  try {
+    localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(listado));
+  } catch (error) {
+    console.error("Error al guardar muestras en localStorage:", error);
+  }
+};
+
 /** Opciones de la trampa de foco (spec 010 §2.2). */
 function crearOpcionesTrampa(refPanel) {
   return {
@@ -90,8 +132,9 @@ function crearOpcionesTrampa(refPanel) {
 }
 
 export default function PaginaDashboardInicio() {
-  // Muestras creadas por el usuario: lista vacía al iniciar; cada guardado añade al
-  // final (orden de creación, RF-07) y el renderizado por tipo llega en T6.
+  // Muestras creadas por el usuario: restauradas de localStorage al montar (RF-15, en
+  // el orden guardado) o lista vacía; cada guardado añade al final (orden de creación,
+  // RF-07) y el renderizado por tipo llega en T6.
   const [muestras, setMuestras] = useState([]);
   // Borrador del formulario de creación: los tres campos vacíos muestran sus placeholders.
   const [borrador, setBorrador] = useState(BORRADOR_VACIO);
@@ -101,6 +144,15 @@ export default function PaginaDashboardInicio() {
   const triggerRef = useRef(null);
   // Ref al contenedor del panel: foco inicial de la trampa y objetivo del gesto.
   const panelRef = useRef(null);
+
+  // Carga inicial al montar (RF-15): restaura las muestras en el orden guardado; con
+  // JSON inválido, no-array o un almacén no disponible arranca lista vacía sin crash.
+  useEffect(() => {
+    const persistidas = leerMuestrasPersistidas();
+    if (persistidas) {
+      setMuestras(persistidas);
+    }
+  }, []);
 
   const alCrearMuestra = () => setModalAbierto(true);
 
@@ -130,7 +182,11 @@ export default function PaginaDashboardInicio() {
       return;
     }
 
-    setMuestras((previas) => [...previas, { titulo, fuente, tipo }]);
+    // Añade al final en memoria y persiste la lista COMPLETA de muestras (AC-27); si
+    // la escritura falla, el guardado sigue siendo válido en memoria (AC-29).
+    const nuevasMuestras = [...muestras, { titulo, fuente, tipo }];
+    setMuestras(nuevasMuestras);
+    persistirMuestras(nuevasMuestras);
     alCerrarModal();
   };
 
