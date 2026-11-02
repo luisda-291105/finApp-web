@@ -23,7 +23,7 @@ export async function crearUsuario(usuario) {
 
 export async function iniciarSesion(credenciales) { return crear(`${rutaBase}/login`, credenciales); }
 export async function obtenerUsuarioActivo() { return obtener(`${rutaBase}/activo`); }
-export async function cerrarSesionServidor() { return crear(`${rutaBase}/logout`, {}); }
+export async function cerrarSesionServidor(opciones = {}) { return crear(`${rutaBase}/logout`, {}, opciones); }
 
 /**
  * obtenerUsuarios

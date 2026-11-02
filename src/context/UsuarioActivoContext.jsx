@@ -1,10 +1,9 @@
 /**
- * @uso        Contexto para mantener el usuario activo (sin autenticación)
+ * @uso        Contexto de usuario activo respaldado por la sesión del servidor
  * @funciones  UsuarioActivoProvider, useUsuarioActivo
- * @datos      usuario (objeto con idUsuario, nombre, fechaCreacion), guardarUsuario, limpiarUsuario;
- *             valor por defecto seguro (usuario null y funciones no-op) fuera del provider
- * @eventos    Ninguno
- * @estados    usuario (desde localStorage o null)
+ * @datos      usuario, estadoSesion, guardarUsuario, limpiarUsuario y cerrarSesion
+ * @eventos    Comprueba la sesión al iniciar; invalida y limpia al cerrar o recargar la pestaña
+ * @estados    usuario (desde sesión del servidor), estadoSesion
  * @usadoPor   App.jsx y componentes que necesiten relacionar con id_usuario
  */
 import { createContext, useContext, useEffect, useRef, useState } from "react";
@@ -22,6 +21,7 @@ const contextoPorDefecto = {
 const UsuarioActivoContext = createContext(contextoPorDefecto);
 
 const CLAVE_ALMACEN = "finapp_usuario_activo";
+const CLAVE_SESION_PESTANA = "finapp_sesion_pestana";
 
 export function UsuarioActivoProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
@@ -31,13 +31,22 @@ export function UsuarioActivoProvider({ children }) {
   useEffect(() => {
     let activo = true;
     const revisionInicial = revisionSesion.current;
+    let sesionDeEstaPestana = false;
+    try { sesionDeEstaPestana = sessionStorage.getItem(CLAVE_SESION_PESTANA) === "activa"; }
+    catch { sesionDeEstaPestana = false; }
+    if (!sesionDeEstaPestana) {
+      setUsuario(null);
+      setEstadoSesion("sin-sesion");
+      try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
+      return () => { activo = false; };
+    }
     obtenerUsuarioActivo().then((respuesta) => {
       const datos = respuesta?.datos || respuesta;
       if (!activo || revisionSesion.current !== revisionInicial) return;
       if (datos?.idUsuario) {
         setUsuario(datos);
         setEstadoSesion("autenticado");
-        localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos));
+        try { localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos)); } catch { /* La sesión no depende de localStorage. */ }
       } else {
         setUsuario(null);
         setEstadoSesion("sin-sesion");
@@ -46,9 +55,24 @@ export function UsuarioActivoProvider({ children }) {
       if (!activo || revisionSesion.current !== revisionInicial) return;
       setUsuario(null);
       setEstadoSesion("sin-sesion");
-      localStorage.removeItem(CLAVE_ALMACEN);
+      try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
     });
     return () => { activo = false; };
+  }, []);
+
+  useEffect(() => {
+    const terminarSesionAlSalir = (evento) => {
+      let habiaSesion = false;
+      try {
+        habiaSesion = sessionStorage.getItem(CLAVE_SESION_PESTANA) === "activa";
+        sessionStorage.removeItem(CLAVE_SESION_PESTANA);
+      } catch { /* El servidor igualmente recibe logout cuando el almacenamiento está disponible. */ }
+      try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
+      if (habiaSesion) void cerrarSesionServidor({ keepalive: true }).catch(() => {});
+      if (evento.persisted) window.dispatchEvent(new Event("finapp:sesion-requerida"));
+    };
+    window.addEventListener("pagehide", terminarSesionAlSalir);
+    return () => window.removeEventListener("pagehide", terminarSesionAlSalir);
   }, []);
 
   const guardarUsuario = (usuarioNuevo) => {
@@ -65,6 +89,7 @@ export function UsuarioActivoProvider({ children }) {
     setUsuario(normalizado);
     setEstadoSesion("autenticado");
     try {
+      sessionStorage.setItem(CLAVE_SESION_PESTANA, "activa");
       localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(normalizado));
     } catch (error) {
       console.error("Error al guardar usuario activo en localStorage:", error);
@@ -76,10 +101,12 @@ export function UsuarioActivoProvider({ children }) {
     setUsuario(null);
     setEstadoSesion("sin-sesion");
     try {
-      localStorage.removeItem(CLAVE_ALMACEN);
+      sessionStorage.removeItem(CLAVE_SESION_PESTANA);
     } catch (error) {
-      console.error("Error al limpiar usuario activo de localStorage:", error);
+      console.error("Error al limpiar el indicador de sesión de la pestaña:", error);
     }
+    try { localStorage.removeItem(CLAVE_ALMACEN); }
+    catch (error) { console.error("Error al limpiar usuario activo de localStorage:", error); }
   };
 
   const cerrarSesion = async () => {
