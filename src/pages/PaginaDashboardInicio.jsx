@@ -39,6 +39,7 @@ import { useCierreConEsc } from "../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../hooks/useRetornoDeFoco";
 import { useTema } from "../context/TemaContext";
+import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 
 /**
  * Fuentes demo del selector de fuente (RF-05): lista fija de demostración que vive en el
@@ -197,6 +198,7 @@ function crearOpcionesTrampa(refPanel) {
 
 export default function PaginaDashboardInicio() {
   const { tema } = useTema();
+  const { usuario } = useUsuarioActivo();
   const temaOscuro = tema === "oscuro";
   // Muestras creadas por el usuario: restauradas de localStorage al montar (RF-15, en
   // el orden guardado) o lista vacía; cada guardado añade al final (orden de creación,
@@ -219,6 +221,11 @@ export default function PaginaDashboardInicio() {
   const panelDetalleRef = useRef(null);
   // Navegación programática del router (RF-13, T8).
   const navigate = useNavigate();
+  const exigirUsuario = () => {
+    if (usuario?.idUsuario) return true;
+    navigate("/", { replace: true });
+    return false;
+  };
 
   /**
    * Formatea un monto numérico con la convención del repo:
@@ -383,6 +390,7 @@ export default function PaginaDashboardInicio() {
   }, []);
 
   const alCrearMuestra = () => {
+    if (!exigirUsuario()) return;
     setIndiceMuestraEditando(null);
     setConfirmarEliminacion(false);
     setBorrador(BORRADOR_VACIO);
@@ -416,6 +424,7 @@ export default function PaginaDashboardInicio() {
   // (RF-09) o duplicado (RF-10) no añade, no cierra y no muestra mensajes: el borrador
   // se conserva para permitir corregir y reintentar.
   const alGuardarMuestra = () => {
+    if (!exigirUsuario()) return;
     if (!esBorradorCompleto(borrador)) {
       return;
     }
@@ -438,6 +447,7 @@ export default function PaginaDashboardInicio() {
   };
 
   const alEditarMuestra = () => {
+    if (!exigirUsuario()) return;
     const indice = muestras.indexOf(muestraDetalle);
     if (indice < 0) return;
     setIndiceMuestraEditando(indice);
@@ -448,6 +458,7 @@ export default function PaginaDashboardInicio() {
   };
 
   const alEliminarMuestra = () => {
+    if (!exigirUsuario()) return;
     if (!confirmarEliminacion || !muestraDetalle) {
       setConfirmarEliminacion(true);
       return;

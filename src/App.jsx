@@ -21,6 +21,7 @@ import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
 import PaginaDashboardContabilidad from "./pages/PaginaDashboardContabilidad";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
+import { useUsuarioActivo } from "./context/UsuarioActivoContext";
 
 function RedireccionSesion() {
   const navigate = useNavigate();
@@ -30,6 +31,15 @@ function RedireccionSesion() {
     return () => window.removeEventListener("finapp:sesion-requerida", redirigir);
   }, [navigate]);
   return null;
+}
+
+function DashboardProtegido() {
+  const { usuario, estadoSesion } = useUsuarioActivo();
+  if (estadoSesion === "verificando") {
+    return <div className="min-h-screen grid place-items-center bg-bg-cream text-slate-text" role="status" aria-live="polite">Verificando sesión…</div>;
+  }
+  if (!usuario || estadoSesion !== "autenticado") return <Navigate to="/" replace />;
+  return <DashboardLayout />;
 }
 
 /**
@@ -48,7 +58,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            TRIAL_ACTIVO ? <DashboardLayout /> : <Navigate to="/login" replace />
+            TRIAL_ACTIVO ? <DashboardProtegido /> : <Navigate to="/" replace />
           }
         >
           <Route index element={<PaginaDashboardInicio />} />

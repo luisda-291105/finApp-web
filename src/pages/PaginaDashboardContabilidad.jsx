@@ -7,11 +7,13 @@
  * @usadoPor   App.jsx (ruta /dashboard/contabilidad)
  */
 import { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowDownRight, ArrowUpRight, PiggyBank, Plus, Wallet } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import RespuestaModal from "../components/ui/RespuestaModal";
 import ModalDetalleResumenContable from "../components/domain/modales/ModalDetalleResumenContable";
 import ModalCrearResumenContable from "../components/domain/modales/ModalCrearResumenContable";
+import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 
 const formatoMoneda = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -40,6 +42,8 @@ const indicadores = [
 
 /** Página de resúmenes contables y movimientos de ejemplo. */
 export default function PaginaDashboardContabilidad({ movimientos: movimientosIniciales = MOVIMIENTOS_DEMO }) {
+  const navigate = useNavigate();
+  const { usuario } = useUsuarioActivo();
   const [movimientos, setMovimientos] = useState(movimientosIniciales);
   const [detalle, setDetalle] = useState(null);
   const [crearAbierto, setCrearAbierto] = useState(false);
@@ -56,6 +60,7 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
   const importes = { gastos, ahorros, balance };
 
   const agregarResumen = (resumen) => {
+    if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; }
     const tipo = resumen.tipoMovimiento === "gasto" ? "Gasto" : resumen.tipoMovimiento === "ahorro" ? "Ahorro" : "Ingreso";
     const monto = resumen.tipoMovimiento === "gasto" || resumen.tipoMovimiento === "ahorro" ? -resumen.monto : resumen.monto;
     const fecha = `${resumen.periodo}-${resumen.fecha.slice(-2)}`;
@@ -85,7 +90,7 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-emerald-primary/10 px-3 py-1 text-xs font-medium text-emerald-primary">Datos de demostración</span>
-            <button ref={disparadorRef} type="button" onClick={() => { disparadorRef.current = document.activeElement; setRespuesta(null); setCrearAbierto(true); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-3 py-2 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+            <button ref={disparadorRef} type="button" onClick={(evento) => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } disparadorRef.current = evento.currentTarget; setRespuesta(null); setCrearAbierto(true); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-3 py-2 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
               <Plus className="h-4 w-4" aria-hidden="true" />Agregar nuevo resumen
             </button>
           </div>

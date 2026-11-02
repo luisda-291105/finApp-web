@@ -55,7 +55,7 @@ function crearOpcionesTrampa(refPanel) {
  *   lateral); nunca termina en `body`.
  * - Header con el nombre del usuario activo («Cuenta de Usuario Demo» si no existe) y el correo
  *   «No registrado» de solo lectura; botón Configuración (navega a /dashboard/configuracion) y
- *   botón Salir del demo (navega a / con replace).
+ *   botón Salir del demo (invalida la sesión en backend y navega a / con replace).
  * @param {Object} props
  * @param {boolean} props.abierto - Visibilidad del modal
  * @param {() => void} props.alCerrar - Callback de cierre
@@ -65,7 +65,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const navigate = useNavigate();
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
-  const { usuario } = useUsuarioActivo();
+  const { usuario, cerrarSesion } = useUsuarioActivo();
   const { correo } = useFuentesUsuario(usuario?.idUsuario);
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
@@ -88,7 +88,8 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
     alCerrar();
   };
 
-  const handleSalirDemo = () => {
+  const handleSalirDemo = async () => {
+    await cerrarSesion();
     navigate("/", { replace: true });
     alCerrar();
   };
