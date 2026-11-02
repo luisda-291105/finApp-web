@@ -45,7 +45,7 @@ async function obtenerJson(respuesta) {
 async function leerRespuesta(respuesta, url, metodo) {
   if (respuesta.ok) return obtenerJson(respuesta);
 
-  if (respuesta.status === 401 && !url.includes("/usuario/login")) {
+  if (respuesta.status === 401 && !url.includes("/usuario/login") && !url.includes("/api/gmail/")) {
     window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
   }
 
