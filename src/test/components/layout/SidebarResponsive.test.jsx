@@ -146,13 +146,13 @@ describe("SidebarResponsive", () => {
       expect(inicioLink.getAttribute("href")).toBe("/dashboard");
       expect(inicioLink.querySelector("svg.lucide-house")).toBeTruthy();
 
-      const transaccionesLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(transaccionesLink.getAttribute("href")).toBe("/dashboard/transacciones");
-      expect(transaccionesLink.querySelector("svg.lucide-receipt")).toBeTruthy();
-
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
+
+      const contabilidadLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(contabilidadLink.getAttribute("href")).toBe("/dashboard/contabilidad");
+      expect(contabilidadLink.querySelector("svg.lucide-wallet")).toBeTruthy();
     });
 
     it("iconos de navegación tienen flex-shrink-0 w-6 h-6", () => {
@@ -343,9 +343,9 @@ describe("SidebarResponsive", () => {
     });
 
     it("enlaces activos tienen clases de estado activo", () => {
-      renderSidebarResponsive({ colapsada: false }, ["/dashboard/transacciones"]);
+      renderSidebarResponsive({ colapsada: false }, ["/dashboard/contabilidad"]);
 
-      const activeLink = screen.getByRole("link", { name: /Transacciones/i });
+      const activeLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(activeLink).toHaveClass("bg-emerald-primary/10");
       expect(activeLink).toHaveClass("text-mint-accent");
       expect(activeLink).toHaveClass("font-medium");
@@ -354,7 +354,7 @@ describe("SidebarResponsive", () => {
     it("enlaces inactivos tienen clases base y hover", () => {
       renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
 
-      const inactiveLink = screen.getByRole("link", { name: /Transacciones/i });
+      const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(inactiveLink).toHaveClass("text-bg-cream/70");
       expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
     });

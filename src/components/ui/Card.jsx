@@ -6,7 +6,7 @@
  * @estados    Ninguno
  * @param {string|React.ElementType} [props.como="div"] - Etiqueta o componente con el que se
  *   renderiza el contenedor (por defecto, `div`).
- * @usadoPor   Features, PaginaDashboardInicio, PaginaDashboardTransacciones, PaginaDashboardConfiguracion
+ * @usadoPor   Features, PaginaDashboardInicio, PaginaDashboardContabilidad, PaginaDashboardConfiguracion
  */
 export function Card({ children, className = "", como: Tag = "div", ...props }) {
   return (

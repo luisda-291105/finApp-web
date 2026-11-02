@@ -8,6 +8,7 @@
  * @usadoPor   App.jsx y componentes que necesiten relacionar con id_usuario
  */
 import { createContext, useContext, useEffect, useState } from "react";
+import { obtenerUsuarioActivo } from "../services/usuarioServicio";
 
 /** Valor seguro cuando un componente se monta sin `UsuarioActivoProvider` (pruebas/aislados). */
 const contextoPorDefecto = {
@@ -24,18 +25,12 @@ export function UsuarioActivoProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
 
   useEffect(() => {
-    try {
-      const guardado = localStorage.getItem(CLAVE_ALMACEN);
-      if (guardado) {
-        const parseado = JSON.parse(guardado);
-        const id = parseado?.idUsuario || parseado?.id || parseado?.id_usuario;
-        if (id) {
-          setUsuario({ ...parseado, idUsuario: id });
-        }
-      }
-    } catch (error) {
-      console.error("Error al leer usuario activo desde localStorage:", error);
-    }
+    let activo = true;
+    obtenerUsuarioActivo().then((respuesta) => {
+      const datos = respuesta?.datos || respuesta;
+      if (activo && datos?.idUsuario) { setUsuario(datos); localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos)); }
+    }).catch(() => { if (activo) { setUsuario(null); localStorage.removeItem(CLAVE_ALMACEN); } });
+    return () => { activo = false; };
   }, []);
 
   const guardarUsuario = (usuarioNuevo) => {

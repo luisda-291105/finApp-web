@@ -18,7 +18,7 @@ import FocusTrap from "focus-trap-react";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
-import { crearUsuario, obtenerUsuarioPorId } from "../../../services/usuarioServicio";
+import { crearUsuario, iniciarSesion } from "../../../services/usuarioServicio";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 
 /**
@@ -117,7 +117,8 @@ try {
         }
 
         try {
-          const usuario = await obtenerUsuarioPorId(idUsuarioLimpio);
+          const respuestaLogin = await iniciarSesion({ idUsuario: idUsuarioLimpio, contrasena });
+          const usuario = respuestaLogin?.datos || respuestaLogin;
           if (usuario?.idUsuario) {
             guardarUsuario(usuario);
             console.log("Login con idUsuario:", usuario);
@@ -128,7 +129,9 @@ try {
             return;
           }
         } catch (error) {
-          console.error("Error al buscar usuario por idUsuario:", error);
+          setMensaje(error?.message || "No fue posible iniciar sesión.");
+          setCargando(false);
+          return;
         }
 
         setMensaje("No se encontró un usuario con esa identificación.");
@@ -164,10 +167,13 @@ try {
         fechaCreacion,
       });
 
+      const respuestaLogin = await iniciarSesion({ idUsuario: idUsuarioLimpio, contrasena });
+      const usuarioAutenticado = respuestaLogin?.datos || respuestaLogin;
+
       console.log("Registro desde AuthModal:", respuesta);
 
-      if (respuesta?.idUsuario) {
-        guardarUsuario(respuesta);
+      if (usuarioAutenticado?.idUsuario) {
+        guardarUsuario(usuarioAutenticado);
       }
 
       setMensaje("¡Usuario creado correctamente!");

@@ -337,7 +337,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
       expect(etiquetas).toEqual([
         "Elegir fuente",
         "Bolsillos",
-        "Transacciones",
+        "Contabilidad",
         "Ingresos",
         "Gastos",
         "Tarjetas",
@@ -1235,25 +1235,25 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
     expect(navigateRef).toHaveBeenCalledWith("/dashboard/bolsillos");
   });
 
-  it("activar una muestra Transacciones navega a /dashboard/transacciones (AC-22)", async () => {
+  it("activar una muestra Contabilidad navega a /dashboard/contabilidad (AC-22)", async () => {
     renderConNavegacion();
     await crearMuestra({ titulo: "Muestra prueba", fuente: "transacciones", tipo: "tarjeta" });
     await abrirDetalleYIrAFuente();
-    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/contabilidad");
   });
 
-  it("activar una muestra Ingresos navega a /dashboard/transacciones (AC-22)", async () => {
+  it("activar una muestra Ingresos navega a /dashboard/contabilidad (AC-22)", async () => {
     renderConNavegacion();
     await crearMuestra({ titulo: "Muestra prueba", fuente: "ingresos", tipo: "tarjeta" });
     await abrirDetalleYIrAFuente();
-    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/contabilidad");
   });
 
-  it("activar una muestra Gastos navega a /dashboard/transacciones (AC-22)", async () => {
+  it("activar una muestra Gastos navega a /dashboard/contabilidad (AC-22)", async () => {
     renderConNavegacion();
     await crearMuestra({ titulo: "Muestra prueba", fuente: "gastos", tipo: "tarjeta" });
     await abrirDetalleYIrAFuente();
-    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/contabilidad");
   });
 
   it("activar una muestra Tarjetas navega a /dashboard/tarjetas (AC-23)", async () => {
@@ -1292,6 +1292,6 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
     const botonIrAFuente = screen.getByRole("button", { name: "Ir a la fuente" });
     await userEvent.keyboard(" ");
 
-    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/contabilidad");
   });
 });

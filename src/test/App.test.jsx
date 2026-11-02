@@ -56,10 +56,11 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByRole("button", { name: "crear muestra" })).toBeDefined();
   });
 
-  it("permite abrir una subruta de dashboard durante el trial", () => {
-    renderRuta("/dashboard/transacciones");
+  it("permite abrir Contabilidad dentro del dashboard de demostración", () => {
+    renderRuta("/dashboard/contabilidad");
 
-    expect(screen.getByRole("heading", { name: "Transacciones" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Contabilidad", level: 1 })).toBeDefined();
+    expect(screen.getByText("Datos de demostración")).toBeDefined();
   });
 
   it("muestra los registros de tarjetas por usuario y el estado sin sesión", () => {
@@ -86,12 +87,10 @@ describe("rutas de la aplicación", () => {
     expect(screen.queryByText("Gastos del mes")).toBeNull();
   });
 
-  it("conserva el placeholder en transacciones", () => {
+  it("redirige la ruta retirada de transacciones al inicio del dashboard", () => {
     renderRuta("/dashboard/transacciones");
 
-    expect(
-      screen.getAllByText("Consulta y organiza tus movimientos recientes.", { selector: "p" }).length
-    ).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
   });
 
   it("conserva el placeholder en configuración", () => {

@@ -51,10 +51,6 @@ describe("SidebarNavContenido", () => {
       expect(inicioLink.getAttribute("href")).toBe("/dashboard");
       expect(inicioLink.querySelector("svg.lucide-house")).toBeTruthy();
 
-      const transaccionesLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(transaccionesLink.getAttribute("href")).toBe("/dashboard/transacciones");
-      expect(transaccionesLink.querySelector("svg.lucide-receipt")).toBeTruthy();
-
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
@@ -70,6 +66,10 @@ describe("SidebarNavContenido", () => {
       const correosLink = screen.getByRole("link", { name: /Correos/i });
       expect(correosLink.getAttribute("href")).toBe("/dashboard/correos");
       expect(correosLink.querySelector("svg")).toBeTruthy();
+
+      const contabilidadLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(contabilidadLink.getAttribute("href")).toBe("/dashboard/contabilidad");
+      expect(contabilidadLink.querySelector("svg.lucide-wallet")).toBeTruthy();
     });
 
     it("iconos tienen flex-shrink-0 w-6 h-6", () => {
@@ -242,7 +242,7 @@ describe("SidebarNavContenido", () => {
     it("conserva nombres accesibles cuando la sidebar está colapsada", () => {
       renderSidebarNavContenido({ colapsada: true });
 
-      ["Inicio", "Transacciones", "Tarjetas", "Contactos", "Correos"].forEach((etiqueta) => {
+      ["Inicio", "Tarjetas", "Contactos", "Correos", "Contabilidad"].forEach((etiqueta) => {
         expect(screen.getByRole("link", { name: etiqueta })).toHaveAttribute(
           "aria-label",
           etiqueta
@@ -270,7 +270,7 @@ describe("SidebarNavContenido", () => {
     it("el correo del avatar usa texto con contraste adecuado sobre la sidebar oscura", () => {
       renderSidebarNavContenido();
 
-      expect(screen.getByText("No registrado")).toHaveClass("text-bg-cream/70");
+      expect(screen.getByText("correo No registrado")).toHaveClass("text-bg-cream/70");
     });
 
     it("separador tiene aria-hidden=true", () => {
@@ -284,9 +284,9 @@ describe("SidebarNavContenido", () => {
 
   describe("estilos y clases", () => {
     it("enlaces activos tienen clases de estado activo", () => {
-      renderSidebarNavContenido({}, ["/dashboard/transacciones"]);
+      renderSidebarNavContenido({}, ["/dashboard/contabilidad"]);
 
-      const activeLink = screen.getByRole("link", { name: /Transacciones/i });
+      const activeLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(activeLink.classList.contains("bg-emerald-primary/10")).toBe(true);
       expect(activeLink.classList.contains("text-mint-accent")).toBe(true);
       expect(activeLink.classList.contains("font-medium")).toBe(true);
@@ -295,8 +295,8 @@ describe("SidebarNavContenido", () => {
     it("enlaces inactivos tienen clases base y hover", () => {
       renderSidebarNavContenido({}, ["/dashboard"]);
 
-      const inactiveLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(inactiveLink.classList.contains("text-bg-cream/70")).toBe(true);
+      const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(inactiveLink.classList.contains("text-bg-cream")).toBe(true);
       expect(inactiveLink.classList.contains("hover:bg-emerald-primary/5")).toBe(true);
     });
 

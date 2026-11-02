@@ -35,7 +35,7 @@ const PLACEHOLDER = "Escribe una pregunta…";
 const BOTON_ENVIAR = "Enviar";
 const BURBUJAS = [
   "¿Cómo entro al panel?",
-  "En esta demo el panel se abre directamente desde la portada. Dentro, la barra lateral te permite ir a Inicio, Transacciones y Tarjetas.",
+  "En esta demo el panel se abre directamente desde la portada. Dentro, la barra lateral te permite ir a Inicio, Contabilidad y Tarjetas.",
   "¿Se guardan mis datos?",
   "Esta es una demostración: no hay backend ni datos financieros reales. Las cifras y las tarjetas que ves son de ejemplo.",
 ];

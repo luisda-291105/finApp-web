@@ -6,20 +6,31 @@
  * @estados    N/A
  * @usadoPor   main.jsx
  */
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { TRIAL_ACTIVO } from "./config/app.config";
 import PaginaInicio from "./pages/PaginaInicio";
 import PaginaLogin from "./pages/PaginaLogin";
 import DashboardLayout from "./layout/DashboardLayout";
 import PaginaDashboardInicio from "./pages/PaginaDashboardInicio";
-import PaginaDashboardTransacciones from "./pages/PaginaDashboardTransacciones";
 import PaginaDashboardTarjetas from "./pages/PaginaDashboardTarjetas";
 import PaginaDashboardConfiguracion from "./pages/PaginaDashboardConfiguracion";
 import PaginaDashboardBolsillos from "./pages/PaginaDashboardBolsillos";
 import PaginaDashboardContactos from "./pages/PaginaDashboardContactos";
 import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
+import PaginaDashboardContabilidad from "./pages/PaginaDashboardContabilidad";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
+
+function RedireccionSesion() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const redirigir = () => navigate("/", { replace: true });
+    window.addEventListener("finapp:sesion-requerida", redirigir);
+    return () => window.removeEventListener("finapp:sesion-requerida", redirigir);
+  }, [navigate]);
+  return null;
+}
 
 /**
  * App
@@ -29,6 +40,7 @@ export default function App() {
   return (
     <TemaProvider>
       <UsuarioActivoProvider>
+        <RedireccionSesion />
         <Routes>
         <Route path="/" element={<PaginaInicio />} />
         <Route path="/inicio" element={<Navigate to="/" replace />} />
@@ -41,10 +53,6 @@ export default function App() {
         >
           <Route index element={<PaginaDashboardInicio />} />
           <Route
-            path="transacciones"
-            element={<PaginaDashboardTransacciones />}
-          />
-          <Route
             path="tarjetas"
             element={<PaginaDashboardTarjetas />}
           />
@@ -55,6 +63,7 @@ export default function App() {
           <Route path="bolsillos" element={<PaginaDashboardBolsillos />} />
           <Route path="contactos" element={<PaginaDashboardContactos />} />
           <Route path="correos" element={<PaginaDashboardCorreos />} />
+          <Route path="contabilidad" element={<PaginaDashboardContabilidad />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -286,7 +286,7 @@ describe("DashboardDrawer", () => {
       document.body.removeChild(externo);
     });
 
-    it("elementos enfocables: la «X» + 5 enlaces + el avatar del menú (7), en orden", () => {
+    it("elementos enfocables: la «X» + 6 enlaces + el avatar del menú (8), en orden", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -298,11 +298,11 @@ describe("DashboardDrawer", () => {
       expect(focusables.length).toBe(8);
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar menú");
       expect(focusables[1].tagName).toBe("A"); // Inicio
-      expect(focusables[2].tagName).toBe("A"); // Transacciones
-      expect(focusables[3].tagName).toBe("A"); // Tarjetas
-      expect(focusables[4].getAttribute("href")).toBe("/dashboard/bolsillos");
-      expect(focusables[5].getAttribute("href")).toBe("/dashboard/contactos");
-      expect(focusables[6].getAttribute("href")).toBe("/dashboard/correos");
+      expect(focusables[2].tagName).toBe("A"); // Tarjetas
+      expect(focusables[3].getAttribute("href")).toBe("/dashboard/bolsillos");
+      expect(focusables[4].getAttribute("href")).toBe("/dashboard/contactos");
+      expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
+      expect(focusables[6].getAttribute("href")).toBe("/dashboard/contabilidad");
       expect(focusables[7].tagName).toBe("BUTTON"); // Avatar
       expect(focusables[7].getAttribute("aria-label")).toContain("Cuenta de");
     });

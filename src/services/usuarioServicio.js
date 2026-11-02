@@ -21,6 +21,9 @@ export async function crearUsuario(usuario) {
   return crear(rutaBase, usuario);
 }
 
+export async function iniciarSesion(credenciales) { return crear(`${rutaBase}/login`, credenciales); }
+export async function obtenerUsuarioActivo() { return obtener(`${rutaBase}/activo`); }
+
 /**
  * obtenerUsuarios
  * Consulta todos los usuarios.

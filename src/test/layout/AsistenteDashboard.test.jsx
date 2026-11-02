@@ -109,7 +109,7 @@ function LayoutTree({ initialPath = "/dashboard" }) {
       <Routes>
         <Route path="/dashboard/*" element={<DashboardLayout />}>
           <Route index element={<ContenidoDashboard etiqueta="Inicio" />} />
-          <Route path="transacciones" element={<ContenidoDashboard etiqueta="Transacciones" />} />
+          <Route path="contabilidad" element={<ContenidoDashboard etiqueta="Contabilidad" />} />
           <Route path="tarjetas" element={<ContenidoDashboard etiqueta="Tarjetas" />} />
           <Route path="configuracion" element={<ContenidoDashboard etiqueta="Configuración" />} />
         </Route>
@@ -232,7 +232,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
 
   it.each([
     ["/dashboard", "Inicio"],
-    ["/dashboard/transacciones", "Transacciones"],
+    ["/dashboard/contabilidad", "Contabilidad"],
     ["/dashboard/tarjetas", "Tarjeta"],
     ["/dashboard/configuracion", "Configuración"],
   ])("permite abrir una sola instancia en %s", async (ruta, contenido) => {
@@ -248,7 +248,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
 
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(document.querySelectorAll("#asistente-titulo")).toHaveLength(1);
-    if (ruta === "/dashboard/transacciones" || ruta === "/dashboard/configuracion") {
+    if (ruta === "/dashboard/contabilidad" || ruta === "/dashboard/configuracion") {
       expect(errorSpy).not.toHaveBeenCalled();
     }
   });

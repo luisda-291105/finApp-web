@@ -45,6 +45,10 @@ async function obtenerJson(respuesta) {
 async function leerRespuesta(respuesta, url, metodo) {
   if (respuesta.ok) return obtenerJson(respuesta);
 
+  if (respuesta.status === 401 && !url.includes("/usuario/login")) {
+    window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+  }
+
   const datos = await obtenerJson(respuesta);
   console.error("[HTTP][ERROR]", {
     url,
@@ -73,6 +77,7 @@ export async function obtener(rutaRelativa, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "GET",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),
@@ -94,6 +99,7 @@ export async function crear(rutaRelativa, cuerpo, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),
@@ -116,6 +122,7 @@ export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "PUT",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),
@@ -137,6 +144,7 @@ export async function eliminar(rutaRelativa, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "DELETE",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),

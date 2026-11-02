@@ -1,5 +1,5 @@
 /**
- * @uso        Contenido compartido de navegación: 6 enlaces y avatar → modal
+ * @uso        Contenido compartido de navegación: 7 enlaces y avatar → modal
  * @funciones  SidebarNavContenido({ alAbrirUserModal, colapsada, avatarSeparado })
  * @datos      6 NavLink fijos + avatar con el usuario activo de UsuarioActivoContext (nombre,
  *             iniciales derivadas y correo «No registrado»)
@@ -8,8 +8,8 @@
  * @usadoPor   SidebarResponsive (avatar al pie), DashboardDrawer (avatar tras los enlaces)
  */
 
-import { NavLink } from "react-router-dom";
-import { Home, Receipt, CreditCard, Users, Contact, Mail } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { Home, CreditCard, Users, Contact, Mail, Wallet } from "lucide-react";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 import { useFuentesUsuario } from "../../hooks/useFuentesUsuario";
 import clsx from "clsx";
@@ -42,7 +42,7 @@ function calcularIniciales(nombre) {
 /**
  * SidebarNavContenido
  * Componente stateless que renderiza la navegación compartida del dashboard:
- * 6 enlaces con icono + etiqueta, separador, y avatar de usuario que abre el modal.
+ * 6 enlaces con icono + etiqueta, contexto de ubicación, separador y avatar de usuario que abre el modal.
  * No gestiona navegación propia (delega a NavLink) ni estado.
  * Cuando `colapsada=true`, oculta las etiquetas de texto de los enlaces.
  * Con `avatarSeparado=true`, renderiza el avatar como bloque hermano de la navegación
@@ -60,6 +60,7 @@ export default function SidebarNavContenido({
   alCerrarSidebar,
   temaClaro = false,
 }) {
+  const location = useLocation();
   const { usuario } = useUsuarioActivo();
   const nombreUsuario = String(usuario?.nombre || "").trim();
   const nombre = nombreUsuario || NOMBRE_RESPALDO;
@@ -68,12 +69,13 @@ export default function SidebarNavContenido({
 
   const enlaces = [
     { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },
-    { ruta: "/dashboard/transacciones", icono: Receipt, etiqueta: "Transacciones" },
     { ruta: "/dashboard/tarjetas", icono: CreditCard, etiqueta: "Tarjetas" },
     { ruta: "/dashboard/bolsillos", icono: Users, etiqueta: "Bolsillos" },
     { ruta: "/dashboard/contactos", icono: Contact, etiqueta: "Contactos" },
     { ruta: "/dashboard/correos", icono: Mail, etiqueta: "Correos" },
+    { ruta: "/dashboard/contabilidad", icono: Wallet, etiqueta: "Contabilidad" },
   ];
+  const paginaActual = enlaces.find(({ ruta, exacto }) => exacto ? location.pathname === ruta : location.pathname.startsWith(ruta))?.etiqueta || "Inicio";
 
   const enlacesNavegacion = enlaces.map(({ ruta, icono: Icono, etiqueta, exacto }) => (
     <NavLink
@@ -125,6 +127,7 @@ export default function SidebarNavContenido({
           className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll"
           aria-label="Navegación principal del dashboard"
         >
+          {!colapsada && <div className={clsx("px-3 pb-3 text-right text-xs", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>FinApp / {paginaActual}</div>}
           {enlacesNavegacion}
         </nav>
         <div className="shrink-0">
@@ -137,6 +140,7 @@ export default function SidebarNavContenido({
 
   return (
     <nav className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll" aria-label="Navegación principal del dashboard">
+      {!colapsada && <div className={clsx("px-3 pb-3 text-right text-xs", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>FinApp / {paginaActual}</div>}
       {enlacesNavegacion}
       <hr role="separator" className={clsx("my-3", temaClaro ? "border-border-line/70" : "border-border-line/20")} aria-hidden="true" />
       {bloqueAvatar}

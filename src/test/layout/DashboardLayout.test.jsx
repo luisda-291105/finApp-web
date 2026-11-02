@@ -97,8 +97,8 @@ const LayoutTree = ({ initialPath = "/dashboard" }) => (
       <Route path="/dashboard/*" element={<DashboardLayout />}>
         <Route index element={<div data-testid="outlet-content">Inicio</div>} />
         <Route
-          path="transacciones"
-          element={<div data-testid="outlet-content">Transacciones</div>}
+          path="contabilidad"
+          element={<div data-testid="outlet-content">Contabilidad</div>}
         />
       </Route>
     </Routes>
@@ -236,10 +236,10 @@ describe("DashboardLayout — dos versiones de vista", () => {
     });
 
     it("navega con alNavegar y marca la ruta activa en BottomNav", () => {
-      renderLayout(versionMovil(), "/dashboard/transacciones");
+      renderLayout(versionMovil(), "/dashboard/contabilidad");
 
       // El árbol de rutas cambia: BottomNav recibe la ruta activa y el callback de navegación
-      expect(propsDe(BottomNav).itemActivo).toBe("/dashboard/transacciones");
+      expect(propsDe(BottomNav).itemActivo).toBe("/dashboard/contabilidad");
       expect(propsDe(BottomNav).alNavegar).toBeTypeOf("function");
     });
   });

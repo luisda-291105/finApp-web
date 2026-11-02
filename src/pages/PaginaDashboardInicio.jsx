@@ -47,9 +47,9 @@ import { useTema } from "../context/TemaContext";
  */
 const FUENTES_DEMO = [
   { valor: "bolsillos", etiqueta: "Bolsillos", destino: "/dashboard/bolsillos" },
-  { valor: "transacciones", etiqueta: "Transacciones", destino: "/dashboard/transacciones" },
-  { valor: "ingresos", etiqueta: "Ingresos", destino: "/dashboard/transacciones" },
-  { valor: "gastos", etiqueta: "Gastos", destino: "/dashboard/transacciones" },
+  { valor: "transacciones", etiqueta: "Contabilidad", destino: "/dashboard/contabilidad" },
+  { valor: "ingresos", etiqueta: "Ingresos", destino: "/dashboard/contabilidad" },
+  { valor: "gastos", etiqueta: "Gastos", destino: "/dashboard/contabilidad" },
   { valor: "tarjetas", etiqueta: "Tarjetas", destino: "/dashboard/tarjetas" },
 ];
 
@@ -731,9 +731,12 @@ export default function PaginaDashboardInicio() {
       <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
         {/* Cabecera exclusiva de esta página: título "dashboard" y botón "crear muestra" a la derecha */}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 id="dashboard-title" className="font-display text-3xl font-medium text-bg-dark">
-            dashboard
-          </h1>
+          <div>
+            <h1 id="dashboard-title" className="font-display text-3xl font-medium text-bg-dark">
+              dashboard
+            </h1>
+            <p className="text-sm text-slate-text/80">Tus muestras y vistas guardadas, en un solo lugar.</p>
+          </div>
           <button
             ref={triggerRef}
             type="button"

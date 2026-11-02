@@ -35,7 +35,7 @@ describe("BottomNav", () => {
 
     // Verificar etiquetas en orden
     expect(screen.getByText("Inicio")).toBeDefined();
-    expect(screen.getByText("Transacciones")).toBeDefined();
+    expect(screen.getByText("Contabilidad")).toBeDefined();
     expect(screen.getByText("Tarjetas")).toBeDefined();
     expect(screen.getByText("Menú")).toBeDefined();
 
@@ -60,7 +60,7 @@ describe("BottomNav", () => {
     expect(indicador).toHaveAttribute("aria-hidden", "true");
 
     // Items inactivos tienen color crema (AA sobre el fondo compuesto)
-    const botonInactivo = screen.getByText("Transacciones").closest("button");
+    const botonInactivo = screen.getByText("Contabilidad").closest("button");
     expect(botonInactivo).toHaveClass("text-bg-cream");
     expect(botonInactivo).not.toHaveClass("text-slate-text");
   });
@@ -96,8 +96,8 @@ describe("BottomNav", () => {
     fireEvent.click(screen.getByText("Inicio"));
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard");
 
-    fireEvent.click(screen.getByText("Transacciones"));
-    expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/transacciones");
+    fireEvent.click(screen.getByText("Contabilidad"));
+    expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/contabilidad");
 
     fireEvent.click(screen.getByText("Tarjetas"));
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/tarjetas");
@@ -193,9 +193,9 @@ describe("BottomNav", () => {
   });
 
   it("item activo tiene aria-current='page'", () => {
-    render(<BottomNav {...propsBase} itemActivo="/dashboard/transacciones" />);
+    render(<BottomNav {...propsBase} itemActivo="/dashboard/contabilidad" />);
 
-    const botonActivo = screen.getByText("Transacciones").closest("button");
+    const botonActivo = screen.getByText("Contabilidad").closest("button");
     expect(botonActivo).toHaveAttribute("aria-current", "page");
 
     const botonInactivo = screen.getByText("Inicio").closest("button");
@@ -216,7 +216,7 @@ describe("BottomNav", () => {
     expect(nav).toHaveAttribute("aria-label", "Navegación principal móvil");
   });
 
-  it("en rango de 470px a 750px muestra el 4.º ítem del sidebar (Contactos) y usa grid-cols-5", () => {
+  it("en rango de 470px a 750px muestra Contabilidad como 4.º ítem y usa grid-cols-5", () => {
     window.innerWidth = 500;
     render(<BottomNav {...propsBase} />);
 
@@ -224,7 +224,7 @@ describe("BottomNav", () => {
     expect(botones).toHaveLength(5);
 
     expect(screen.getByText("Inicio")).toBeDefined();
-    expect(screen.getByText("Transacciones")).toBeDefined();
+    expect(screen.getByText("Contabilidad")).toBeDefined();
     expect(screen.getByText("Tarjetas")).toBeDefined();
     expect(screen.getByText("Contactos")).toBeDefined();
     expect(screen.getByText("Menú")).toBeDefined();
