@@ -49,6 +49,9 @@ export const ENDPOINTS = {
   asistente: {
     chat: "/asistente/chat",
   },
+  gmail: {
+    callback: "/api/gmail/callback",
+  },
 };
 
 /**

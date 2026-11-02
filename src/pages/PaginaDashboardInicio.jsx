@@ -31,12 +31,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
 import { BotonCerrar } from "../components/ui/BotonCerrar";
 import { useCierreConEsc } from "../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../hooks/useRetornoDeFoco";
+import { useTema } from "../context/TemaContext";
 
 /**
  * Fuentes demo del selector de fuente (RF-05): lista fija de demostración que vive en el
@@ -194,6 +196,8 @@ function crearOpcionesTrampa(refPanel) {
 }
 
 export default function PaginaDashboardInicio() {
+  const { tema } = useTema();
+  const temaOscuro = tema === "oscuro";
   // Muestras creadas por el usuario: restauradas de localStorage al montar (RF-15, en
   // el orden guardado) o lista vacía; cada guardado añade al final (orden de creación,
   // RF-07) y el renderizado por tipo llega en T6.
@@ -201,11 +205,173 @@ export default function PaginaDashboardInicio() {
   // Borrador del formulario de creación: los tres campos vacíos muestran sus placeholders.
   const [borrador, setBorrador] = useState(BORRADOR_VACIO);
   const [modalAbierto, setModalAbierto] = useState(false);
+  // Muestra seleccionada para ver en el modal de detalle (null = cerrado).
+  const [muestraDetalle, setMuestraDetalle] = useState(null);
+  // Índice que se actualizará al guardar desde el formulario (null = creación).
+  const [indiceMuestraEditando, setIndiceMuestraEditando] = useState(null);
+  const [confirmarEliminacion, setConfirmarEliminacion] = useState(false);
 
   // Ref al disparador para la devolución de foco al cerrar el modal.
   const triggerRef = useRef(null);
   // Ref al contenedor del panel: foco inicial de la trampa y objetivo del gesto.
   const panelRef = useRef(null);
+  // Ref al panel del modal de detalle.
+  const panelDetalleRef = useRef(null);
+  // Navegación programática del router (RF-13, T8).
+  const navigate = useNavigate();
+
+  /**
+   * Formatea un monto numérico con la convención del repo:
+   * `$` + toLocaleString("es-MX", { minimumFractionDigits: 2 }) (RF-08, AC-31).
+   */
+  const formatearMonto = (valor) =>
+    `$${valor.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+  const clasesTextoMuestra = temaOscuro ? "text-bg-cream" : "text-bg-dark";
+  const clasesEtiquetaMuestra = temaOscuro ? "text-bg-cream/70" : "text-slate-text";
+
+  const renderContenidoVisual = (muestra) => {
+    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === muestra.fuente);
+    const valor = fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null;
+    const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(muestra.tipo);
+
+    if (!valor || !tipoValido) {
+      return <p className={`text-sm ${clasesEtiquetaMuestra}`}>{TEXTO_SIN_DATOS}</p>;
+    }
+
+    const valorFormateado = formatearMonto(valor);
+    return (
+      <>
+        {muestra.tipo === "tarjeta" && <p className={`text-2xl font-bold ${clasesTextoMuestra}`}>{valorFormateado}</p>}
+        {muestra.tipo === "grafica" && (
+          <div role="img" aria-label="Gráfica de demostración con serie fija" className="flex h-24 items-end gap-1">
+            {SERIE_GRAFICA_DEMO.map((barra, i) => (
+              <div key={i} data-testid="barra-grafica" className="w-full rounded-t-sm bg-emerald-primary" style={{ height: `${barra.altura}%` }} title={barra.etiqueta}>
+                <span className={`mt-1 block text-center text-xs ${clasesEtiquetaMuestra}`}>{barra.etiqueta}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {muestra.tipo === "metrica" && (
+          <div className="flex items-baseline gap-1">
+            <span className={`text-3xl font-bold ${clasesTextoMuestra}`}>{valorFormateado}</span>
+            <span className="text-sm font-medium text-emerald-primary">{VARIACION_METRICA_DEMO}</span>
+          </div>
+        )}
+        {muestra.tipo === "mapa_calor" && (
+          <div role="img" aria-label="Mapa de calor de demostración (7 días × 5 franjas)" className="grid h-24 grid-cols-5 grid-rows-7 gap-1" data-testid="mapa-calor">
+            {INTENSIDADES_MAPA_DEMO.flatMap((fila, filaIdx) =>
+              fila.map((intensidad, colIdx) => (
+                <div key={`${filaIdx}-${colIdx}`} data-testid="celda-mapa-calor" className={`min-h-0 rounded-sm ${CLASES_INTENSIDAD[intensidad]}`} />
+              ))
+            )}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  /**
+   * Navega a la página del dashboard correspondiente a la fuente de la muestra
+   * (RF-13, AC-21/22/23, T8).
+   */
+  const alActivarMuestra = (fuente) => {
+    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === fuente);
+    if (fuenteDemo) {
+      navigate(fuenteDemo.destino);
+    }
+  };
+
+  /**
+   * Renderiza una muestra según su tipo de visualización (RF-08, T6).
+   * Aplica la regla de superficie mixta: las 3 primeras posiciones son translúcidas
+   * (`glass-surface`), el resto sólidas con tokens de la paleta (RF-16, T7).
+   * Cada muestra es un botón accesible activable con clic o teclado (RF-13, T8).
+   */
+  const renderMuestra = (muestra, indice) => {
+    const { titulo, fuente, tipo } = muestra;
+    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === fuente);
+    const valor = fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null;
+    const esTranslucida = indice < 3;
+    const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(tipo);
+    const nombreAccesible = `${titulo}, fuente ${fuenteDemo?.etiqueta || fuente}, tipo ${tipo}`;
+    const clasesSuperficie = temaOscuro
+      ? esTranslucida
+        ? "glass-surface border border-border-line/50 bg-bg-dark/90"
+        : "border border-border-line/50 bg-bg-dark"
+      : esTranslucida
+        ? "glass-surface border border-border-line/30 bg-bg-cream/95"
+        : "border border-border-line/20 bg-bg-cream/90";
+    const clasesBadge = temaOscuro ? "bg-mint-accent/15 text-bg-cream" : "bg-emerald-primary/10 text-slate-text";
+
+    // Render defensivo: muestra sin valor válido, fuente desconocida o tipo no conocido (RF-14, AC-26).
+    if (!valor || !fuenteDemo || !tipoValido) {
+      const etiquetaTipo = TIPOS_VISUALIZACION.find((opcion) => opcion.valor === tipo)?.etiqueta || tipo;
+      return (
+        <li key={indice} className={`mb-4 overflow-hidden rounded-2xl shadow-sm ${clasesSuperficie}`}>
+          <button
+            type="button"
+            onClick={() => alAbrirDetalle(muestra)}
+            className="w-full flex flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-primary"
+            aria-label={nombreAccesible}
+          >
+            <header className="flex items-center justify-between gap-3 border-b border-border-line/20 px-4 py-3">
+              <h2 className={`font-display font-semibold ${clasesTextoMuestra}`}>{titulo}</h2>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${clasesBadge}`}>
+                {etiquetaTipo}
+              </span>
+            </header>
+            <div className="flex min-h-28 items-center px-4 py-4">
+              {renderContenidoVisual(muestra)}
+            </div>
+            <footer className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
+              <div>
+                <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Fuente</p>
+                <p className={`text-sm ${clasesTextoMuestra}`}>{FUENTES_DEMO.find((opcion) => opcion.valor === fuente)?.etiqueta || fuente}</p>
+              </div>
+              <div>
+                <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Valor</p>
+                <p className={`text-sm ${clasesTextoMuestra}`}>{TEXTO_SIN_DATOS}</p>
+              </div>
+            </footer>
+          </button>
+        </li>
+      );
+    }
+
+    const etiquetaFuente = fuenteDemo.etiqueta;
+    const etiquetaTipo = TIPOS_VISUALIZACION.find((opcion) => opcion.valor === tipo)?.etiqueta || tipo;
+
+    return (
+      <li key={indice} className={`mb-4 overflow-hidden rounded-2xl shadow-sm ${clasesSuperficie}`}>
+        <button
+          type="button"
+          onClick={() => alAbrirDetalle(muestra)}
+          className="w-full flex flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-primary"
+          aria-label={nombreAccesible}
+        >
+          <header className="flex items-center justify-between gap-3 border-b border-border-line/20 px-4 py-3">
+              <h2 className={`font-display font-semibold ${clasesTextoMuestra}`}>{titulo}</h2>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${clasesBadge}`}>
+              {etiquetaTipo}
+            </span>
+          </header>
+          <div className="flex min-h-28 flex-col justify-center gap-2 px-4 py-4">
+            {renderContenidoVisual(muestra)}
+          </div>
+          <footer className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
+            <div>
+              <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Fuente</p>
+              <p className={`text-sm ${clasesTextoMuestra}`}>{etiquetaFuente}</p>
+            </div>
+            <div>
+              <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Valor</p>
+              <p className={`text-sm ${clasesTextoMuestra}`}>{formatearMonto(valor)}</p>
+            </div>
+          </footer>
+        </button>
+      </li>
+    );
+  };
 
   // Carga inicial al montar (RF-15): restaura las muestras en el orden guardado; con
   // JSON inválido, no-array o un almacén no disponible arranca lista vacía sin crash.
@@ -216,13 +382,29 @@ export default function PaginaDashboardInicio() {
     }
   }, []);
 
-  const alCrearMuestra = () => setModalAbierto(true);
+  const alCrearMuestra = () => {
+    setIndiceMuestraEditando(null);
+    setConfirmarEliminacion(false);
+    setBorrador(BORRADOR_VACIO);
+    setMuestraDetalle(null);
+    setModalAbierto(true);
+  };
 
   // Cierre por cualquier vía (X, Esc, clic fuera o deslizar): descarta el borrador de modo
   // que la próxima apertura muestre el formulario vacío (RF-11, decisión aprobada).
   const alCerrarModal = () => {
     setModalAbierto(false);
     setBorrador(BORRADOR_VACIO);
+    setIndiceMuestraEditando(null);
+  };
+
+  // Abre el modal de detalle con la muestra indicada.
+  const alAbrirDetalle = (muestra) => setMuestraDetalle(muestra);
+
+  // Cierra el modal de detalle.
+  const alCerrarDetalle = () => {
+    setMuestraDetalle(null);
+    setConfirmarEliminacion(false);
   };
 
   // Actualiza un campo del borrador del formulario de creación de muestra.
@@ -240,16 +422,44 @@ export default function PaginaDashboardInicio() {
 
     const titulo = normalizarTitulo(borrador.titulo);
     const { fuente, tipo } = borrador;
-    if (esMuestraDuplicada(muestras, titulo, fuente, tipo)) {
+    const muestrasParaComparar = indiceMuestraEditando === null
+      ? muestras
+      : muestras.filter((_, indice) => indice !== indiceMuestraEditando);
+    if (esMuestraDuplicada(muestrasParaComparar, titulo, fuente, tipo)) {
       return;
     }
 
-    // Añade al final en memoria y persiste la lista COMPLETA de muestras (AC-27); si
-    // la escritura falla, el guardado sigue siendo válido en memoria (AC-29).
-    const nuevasMuestras = [...muestras, { titulo, fuente, tipo }];
+    const nuevasMuestras = indiceMuestraEditando === null
+      ? [...muestras, { titulo, fuente, tipo }]
+      : muestras.map((muestra, indice) => indice === indiceMuestraEditando ? { titulo, fuente, tipo } : muestra);
     setMuestras(nuevasMuestras);
     persistirMuestras(nuevasMuestras);
     alCerrarModal();
+  };
+
+  const alEditarMuestra = () => {
+    const indice = muestras.indexOf(muestraDetalle);
+    if (indice < 0) return;
+    setIndiceMuestraEditando(indice);
+    setBorrador({ titulo: muestraDetalle.titulo, fuente: muestraDetalle.fuente, tipo: muestraDetalle.tipo });
+    setConfirmarEliminacion(false);
+    setMuestraDetalle(null);
+    setModalAbierto(true);
+  };
+
+  const alEliminarMuestra = () => {
+    if (!confirmarEliminacion || !muestraDetalle) {
+      setConfirmarEliminacion(true);
+      return;
+    }
+    const indice = muestras.indexOf(muestraDetalle);
+    if (indice >= 0) {
+      const nuevasMuestras = muestras.filter((_, posicion) => posicion !== indice);
+      setMuestras(nuevasMuestras);
+      persistirMuestras(nuevasMuestras);
+    }
+    setConfirmarEliminacion(false);
+    setMuestraDetalle(null);
   };
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
@@ -286,10 +496,10 @@ export default function PaginaDashboardInicio() {
         {/* Header con el único control visible de cierre */}
         <header className="flex items-center justify-between px-5 py-4 border-b border-border-line/30">
           <h2 id="modal-crear-muestra-titulo" className="font-display text-lg font-semibold text-bg-dark">
-            Crear muestra
+            {indiceMuestraEditando === null ? "Crear muestra" : "Editar muestra"}
           </h2>
           <BotonCerrar
-            ariaLabel="Cerrar creación de muestra"
+            ariaLabel={indiceMuestraEditando === null ? "Cerrar creación de muestra" : "Cerrar edición de muestra"}
             alCerrar={alCerrarModal}
             className="text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
           />
@@ -360,12 +570,160 @@ export default function PaginaDashboardInicio() {
               onClick={alGuardarMuestra}
               className="w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent cursor-pointer"
             >
-              guardar muestra
+              {indiceMuestraEditando === null ? "guardar muestra" : "guardar cambios"}
             </button>
           </div>
         </div>
       </motion.div>
     </FocusTrap>
+  );
+
+  // Cierre del overlay del modal de detalle.
+  const handleOverlayClickDetalle = (evento) => {
+    if (evento.target === evento.currentTarget) {
+      alCerrarDetalle();
+    }
+  };
+
+  // Modal de detalle de una muestra (solo lectura). Se abre al clic en una muestra.
+  const modalDetalleContent = (
+    <motion.div
+      ref={panelDetalleRef}
+      id="modal-detalle-muestra-panel"
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-2xl shadow-xl z-60"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+    >
+      <header className="flex items-center justify-between px-5 py-4 border-b border-border-line/30">
+        <h2 id="modal-detalle-muestra-titulo" className="font-display text-lg font-semibold text-bg-dark">
+          Detalle de muestra
+        </h2>
+        <BotonCerrar
+          ariaLabel="Cerrar detalle de muestra"
+          alCerrar={alCerrarDetalle}
+          className="text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
+        />
+      </header>
+
+      <div className="px-5 py-4">
+        {muestraDetalle && (
+          <>
+            {(() => {
+              const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === muestraDetalle.fuente);
+              const etiquetaFuente = fuenteDemo?.etiqueta || muestraDetalle.fuente;
+              const tipoDemo = TIPOS_VISUALIZACION.find((t) => t.valor === muestraDetalle.tipo);
+              const etiquetaTipo = tipoDemo?.etiqueta || muestraDetalle.tipo;
+              const valor = fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null;
+              const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(muestraDetalle.tipo);
+              const valorFormateado = valor && tipoValido ? formatearMonto(valor) : TEXTO_SIN_DATOS;
+
+              return (
+                <>
+                  <section
+                    aria-label="Vista previa de la muestra"
+                    className="mb-5 overflow-hidden rounded-2xl border border-border-line/30 bg-bg-cream/75 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-3 border-b border-border-line/20 px-4 py-3">
+                      <h3 className="font-display font-semibold text-bg-dark">{muestraDetalle.titulo}</h3>
+                      <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-slate-text">
+                        {etiquetaTipo}
+                      </span>
+                    </div>
+                    <div className="flex min-h-28 flex-col justify-center gap-2 px-4 py-4">
+                      {renderContenidoVisual(muestraDetalle)}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
+                      <div>
+                        <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p>
+                        <p className="text-sm text-bg-dark">{etiquetaFuente}</p>
+                      </div>
+                      <div>
+                        <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Valor</p>
+                        <p className="text-sm text-bg-dark">{valorFormateado}</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <dl className="mb-6 grid grid-cols-2 gap-x-5 gap-y-4">
+                    <div>
+                      <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Título</dt>
+                      <dd className="mt-0.5 break-words text-sm text-bg-dark">{muestraDetalle.titulo}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</dt>
+                      <dd className="mt-0.5 text-sm text-bg-dark">{etiquetaFuente}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Tipo</dt>
+                      <dd className="mt-0.5 text-sm text-bg-dark">{etiquetaTipo}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Valor</dt>
+                      <dd className="mt-0.5 text-sm text-bg-dark">{valorFormateado}</dd>
+                    </div>
+                  </dl>
+
+                  <section aria-label="Ir a la fuente de la muestra" className={`mb-5 rounded-xl border border-border-line/40 p-4 ${temaOscuro ? "bg-bg-dark/60" : "bg-bg-cream/60"}`}>
+                    <p className="mb-2 text-sm text-slate-text">Continuar en {etiquetaFuente}</p>
+                    <button
+                      type="button"
+                      onClick={() => alActivarMuestra(muestraDetalle.fuente)}
+                      className="w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent"
+                    >
+                      Ir a la fuente
+                    </button>
+                  </section>
+
+                  {confirmarEliminacion && (
+                    <div role="alert" className="mb-4 rounded-xl border border-red-300/50 bg-red-50/60 p-3 text-sm text-bg-dark">
+                      ¿Eliminar esta muestra? Esta acción no se puede deshacer.
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
+            <div className="grid grid-cols-2 gap-2 border-t border-border-line/20 pt-4">
+              <button
+                type="button"
+                onClick={alCrearMuestra}
+                className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+              >
+                Nueva muestra
+              </button>
+              <button
+                type="button"
+                onClick={alEditarMuestra}
+                className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                onClick={alEliminarMuestra}
+                className="rounded-xl border border-red-300/60 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                {confirmarEliminacion ? "Confirmar eliminación" : "Eliminar"}
+              </button>
+              {confirmarEliminacion && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmarEliminacion(false)}
+                  className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </motion.div>
   );
 
   return (
@@ -386,7 +744,11 @@ export default function PaginaDashboardInicio() {
           </button>
         </header>
 
-        {/* Las muestras creadas se renderizan aquí: vacío hasta la primera (T6) */}
+        {/* Lista de muestras creadas por el usuario: vacía hasta la primera (RF-12, T6).
+             Rejilla responsiva: escritorio con columnas desde sm:, móvil 1 columna (RF-16, T7). */}
+        <ul data-testid="lista-muestras" id="lista-muestras" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {muestras.map((muestra, indice) => renderMuestra(muestra, indice))}
+        </ul>
       </section>
 
       {/* Portal del modal «Crear muestra» (solo cuando está abierto) */}
@@ -401,6 +763,21 @@ export default function PaginaDashboardInicio() {
             />
             {/* Panel con AnimatePresence para animación de salida */}
             <AnimatePresence>{modalContent}</AnimatePresence>
+          </>,
+          document.body
+        )}
+
+      {/* Portal del modal «Detalle de muestra» (solo cuando está abierto) */}
+      {muestraDetalle &&
+        createPortal(
+          <>
+            {/* Overlay: cierra el modal al tocar/clicar fuera */}
+            <div
+              className="fixed inset-0 bg-bg-dark/80 backdrop-blur-sm z-50"
+              onClick={handleOverlayClickDetalle}
+              aria-hidden="true"
+            />
+            <AnimatePresence>{modalDetalleContent}</AnimatePresence>
           </>,
           document.body
         )}

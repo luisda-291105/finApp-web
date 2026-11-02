@@ -1,16 +1,20 @@
 /**
  * @uso        Autoriza y consulta mensajes de Gmail directamente desde el navegador
- * @funciones  solicitarTokenGmail, obtenerCorreosGmail
+ * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail
  * @datos      Acceso temporal en memoria; no persiste tokens ni mensajes en FinApp
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
  * @usadoPor   PaginaDashboardCorreos
  */
+import { getEndpoint } from "../config/api.config";
+
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const URL_API_GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me";
 const ALCANCE_GMAIL_LECTURA = "https://www.googleapis.com/auth/gmail.readonly";
 const ID_CLIENTE_GOOGLE = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GMAIL_CONFIGURADO = Boolean(ID_CLIENTE_GOOGLE);
+const MENSAJE_ACCESO_DENEGADO =
+  "Google denegó el acceso (403 access_denied). Si la app está en modo de prueba, agrega tu cuenta a Usuarios de prueba en Google Cloud Console y vuelve a intentar.";
 
 let cargaBiblioteca;
 
@@ -40,28 +44,73 @@ function cargarBibliotecaGoogle() {
   return cargaBiblioteca;
 }
 
-/** Pide al usuario un token temporal de solo lectura para Gmail. */
-export async function solicitarTokenGmail() {
+/** Prepara GIS antes del gesto del usuario para que el popup no sea bloqueado. */
+export async function prepararGoogleIdentityServices() {
+  if (!ID_CLIENTE_GOOGLE) throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.");
+  await cargarBibliotecaGoogle();
+}
+
+/** Solicita un código OAuth con popup GIS y lo devuelve mediante la respuesta JavaScript. */
+export async function iniciarCodigoAutorizacionGmail() {
   if (!ID_CLIENTE_GOOGLE) {
     throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.");
   }
-  await cargarBibliotecaGoogle();
+  await prepararGoogleIdentityServices();
 
   return new Promise((resolver, rechazar) => {
-    const cliente = window.google.accounts.oauth2.initTokenClient({
+    const cliente = window.google.accounts.oauth2.initCodeClient({
       client_id: ID_CLIENTE_GOOGLE,
       scope: ALCANCE_GMAIL_LECTURA,
+      ux_mode: "popup",
       callback: (respuesta) => {
-        if (respuesta.error || !respuesta.access_token) {
-          rechazar(new Error(respuesta.error_description || "Google no autorizó la lectura de Gmail."));
+        if (respuesta.error || !respuesta.code) {
+          rechazar(new Error(
+            respuesta.error === "access_denied"
+              ? MENSAJE_ACCESO_DENEGADO
+              : respuesta.error_description || "Google no autorizó la lectura de Gmail."
+          ));
           return;
         }
-        resolver(respuesta.access_token);
+        resolver(respuesta.code);
       },
-      error_callback: (respuesta) => rechazar(new Error(respuesta.message || "No se completó la autorización de Gmail.")),
+      error_callback: (respuesta) => {
+        const mensaje = respuesta.type === "popup_closed"
+          ? `La autorización de Google se cerró antes de terminar. ${MENSAJE_ACCESO_DENEGADO}`
+          : respuesta.type === "popup_failed_to_open"
+            ? "El navegador bloqueó la ventana de Google. Permite ventanas emergentes para localhost y vuelve a intentar."
+            : respuesta.message || "No se completó la autorización de Gmail.";
+        rechazar(new Error(mensaje));
+      },
     });
-    cliente.requestAccessToken();
+    try {
+      cliente.requestCode();
+    } catch (error) {
+      rechazar(error);
+    }
   });
+}
+
+/** Canjea el código recibido por redirección usando el endpoint del backend. */
+export async function canjearCodigoGmail(code) {
+  if (!code) throw new Error("Google no devolvió un código de autorización.");
+  const respuesta = await fetch(getEndpoint("gmail.callback"), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XmlHttpRequest",
+    },
+    body: JSON.stringify({ code }),
+  });
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) {
+    throw new Error(datos.message || datos.error || "El servidor no pudo completar la conexión con Gmail.");
+  }
+  const token = datos.access_token || datos.accessToken || datos.token;
+  if (!token) {
+    throw new Error("El servidor respondió sin un token de acceso de Gmail.");
+  }
+  return token;
 }
 
 function validarDireccion(valor) {

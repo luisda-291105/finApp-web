@@ -12,8 +12,15 @@ import { Card } from "../components/ui/Card";
 import ModalDetalleRegistro from "../components/domain/modales/ModalDetalleRegistro";
 import ModalFuentes from "../components/domain/modales/ModalFuentes";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
-import { obtenerFuentesPorUsuario } from "../services/fuenteServicio";
-import { GMAIL_CONFIGURADO, obtenerCorreosGmail, obtenerPerfilGmail, solicitarTokenGmail } from "../services/gmailServicio";
+import { actualizarFuente, obtenerFuentesPorUsuario } from "../services/fuenteServicio";
+import {
+  canjearCodigoGmail,
+  GMAIL_CONFIGURADO,
+  iniciarCodigoAutorizacionGmail,
+  obtenerCorreosGmail,
+  obtenerPerfilGmail,
+  prepararGoogleIdentityServices,
+} from "../services/gmailServicio";
 
 const CATEGORIAS = [
   { id: "TODOS", etiqueta: "Todos" },
@@ -56,11 +63,25 @@ export default function PaginaDashboardCorreos() {
   const disparadorFuenteRef = useRef(null);
   const [tokenGmail, setTokenGmail] = useState("");
   const [cuentaGmail, setCuentaGmail] = useState("");
+  const [gisListo, setGisListo] = useState(!GMAIL_CONFIGURADO);
   const [cargandoFuentes, setCargandoFuentes] = useState(false);
   const [cargandoMensajes, setCargandoMensajes] = useState(false);
   const [error, setError] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const disparadorRef = useRef(null);
+
+  useEffect(() => {
+    if (!GMAIL_CONFIGURADO) return undefined;
+    let vigente = true;
+    prepararGoogleIdentityServices()
+      .catch((fallo) => {
+        if (vigente) setError(fallo?.message || "No se pudo cargar la autorización de Google.");
+      })
+      .finally(() => {
+        if (vigente) setGisListo(true);
+      });
+    return () => { vigente = false; };
+  }, []);
 
   const cargarFuentes = useCallback(async () => {
     if (!usuario?.idUsuario) {
@@ -73,7 +94,7 @@ export default function PaginaDashboardCorreos() {
       setCargandoFuentes(true);
       setError("");
       const lista = extraerLista(await obtenerFuentesPorUsuario(usuario.idUsuario));
-      setFuentes(lista.filter((fuente) => fuente.tipo === "CORREO" && fuente.estado !== false));
+      setFuentes(lista.filter((fuente) => fuente.tipo === "CORREO"));
     } catch (fallo) {
       setFuentes([]);
       setError(fallo?.message || "No se pudieron cargar tus fuentes de correo.");
@@ -114,18 +135,41 @@ export default function PaginaDashboardCorreos() {
   const conectarGmail = async () => {
     try {
       setError("");
-      const token = await solicitarTokenGmail();
+      const code = await iniciarCodigoAutorizacionGmail();
+      const token = await canjearCodigoGmail(code);
       const cuenta = await obtenerPerfilGmail(token);
       setTokenGmail(token);
       setCuentaGmail(cuenta);
       setMensajes([]);
       setMensajesFuente([]);
+
+      const fuentesPendientes = fuentes.filter((fuente) => fuente.estado === false);
+      const resultados = await Promise.allSettled(fuentesPendientes.map((fuente) =>
+        actualizarFuente(
+          fuente.idFuente,
+          { tipo: fuente.tipo, contenido: fuente.contenido, estado: true },
+          usuario?.idUsuario,
+        )
+      ));
+      const activadas = new Set();
+      resultados.forEach((resultado, indice) => {
+        if (resultado.status === "fulfilled") activadas.add(fuentesPendientes[indice].idFuente);
+      });
+      if (activadas.size) {
+        setFuentes((actuales) => actuales.map((fuente) =>
+          activadas.has(fuente.idFuente) ? { ...fuente, estado: true } : fuente
+        ));
+      }
+      if (activadas.size < fuentesPendientes.length) {
+        setError("Gmail quedó conectado, pero algunas fuentes siguen inactivas porque no se pudieron actualizar.");
+      }
     } catch (fallo) {
-      setError(fallo?.message || "No se pudo conectar Gmail.");
+      setError(fallo?.message || "No se pudo iniciar la conexión con Gmail.");
     }
   };
 
   const seleccionarFuente = async (fuente, evento) => {
+    if (!tokenGmail || fuente.estado === false) return;
     disparadorFuenteRef.current = evento.currentTarget;
     setFuenteSeleccionada(fuente);
     setCategoria("TODOS");
@@ -178,8 +222,8 @@ export default function PaginaDashboardCorreos() {
               <button type="button" onClick={() => { setTokenGmail(""); setCuentaGmail(""); setMensajes([]); }} className="min-h-11 rounded-lg px-3 py-2 text-sm font-medium text-slate-text hover:bg-border-line/20">Desconectar Gmail</button>
             </>
           ) : (
-            <button type="button" onClick={conectarGmail} disabled={cargandoFuentes || noHayFuentes || !GMAIL_CONFIGURADO} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
-              Conectar Gmail
+            <button type="button" onClick={conectarGmail} disabled={cargandoFuentes || noHayFuentes || !GMAIL_CONFIGURADO || !gisListo} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
+              {GMAIL_CONFIGURADO && !gisListo ? "Preparando Gmail..." : "Conectar Gmail"}
             </button>
           )}
         </div>
@@ -190,7 +234,31 @@ export default function PaginaDashboardCorreos() {
         {cargandoFuentes && <p role="status" className="text-sm text-slate-text">Cargando fuentes...</p>}
         {!cargandoFuentes && !usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para conectar tus fuentes.</p>}
         {noHayFuentes && <p className="text-sm text-slate-text">Agrega una fuente de tipo correo para elegir a qué direcciones entrantes buscar mensajes.</p>}
-        {!cargandoFuentes && fuentes.length > 0 && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{fuentes.map((fuente) => <button key={fuente.idFuente} type="button" onClick={(evento) => seleccionarFuente(fuente, evento)} aria-label={`Ver correos de ${fuente.contenido}`} className={`rounded-2xl border p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${fuenteSeleccionada?.idFuente === fuente.idFuente ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}><span className="block text-xs uppercase tracking-wide text-slate-text">Fuente de correo</span><span className="mt-1 block break-all font-medium text-bg-dark">{fuente.contenido}</span><span className="mt-2 block text-xs text-emerald-primary">{fuenteSeleccionada?.idFuente === fuente.idFuente ? `${mensajesFuente.length} mensajes` : tokenGmail ? "Selecciona para consultar" : "Conecta Gmail para consultar"}</span></button>)}</div>}
+        {!cargandoFuentes && fuentes.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {fuentes.map((fuente) => {
+              const inactiva = !tokenGmail || fuente.estado === false;
+              return (
+                <button
+                  key={fuente.idFuente}
+                  type="button"
+                  onClick={(evento) => seleccionarFuente(fuente, evento)}
+                  disabled={inactiva}
+                  aria-label={`Ver correos de ${fuente.contenido}`}
+                  className={`rounded-2xl border p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-60 ${fuenteSeleccionada?.idFuente === fuente.idFuente ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}
+                >
+                  <span className="block text-xs uppercase tracking-wide text-slate-text">Fuente de correo</span>
+                  <span className="mt-1 block break-all font-medium text-bg-dark">{fuente.contenido}</span>
+                  <span className={`mt-2 block text-xs font-medium ${inactiva ? "text-slate-text" : "text-emerald-primary"}`}>
+                    {inactiva
+                      ? tokenGmail ? "Inactiva · no se pudo activar" : "Inactiva · conecta Gmail"
+                      : fuenteSeleccionada?.idFuente === fuente.idFuente ? `${mensajesFuente.length} mensajes` : "Activa · selecciona para consultar"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         {fuentes.length > 0 && !tokenGmail && <p className="text-xs text-slate-text">Al conectar Gmail, Google solicitará permiso de solo lectura para toda la bandeja. FinApp limitará sus búsquedas a mensajes recibidos en estas direcciones y no guardará los mensajes.</p>}
         {fuentes.length > 0 && !GMAIL_CONFIGURADO && <p role="status" className="text-sm text-amber-800">Configura <code>VITE_GOOGLE_CLIENT_ID</code> en el archivo `.env` para habilitar la conexión.</p>}
         {cuentaGmail && <p className="text-xs text-emerald-primary">Conectado a Gmail como {cuentaGmail}</p>}
@@ -199,7 +267,7 @@ export default function PaginaDashboardCorreos() {
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <ModalDetalleRegistro abierto={Boolean(fuenteSeleccionada)} titulo={fuenteSeleccionada ? `Correos de ${fuenteSeleccionada.contenido}` : "Correos"} alCerrar={() => { setFuenteSeleccionada(null); setMensajesFuente([]); }} triggerRef={disparadorFuenteRef}>
-      {fuenteSeleccionada && !tokenGmail && <div className="mb-4 space-y-3"><p className="text-sm text-slate-text">Conecta Gmail para consultar únicamente los mensajes recibidos por esta dirección.</p><button type="button" onClick={conectarGmail} disabled={!GMAIL_CONFIGURADO} className="min-h-10 rounded-lg bg-emerald-primary px-4 text-sm font-medium text-bg-cream disabled:opacity-50">Conectar Gmail</button></div>}
+      {fuenteSeleccionada && !tokenGmail && <div className="mb-4 space-y-3"><p className="text-sm text-slate-text">Conecta Gmail para consultar únicamente los mensajes recibidos por esta dirección.</p><button type="button" onClick={conectarGmail} disabled={!GMAIL_CONFIGURADO || !gisListo} className="min-h-10 rounded-lg bg-emerald-primary px-4 text-sm font-medium text-bg-cream disabled:opacity-50">{GMAIL_CONFIGURADO && !gisListo ? "Preparando Gmail..." : "Conectar Gmail"}</button></div>}
       {tokenGmail && fuenteSeleccionada && (
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap gap-2 border-b border-border-line/30 p-4" role="group" aria-label="Filtrar correos por categoría">
@@ -239,7 +307,7 @@ export default function PaginaDashboardCorreos() {
       )}
 
       </ModalDetalleRegistro>
-      <ModalFuentes abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={alGuardarFuente} fuentesExistentes={fuentes} tipoInicial="CORREO" tiposPermitidos={["CORREO"]} />
+      <ModalFuentes abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={alGuardarFuente} fuentesExistentes={fuentes} tipoInicial="CORREO" tiposPermitidos={["CORREO"]} estadoInicial={Boolean(tokenGmail)} />
     </section>
   );
 }

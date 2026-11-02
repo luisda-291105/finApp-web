@@ -1,8 +1,24 @@
 import { cleanup, render, screen, waitFor, act, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useNavigate } from "react-router-dom";
 import PaginaDashboardInicio from "../../pages/PaginaDashboardInicio";
+
+/**
+ * Mockeo de useNavigate para poder verificar los destinos de navegación al activar
+ * una muestra (T8, AC-21 a AC-25). Se devuelve siempre el mismo vi.fn() para que
+ * el componente y el TestWrapper compartan la misma instancia. MemoryRouter y el
+ * resto de exportaciones se preservan tal cual.
+ */
+const navigateMock = vi.fn();
+
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNavigate: vi.fn(() => navigateMock),
+  };
+});
 
 const mockMatchMedia = (coincide) =>
   vi.fn().mockImplementation((query) => ({
@@ -1103,5 +1119,179 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
 
       expect(screen.getByText("Sin datos disponibles")).toBeInTheDocument();
     });
+  });
+});
+
+describe("PaginaDashboardInicio (T7 — superficie mixta y rejilla responsiva)", () => {
+  beforeEach(() => {
+    window.localStorage.getItem.mockReset();
+    window.localStorage.setItem.mockClear();
+  });
+
+  afterEach(() => {
+    window.localStorage.getItem.mockReset();
+  });
+
+  const crearMuestras = async (cantidad = 5) => {
+    for (let i = 1; i <= cantidad; i++) {
+      await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+      await userEvent.type(screen.getByLabelText("Título de la muestra"), `Muestra ${i}`);
+      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "bolsillos");
+      await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
+      await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
+      await waitFor(() => expect(obtenerPanel()).toBeNull());
+    }
+  };
+
+  it("las 3 primeras muestras usan glass-surface y el resto superficie sólida (AC-33)", async () => {
+    renderPagina();
+    await crearMuestras(5);
+
+    const items = screen.getByTestId("lista-muestras").querySelectorAll("li");
+    expect(items).toHaveLength(5);
+
+    // Las 3 primeras son translúcidas.
+    for (let i = 0; i < 3; i++) {
+      expect(items[i]).toHaveClass("glass-surface");
+    }
+
+    // Las restantes son sólidas (sin glass-surface).
+    for (let i = 3; i < 5; i++) {
+      expect(items[i]).not.toHaveClass("glass-surface");
+      expect(items[i]).toHaveClass("border-border-line/20");
+      expect(items[i]).toHaveClass("bg-bg-cream/90");
+    }
+  });
+
+  it("el contenedor de muestras usa rejilla responsiva con columnas desde sm: (AC-34)", () => {
+    renderPagina();
+
+    const lista = screen.getByTestId("lista-muestras");
+    expect(lista.classList.contains("grid")).toBe(true);
+    expect(lista.classList.contains("gap-4")).toBe(true);
+    expect(lista.classList.contains("sm:grid-cols-2")).toBe(true);
+    expect(lista.classList.contains("lg:grid-cols-3")).toBe(true);
+  });
+});
+
+describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fuente)", () => {
+  let navigateRef;
+
+  const TestWrapper = ({ children }) => {
+    const navigate = useNavigate(); // vi.fn() mockeado arriba
+    navigateRef = navigate;
+    return <>{children}</>;
+  };
+
+  const renderConNavegacion = () =>
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <TestWrapper>
+          <PaginaDashboardInicio />
+        </TestWrapper>
+      </MemoryRouter>
+    );
+
+  const obtenerPanelDetalle = () =>
+    document.body.querySelector("#modal-detalle-muestra-panel");
+
+  beforeEach(() => {
+    window.localStorage.getItem.mockReset();
+    window.localStorage.setItem.mockClear();
+    navigateRef = null;
+  });
+
+  afterEach(() => {
+    window.localStorage.getItem.mockReset();
+    navigateRef = null;
+  });
+
+  /** Crea una muestra desde la UI y espera el cierre del modal de creación. */
+  const crearMuestra = async ({ titulo, fuente, tipo }) => {
+    await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+    await userEvent.type(screen.getByLabelText("Título de la muestra"), titulo);
+    await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
+    await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
+    await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
+    await waitFor(() => expect(obtenerPanel()).toBeNull());
+  };
+
+  /** Abre el modal de detalle de la muestra creada y hace clic en "Ir a la fuente". */
+  const abrirDetalleYIrAFuente = async () => {
+    const heading = screen.getByRole("heading", { name: "Muestra prueba" });
+    const button = heading.closest("button");
+    await userEvent.click(button);
+
+    await waitFor(() => expect(obtenerPanelDetalle()).toBeTruthy());
+
+    const botonIrAFuente = screen.getByRole("button", { name: "Ir a la fuente" });
+    await userEvent.click(botonIrAFuente);
+  };
+
+  it("activar una muestra Bolsillos navega a /dashboard/bolsillos (AC-21)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra prueba", fuente: "bolsillos", tipo: "tarjeta" });
+    await abrirDetalleYIrAFuente();
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/bolsillos");
+  });
+
+  it("activar una muestra Transacciones navega a /dashboard/transacciones (AC-22)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra prueba", fuente: "transacciones", tipo: "tarjeta" });
+    await abrirDetalleYIrAFuente();
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+  });
+
+  it("activar una muestra Ingresos navega a /dashboard/transacciones (AC-22)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra prueba", fuente: "ingresos", tipo: "tarjeta" });
+    await abrirDetalleYIrAFuente();
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+  });
+
+  it("activar una muestra Gastos navega a /dashboard/transacciones (AC-22)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra prueba", fuente: "gastos", tipo: "tarjeta" });
+    await abrirDetalleYIrAFuente();
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
+  });
+
+  it("activar una muestra Tarjetas navega a /dashboard/tarjetas (AC-23)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra prueba", fuente: "tarjetas", tipo: "tarjeta" });
+    await abrirDetalleYIrAFuente();
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/tarjetas");
+  });
+
+  it("activar por teclado (Enter) en «Ir a la fuente» navega al destino (AC-24)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra teclado", fuente: "tarjetas", tipo: "tarjeta" });
+
+    const heading = screen.getByRole("heading", { name: "Muestra teclado" });
+    const button = heading.closest("button");
+    await userEvent.click(button);
+
+    await waitFor(() => expect(obtenerPanelDetalle()).toBeTruthy());
+
+    const botonIrAFuente = screen.getByRole("button", { name: "Ir a la fuente" });
+    await userEvent.keyboard("{Enter}");
+
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/tarjetas");
+  });
+
+  it("activar por teclado (Espacio) en «Ir a la fuente» navega al destino (AC-24)", async () => {
+    renderConNavegacion();
+    await crearMuestra({ titulo: "Muestra espacio", fuente: "ingresos", tipo: "metrica" });
+
+    const heading = screen.getByRole("heading", { name: "Muestra espacio" });
+    const button = heading.closest("button");
+    await userEvent.click(button);
+
+    await waitFor(() => expect(obtenerPanelDetalle()).toBeTruthy());
+
+    const botonIrAFuente = screen.getByRole("button", { name: "Ir a la fuente" });
+    await userEvent.keyboard(" ");
+
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/transacciones");
   });
 });

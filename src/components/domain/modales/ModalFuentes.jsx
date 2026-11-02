@@ -66,7 +66,7 @@ function crearOpcionesTrampa(refPanel) {
  * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Elemento al cual devolver el foco.
  * @param {(fuente: Object) => void} [props.alGuardar] - Callback invocado tras crear exitosamente la fuente.
  */
-export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar, fuentesExistentes = [], tipoInicial = "CORREO", tiposPermitidos = TIPOS_FUENTE.map((opcion) => opcion.valor) }) {
+export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar, fuentesExistentes = [], tipoInicial = "CORREO", tiposPermitidos = TIPOS_FUENTE.map((opcion) => opcion.valor), estadoInicial = true }) {
   const panelRef = useRef(null);
   const { usuario } = useUsuarioActivo();
   const [tipo, setTipo] = useState(tipoInicial);
@@ -139,7 +139,7 @@ export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar,
         usuario: { idUsuario: idUsuarioFinal },
         tipo,
         contenido: contenidoLimpio,
-        estado: true,
+        estado: tipo === "CORREO" ? estadoInicial : true,
         fechaCreacion: fechaLocalISO(),
       };
 
@@ -255,7 +255,9 @@ export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar,
 
             {/* Nota de estado activo */}
             <p className="text-xs text-slate-text">
-              La fuente se registrará activa por defecto con la fecha actual vinculada al usuario.
+              {tipo === "CORREO" && !estadoInicial
+                ? "El correo se registrará inactivo hasta que conectes Gmail."
+                : "La fuente se registrará activa con la fecha actual vinculada al usuario."}
             </p>
 
             {/* Botón de acción */}
