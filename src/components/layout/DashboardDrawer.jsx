@@ -25,6 +25,7 @@
  */
 
 import { useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
@@ -66,6 +67,15 @@ function crearOpcionesTrampa(refPanel) {
 export default function DashboardDrawer({ abierto, alCerrar, children, triggerRef, temaClaro = false }) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
+  const location = useLocation();
+  const paginaActual = [
+    ["/dashboard", "Inicio"],
+    ["/dashboard/tarjetas", "Tarjetas"],
+    ["/dashboard/bolsillos", "Bolsillos"],
+    ["/dashboard/contactos", "Contactos"],
+    ["/dashboard/correos", "Correos"],
+    ["/dashboard/contabilidad", "Contabilidad"],
+  ].find(([ruta]) => ruta === "/dashboard" ? location.pathname === ruta : location.pathname.startsWith(ruta))?.[1] || "Inicio";
 
   // Esc: mecanismo único compartido con el resto de superficies (capa del panel: 55)
   useCierreConEsc({ activo: abierto, zIndex: CAPA_MENU, alCerrar });
@@ -115,7 +125,10 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
         >
           {/* Cromo superior: único control visible de cierre, alineado a la derecha. Deja el
               contenido un poco más abajo (RF-15) sin solaparse con la «X». */}
-          <div className="flex justify-end px-4 pt-6 pb-2">
+          <div data-testid="dashboard-drawer-header" className="flex items-center justify-between gap-3 px-4 pt-6 pb-2">
+            <div className={clsx("min-w-0 truncate font-display text-base font-semibold", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
+              <span className="text-emerald-primary">Fin</span>App<span aria-hidden="true"> / </span><span className="font-sans text-sm font-medium">{paginaActual}</span>
+            </div>
             <BotonCerrar
               ariaLabel="Cerrar menú"
               alCerrar={alCerrar}

@@ -33,18 +33,20 @@ describe("PaginaDashboardContabilidad", () => {
     ["Gastos", "Ahorros", "Balance disponible"].forEach((etiqueta) => {
       expect(screen.getByRole("heading", { name: etiqueta, level: 3 })).toBeInTheDocument();
     });
-    expect(screen.getByRole("article", { name: "Gastos" })).toHaveTextContent("277.000");
-    expect(screen.getByRole("article", { name: "Ahorros" })).toHaveTextContent("450.000");
-    expect(screen.getByRole("article", { name: "Balance disponible" })).toHaveTextContent("3.073.000");
+    expect(screen.getByRole("button", { name: "Ver detalle de Gastos" })).toHaveTextContent("277.000");
+    expect(screen.getByRole("button", { name: "Ver detalle de Ahorros" })).toHaveTextContent("450.000");
+    expect(screen.getByRole("button", { name: "Ver detalle de Balance disponible" })).toHaveTextContent("3.073.000");
   });
 
   it("muestra fecha, concepto, monto y tipo de cada movimiento de ejemplo", () => {
     renderPagina();
 
     const lista = screen.getByRole("list", { name: "Movimientos de demostración" });
-    expect(within(lista).getAllByRole("listitem")).toHaveLength(4);
+    expect(within(lista).getAllByRole("listitem")).toHaveLength(7);
     expect(within(lista).getByText("Pago de nómina")).toBeInTheDocument();
-    expect(within(lista).getByText("13 de feb de 2025")).toBeInTheDocument();
+    const fechaActual = new Date();
+    const fechaDeDemo = new Date(Date.UTC(fechaActual.getFullYear(), fechaActual.getMonth(), 13)).toISOString().slice(0, 10);
+    expect(within(lista).getByText("Pago de nómina").parentElement.querySelector("time")).toHaveAttribute("dateTime", fechaDeDemo);
     expect(within(lista).getByText("Ingreso")).toBeInTheDocument();
     expect(within(lista).getByText(/\+\$.*3\.800\.000/)).toBeInTheDocument();
     expect(within(lista).getByText("Mercado semanal")).toBeInTheDocument();
