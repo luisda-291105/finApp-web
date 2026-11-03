@@ -7,24 +7,101 @@
  * @estados    N/A
  * @usadoPor   vitest (npm run test)
  */
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+
+// Mock window.matchMedia para jsdom (usado por useBreakpoint hook) - DEBE ir ANTES de imports
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  configurable: true,
+  value: (query) => {
+    const minimo = /min-width:\s*(\d+)px/.exec(query);
+    return {
+      matches: minimo ? window.innerWidth >= Number(minimo[1]) : false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => {},
+    };
+  },
+});
+
+// Mock window.innerWidth para breakpoint tests (default: pantallas grandes)
+Object.defineProperty(window, "innerWidth", {
+  writable: true,
+  configurable: true,
+  value: 1024,
+});
+
+// Mocks de servicios - DEBEN ir ANTES de cualquier import (vitest los hoistea al tope)
+vi.mock("../services/fuenteServicio", () => ({
+  listarFuentes: () => Promise.resolve([]),
+  crearFuente: () => Promise.resolve({ ok: true }),
+  actualizarFuente: () => Promise.resolve({ ok: true }),
+  eliminarFuente: () => Promise.resolve({ ok: true }),
+  obtenerFuentePorId: () => Promise.resolve(null),
+}));
+
+vi.mock("../services/grupoServicio", () => ({
+  listarGrupos: () => Promise.resolve([]),
+  crearGrupo: () => Promise.resolve({ ok: true }),
+  actualizarGrupo: () => Promise.resolve({ ok: true }),
+  eliminarGrupo: () => Promise.resolve({ ok: true }),
+}));
+
+vi.mock("../services/tarjetaServicio", () => ({
+  obtenerTarjetasPorUsuario: () => Promise.resolve([]),
+  crearTarjeta: () => Promise.resolve({ ok: true }),
+  actualizarTarjeta: () => Promise.resolve({ ok: true }),
+  eliminarTarjeta: () => Promise.resolve({ ok: true }),
+}));
+
+vi.mock("../services/muestraServicio", () => ({
+  listarMuestras: () => Promise.resolve([]),
+  crearMuestra: () => Promise.resolve({ ok: true }),
+  actualizarMuestra: () => Promise.resolve({ ok: true }),
+  eliminarMuestra: () => Promise.resolve({ ok: true }),
+}));
+
+// Mock del contexto de usuario activo - respeta sessionStorage
+vi.mock("../context/UsuarioActivoContext", () => {
+  const useUsuarioActivo = () => {
+    const haySesion = sessionStorage.getItem("finapp_sesion_pestana") === "activa";
+    return {
+      usuario: haySesion ? { idUsuario: "usuario-prueba", nombre: "Ana Prueba", fechaCreacion: "2026-01-01" } : null,
+      estadoSesion: haySesion ? "autenticado" : "sin-sesion",
+      guardarUsuario: vi.fn(),
+      limpiarUsuario: vi.fn(),
+      cerrarSesion: vi.fn().mockResolvedValue(undefined),
+    };
+  };
+  return {
+    UsuarioActivoProvider: ({ children }) => children,
+    useUsuarioActivo,
+  };
+});
+
+// Mock del contexto de Gmail - evita efectos secundarios
+vi.mock("../context/GmailContext", () => ({
+  GmailProvider: ({ children }) => children,
+  useGmail: () => ({ gmailUser: null, setGmailUser: vi.fn() }),
+}));
+
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import App from "../App";
 
-const mocks = vi.hoisted(() => ({ obtenerUsuarioActivo: vi.fn() }));
-vi.mock("../services/usuarioServicio", () => ({ obtenerUsuarioActivo: mocks.obtenerUsuarioActivo }));
-vi.mock("../services/tarjetaServicio", () => ({ obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]) }));
-vi.mock("../services/muestraServicio", () => ({ listarMuestras: vi.fn().mockResolvedValue([]) }));
-
 beforeEach(() => {
-  sessionStorage.setItem("finapp_sesion_pestana", "activa");
-  mocks.obtenerUsuarioActivo.mockResolvedValue({ datos: { idUsuario: "usuario-prueba", nombre: "Ana Prueba", fechaCreacion: "2026-01-01" } });
+  vi.spyOn(sessionStorage, "getItem").mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
 });
 
 afterEach(() => {
-  cleanup();
+  vi.restoreAllMocks();
   sessionStorage.removeItem("finapp_sesion_pestana");
 });
 
