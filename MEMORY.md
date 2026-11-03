@@ -25,7 +25,7 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/013-calidad-css/spec.md` — visual/CSS (revelado, vidrio, radios, área segura, tokens y contraste). Cerrada (2026-10-18).
 - `specs/015-higiene-y-dobles/spec.md` — higiene de código, dobles de prueba y documentación. Cerrada (2026-10-18).
 - `specs/038-google-identity-services/` — migración de Gmail de popup a redirect (error COOP `window.closed`); `plan.md` y `tasks.md` escritos, pendiente de implementación.
-- `specs/039-migrarTrasacciones-contabilidad/` — nueva página de contabilidad a partir de transacciones (ruta `/dashboard/contabilidad`); `plan.md` y `tasks.md` escritos, pendiente de implementación.
+- `specs/039-migrarTrasacciones-contabilidad/` — página demo de Contabilidad implementada en `/dashboard/contabilidad`, con resumen, movimientos y acceso en navegación; T1–T4 completas. Build y pruebas focales pasan; suite completa 529/588, revisión visual y análisis de línea base pendientes.
 - `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.
 - `specs/016/` — aprobada y cerrada (2026-10-20); T1–T6 completas. Regresión final: 554/554 pruebas en 39 archivos, build correcto y revisión visual responsive; T6 corrigió contraste/nombres accesibles de la navegación lateral.
 - `specs/017-asistente-en-dashboard/` — implementada; 536 pruebas y build correctos; revisión visual realizada, área segura real pendiente.

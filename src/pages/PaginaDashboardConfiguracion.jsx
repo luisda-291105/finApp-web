@@ -13,7 +13,9 @@ import ModalFuentes from "../components/domain/modales/ModalFuentes";
 import ModalPerfilUsuario from "../components/domain/modales/ModalPerfilUsuario";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { useTema } from "../context/TemaContext";
+import { useGmail } from "../context/GmailContext";
 import { actualizarFuente, eliminarFuente, obtenerFuentesPorUsuario } from "../services/fuenteServicio";
+import { GMAIL_CONFIGURADO } from "../services/gmailServicio";
 import { Moon, Sun } from "lucide-react";
 
 export default function PaginaDashboardConfiguracion() {
@@ -30,6 +32,7 @@ export default function PaginaDashboardConfiguracion() {
   const triggerUsuarioRef = useRef(null);
   const { usuario } = useUsuarioActivo();
   const { tema, alternarTema } = useTema();
+  const { tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo, conexionCargando, errorGmail, conectarGmail, desconectarGmail, seleccionarCuentaGmail } = useGmail();
 
   const cargarFuentes = async () => {
     try {
@@ -62,11 +65,45 @@ export default function PaginaDashboardConfiguracion() {
     cargarFuentes();
   }, [usuario?.idUsuario]);
 
-  const alGuardarFuente = (nuevaFuente) => {
-    setFuentes((prev) => [
-      nuevaFuente,
-      ...prev.filter((f) => f.idFuente !== nuevaFuente.idFuente),
-    ]);
+  const alGuardarFuente = async (nuevaFuente) => {
+    try {
+      const respuesta = await obtenerFuentesPorUsuario(usuario.idUsuario);
+      const lista = Array.isArray(respuesta)
+        ? respuesta
+        : Array.isArray(respuesta?.data)
+          ? respuesta.data
+          : Array.isArray(respuesta?.content)
+            ? respuesta.content
+            : [];
+      const guardada = lista.some((fuente) => fuente.idFuente === nuevaFuente.idFuente);
+      setFuentes(lista);
+      setErrorFuentes(guardada
+        ? ""
+        : "El servidor aceptó el registro, pero no aparece al volver a consultar las fuentes. Revisa la conexión y vuelve a cargar.");
+    } catch (fallo) {
+      setErrorFuentes(`La fuente se envió, pero no se pudo confirmar su persistencia: ${fallo?.message || "error al consultar el servidor"}`);
+    }
+  };
+
+  const conectarFuentesGmail = async () => {
+    try {
+      await conectarGmail();
+      const pendientes = fuentes.filter((fuente) => fuente.tipo?.toUpperCase() === "CORREO" && fuente.estado === false);
+      const resultados = await Promise.allSettled(pendientes.map((fuente) => actualizarFuente(
+        fuente.idFuente,
+        { tipo: fuente.tipo, contenido: fuente.contenido, estado: true },
+        usuario?.idUsuario,
+      )));
+      const activadas = new Set();
+      resultados.forEach((resultado, indice) => { if (resultado.status === "fulfilled") activadas.add(pendientes[indice].idFuente); });
+      if (activadas.size > 0) {
+        const respuesta = await obtenerFuentesPorUsuario(usuario.idUsuario);
+        const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+        setFuentes(Array.isArray(lista) ? lista : []);
+      }
+      if (activadas.size < pendientes.length) setErrorFuentes("Gmail quedó conectado, pero algunas fuentes no se pudieron activar.");
+      else setErrorFuentes("");
+    } catch { /* El mensaje detallado se muestra desde GmailContext. */ }
   };
 
   const guardarEdicionFuente = async (evento) => {
@@ -174,15 +211,15 @@ export default function PaginaDashboardConfiguracion() {
               Consulta y administra las fuentes asociadas a tu usuario.
             </p>
           </div>
-          <button
-            ref={disparadorFuentesRef}
-            type="button"
-            className="self-start sm:self-auto min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2 cursor-pointer"
-            onClick={() => setModalFuentesAbierto(true)}
-          >
-            Registrar fuentes
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button ref={disparadorFuentesRef} type="button" className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2 cursor-pointer" onClick={() => setModalFuentesAbierto(true)}>Registrar fuentes</button>
+            <button type="button" onClick={conectarFuentesGmail} disabled={!GMAIL_CONFIGURADO || !gisListo || conexionCargando} className="min-h-11 rounded-xl border border-emerald-primary px-4 py-2 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 disabled:opacity-50">{!GMAIL_CONFIGURADO ? "Configura Gmail" : conexionCargando ? "Restaurando Gmail…" : !gisListo ? "Preparando Gmail…" : "Agregar cuenta Gmail"}</button>
+          </div>
         </div>
+        {!GMAIL_CONFIGURADO && <p className="text-sm text-amber-800">Configura VITE_GOOGLE_CLIENT_ID para habilitar la conexión.</p>}
+        {errorGmail && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorGmail}</p>}
+        {tokenGmail && <p className="text-sm text-emerald-primary">Gmail conectado como {cuentaGmail}. La conexión se guarda para restaurarse al volver a entrar y las fuentes nuevas se registran activas.</p>}
+        {cuentasGmail.length > 0 && <ul className="grid gap-2 sm:grid-cols-2" aria-label="Cuentas Gmail conectadas">{cuentasGmail.map((cuenta) => <li key={cuenta.id} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/50 px-3 py-2"><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-w-0 truncate text-left text-sm font-medium text-bg-dark">{cuenta.email}{String(cuenta.id) === String(cuentaSeleccionadaId) ? " · seleccionada" : ""}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></li>)}</ul>}
 
         {/* Listado renderizado de fuentes */}
         <div className="pt-2">
@@ -303,6 +340,7 @@ export default function PaginaDashboardConfiguracion() {
         triggerRef={disparadorFuentesRef}
         alGuardar={alGuardarFuente}
         fuentesExistentes={fuentes}
+        estadoInicial={Boolean(tokenGmail)}
       />
     </section>
   );

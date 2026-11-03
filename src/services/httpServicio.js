@@ -45,18 +45,23 @@ async function obtenerJson(respuesta) {
 async function leerRespuesta(respuesta, url, metodo) {
   if (respuesta.ok) return obtenerJson(respuesta);
 
+  const consultaSesionSinSesion = respuesta.status === 401 && url.includes("/usuario/activo");
   if (respuesta.status === 401 && !url.includes("/usuario/login") && !url.includes("/api/gmail/")) {
     window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
   }
 
   const datos = await obtenerJson(respuesta);
-  console.error("[HTTP][ERROR]", {
-    url,
-    metodo,
-    status: respuesta.status,
-    statusText: respuesta.statusText,
-    datos,
-  });
+  // La consulta de sesión responde 401 cuando la pestaña ya no tiene sesión;
+  // ese resultado es parte del flujo normal de inicio, no un error de aplicación.
+  if (!consultaSesionSinSesion) {
+    console.error("[HTTP][ERROR]", {
+      url,
+      metodo,
+      status: respuesta.status,
+      statusText: respuesta.statusText,
+      datos,
+    });
+  }
 
   const mensaje =
     datos && typeof datos === "object"

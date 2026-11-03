@@ -7,12 +7,20 @@
  * @usadoPor   Vitest
  */
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { TemaProvider } from "../../../context/TemaContext.jsx";
 import SidebarResponsive from "../../../components/layout/SidebarResponsive";
 
 afterEach(cleanup);
+
+beforeEach(() => {
+  // Mock localStorage para tema oscuro
+  window.localStorage.getItem.mockImplementation((key) =>
+    key === "finapp_tema" ? "oscuro" : null
+  );
+});
 
 const renderSidebarResponsive = (props = {}, initialEntries = ["/dashboard"]) => {
   const defaultProps = {
@@ -23,9 +31,11 @@ const renderSidebarResponsive = (props = {}, initialEntries = ["/dashboard"]) =>
   };
 
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <SidebarResponsive {...defaultProps} />
-    </MemoryRouter>
+    <TemaProvider>
+      <MemoryRouter initialEntries={initialEntries}>
+        <SidebarResponsive {...defaultProps} />
+      </MemoryRouter>
+    </TemaProvider>
   );
 };
 
@@ -352,12 +362,12 @@ describe("SidebarResponsive", () => {
     });
 
     it("enlaces inactivos tienen clases base y hover", () => {
-      renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
+          renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
 
-      const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
-      expect(inactiveLink).toHaveClass("text-bg-cream/70");
-      expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
-    });
+          const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
+          expect(inactiveLink).toHaveClass("text-bg-cream");
+          expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
+        });
   });
 
   describe("estados de foco visible", () => {
@@ -376,37 +386,41 @@ describe("SidebarResponsive", () => {
   });
 
   describe("cambio de estado controlado (props)", () => {
-    it("re-renderiza correctamente al cambiar prop colapsada de false a true", () => {
-      const { rerender } = renderSidebarResponsive({ colapsada: false });
+      it("re-renderiza correctamente al cambiar prop colapsada de false a true", () => {
+        const { rerender } = renderSidebarResponsive({ colapsada: false });
 
-      const aside = getSidebarAside();
-      expect(aside).toHaveClass("w-64");
+        const aside = getSidebarAside();
+        expect(aside).toHaveClass("w-64");
 
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <SidebarResponsive colapsada={true} alToggleColapso={vi.fn()} alAbrirUserModal={vi.fn()} />
-        </MemoryRouter>
-      );
+        rerender(
+          <TemaProvider temaInicial="oscuro">
+            <MemoryRouter initialEntries={["/dashboard"]}>
+              <SidebarResponsive colapsada={true} alToggleColapso={vi.fn()} alAbrirUserModal={vi.fn()} />
+            </MemoryRouter>
+          </TemaProvider>
+        );
 
-      const newAside = getSidebarAside();
-      expect(newAside).toHaveClass("w-[72px]");
+        const newAside = getSidebarAside();
+        expect(newAside).toHaveClass("w-[72px]");
+      });
+
+      it("mantiene callback alToggleColapso referencialmente estable entre renders", () => {
+        const alToggleColapso = vi.fn();
+        const { rerender } = renderSidebarResponsive({ colapsada: false, alToggleColapso });
+
+        const button1 = screen.getByRole("button", { name: /Colapsar navegación/i });
+
+        rerender(
+          <TemaProvider temaInicial="oscuro">
+            <MemoryRouter initialEntries={["/dashboard"]}>
+              <SidebarResponsive colapsada={false} alToggleColapso={alToggleColapso} alAbrirUserModal={vi.fn()} />
+            </MemoryRouter>
+          </TemaProvider>
+        );
+
+        const button2 = screen.getByRole("button", { name: /Colapsar navegación/i });
+        // El botón se re-renderiza pero la función callback es la misma
+        expect(button2).toBeTruthy();
+      });
     });
-
-    it("mantiene callback alToggleColapso referencialmente estable entre renders", () => {
-      const alToggleColapso = vi.fn();
-      const { rerender } = renderSidebarResponsive({ colapsada: false, alToggleColapso });
-
-      const button1 = screen.getByRole("button", { name: /Colapsar navegación/i });
-
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <SidebarResponsive colapsada={false} alToggleColapso={alToggleColapso} alAbrirUserModal={vi.fn()} />
-        </MemoryRouter>
-      );
-
-      const button2 = screen.getByRole("button", { name: /Colapsar navegación/i });
-      // El botón se re-renderiza pero la función callback es la misma
-      expect(button2).toBeTruthy();
-    });
-  });
 });

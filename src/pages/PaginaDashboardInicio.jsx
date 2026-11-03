@@ -1,11 +1,7 @@
 /**
  * @uso        Página de inicio del dashboard: vista de «muestras» creadas por el usuario
  * @funciones  PaginaDashboardInicio()
- * @datos      Estado local `muestras` ({ titulo, fuente, tipo }; se restaura al montar
- *             desde localStorage con la clave finapp_muestras_dashboard — JSON con
- *             try/catch y validación de array, patrón de UsuarioActivoContext, RF-15 —
- *             y se persiste al guardar con la lista completa; si el almacén no está
- *             disponible o falla, la página funciona en memoria sin persistir, AC-29)
+ * @datos      Estado local `muestras` que se carga y persiste en el backend según la sesión activa
  *             y `borrador` del formulario de creación ({ titulo, fuente, tipo }; vacío =
  *             placeholders); modal «Crear muestra» con 5 fuentes demo del propio modal,
  *             cada una con su destino de redirección (RF-05, se usará en T8), y 4 tipos
@@ -14,17 +10,16 @@
  *             (VALORES_DEMO): tarjeta con el título + monto es-MX, gráfica de barras con
  *             serie fija, métrica con variación demo y mapa de calor 7 × 5 con
  *             intensidades fijas; una muestra sin valor válido degrada a «Sin datos
- *             disponibles» (RF-08/RF-14; esa condición no es producible desde la UI y se
- *             cubre por prueba de unidad). Sin backend ni endpoints (TRIAL_ACTIVO, demo;
- *             la migración del localStorage al backend es deuda documentada). El estilo
+ *             disponibles» (RF-08/RF-14). Los valores son demostrativos; el registro se
+ *             guarda en backend por usuario. El estilo
  *             neutro de la lista lo sustituye la superficie mixta y la rejilla
  *             responsiva de T7; el clic con redirección llega en T8
  * @eventos    clic en «crear muestra» abre el modal; cierres por «X», Esc, clic fuera y
  *             deslizar hacia abajo (móvil) descartan el borrador (RF-11); `alCambiarBorrador`
  *             mantiene controlado el borrador; «guardar muestra» valida (completo y sin
- *             duplicado), añade al final, persiste la lista completa en localStorage y
+ *             duplicado), crea o actualiza en backend y
  *             cierra restableciendo los campos (RF-07/RF-09/RF-10/RF-15)
- * @estados    muestras (carga al montar desde localStorage o lista vacía), borrador
+ * @estados    muestras (carga desde el backend para el usuario activo), borrador
  *             (título/fuente/tipo vacíos al iniciar), modalAbierto (booleano)
  * @usadoPor   App.jsx (ruta /dashboard)
  */
@@ -40,6 +35,7 @@ import { useDeslizarParaCerrar } from "../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../hooks/useRetornoDeFoco";
 import { useTema } from "../context/TemaContext";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
+import { actualizarMuestra, crearMuestra, eliminarMuestra, listarMuestras } from "../services/muestraServicio";
 
 /**
  * Fuentes demo del selector de fuente (RF-05): lista fija de demostración que vive en el
@@ -48,10 +44,17 @@ import { useUsuarioActivo } from "../context/UsuarioActivoContext";
  */
 const FUENTES_DEMO = [
   { valor: "bolsillos", etiqueta: "Bolsillos", destino: "/dashboard/bolsillos" },
-  { valor: "transacciones", etiqueta: "Contabilidad", destino: "/dashboard/contabilidad" },
+  { valor: "contabilidad", etiqueta: "Contabilidad", destino: "/dashboard/contabilidad" },
   { valor: "ingresos", etiqueta: "Ingresos", destino: "/dashboard/contabilidad" },
   { valor: "gastos", etiqueta: "Gastos", destino: "/dashboard/contabilidad" },
   { valor: "tarjetas", etiqueta: "Tarjetas", destino: "/dashboard/tarjetas" },
+];
+
+const SEGMENTOS_CONTABLES = [
+  { valor: "todos", etiqueta: "Todos los movimientos" },
+  { valor: "ingresos", etiqueta: "Ingresos" },
+  { valor: "gastos", etiqueta: "Gastos" },
+  { valor: "otros", etiqueta: "Otros (ahorros)" },
 ];
 
 /**
@@ -72,6 +75,7 @@ const TIPOS_VISUALIZACION = [
  */
 const VALORES_DEMO = {
   bolsillos: 2300,
+  contabilidad: 3473000,
   transacciones: 5800,
   ingresos: 4250,
   gastos: 1820.75,
@@ -120,7 +124,7 @@ const CLASES_INTENSIDAD = [
 ];
 
 /** Borrador inicial del formulario: los tres campos vacíos muestran su placeholder. */
-const BORRADOR_VACIO = { titulo: "", fuente: "", tipo: "" };
+const BORRADOR_VACIO = { titulo: "", fuente: "", tipo: "", segmentoContable: "todos" };
 
 /**
  * Normaliza el título recortando los espacios de los extremos (decisión 12 de la spec
@@ -137,54 +141,20 @@ const esBorradorCompleto = (borrador) =>
   borrador.fuente !== "" &&
   borrador.tipo !== "";
 
+const normalizarFuente = (fuente) => fuente === "transacciones" ? "contabilidad" : fuente;
+
 /**
  * Detecta la muestra duplicada por el triple título (normalizado) + fuente + tipo, con
  * los valores internos de cada muestra (RF-10).
  */
-const esMuestraDuplicada = (muestras, titulo, fuente, tipo) =>
+const esMuestraDuplicada = (muestras, titulo, fuente, tipo, segmentoContable) =>
   muestras.some(
     (muestra) =>
       normalizarTitulo(muestra.titulo) === titulo &&
-      muestra.fuente === fuente &&
-      muestra.tipo === tipo
+      normalizarFuente(muestra.fuente) === fuente &&
+      muestra.tipo === tipo &&
+      (fuente !== "contabilidad" || (muestra.segmentoContable || "todos") === segmentoContable)
   );
-
-/** Clave de almacenamiento simulado de las muestras (RF-15): prefijo finapp_ del repo. */
-const CLAVE_ALMACEN = "finapp_muestras_dashboard";
-
-/**
- * Lectura segura de las muestras persistidas (RF-15, patrón de UsuarioActivoContext):
- * JSON con validación defensiva — JSON inválido o no-array devuelve null y la página
- * arranca con su estado en memoria (AC-28). Si localStorage no está disponible o la
- * lectura falla, registra el error y degrada a memoria sin crash (AC-29).
- */
-const leerMuestrasPersistidas = () => {
-  try {
-    const guardado = localStorage.getItem(CLAVE_ALMACEN);
-    if (!guardado) {
-      return null;
-    }
-    const parseado = JSON.parse(guardado);
-    return Array.isArray(parseado) ? parseado : null;
-  } catch (error) {
-    console.error("Error al leer muestras desde localStorage:", error);
-    return null;
-  }
-};
-
-/**
- * Escritura segura de la lista COMPLETA de muestras (AC-27, patrón de
- * UsuarioActivoContext): JSON bajo la clave del módulo. Si localStorage no está
- * disponible o falla la escritura, registra el error: la página sigue funcionando con
- * su estado en memoria y al recargar no hay persistencia (AC-29).
- */
-const persistirMuestras = (listado) => {
-  try {
-    localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(listado));
-  } catch (error) {
-    console.error("Error al guardar muestras en localStorage:", error);
-  }
-};
 
 /** Opciones de la trampa de foco (spec 010 §2.2). */
 function crearOpcionesTrampa(refPanel) {
@@ -200,10 +170,12 @@ export default function PaginaDashboardInicio() {
   const { tema } = useTema();
   const { usuario } = useUsuarioActivo();
   const temaOscuro = tema === "oscuro";
-  // Muestras creadas por el usuario: restauradas de localStorage al montar (RF-15, en
-  // el orden guardado) o lista vacía; cada guardado añade al final (orden de creación,
-  // RF-07) y el renderizado por tipo llega en T6.
+  // Muestras guardadas en el backend para el usuario activo; cada guardado añade al final.
   const [muestras, setMuestras] = useState([]);
+  const [cargandoMuestras, setCargandoMuestras] = useState(true);
+  const [guardandoMuestra, setGuardandoMuestra] = useState(false);
+  const [eliminandoMuestra, setEliminandoMuestra] = useState(false);
+  const [errorPersistencia, setErrorPersistencia] = useState("");
   // Borrador del formulario de creación: los tres campos vacíos muestran sus placeholders.
   const [borrador, setBorrador] = useState(BORRADOR_VACIO);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -237,8 +209,8 @@ export default function PaginaDashboardInicio() {
   const clasesEtiquetaMuestra = temaOscuro ? "text-bg-cream/70" : "text-slate-text";
 
   const renderContenidoVisual = (muestra) => {
-    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === muestra.fuente);
-    const valor = fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null;
+    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === normalizarFuente(muestra.fuente));
+    const valor = muestra.valor ?? (fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null);
     const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(muestra.tipo);
 
     if (!valor || !tipoValido) {
@@ -251,7 +223,7 @@ export default function PaginaDashboardInicio() {
         {muestra.tipo === "tarjeta" && <p className={`text-2xl font-bold ${clasesTextoMuestra}`}>{valorFormateado}</p>}
         {muestra.tipo === "grafica" && (
           <div role="img" aria-label="Gráfica de demostración con serie fija" className="flex h-24 items-end gap-1">
-            {SERIE_GRAFICA_DEMO.map((barra, i) => (
+            {(muestra.serie || SERIE_GRAFICA_DEMO).map((barra, i) => (
               <div key={i} data-testid="barra-grafica" className="w-full rounded-t-sm bg-emerald-primary" style={{ height: `${barra.altura}%` }} title={barra.etiqueta}>
                 <span className={`mt-1 block text-center text-xs ${clasesEtiquetaMuestra}`}>{barra.etiqueta}</span>
               </div>
@@ -261,12 +233,12 @@ export default function PaginaDashboardInicio() {
         {muestra.tipo === "metrica" && (
           <div className="flex items-baseline gap-1">
             <span className={`text-3xl font-bold ${clasesTextoMuestra}`}>{valorFormateado}</span>
-            <span className="text-sm font-medium text-emerald-primary">{VARIACION_METRICA_DEMO}</span>
+            <span className="text-sm font-medium text-emerald-primary">{muestra.variacion || VARIACION_METRICA_DEMO}</span>
           </div>
         )}
         {muestra.tipo === "mapa_calor" && (
           <div role="img" aria-label="Mapa de calor de demostración (7 días × 5 franjas)" className="grid h-24 grid-cols-5 grid-rows-7 gap-1" data-testid="mapa-calor">
-            {INTENSIDADES_MAPA_DEMO.flatMap((fila, filaIdx) =>
+            {(muestra.intensidades || INTENSIDADES_MAPA_DEMO).flatMap((fila, filaIdx) =>
               fila.map((intensidad, colIdx) => (
                 <div key={`${filaIdx}-${colIdx}`} data-testid="celda-mapa-calor" className={`min-h-0 rounded-sm ${CLASES_INTENSIDAD[intensidad]}`} />
               ))
@@ -282,7 +254,7 @@ export default function PaginaDashboardInicio() {
    * (RF-13, AC-21/22/23, T8).
    */
   const alActivarMuestra = (fuente) => {
-    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === fuente);
+    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === normalizarFuente(fuente));
     if (fuenteDemo) {
       navigate(fuenteDemo.destino);
     }
@@ -296,11 +268,16 @@ export default function PaginaDashboardInicio() {
    */
   const renderMuestra = (muestra, indice) => {
     const { titulo, fuente, tipo } = muestra;
-    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === fuente);
-    const valor = fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null;
+    const fuenteNormalizada = normalizarFuente(fuente);
+    const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === fuenteNormalizada);
+    const valor = muestra.valor ?? (fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null);
     const esTranslucida = indice < 3;
     const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(tipo);
-    const nombreAccesible = `${titulo}, fuente ${fuenteDemo?.etiqueta || fuente}, tipo ${tipo}`;
+    const etiquetaFuente = fuenteDemo?.etiqueta || fuente;
+    const nombreSegmento = fuenteNormalizada === "contabilidad"
+      ? SEGMENTOS_CONTABLES.find((segmento) => segmento.valor === muestra.segmentoContable)?.etiqueta
+      : null;
+    const nombreAccesible = `${titulo}, fuente ${etiquetaFuente}${nombreSegmento ? `, ${nombreSegmento}` : ""}, tipo ${tipo}`;
     const clasesSuperficie = temaOscuro
       ? esTranslucida
         ? "glass-surface border border-border-line/50 bg-bg-dark/90"
@@ -333,7 +310,7 @@ export default function PaginaDashboardInicio() {
             <footer className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
               <div>
                 <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Fuente</p>
-                <p className={`text-sm ${clasesTextoMuestra}`}>{FUENTES_DEMO.find((opcion) => opcion.valor === fuente)?.etiqueta || fuente}</p>
+                <p className={`text-sm ${clasesTextoMuestra}`}>{etiquetaFuente}{nombreSegmento ? ` · ${nombreSegmento}` : ""}</p>
               </div>
               <div>
                 <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Valor</p>
@@ -345,7 +322,6 @@ export default function PaginaDashboardInicio() {
       );
     }
 
-    const etiquetaFuente = fuenteDemo.etiqueta;
     const etiquetaTipo = TIPOS_VISUALIZACION.find((opcion) => opcion.valor === tipo)?.etiqueta || tipo;
 
     return (
@@ -368,7 +344,7 @@ export default function PaginaDashboardInicio() {
           <footer className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
             <div>
               <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Fuente</p>
-              <p className={`text-sm ${clasesTextoMuestra}`}>{etiquetaFuente}</p>
+              <p className={`text-sm ${clasesTextoMuestra}`}>{etiquetaFuente}{nombreSegmento ? ` · ${nombreSegmento}` : ""}</p>
             </div>
             <div>
               <p className={`text-[0.65rem] font-medium uppercase tracking-wide ${clasesEtiquetaMuestra}`}>Valor</p>
@@ -380,18 +356,27 @@ export default function PaginaDashboardInicio() {
     );
   };
 
-  // Carga inicial al montar (RF-15): restaura las muestras en el orden guardado; con
-  // JSON inválido, no-array o un almacén no disponible arranca lista vacía sin crash.
+  // Las muestras se consultan desde el backend con la sesión activa; localStorage no es fuente de verdad.
   useEffect(() => {
-    const persistidas = leerMuestrasPersistidas();
-    if (persistidas) {
-      setMuestras(persistidas);
+    let vigente = true;
+    if (!usuario?.idUsuario) {
+      navigate("/", { replace: true });
+      return () => { vigente = false; };
     }
-  }, []);
+    setCargandoMuestras(true);
+    setErrorPersistencia("");
+    listarMuestras()
+      .then((guardadas) => { if (vigente) setMuestras(guardadas); })
+      .catch((error) => { if (vigente) setErrorPersistencia(error?.message || "No se pudieron cargar las muestras."); })
+      .finally(() => { if (vigente) setCargandoMuestras(false); });
+    return () => { vigente = false; };
+  }, [usuario?.idUsuario, navigate]);
 
   const alCrearMuestra = () => {
     if (!exigirUsuario()) return;
+    setErrorPersistencia("");
     setIndiceMuestraEditando(null);
+    setErrorPersistencia("");
     setConfirmarEliminacion(false);
     setBorrador(BORRADOR_VACIO);
     setMuestraDetalle(null);
@@ -407,70 +392,95 @@ export default function PaginaDashboardInicio() {
   };
 
   // Abre el modal de detalle con la muestra indicada.
-  const alAbrirDetalle = (muestra) => setMuestraDetalle(muestra);
+  const alAbrirDetalle = (muestra) => { setErrorPersistencia(""); setMuestraDetalle(muestra); };
 
   // Cierra el modal de detalle.
   const alCerrarDetalle = () => {
     setMuestraDetalle(null);
     setConfirmarEliminacion(false);
+    setErrorPersistencia("");
   };
 
   // Actualiza un campo del borrador del formulario de creación de muestra.
-  const alCambiarBorrador = (campo, valor) =>
+  const alCambiarBorrador = (campo, valor) => {
+    setErrorPersistencia("");
     setBorrador((previo) => ({ ...previo, [campo]: valor }));
+  };
 
   // Guardar muestra (RF-07): con formulario completo y sin duplicado añade la nueva
   // muestra al final, cierra el modal y restablece los campos. Con formulario incompleto
   // (RF-09) o duplicado (RF-10) no añade, no cierra y no muestra mensajes: el borrador
   // se conserva para permitir corregir y reintentar.
-  const alGuardarMuestra = () => {
+  const alGuardarMuestra = async () => {
     if (!exigirUsuario()) return;
+    if (guardandoMuestra) return;
     if (!esBorradorCompleto(borrador)) {
       return;
     }
 
     const titulo = normalizarTitulo(borrador.titulo);
-    const { fuente, tipo } = borrador;
+    const { tipo } = borrador;
+    const fuente = normalizarFuente(borrador.fuente);
+    const segmentoContable = borrador.segmentoContable || "todos";
     const muestrasParaComparar = indiceMuestraEditando === null
       ? muestras
       : muestras.filter((_, indice) => indice !== indiceMuestraEditando);
-    if (esMuestraDuplicada(muestrasParaComparar, titulo, fuente, tipo)) {
+    if (esMuestraDuplicada(muestrasParaComparar, titulo, fuente, tipo, segmentoContable)) {
       return;
     }
 
-    const nuevasMuestras = indiceMuestraEditando === null
-      ? [...muestras, { titulo, fuente, tipo }]
-      : muestras.map((muestra, indice) => indice === indiceMuestraEditando ? { titulo, fuente, tipo } : muestra);
-    setMuestras(nuevasMuestras);
-    persistirMuestras(nuevasMuestras);
-    alCerrarModal();
+    setErrorPersistencia("");
+    setGuardandoMuestra(true);
+    try {
+      const guardada = indiceMuestraEditando === null
+        ? await crearMuestra({ titulo, fuente, tipo, segmentoContable })
+        : await actualizarMuestra(muestras[indiceMuestraEditando]?.id, { titulo, fuente, tipo, segmentoContable });
+      setMuestras((actuales) => indiceMuestraEditando === null
+        ? [...actuales, guardada]
+        : actuales.map((muestra, indice) => indice === indiceMuestraEditando ? guardada : muestra));
+      alCerrarModal();
+    } catch (error) {
+      setErrorPersistencia(error?.message || "No se pudo guardar la muestra. Intenta de nuevo.");
+    } finally {
+      setGuardandoMuestra(false);
+    }
   };
 
   const alEditarMuestra = () => {
     if (!exigirUsuario()) return;
+    setErrorPersistencia("");
     const indice = muestras.indexOf(muestraDetalle);
     if (indice < 0) return;
     setIndiceMuestraEditando(indice);
-    setBorrador({ titulo: muestraDetalle.titulo, fuente: muestraDetalle.fuente, tipo: muestraDetalle.tipo });
+    setBorrador({
+      titulo: muestraDetalle.titulo,
+      fuente: normalizarFuente(muestraDetalle.fuente),
+      tipo: muestraDetalle.tipo,
+      segmentoContable: muestraDetalle.segmentoContable || "todos",
+    });
     setConfirmarEliminacion(false);
     setMuestraDetalle(null);
     setModalAbierto(true);
   };
 
-  const alEliminarMuestra = () => {
+  const alEliminarMuestra = async () => {
     if (!exigirUsuario()) return;
     if (!confirmarEliminacion || !muestraDetalle) {
       setConfirmarEliminacion(true);
       return;
     }
-    const indice = muestras.indexOf(muestraDetalle);
-    if (indice >= 0) {
-      const nuevasMuestras = muestras.filter((_, posicion) => posicion !== indice);
-      setMuestras(nuevasMuestras);
-      persistirMuestras(nuevasMuestras);
+    setErrorPersistencia("");
+    setEliminandoMuestra(true);
+    try {
+      await eliminarMuestra(muestraDetalle.id);
+      setMuestras((actuales) => actuales.filter((muestra) => muestra.id !== muestraDetalle.id));
+      setConfirmarEliminacion(false);
+      setMuestraDetalle(null);
+    } catch (error) {
+      setErrorPersistencia(error?.message || "No se pudo eliminar la muestra. Intenta de nuevo.");
+    } finally {
+      setEliminandoMuestra(false);
     }
-    setConfirmarEliminacion(false);
-    setMuestraDetalle(null);
   };
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
@@ -554,6 +564,24 @@ export default function PaginaDashboardInicio() {
               </select>
             </div>
 
+            {normalizarFuente(borrador.fuente) === "contabilidad" && (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="muestra-segmento-contable" className="text-sm font-medium text-bg-dark">
+                  Qué mostrar de Contabilidad
+                </label>
+                <select
+                  id="muestra-segmento-contable"
+                  value={borrador.segmentoContable || "todos"}
+                  onChange={(evento) => alCambiarBorrador("segmentoContable", evento.target.value)}
+                  className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 text-bg-dark outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary cursor-pointer"
+                >
+                  {SEGMENTOS_CONTABLES.map((segmento) => (
+                    <option key={segmento.valor} value={segmento.valor}>{segmento.etiqueta}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <label htmlFor="muestra-tipo" className="text-sm font-medium text-bg-dark">
                 Tipo de visualización
@@ -579,10 +607,12 @@ export default function PaginaDashboardInicio() {
             <button
               type="button"
               onClick={alGuardarMuestra}
+              disabled={guardandoMuestra}
               className="w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent cursor-pointer"
             >
-              {indiceMuestraEditando === null ? "guardar muestra" : "guardar cambios"}
+              {guardandoMuestra ? "Guardando…" : indiceMuestraEditando === null ? "guardar muestra" : "guardar cambios"}
             </button>
+            {errorPersistencia && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{errorPersistencia}</p>}
           </div>
         </div>
       </motion.div>
@@ -625,11 +655,12 @@ export default function PaginaDashboardInicio() {
         {muestraDetalle && (
           <>
             {(() => {
-              const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === muestraDetalle.fuente);
+      const fuenteDemo = FUENTES_DEMO.find((f) => f.valor === normalizarFuente(muestraDetalle.fuente));
               const etiquetaFuente = fuenteDemo?.etiqueta || muestraDetalle.fuente;
+      const segmento = SEGMENTOS_CONTABLES.find((opcion) => opcion.valor === muestraDetalle.segmentoContable);
               const tipoDemo = TIPOS_VISUALIZACION.find((t) => t.valor === muestraDetalle.tipo);
               const etiquetaTipo = tipoDemo?.etiqueta || muestraDetalle.tipo;
-              const valor = fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null;
+      const valor = muestraDetalle.valor ?? (fuenteDemo ? VALORES_DEMO[fuenteDemo.valor] : null);
               const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(muestraDetalle.tipo);
               const valorFormateado = valor && tipoValido ? formatearMonto(valor) : TEXTO_SIN_DATOS;
 
@@ -651,7 +682,7 @@ export default function PaginaDashboardInicio() {
                     <div className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
                       <div>
                         <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p>
-                        <p className="text-sm text-bg-dark">{etiquetaFuente}</p>
+                        <p className="text-sm text-bg-dark">{etiquetaFuente}{segmento ? ` · ${segmento.etiqueta}` : ""}</p>
                       </div>
                       <div>
                         <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Valor</p>
@@ -667,7 +698,7 @@ export default function PaginaDashboardInicio() {
                     </div>
                     <div>
                       <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</dt>
-                      <dd className="mt-0.5 text-sm text-bg-dark">{etiquetaFuente}</dd>
+                      <dd className="mt-0.5 text-sm text-bg-dark">{etiquetaFuente}{segmento ? ` · ${segmento.etiqueta}` : ""}</dd>
                     </div>
                     <div>
                       <dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Tipo</dt>
@@ -717,9 +748,10 @@ export default function PaginaDashboardInicio() {
               <button
                 type="button"
                 onClick={alEliminarMuestra}
+                disabled={eliminandoMuestra}
                 className="rounded-xl border border-red-300/60 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
-                {confirmarEliminacion ? "Confirmar eliminación" : "Eliminar"}
+                {eliminandoMuestra ? "Eliminando…" : confirmarEliminacion ? "Confirmar eliminación" : "Eliminar"}
               </button>
               {confirmarEliminacion && (
                 <button
@@ -731,6 +763,7 @@ export default function PaginaDashboardInicio() {
                 </button>
               )}
             </div>
+            {errorPersistencia && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{errorPersistencia}</p>}
           </>
         )}
       </div>
@@ -758,7 +791,10 @@ export default function PaginaDashboardInicio() {
           </button>
         </header>
 
-        {/* Lista de muestras creadas por el usuario: vacía hasta la primera (RF-12, T6).
+        {errorPersistencia && !modalAbierto && !muestraDetalle && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{errorPersistencia}</p>}
+        {cargandoMuestras && <p role="status" className="text-sm text-slate-text">Cargando tus muestras guardadas…</p>}
+
+        {/* Lista de muestras guardadas en backend para el usuario activo.
              Rejilla responsiva: escritorio con columnas desde sm:, móvil 1 columna (RF-16, T7). */}
         <ul data-testid="lista-muestras" id="lista-muestras" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {muestras.map((muestra, indice) => renderMuestra(muestra, indice))}

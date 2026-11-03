@@ -104,12 +104,14 @@ export default function ModalPerfilUsuario({ abierto, alCerrar, triggerRef }) {
         nombre: nombreLimpio,
         contrasena,
       });
+      const datosActualizados = respuesta?.datos || respuesta;
+      if (datosActualizados?.idUsuario !== idUsuarioLimpio) {
+        throw new Error("El servidor no confirmó la identificación actualizada. Vuelve a intentarlo.");
+      }
 
       const actualizado = {
         ...usuario,
-        ...(respuesta && typeof respuesta === "object" ? respuesta : {}),
-        idUsuario: idUsuarioLimpio,
-        nombre: nombreLimpio,
+        ...datosActualizados,
         fechaCreacion,
       };
       // La contraseña nunca se persiste en el contexto/localStorage (dato sensible).
@@ -182,6 +184,7 @@ export default function ModalPerfilUsuario({ abierto, alCerrar, triggerRef }) {
               value={contrasena}
               onChange={(evento) => setContrasena(evento.target.value)}
               autoComplete="new-password"
+              minLength={8}
               placeholder={modoEdicion ? "Nueva contraseña" : undefined}
               readOnly={bloqueado}
               className={clasesCampo(bloqueado)}

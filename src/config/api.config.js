@@ -16,6 +16,10 @@ export const ENDPOINTS = {
     login: "/api/auth/login",
     registro: "/api/auth/registro",
   },
+  googleAuth: {
+    state: "/api/auth/google/state",
+    callback: "/api/auth/google/callback",
+  },
   usuario: {
     base: "/usuario",
     porId: "/usuario/id",
@@ -51,6 +55,8 @@ export const ENDPOINTS = {
   },
   gmail: {
     callback: "/api/gmail/callback",
+    conexion: "/api/gmail/conexion",
+    cuentas: "/api/gmail/cuentas",
   },
 };
 

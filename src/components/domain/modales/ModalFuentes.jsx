@@ -147,7 +147,7 @@ export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar,
       const fuenteGuardada = resultado || nuevaFuente;
 
       if (alGuardar) {
-        alGuardar(fuenteGuardada);
+        await alGuardar(fuenteGuardada);
       }
 
       reiniciarFormulario();

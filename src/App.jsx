@@ -22,6 +22,7 @@ import PaginaDashboardContabilidad from "./pages/PaginaDashboardContabilidad";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
 import { useUsuarioActivo } from "./context/UsuarioActivoContext";
+import { GmailProvider } from "./context/GmailContext";
 
 function RedireccionSesion() {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export default function App() {
   return (
     <TemaProvider>
       <UsuarioActivoProvider>
+      <GmailProvider>
         <RedireccionSesion />
         <Routes>
         <Route path="/" element={<PaginaInicio />} />
@@ -78,6 +80,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </GmailProvider>
       </UsuarioActivoProvider>
     </TemaProvider>
   );

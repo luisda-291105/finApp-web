@@ -52,6 +52,18 @@ Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
+// Mock sessionStorage for jsdom (used by UsuarioActivoContext)
+const sessionStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
+Object.defineProperty(window, "sessionStorage", {
+  writable: true,
+  value: sessionStorageMock,
+});
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Stub de geometría para poder ejercer la TRAMPA DE FOCO REAL en jsdom (spec 010, T2; RF-18, D1)
 // ─────────────────────────────────────────────────────────────────────────────────────────────

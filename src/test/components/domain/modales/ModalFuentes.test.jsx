@@ -13,6 +13,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ModalFuentes from "../../../../components/domain/modales/ModalFuentes";
 import { UsuarioActivoProvider } from "../../../../context/UsuarioActivoContext";
 import * as fuenteServicio from "../../../../services/fuenteServicio";
+import { obtenerUsuarioActivo } from "../../../../services/usuarioServicio";
+
+vi.mock("../../../../services/usuarioServicio", () => ({
+  obtenerUsuarioActivo: vi.fn(),
+}));
 
 const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez" };
 
@@ -66,6 +71,12 @@ afterEach(() => {
 beforeEach(() => {
   fijarViewport(1024);
   window.localStorage.getItem.mockReturnValue(JSON.stringify(USUARIO));
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO });
 });
 
 describe("ModalFuentes", () => {

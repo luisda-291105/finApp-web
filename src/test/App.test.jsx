@@ -8,12 +8,25 @@
  * @usadoPor   vitest (npm run test)
  */
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import App from "../App";
 
-afterEach(cleanup);
+const mocks = vi.hoisted(() => ({ obtenerUsuarioActivo: vi.fn() }));
+vi.mock("../services/usuarioServicio", () => ({ obtenerUsuarioActivo: mocks.obtenerUsuarioActivo }));
+vi.mock("../services/tarjetaServicio", () => ({ obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]) }));
+vi.mock("../services/muestraServicio", () => ({ listarMuestras: vi.fn().mockResolvedValue([]) }));
+
+beforeEach(() => {
+  sessionStorage.setItem("finapp_sesion_pestana", "activa");
+  mocks.obtenerUsuarioActivo.mockResolvedValue({ datos: { idUsuario: "usuario-prueba", nombre: "Ana Prueba", fechaCreacion: "2026-01-01" } });
+});
+
+afterEach(() => {
+  cleanup();
+  sessionStorage.removeItem("finapp_sesion_pestana");
+});
 
 function renderRuta(ruta) {
   return render(
@@ -56,6 +69,12 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByRole("button", { name: "crear muestra" })).toBeDefined();
   });
 
+  it("redirige al inicio si no hay una sesión activa", async () => {
+    sessionStorage.removeItem("finapp_sesion_pestana");
+    renderRuta("/dashboard");
+    expect(await screen.findByRole("heading", { name: /Controla tu dinero/ })).toBeInTheDocument();
+  });
+
   it("permite abrir Contabilidad dentro del dashboard de demostración", () => {
     renderRuta("/dashboard/contabilidad");
 
@@ -63,12 +82,12 @@ describe("rutas de la aplicación", () => {
     expect(screen.getByText("Datos de demostración")).toBeDefined();
   });
 
-  it("muestra los registros de tarjetas por usuario y el estado sin sesión", () => {
+  it("muestra las tarjetas vacías para el usuario autenticado", async () => {
     renderRuta("/dashboard/tarjetas");
 
-    expect(screen.getByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Tarjetas registradas" })).toBeDefined();
-    expect(screen.getByText("Inicia sesión para ver tus tarjetas.")).toBeDefined();
+    expect(screen.getByText("Todavía no tienes tarjetas registradas.")).toBeDefined();
     expect(screen.queryByText("Datos de demostración")).toBeNull();
   });
 

@@ -1,7 +1,7 @@
 /**
  * @uso        Autoriza y consulta mensajes de Gmail directamente desde el navegador
  * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail
- * @datos      Acceso temporal en memoria; no persiste tokens ni mensajes en FinApp
+ * @datos      Token activo en memoria del navegador; backend conserva la conexión cifrada por usuario
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
  * @usadoPor   PaginaDashboardCorreos
@@ -62,6 +62,8 @@ export async function iniciarCodigoAutorizacionGmail() {
       client_id: ID_CLIENTE_GOOGLE,
       scope: ALCANCE_GMAIL_LECTURA,
       ux_mode: "popup",
+      prompt: "consent",
+      select_account: true,
       callback: (respuesta) => {
         if (respuesta.error || !respuesta.code) {
           rechazar(new Error(
@@ -107,10 +109,51 @@ export async function canjearCodigoGmail(code) {
     throw new Error(datos.message || datos.error || "El servidor no pudo completar la conexión con Gmail.");
   }
   const token = datos.access_token || datos.accessToken || datos.token;
-  if (!token) {
+  if (!token || !datos.account_id) {
     throw new Error("El servidor respondió sin un token de acceso de Gmail.");
   }
-  return token;
+  return { token, email: datos.email || "Cuenta de Gmail", accountId: datos.account_id };
+}
+
+export async function listarCuentasGmail() {
+  const respuesta = await fetch(getEndpoint("gmail.cuentas"), { credentials: "include" });
+  const datos = await respuesta.json().catch(() => []);
+  if (!respuesta.ok) throw new Error(datos.message || "No se pudieron cargar las cuentas Gmail.");
+  return Array.isArray(datos) ? datos : [];
+}
+
+export async function obtenerConexionCuentaGmail(accountId) {
+  const ruta = `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/conexion`;
+  const respuesta = await fetch(ruta, { credentials: "include" });
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) throw new Error(datos.message || "No se pudo restaurar esta cuenta Gmail.");
+  return datos;
+}
+
+export async function eliminarCuentaGmail(accountId) {
+  const ruta = `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}`;
+  const respuesta = await fetch(ruta, { method: "DELETE", credentials: "include" });
+  if (!respuesta.ok) {
+    const datos = await respuesta.json().catch(() => ({}));
+    throw new Error(datos.message || "No se pudo desconectar esta cuenta Gmail.");
+  }
+}
+
+/** Recupera del backend la conexión cifrada asociada a la sesión de FinApp. */
+export async function obtenerConexionGmail() {
+  const respuesta = await fetch(getEndpoint("gmail.conexion"), { credentials: "include" });
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) throw new Error(datos.message || "No se pudo restaurar la conexión con Gmail.");
+  return datos;
+}
+
+/** Elimina del backend la conexión persistida al desconectar Gmail. */
+export async function eliminarConexionGmail() {
+  const respuesta = await fetch(getEndpoint("gmail.conexion"), { method: "DELETE", credentials: "include" });
+  if (!respuesta.ok) {
+    const datos = await respuesta.json().catch(() => ({}));
+    throw new Error(datos.message || "No se pudo eliminar la conexión guardada de Gmail.");
+  }
 }
 
 function validarDireccion(valor) {
@@ -137,26 +180,35 @@ function encabezado(mensaje, nombre) {
   return mensaje.payload?.headers?.find((item) => item.name?.toLowerCase() === nombre.toLowerCase())?.value || "";
 }
 
-/** Recupera hasta 50 mensajes recientes de la bandeja dirigidos a las fuentes registradas. */
+/** Recupera los 20 mensajes más recientes dirigidos o entregados a las fuentes registradas. */
 export async function obtenerCorreosGmail(token, fuentes) {
   const direcciones = [...new Set((fuentes || []).map((fuente) => validarDireccion(fuente.contenido)).filter(Boolean))];
   if (direcciones.length === 0) return [];
 
-  const destino = direcciones.map((direccion) => `to:${direccion}`).join(" ");
-  const consulta = `in:inbox {${destino}}`;
-  const listado = await llamarGmail(token, "messages", { q: consulta, maxResults: "50" });
+  const destino = direcciones.flatMap((direccion) => [
+    `to:${direccion}`,
+    `cc:${direccion}`,
+    `deliveredto:${direccion}`,
+  ]).join(" ");
+  // Sin `in:inbox`: Gmail puede archivar automáticamente mensajes que siguen siendo relevantes.
+  const consulta = `{${destino}}`;
+  // Gmail ya devuelve primero los mensajes recientes; no se reordena localmente.
+  const listado = await llamarGmail(token, "messages", { q: consulta, maxResults: "20" });
   const ids = listado.messages || [];
   const mensajes = [];
   for (let inicio = 0; inicio < ids.length; inicio += 8) {
     const bloque = await Promise.all(ids.slice(inicio, inicio + 8).map(async ({ id }) => {
       const mensaje = await llamarGmail(token, `messages/${encodeURIComponent(id)}`, {
         format: "metadata",
-        metadataHeaders: ["From", "To", "Subject", "Date"],
+        metadataHeaders: ["From", "To", "Cc", "Delivered-To", "X-Original-To", "Subject", "Date"],
       });
       return {
         id: mensaje.id,
         remitente: encabezado(mensaje, "From"),
-        destinatario: encabezado(mensaje, "To"),
+        destinatario: ["To", "Cc", "Delivered-To", "X-Original-To"]
+          .map((nombre) => encabezado(mensaje, nombre))
+          .filter(Boolean)
+          .join(", "),
         asunto: encabezado(mensaje, "Subject") || "(Sin asunto)",
         fecha: encabezado(mensaje, "Date"),
         fragmento: mensaje.snippet || "",

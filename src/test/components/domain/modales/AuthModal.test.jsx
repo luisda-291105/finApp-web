@@ -172,7 +172,7 @@ describe("AuthModal", () => {
       const usuario = userEvent.setup();
       renderModal({ alCerrar });
 
-      const identificacion = screen.getByPlaceholderText("1234567890");
+      const identificacion = screen.getByPlaceholderText(/1234567890/);
       await usuario.click(identificacion);
       expect(document.activeElement).toBe(identificacion);
 
@@ -248,7 +248,7 @@ describe("AuthModal", () => {
       renderModal({ alCerrar });
       await esperarFocoEnContenedor(obtenerDialogo());
 
-      const identificacion = screen.getByPlaceholderText("1234567890");
+      const identificacion = screen.getByPlaceholderText(/1234567890/);
       dispararPuntero(identificacion, "pointerdown", { clientY: 0 });
       dispararPuntero(identificacion, "pointermove", { clientY: 200 });
       dispararPuntero(identificacion, "pointerup", { clientY: 200 });
@@ -273,16 +273,17 @@ describe("AuthModal", () => {
 
   describe("AC-22: cerrar NO borra lo escrito", () => {
     const escribirCampos = async (usuario) => {
-      await usuario.type(screen.getByPlaceholderText("1234567890"), "12345678");
-      await usuario.type(screen.getByPlaceholderText("Juan Pérez"), "Ana Pérez");
-      await usuario.type(screen.getByPlaceholderText("••••••••"), "secreta123");
-    };
+          const idInput = screen.getByPlaceholderText(/1234567890/);
+          await usuario.type(idInput, "12345678");
+          await usuario.type(screen.getByPlaceholderText("Juan Pérez"), "Ana Pérez");
+          await usuario.type(screen.getByPlaceholderText("••••••••"), "secreta123");
+        };
 
-    const comprobarCamposConservados = () => {
-      expect(screen.getByPlaceholderText("1234567890").value).toBe("12345678");
-      expect(screen.getByPlaceholderText("Juan Pérez").value).toBe("Ana Pérez");
-      expect(screen.getByPlaceholderText("••••••••").value).toBe("secreta123");
-    };
+        const comprobarCamposConservados = () => {
+          expect(screen.getByPlaceholderText(/1234567890/).value).toBe("12345678");
+          expect(screen.getByPlaceholderText("Juan Pérez").value).toBe("Ana Pérez");
+          expect(screen.getByPlaceholderText("••••••••").value).toBe("secreta123");
+        };
 
     it("conserva identificación, nombre y contraseña al cerrar con la «X» y reabrir", async () => {
       const usuario = userEvent.setup();

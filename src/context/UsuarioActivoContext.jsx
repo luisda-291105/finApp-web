@@ -2,11 +2,12 @@
  * @uso        Contexto de usuario activo respaldado por la sesión del servidor
  * @funciones  UsuarioActivoProvider, useUsuarioActivo
  * @datos      usuario, estadoSesion, guardarUsuario, limpiarUsuario y cerrarSesion
- * @eventos    Comprueba la sesión al iniciar; invalida y limpia al cerrar o recargar la pestaña
+ * @eventos    Comprueba sesión al iniciar; recargar dashboard la conserva y salir del dashboard la cierra
  * @estados    usuario (desde sesión del servidor), estadoSesion
  * @usadoPor   App.jsx y componentes que necesiten relacionar con id_usuario
  */
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { cerrarSesionServidor, obtenerUsuarioActivo } from "../services/usuarioServicio";
 
 /** Valor seguro cuando un componente se monta sin `UsuarioActivoProvider` (pruebas/aislados). */
@@ -24,6 +25,10 @@ const CLAVE_ALMACEN = "finapp_usuario_activo";
 const CLAVE_SESION_PESTANA = "finapp_sesion_pestana";
 
 export function UsuarioActivoProvider({ children }) {
+  // El proveedor también se monta en vistas/pruebas aisladas fuera de un Router.
+  // Conserva una ruta neutral en ese caso; dentro de la app usa la ruta real.
+  let location = { pathname: "/" };
+  try { location = useLocation(); } catch { /* No hay router en este montaje. */ }
   const [usuario, setUsuario] = useState(null);
   const [estadoSesion, setEstadoSesion] = useState("verificando");
   const revisionSesion = useRef(0);
@@ -55,25 +60,25 @@ export function UsuarioActivoProvider({ children }) {
       if (!activo || revisionSesion.current !== revisionInicial) return;
       setUsuario(null);
       setEstadoSesion("sin-sesion");
+      try { sessionStorage.removeItem(CLAVE_SESION_PESTANA); } catch { /* Almacenamiento opcional. */ }
       try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
     });
     return () => { activo = false; };
   }, []);
 
+  const rutaAnterior = useRef(location.pathname);
   useEffect(() => {
-    const terminarSesionAlSalir = (evento) => {
-      let habiaSesion = false;
-      try {
-        habiaSesion = sessionStorage.getItem(CLAVE_SESION_PESTANA) === "activa";
-        sessionStorage.removeItem(CLAVE_SESION_PESTANA);
-      } catch { /* El servidor igualmente recibe logout cuando el almacenamiento está disponible. */ }
+    const veniaDelDashboard = rutaAnterior.current.startsWith("/dashboard");
+    rutaAnterior.current = location.pathname;
+    if (veniaDelDashboard && !location.pathname.startsWith("/dashboard")) {
+      void cerrarSesionServidor().catch(() => {});
+      revisionSesion.current += 1;
+      setUsuario(null);
+      setEstadoSesion("sin-sesion");
+      try { sessionStorage.removeItem(CLAVE_SESION_PESTANA); } catch { /* Almacenamiento opcional. */ }
       try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
-      if (habiaSesion) void cerrarSesionServidor({ keepalive: true }).catch(() => {});
-      if (evento.persisted) window.dispatchEvent(new Event("finapp:sesion-requerida"));
-    };
-    window.addEventListener("pagehide", terminarSesionAlSalir);
-    return () => window.removeEventListener("pagehide", terminarSesionAlSalir);
-  }, []);
+    }
+  }, [location.pathname]);
 
   const guardarUsuario = (usuarioNuevo) => {
     const id = usuarioNuevo?.idUsuario || usuarioNuevo?.id || usuarioNuevo?.id_usuario;

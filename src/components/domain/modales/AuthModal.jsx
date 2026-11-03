@@ -19,6 +19,7 @@ import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
 import { crearUsuario, iniciarSesion } from "../../../services/usuarioServicio";
+import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle } from "../../../services/authGoogleServicio";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 
 /**
@@ -51,7 +52,7 @@ function crearOpcionesTrampa(refPanel) {
  * @param {'login' | 'registro'} props.modoInicial - Tab activo al abrir
  * @param {() => void} props.alCerrar - Callback de cierre
  */
-export default function AuthModal({ abierto, modoInicial = "login", alCerrar }) {
+export default function AuthModal({ abierto, modoInicial = "login", alCerrar, mensajeExterno = "" }) {
   const panelRef = useRef(null);
   // Obtener navigate de React Router si está disponible; de lo contrario usar función no‑op para evitar errores en entornos de pruebas sin router.
 let navigate;
@@ -95,6 +96,17 @@ try {
     }
   };
 
+  const manejarLoginGoogle = async () => {
+    setCargando(true);
+    setMensaje("");
+    try {
+      await iniciarLoginGoogle();
+    } catch (error) {
+      setMensaje(error?.message || "No se pudo iniciar sesión con Google.");
+      setCargando(false);
+    }
+  };
+
   const manejarEnvio = async (e) => {
     e.preventDefault();
     setCargando(true);
@@ -105,7 +117,7 @@ try {
         const idUsuarioLimpio = idUsuario.trim();
 
         if (!idUsuarioLimpio) {
-          setMensaje("Ingresa tu cédula o identificación.");
+          setMensaje("Ingresa tu identificación o correo.");
           setCargando(false);
           return;
         }
@@ -134,13 +146,14 @@ try {
           return;
         }
 
-        setMensaje("No se encontró un usuario con esa identificación.");
+        setMensaje("No se encontró una cuenta con esa identificación o correo.");
         setCargando(false);
         return;
       }
 
       const idUsuarioLimpio = idUsuario.trim();
       const nombreLimpio = nombre.trim();
+      const correoLimpio = correo.trim().toLocaleLowerCase("es");
 
       if (!idUsuarioLimpio) {
         setMensaje("Ingresa tu cédula o identificación.");
@@ -149,6 +162,11 @@ try {
       }
       if (!nombreLimpio) {
         setMensaje("Ingresa tu nombre.");
+        setCargando(false);
+        return;
+      }
+      if (!correoLimpio || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
+        setMensaje("Ingresa un correo electrónico válido.");
         setCargando(false);
         return;
       }
@@ -163,6 +181,7 @@ try {
       const respuesta = await crearUsuario({
         idUsuario: idUsuarioLimpio,
         nombre: nombreLimpio,
+        correo: correoLimpio,
         contrasena,
         fechaCreacion,
       });
@@ -237,7 +256,7 @@ try {
                   : "border-transparent text-white/50 hover:text-white/80"
               }`}
             >
-              Registrarse
+              Registrarse con correo
             </button>
           </div>
 
@@ -271,20 +290,34 @@ try {
                     className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/70 mb-1.5">
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={correo}
+                    onChange={(e) => setCorreo(e.target.value)}
+                    placeholder="tu@correo.com"
+                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                  />
+                </div>
               </>
             )}
 
             {modo === "login" && (
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5">
-                  Cédula / Identificación
+                  Identificación / correo
                 </label>
                 <input
                   type="text"
                   required
                   value={idUsuario}
                   onChange={(e) => setIdUsuario(e.target.value)}
-                  placeholder="1234567890"
+                  placeholder="1234567890 o tu@correo.com"
                   className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
                 />
               </div>
@@ -329,6 +362,36 @@ try {
                 : "Crear cuenta"}
             </button>
           </form>
+
+          <div className="my-5 flex items-center gap-3 text-xs text-white/40" aria-hidden="true">
+            <span className="h-px flex-1 bg-white/10" />
+            <span>{modo === "registro" ? "o regístrate con" : "o continúa con"}</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+          <button
+            type="button"
+            onClick={manejarLoginGoogle}
+            disabled={cargando || !GOOGLE_AUTH_CONFIGURADO}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white px-4 py-3 text-sm font-medium text-[#202124] transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span aria-hidden="true" className="font-bold text-lg text-[#4285f4]">G</span>
+            {cargando
+              ? "Conectando con Google…"
+              : modo === "registro" ? "Registrarse con Google" : "Iniciar sesión con Google"}
+          </button>
+          {modo === "registro" && (
+            <p className="mt-2 text-center text-xs text-white/50">
+              Google completará tus datos y abrirá tu cuenta automáticamente. Para entrar con identificación y contraseña, regístrate con correo.
+            </p>
+          )}
+          {!GOOGLE_AUTH_CONFIGURADO && (
+            <p role="status" className="mt-2 text-xs text-amber-200">Google no está configurado para este entorno.</p>
+          )}
+          {mensajeExterno && (
+            <p role="alert" className="mt-3 rounded-xl border border-red-300/30 bg-red-500/10 p-3 text-xs text-red-100">
+              {mensajeExterno}
+            </p>
+          )}
         </div>
       </FocusTrap>
     </div>

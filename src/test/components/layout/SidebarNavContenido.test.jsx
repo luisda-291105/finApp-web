@@ -7,16 +7,34 @@
  * @usadoPor   Vitest
  */
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
+import { obtenerUsuarioActivo } from "../../../services/usuarioServicio";
 import SidebarNavContenido from "../../../components/layout/SidebarNavContenido";
 import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
+
+vi.mock("../../../services/usuarioServicio", () => ({
+  obtenerUsuarioActivo: vi.fn(),
+}));
+
+const USUARIO_SIDEBAR = { idUsuario: "12345678", nombre: "Ana María Ruiz" };
 
 afterEach(() => {
   cleanup();
   window.localStorage.getItem.mockReset();
   window.localStorage.setItem.mockClear();
+  window.sessionStorage.getItem.mockReset();
+  obtenerUsuarioActivo.mockReset();
+});
+
+beforeEach(() => {
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_SIDEBAR });
 });
 
 function RutaActual() {

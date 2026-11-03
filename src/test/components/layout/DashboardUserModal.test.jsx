@@ -11,8 +11,19 @@ import { cleanup, render, screen, waitFor, act } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { obtenerUsuarioActivo } from "../../../services/usuarioServicio";
 import DashboardUserModal from "../../../components/layout/DashboardUserModal";
 import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
+
+vi.mock("../../../services/usuarioServicio", () => ({
+  obtenerUsuarioActivo: vi.fn(),
+}));
+
+const USUARIO_PERFIL = {
+  idUsuario: "123456",
+  nombre: "Ana Pérez",
+  fechaCreacion: "2026-01-15",
+};
 
 // Mock de framer-motion: motion.div trivial con forwardRef para que el ref del focus trap
 // real llegue al nodo del panel. NO se mockea focus-trap-react: la trampa debe ser real.
@@ -73,7 +84,15 @@ const restaurarViewportEscritorio = () => {
   });
 };
 
-beforeEach(restaurarViewportEscritorio);
+beforeEach(() => {
+  restaurarViewportEscritorio();
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_PERFIL });
+});
 
 afterEach(() => {
   cleanup();
@@ -148,30 +167,22 @@ describe("DashboardUserModal", () => {
   });
 
   describe("perfil dinámico (spec 024)", () => {
-    it("muestra el nombre del usuario activo y el correo «No registrado»", async () => {
-      window.localStorage.getItem.mockReturnValue(
-        JSON.stringify({
-          idUsuario: "123456",
-          nombre: "Ana Pérez",
-          fechaCreacion: "2026-01-15",
-        }),
-      );
+      it("muestra el nombre del usuario activo y el correo «No registrado»", async () => {
+        render(
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <UsuarioActivoProvider>
+              <DashboardUserModal abierto alCerrar={vi.fn()} triggerRef={{ current: null }} />
+            </UsuarioActivoProvider>
+          </MemoryRouter>,
+        );
 
-      render(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <UsuarioActivoProvider>
-            <DashboardUserModal abierto alCerrar={vi.fn()} triggerRef={{ current: null }} />
-          </UsuarioActivoProvider>
-        </MemoryRouter>,
-      );
-
-      const dialog = screen.getByRole("dialog");
-      await waitFor(() => {
-        expect(document.getElementById("user-modal-title").textContent).toBe("Ana Pérez");
+        const dialog = screen.getByRole("dialog");
+        await waitFor(() => {
+          expect(document.getElementById("user-modal-title").textContent).toBe("Ana Pérez");
+        });
+        expect(dialog.textContent).toContain("Correo");
+        expect(dialog.textContent).toContain("No registrado");
       });
-      expect(dialog.textContent).toContain("Correo");
-      expect(dialog.textContent).toContain("No registrado");
-    });
 
     it("usa «Cuenta de Usuario Demo» como respaldo sin usuario activo", () => {
       renderModal();

@@ -16,11 +16,12 @@ import {
   UsuarioActivoProvider,
   useUsuarioActivo,
 } from "../../../../context/UsuarioActivoContext";
-import { actualizarUsuario, crearUsuario } from "../../../../services/usuarioServicio";
+import { actualizarUsuario, crearUsuario, obtenerUsuarioActivo } from "../../../../services/usuarioServicio";
 
 vi.mock("../../../../services/usuarioServicio", () => ({
   actualizarUsuario: vi.fn(),
   crearUsuario: vi.fn(),
+  obtenerUsuarioActivo: vi.fn(),
 }));
 
 const USUARIO = {
@@ -73,6 +74,12 @@ const abrirPerfil = async () => {
 
 beforeEach(() => {
   window.localStorage.getItem.mockReturnValue(JSON.stringify(USUARIO));
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario (el provider lo llama al montarse)
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO });
   actualizarUsuario.mockResolvedValue({
     idUsuario: USUARIO.idUsuario,
     nombre: "Ana Actualizada",
@@ -84,8 +91,10 @@ afterEach(() => {
   cleanup();
   actualizarUsuario.mockReset();
   crearUsuario.mockReset();
+  obtenerUsuarioActivo.mockReset();
   window.localStorage.getItem.mockReset();
   window.localStorage.setItem.mockClear();
+  window.sessionStorage.getItem.mockReset();
 });
 
 describe("ModalPerfilUsuario (perfil)", () => {
