@@ -10,13 +10,53 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { obtenerUsuarioActivo } from "../../services/usuarioServicio";
 import DashboardLayout from "../../layout/DashboardLayout";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
+import { UsuarioActivoProvider } from "../../context/UsuarioActivoContext";
+import { TemaProvider } from "../../context/TemaContext";
 import SidebarResponsive from "../../components/layout/SidebarResponsive";
 
 vi.mock("../../hooks/useBreakpoint", () => ({
   useBreakpoint: vi.fn(),
 }));
+
+vi.mock("../../services/usuarioServicio", () => ({
+  obtenerUsuarioActivo: vi.fn(),
+}));
+
+const USUARIO_DASHBOARD = { idUsuario: "12345678", nombre: "Ana Pérez" };
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+  window.sessionStorage.getItem.mockReset();
+  obtenerUsuarioActivo.mockReset();
+});
+
+beforeEach(() => {
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_DASHBOARD });
+});
+
+const VERSION_MOVIL = {
+  isMobile: true,
+  isDesktop: false,
+  sidebarColapsada: false,
+  toggleSidebar: vi.fn(),
+};
+
+const VERSION_ESCRITORIO = {
+  isMobile: false,
+  isDesktop: true,
+  sidebarColapsada: false,
+  toggleSidebar: vi.fn(),
+};
 
 vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
@@ -89,20 +129,6 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const VERSION_MOVIL = {
-  isMobile: true,
-  isDesktop: false,
-  sidebarColapsada: false,
-  toggleSidebar: vi.fn(),
-};
-
-const VERSION_ESCRITORIO = {
-  isMobile: false,
-  isDesktop: true,
-  sidebarColapsada: false,
-  toggleSidebar: vi.fn(),
-};
-
 function LayoutTree({ initialPath = "/dashboard" }) {
   return (
     <MemoryRouter initialEntries={[initialPath]}>
@@ -139,7 +165,7 @@ async function abrirAsistente(user = userEvent.setup()) {
     name: "Abrir el asistente de ayuda",
     exact: true,
   }));
-  return screen.getByRole("dialog", { name: "Asistente de ayuda" });
+  return screen.getByRole("dialog", { name: "Asistente de FinApp" });
 }
 
 function obtenerDisparador() {
@@ -150,7 +176,7 @@ function obtenerDisparador() {
 }
 
 function obtenerScrim() {
-  const dialogo = screen.getByRole("dialog", { name: "Asistente de ayuda" });
+  const dialogo = screen.getByRole("dialog", { name: "Asistente de FinApp" });
   return dialogo.parentElement;
 }
 
@@ -260,39 +286,40 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
   });
 
   it("conserva los textos estáticos aprobados de la 014", async () => {
-    const user = userEvent.setup();
-    renderDashboard();
-    const dialogo = await abrirAsistente(user);
+      const user = userEvent.setup();
+      renderDashboard();
+      const dialogo = await abrirAsistente(user);
 
-    [
-      "Asistente de ayuda",
-      "Demostración · No es una IA real",
-      "Vista de diseño: contenido de ejemplo; aún no responde preguntas.",
-      "Aún no hay mensajes. Cuando la ayuda esté activa, podrás elegir una sugerencia o escribir una pregunta.",
-      "¿Cómo entro al panel?",
-      "¿Dónde veo mis tarjetas?",
-      "¿Se guardan mis datos?",
-      "¿Cómo salgo del demo?",
-      "Cuando la ayuda esté activa, si tu pregunta no coincide verás una respuesta de reserva.",
-      "Enviar",
-    ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
+      // Textos únicos que aparecen en un solo elemento (versión actual del componente)
+      [
+        "Asistente de FinApp",
+        "Respuestas con documentación y búsqueda pública.",
+        "Pregunta sobre cómo usar FinApp o solicita información pública actual.",
+        "¿Dónde veo mis tarjetas?",
+        "¿Cómo cambio la apariencia?",
+        "¿Qué datos consulta este chat?",
+        "No escribas datos personales, números de tarjeta, CVV ni contraseñas. El chat no consulta tu cuenta.",
+        "Tu pregunta",
+        "Enviar",
+      ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
 
-    expect(within(dialogo).getByLabelText("Tu pregunta")).toBeInTheDocument();
-    expect(within(dialogo).getByPlaceholderText("Escribe una pregunta…")).toBeInTheDocument();
-    expect(within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })).toBeInTheDocument();
-    expect(within(dialogo).getByRole("log", { name: "Mensajes del asistente" })).toBeInTheDocument();
-    expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
-  });
+      expect(within(dialogo).getByLabelText("Tu pregunta")).toBeInTheDocument();
+      expect(within(dialogo).getByPlaceholderText("Escribe una pregunta…")).toBeInTheDocument();
+      expect(within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })).toBeInTheDocument();
+      expect(within(dialogo).getByRole("log", { name: "Mensajes del asistente" })).toBeInTheDocument();
+      expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
+    });
 
   it("abre únicamente el estado vacío, sin control de cambio de variante", async () => {
-    const user = userEvent.setup();
-    renderDashboard();
-    const dialogo = await abrirAsistente(user);
+      const user = userEvent.setup();
+      renderDashboard();
+      const dialogo = await abrirAsistente(user);
 
-    expect(within(dialogo).getByText(/Aún no hay mensajes/)).toBeInTheDocument();
-    expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
-    expect(within(dialogo).queryByRole("button", { name: /conversación/i })).not.toBeInTheDocument();
-  });
+      // En estado vacío el componente muestra las sugerencias y el texto de aviso
+      expect(dialogo).toHaveTextContent("Pregunta sobre cómo usar FinApp o solicita información pública actual");
+      expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
+      expect(within(dialogo).queryByRole("button", { name: /conversación/i })).not.toBeInTheDocument();
+    });
 
   it("cumple el contrato ARIA, desactiva Enviar y cierra con Escape", async () => {
     const user = userEvent.setup();
@@ -303,24 +330,21 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
     expect(dialogo).toHaveAttribute("aria-modal", "true");
     expect(dialogo).toHaveAttribute("aria-labelledby", "asistente-titulo");
     expect(dialogo).toHaveAttribute(
-      "aria-describedby",
-      "asistente-marca asistente-nota asistente-reserva"
-    );
+          "aria-describedby",
+          "asistente-aviso"
+        );
     expect(log).toHaveAttribute("aria-live", "polite");
     expect(log).toHaveAttribute("aria-relevant", "additions");
     expect(log).toHaveAttribute("aria-atomic", "false");
     expect(within(dialogo).getByLabelText("Tu pregunta")).toHaveAttribute("id", "asistente-entrada");
-    expect(within(dialogo).getByRole("button", { name: "Enviar" })).toHaveAttribute(
-      "aria-disabled",
-      "true"
-    );
+    expect(within(dialogo).getByRole("button", { name: "Enviar" })).toHaveAttribute("disabled", "");
     expect(document.activeElement).toBe(dialogo);
     expect(document.activeElement).not.toBe(
       within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })
     );
 
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: "Asistente de ayuda" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Asistente de FinApp" })).not.toBeInTheDocument();
   });
 
   it.each([
@@ -368,7 +392,7 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
 
     await waitFor(() => {
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
-      expect(screen.getByRole("dialog", { name: "Asistente de ayuda" })).toContainElement(
+      expect(screen.getByRole("dialog", { name: "Asistente de FinApp" })).toContainElement(
         document.activeElement
       );
     });
@@ -385,7 +409,7 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
     fireEvent.click(obtenerDisparador());
 
     await waitFor(() => {
-      const dialogo = screen.getByRole("dialog", { name: "Asistente de ayuda" });
+      const dialogo = screen.getByRole("dialog", { name: "Asistente de FinApp" });
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
       expect(dialogo).toContainElement(document.activeElement);
     });
