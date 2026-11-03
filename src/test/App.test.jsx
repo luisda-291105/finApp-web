@@ -8,6 +8,10 @@
  * @usadoPor   vitest (npm run test)
  */
 
+vi.hoisted(() => {
+  vi.stubEnv("VITE_TRIAL_MODE", "true");
+});
+
 // Mock window.matchMedia para jsdom (usado por useBreakpoint hook) - DEBE ir ANTES de imports
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -137,17 +141,24 @@ function renderRuta(ruta) {
 }
 
 describe("rutas de la aplicación", () => {
-  it("muestra siempre la landing en la raíz, con independencia del trial", () => {
+  it("redirige la raíz a dashboard si ya hay sesión activa", () => {
+    renderRuta("/");
+
+    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+  });
+
+  it("muestra la landing cuando no hay sesión activa", () => {
+    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
     renderRuta("/");
 
     expect(
       screen.getByRole("heading", { name: /Controla tu dinero/ })
     ).toBeDefined();
-    // Es la landing (PaginaInicio), no el dashboard
     expect(screen.queryByRole("heading", { name: "dashboard" })).toBeNull();
   });
 
   it("redirige /inicio a la landing (/)", () => {
+    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
     renderRuta("/inicio");
 
     expect(
@@ -155,7 +166,8 @@ describe("rutas de la aplicación", () => {
     ).toBeDefined();
   });
 
-  it("muestra el login en su ruta directa", () => {
+  it("muestra el login en su ruta directa si no hay sesión", () => {
+    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
     renderRuta("/login");
 
     expect(screen.getByRole("dialog")).toBeDefined();
@@ -257,12 +269,14 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
     fijarAncho(1024);
   });
 
-  const renderLogin = () =>
-    render(
+  const renderLogin = () => {
+    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
+    return render(
       <MemoryRouter initialEntries={["/login"]}>
         <App />
       </MemoryRouter>
     );
+  };
 
   /** La superficie de origen (`AuthModal`) enfoca su contenedor con la trampa real al abrir. */
   const esperarFocoEnElDialogo = async () => {

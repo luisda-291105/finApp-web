@@ -10,7 +10,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { TRIAL_ACTIVO } from "../config/app.config";
+import { TRIAL_MODE } from "../config/app.config";
 import AuthModal from "../components/domain/modales/AuthModal";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { obtenerUsuarioActivo } from "../services/usuarioServicio";
@@ -73,7 +73,7 @@ export default function PaginaLogin() {
           abierto
           modoInicial="login"
           mensajeExterno={mensajeGoogle}
-          alCerrar={() => navigate(TRIAL_ACTIVO ? "/dashboard" : "/", { state: { focoEnDestino: true } })}
+          alCerrar={() => navigate(TRIAL_MODE ? "/dashboard" : "/", { state: { focoEnDestino: true } })}
         />
       )}
     </main>
