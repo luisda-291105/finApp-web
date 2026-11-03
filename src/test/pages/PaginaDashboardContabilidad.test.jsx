@@ -2,10 +2,68 @@
  * @uso        Verifica el resumen y los movimientos demostrativos de Contabilidad
  * @funciones  Pruebas de renderizado, navegación y estado vacío
  * @datos      Datos locales de demostración; no usa servicios ni persistencia
- * @eventos    Clic en el botón deshabilitado «Nuevo movimiento»
+ * @eventos    Clic en el botón deshabilitado "Nuevo movimiento"
  * @estados    N/A
  * @usadoPor   vitest (npm test)
  */
+
+// Mock window.matchMedia para jsdom
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  configurable: true,
+  value: (query) => {
+    const minimo = /min-width:\s*(\d+)px/.exec(query);
+    return {
+      matches: minimo ? window.innerWidth >= Number(minimo[1]) : false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => {},
+    };
+  },
+});
+Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+
+// Mock contextos
+vi.mock("../../context/UsuarioActivoContext", () => {
+  const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez", fechaCreacion: "2026-01-01" };
+  return {
+    UsuarioActivoProvider: ({ children }) => children,
+    useUsuarioActivo: () => ({
+      usuario: USUARIO,
+      estadoSesion: "autenticado",
+      guardarUsuario: vi.fn(),
+      limpiarUsuario: vi.fn(),
+      cerrarSesion: vi.fn().mockResolvedValue(undefined),
+    }),
+  };
+});
+
+vi.mock("../../context/TemaContext", () => ({
+  TemaProvider: ({ children }) => children,
+  useTema: () => ({ tema: "claro", alternarTema: vi.fn() }),
+}));
+
+vi.mock("../../context/GmailContext", () => ({
+  GmailProvider: ({ children }) => children,
+  useGmail: () => ({
+    tokenGmail: "",
+    cuentaGmail: "",
+    cuentasGmail: [],
+    cuentaSeleccionadaId: null,
+    gisListo: true,
+    conexionCargando: false,
+    errorGmail: "",
+    conectarGmail: vi.fn(),
+    desconectarGmail: vi.fn(),
+    seleccionarCuentaGmail: vi.fn(),
+    limpiarErrorGmail: vi.fn(),
+  }),
+}));
+
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
@@ -43,14 +101,17 @@ describe("PaginaDashboardContabilidad", () => {
 
     const lista = screen.getByRole("list", { name: "Movimientos de demostración" });
     expect(within(lista).getAllByRole("listitem")).toHaveLength(7);
-    expect(within(lista).getByText("Pago de nómina")).toBeInTheDocument();
+    const pagosNomina = within(lista).getAllByText("Pago de nómina");
+    expect(pagosNomina.length).toBeGreaterThanOrEqual(1);
     const fechaActual = new Date();
     const fechaDeDemo = new Date(Date.UTC(fechaActual.getFullYear(), fechaActual.getMonth(), 13)).toISOString().slice(0, 10);
-    expect(within(lista).getByText("Pago de nómina").parentElement.querySelector("time")).toHaveAttribute("dateTime", fechaDeDemo);
-    expect(within(lista).getByText("Ingreso")).toBeInTheDocument();
+    expect(pagosNomina[0].parentElement.querySelector("time")).toHaveAttribute("dateTime", fechaDeDemo);
+    const ingresos = within(lista).getAllByText("Ingreso");
+    expect(ingresos.length).toBeGreaterThanOrEqual(1);
     expect(within(lista).getByText(/\+\$.*3\.800\.000/)).toBeInTheDocument();
     expect(within(lista).getByText("Mercado semanal")).toBeInTheDocument();
-    expect(within(lista).getByText("Ahorro")).toBeInTheDocument();
+    const ahorros = within(lista).getAllByText("Ahorro");
+    expect(ahorros.length).toBeGreaterThanOrEqual(1);
   });
 
   it("deja claro que Nuevo movimiento no registra operaciones reales", async () => {

@@ -850,7 +850,7 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
   });
 
   describe("render defensivo «Sin datos disponibles» (RF-14, AC-26)", () => {
-    it("una muestra sin valor válido (fuente ausente en la tabla demo) renderiza el estado vacío", () => {
+    it("una muestra sin valor válido (fuente ausente en la tabla demo) renderiza el estado vacío", async () => {
       // Prueba de unidad: no existe flujo de UI que produzca una muestra sin valor
       // (todas las fuentes demo tienen valor fijo), por lo que se monta el render
       // con una muestra restaurada con una fuente sin valor.
@@ -864,7 +864,7 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       expect(screen.getByRole("heading", { name: "Fuente huérfana" })).toBeInTheDocument();
     });
 
-    it("una muestra con un tipo no conocido renderiza el mismo estado vacío defensivo", () => {
+    it("una muestra con un tipo no conocido renderiza el mismo estado vacío defensivo", async () => {
       muestraMocks.listarMuestras.mockResolvedValue([
         { id: "raro", titulo: "Contenido raro", fuente: "bolsillos", tipo: "desconocido" },
       ]);

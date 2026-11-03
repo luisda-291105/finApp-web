@@ -35,14 +35,6 @@ Object.defineProperty(window, "innerWidth", {
 });
 
 // Mocks de servicios - DEBEN ir ANTES de cualquier import (vitest los hoistea al tope)
-vi.mock("../services/fuenteServicio", () => ({
-  listarFuentes: () => Promise.resolve([]),
-  crearFuente: () => Promise.resolve({ ok: true }),
-  actualizarFuente: () => Promise.resolve({ ok: true }),
-  eliminarFuente: () => Promise.resolve({ ok: true }),
-  obtenerFuentePorId: () => Promise.resolve(null),
-}));
-
 vi.mock("../services/grupoServicio", () => ({
   listarGrupos: () => Promise.resolve([]),
   crearGrupo: () => Promise.resolve({ ok: true }),
@@ -62,6 +54,25 @@ vi.mock("../services/muestraServicio", () => ({
   crearMuestra: () => Promise.resolve({ ok: true }),
   actualizarMuestra: () => Promise.resolve({ ok: true }),
   eliminarMuestra: () => Promise.resolve({ ok: true }),
+}));
+
+vi.mock("../services/fuenteServicio", () => ({
+  listarFuentes: () => Promise.resolve([]),
+  crearFuente: () => Promise.resolve({ ok: true }),
+  actualizarFuente: () => Promise.resolve({ ok: true }),
+  eliminarFuente: () => Promise.resolve({ ok: true }),
+  obtenerFuentePorId: () => Promise.resolve(null),
+  obtenerFuentesPorUsuario: () => Promise.resolve([]),
+}));
+
+vi.mock("../services/gmailServicio", () => ({
+  GMAIL_CONFIGURADO: false,
+  listarCuentasGmail: () => Promise.resolve([]),
+  obtenerConexionCuentaGmail: () => Promise.resolve({}),
+  canjearCodigoGmail: () => Promise.resolve({}),
+  eliminarCuentaGmail: () => Promise.resolve({}),
+  iniciarCodigoAutorizacionGmail: () => Promise.resolve(""),
+  prepararGoogleIdentityServices: () => Promise.resolve(),
 }));
 
 // Mock del contexto de usuario activo - respeta sessionStorage
@@ -85,7 +96,19 @@ vi.mock("../context/UsuarioActivoContext", () => {
 // Mock del contexto de Gmail - evita efectos secundarios
 vi.mock("../context/GmailContext", () => ({
   GmailProvider: ({ children }) => children,
-  useGmail: () => ({ gmailUser: null, setGmailUser: vi.fn() }),
+  useGmail: () => ({
+    tokenGmail: "",
+    cuentaGmail: "",
+    cuentasGmail: [],
+    cuentaSeleccionadaId: null,
+    gisListo: true,
+    conexionCargando: false,
+    errorGmail: "",
+    conectarGmail: vi.fn(),
+    desconectarGmail: vi.fn(),
+    seleccionarCuentaGmail: vi.fn(),
+    limpiarErrorGmail: vi.fn(),
+  }),
 }));
 
 import { render, screen, waitFor } from "@testing-library/react";
@@ -147,10 +170,13 @@ describe("rutas de la aplicación", () => {
   });
 
   it("redirige al inicio si no hay una sesión activa", async () => {
-    sessionStorage.removeItem("finapp_sesion_pestana");
-    renderRuta("/dashboard");
-    expect(await screen.findByRole("heading", { name: /Controla tu dinero/ })).toBeInTheDocument();
-  });
+      // Sobrescribe el spy para este test: sin sesión activa
+      vi.spyOn(sessionStorage, "getItem").mockImplementation((key) =>
+        key === "finapp_sesion_pestana" ? null : null
+      );
+      renderRuta("/dashboard");
+      expect(await screen.findByRole("heading", { name: /Controla tu dinero/ })).toBeInTheDocument();
+    });
 
   it("permite abrir Contabilidad dentro del dashboard de demostración", () => {
     renderRuta("/dashboard/contabilidad");

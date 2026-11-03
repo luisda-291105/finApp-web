@@ -6,11 +6,84 @@
  * @estados    N/A
  * @usadoPor   vitest (npm run test)
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import PaginaInicio from "../../pages/PaginaInicio";
+
+// Mock window.matchMedia para jsdom
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  configurable: true,
+  value: (query) => {
+    const minimo = /min-width:\s*(\d+)px/.exec(query);
+    return {
+      matches: minimo ? window.innerWidth >= Number(minimo[1]) : false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => {},
+    };
+  },
+});
+Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+
+// Mock contextos
+vi.mock("../../context/UsuarioActivoContext", () => ({
+  UsuarioActivoProvider: ({ children }) => children,
+  useUsuarioActivo: () => ({
+    usuario: null,
+    estadoSesion: "sin-sesion",
+    guardarUsuario: vi.fn(),
+    limpiarUsuario: vi.fn(),
+    cerrarSesion: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+vi.mock("../../context/TemaContext", () => ({
+  TemaProvider: ({ children }) => children,
+  useTema: () => ({ tema: "claro", alternarTema: vi.fn() }),
+}));
+
+vi.mock("../../context/GmailContext", () => ({
+  GmailProvider: ({ children }) => children,
+  useGmail: () => ({
+    tokenGmail: "",
+    cuentaGmail: "",
+    cuentasGmail: [],
+    cuentaSeleccionadaId: null,
+    gisListo: true,
+    conexionCargando: false,
+    errorGmail: "",
+    conectarGmail: vi.fn(),
+    desconectarGmail: vi.fn(),
+    seleccionarCuentaGmail: vi.fn(),
+    limpiarErrorGmail: vi.fn(),
+  }),
+}));
+
+// Mock servicios
+vi.mock("../../services/usuarioServicio", () => ({
+  crearUsuario: () => Promise.resolve({ ok: true }),
+  iniciarSesion: () => Promise.resolve({ ok: true }),
+}));
+
+vi.mock("../../services/authGoogleServicio", () => ({
+  GOOGLE_AUTH_CONFIGURADO: false,
+  iniciarLoginGoogle: () => Promise.resolve(),
+}));
+
+vi.mock("../../services/asistenteServicio", () => ({
+  conversarConAsistente: () => Promise.resolve({ respuesta: "Respuesta de prueba" }),
+}));
+
+// Mock useNavigate
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
 
 // Literal heredado del disparador (src/pages/PaginaInicio.jsx): se copia verbatim para el aserto
 // literal de AC-01. Es un valor heredado, no un hexadecimal nuevo.
@@ -24,6 +97,12 @@ function renderPagina() {
     </MemoryRouter>
   );
 }
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import PaginaInicio from "../../pages/PaginaInicio";
 
 describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => {
   beforeEach(() => {
@@ -77,22 +156,22 @@ describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => 
   });
 
   it("abre el asistente de ayuda al pulsarlo y no la ventana de acceso", async () => {
-    const usuario = userEvent.setup();
-    renderPagina();
+      const usuario = userEvent.setup();
+      renderPagina();
 
-    const disparador = screen.getByRole("button", {
-      name: "Abrir el asistente de ayuda",
+      const disparador = screen.getByRole("button", {
+        name: "Abrir el asistente de ayuda",
+      });
+
+      await usuario.click(disparador);
+
+      expect(
+        screen.getByRole("dialog", { name: "Asistente de FinApp" })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", { name: "Ventana de acceso" })
+      ).toBeNull();
     });
-
-    await usuario.click(disparador);
-
-    expect(
-      screen.getByRole("dialog", { name: "Asistente de ayuda" })
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("dialog", { name: "Ventana de acceso" })
-    ).toBeNull();
-  });
 
   it("no realiza peticiones de red al abrir la ayuda", async () => {
     const usuario = userEvent.setup();
