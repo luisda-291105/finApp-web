@@ -162,29 +162,11 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                       : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/40 bg-bg-cream px-3.5 py-2.5 text-sm text-bg-dark"}
                     >
                       <p className="whitespace-pre-line leading-relaxed">{mensaje.contenido}</p>
-                      {mensaje.fuentes?.length > 0 && (
-                        <div className="mt-3 border-t border-border-line/50 pt-2 text-xs">
-                          <p className="mb-1 font-semibold">Fuentes</p>
-                          <ul className="flex flex-col gap-1">
-                            {mensaje.fuentes.map((fuente) => (
-                              <li key={fuente.id}>
-                                {fuente.url ? (
-                                  <a href={fuente.url} target="_blank" rel="noreferrer" className="text-emerald-primary underline underline-offset-2">
-                                    [{fuente.id}] {fuente.titulo}
-                                  </a>
-                                ) : (
-                                  <span>[{fuente.id}] {fuente.titulo}</span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                       {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
                     </div>
                   </div>
                 ))}
-                {cargando && <p role="status" className="text-sm text-slate-text">Buscando fuentes y preparando respuesta…</p>}
+                {cargando && <p role="status" className="text-sm text-slate-text">Preparando respuesta…</p>}
               </div>
             )}
           </div>
