@@ -161,7 +161,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                       ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream"
                       : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/40 bg-bg-cream px-3.5 py-2.5 text-sm text-bg-dark"}
                     >
-                      <p>{mensaje.contenido}</p>
+                      <p className="whitespace-pre-line leading-relaxed">{mensaje.contenido}</p>
                       {mensaje.fuentes?.length > 0 && (
                         <div className="mt-3 border-t border-border-line/50 pt-2 text-xs">
                           <p className="mb-1 font-semibold">Fuentes</p>

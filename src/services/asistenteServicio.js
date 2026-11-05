@@ -15,6 +15,7 @@ export async function conversarConAsistente(peticion, signal) {
     respuesta = await fetch(getEndpoint("asistente.chat"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(peticion),
       signal,
     });
@@ -30,9 +31,9 @@ export async function conversarConAsistente(peticion, signal) {
   } catch {
     datos = { mensaje: texto };
   }
-  console.error("[Asistente][Error respuesta]", respuesta.status, datos);
 
   if (!respuesta.ok) {
+    console.error("[Asistente][Error respuesta]", respuesta.status, datos);
     const detalle = datos.mensaje || datos.error || datos.message || texto || `Error HTTP ${respuesta.status}`;
     throw new Error(detalle);
   }
