@@ -83,7 +83,6 @@ export function UsuarioActivoProvider({ children }) {
   const guardarUsuario = (usuarioNuevo) => {
     const id = usuarioNuevo?.idUsuario || usuarioNuevo?.id || usuarioNuevo?.id_usuario;
     if (!id) {
-      console.error("guardarUsuario: idUsuario es obligatorio", usuarioNuevo);
       return;
     }
     const normalizado = {
@@ -96,9 +95,7 @@ export function UsuarioActivoProvider({ children }) {
     try {
       sessionStorage.setItem(CLAVE_SESION_PESTANA, "activa");
       localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(normalizado));
-    } catch (error) {
-      console.error("Error al guardar usuario activo en localStorage:", error);
-    }
+    } catch { /* El almacenamiento puede estar bloqueado por el navegador. */ }
   };
 
   const limpiarUsuario = () => {
@@ -107,16 +104,14 @@ export function UsuarioActivoProvider({ children }) {
     setEstadoSesion("sin-sesion");
     try {
       sessionStorage.removeItem(CLAVE_SESION_PESTANA);
-    } catch (error) {
-      console.error("Error al limpiar el indicador de sesión de la pestaña:", error);
-    }
+    } catch { /* El almacenamiento de sesión es opcional. */ }
     try { localStorage.removeItem(CLAVE_ALMACEN); }
-    catch (error) { console.error("Error al limpiar usuario activo de localStorage:", error); }
+    catch { /* El almacenamiento local es opcional. */ }
   };
 
   const cerrarSesion = async () => {
     try { await cerrarSesionServidor(); }
-    catch (error) { console.warn("No se pudo confirmar el cierre de sesión en el servidor:", error); }
+    catch { /* Se limpia la sesión local incluso si el servidor no responde. */ }
     limpiarUsuario();
   };
 

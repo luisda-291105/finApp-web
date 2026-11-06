@@ -11,7 +11,6 @@
 import { NavLink } from "react-router-dom";
 import { Home, CreditCard, Users, Contact, Mail, Wallet } from "lucide-react";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
-import { useFuentesUsuario } from "../../hooks/useFuentesUsuario";
 import clsx from "clsx";
 
 /** Nombre mostrado cuando no hay usuario activo con nombre. */
@@ -64,7 +63,8 @@ export default function SidebarNavContenido({
   const nombreUsuario = String(usuario?.nombre || "").trim();
   const nombre = nombreUsuario || NOMBRE_RESPALDO;
   const iniciales = nombreUsuario ? calcularIniciales(nombreUsuario) : "UD";
-  const { correo , telefono} = useFuentesUsuario(usuario?.idUsuario);
+  const correo = usuario?.correo;
+  const telefono = usuario?.telefono;
 
   const enlaces = [
     { ruta: "/dashboard", icono: Home, etiqueta: "Inicio", exacto: true },

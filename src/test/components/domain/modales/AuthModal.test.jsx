@@ -120,13 +120,13 @@ describe("AuthModal", () => {
     it("muestra solo placeholders del login, conserva nombres accesibles y usa un fondo temático en Google", () => {
       renderModal();
 
-      const identificacion = screen.getByLabelText("Identificación o correo electrónico");
+      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
       const contrasena = screen.getByLabelText("Contraseña");
       const botonGoogle = screen.getByRole("button", { name: "Iniciar sesión con Google" });
 
-      expect(screen.queryByText("Identificación o correo electrónico")).not.toBeInTheDocument();
+      expect(screen.queryByText("Nombre, identificación, correo o teléfono")).not.toBeInTheDocument();
       expect(screen.queryByText("Contraseña")).not.toBeInTheDocument();
-      expect(identificacion).toHaveAttribute("placeholder", "Correo o número de identificación");
+      expect(identificacion).toHaveAttribute("placeholder", "Nombre, identificación, correo o teléfono");
       expect(contrasena).toHaveAttribute("placeholder", "Ingresa tu contraseña");
       expect(botonGoogle).toHaveClass("bg-bg-cream", "text-bg-dark");
       expect(botonGoogle).not.toHaveClass("bg-white");
@@ -190,7 +190,7 @@ describe("AuthModal", () => {
       const usuario = userEvent.setup();
       renderModal({ alCerrar });
 
-      const identificacion = screen.getByLabelText("Identificación o correo electrónico");
+      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
       await usuario.click(identificacion);
       expect(document.activeElement).toBe(identificacion);
 
@@ -266,7 +266,7 @@ describe("AuthModal", () => {
       renderModal({ alCerrar });
       await esperarFocoEnContenedor(obtenerDialogo());
 
-      const identificacion = screen.getByLabelText("Identificación o correo electrónico");
+      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
       dispararPuntero(identificacion, "pointerdown", { clientY: 0 });
       dispararPuntero(identificacion, "pointermove", { clientY: 200 });
       dispararPuntero(identificacion, "pointerup", { clientY: 200 });

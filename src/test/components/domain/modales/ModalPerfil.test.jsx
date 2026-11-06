@@ -1,6 +1,6 @@
 /**
- * @uso        Pruebas del modal de perfil (spec 024): datos del usuario activo, correo/teléfono fijos,
- *             modo de modificación limitado y guardado contra el servicio
+ * @uso        Pruebas del modal de perfil (spec 024): presentación, edición de los datos de contacto
+ *             opcionales y guardado contra el servicio
  * @funciones  render, screen, waitFor, within
  * @datos      Usuario activo de prueba en localStorage; respuesta simulada de actualizarUsuario
  * @eventos    Apertura del modal, clic en «Modificar» y submit de «Guardar cambios»
@@ -65,9 +65,9 @@ const abrirPerfil = async () => {
   renderPerfil();
   const usuario = userEvent.setup();
   await usuario.click(screen.getByRole("button", { name: "Abrir perfil" }));
-  const dialogo = screen.getByRole("dialog", { name: "Perfil" });
+  const dialogo = screen.getByRole("dialog", { name: "Mi perfil" });
   await waitFor(() => {
-    expect(within(dialogo).getByText(USUARIO.nombre)).toBeInTheDocument();
+    expect(within(dialogo).getAllByText(USUARIO.nombre).length).toBeGreaterThan(0);
   });
   return { usuario, dialogo };
 };
@@ -101,50 +101,51 @@ describe("ModalPerfilUsuario (perfil)", () => {
   it("abre con los datos del usuario activo y la contraseña vacía", async () => {
     const { dialogo } = await abrirPerfil();
 
-    expect(within(dialogo).getByText(`Identificación: ${USUARIO.idUsuario}`)).toBeInTheDocument();
-    expect(within(dialogo).queryByLabelText("Contraseña")).toBeNull();
+    expect(within(dialogo).getByText(USUARIO.idUsuario)).toBeInTheDocument();
+    expect(within(dialogo).getByText("Contacto")).toBeInTheDocument();
+    expect(within(dialogo).queryByLabelText(/contraseña/i)).toBeNull();
     expect(dialogo).toHaveAttribute("aria-modal", "true");
   });
 
-  it("muestra Correo y Teléfono como «No registrado» y no son editables", async () => {
+  it("muestra estados vacíos para correo y teléfono y permite añadirlos al editar", async () => {
     const { dialogo } = await abrirPerfil();
 
-    expect(within(dialogo).getByText("Correo: No registrado")).toBeInTheDocument();
-    expect(within(dialogo).getByText("Teléfono: No registrado")).toBeInTheDocument();
-    expect(within(dialogo).queryByLabelText("Correo")).toBeNull();
-    expect(within(dialogo).queryByLabelText("Teléfono")).toBeNull();
+    expect(within(dialogo).getAllByText("Puedes agregarlo más adelante")).toHaveLength(2);
+    await userEvent.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
+    expect(within(dialogo).getByLabelText("Correo (opcional)")).toBeInTheDocument();
+    expect(within(dialogo).getByLabelText("Teléfono (opcional)")).toBeInTheDocument();
   });
 
-  it("«Modificar» habilita solo Cédula/Identificación, Nombre y Contraseña", async () => {
+  it("Editar perfil habilita los campos y deja opcional el cambio de contraseña", async () => {
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
+    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
     const idUsuario = within(dialogo).getByLabelText("Cédula / Identificación");
     const nombre = within(dialogo).getByLabelText("Nombre");
-    const contrasena = within(dialogo).getByLabelText("Contraseña");
+    const contrasena = within(dialogo).getByLabelText(/Nueva contraseña/);
     expect(idUsuario).not.toHaveAttribute("readonly");
     expect(nombre).not.toHaveAttribute("readonly");
     expect(contrasena).not.toHaveAttribute("readonly");
-    expect(contrasena).toHaveAttribute("placeholder", "Nueva contraseña");
+    expect(contrasena).toHaveAttribute("placeholder", "Dejar vacío para conservarla");
     expect(within(dialogo).getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
-    expect(within(dialogo).queryByRole("button", { name: "Modificar" })).toBeNull();
+    expect(within(dialogo).getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
   });
 
   it("guardar llama a actualizarUsuario con el id original y sincroniza el contexto", async () => {
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
+    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
 
     const nombre = within(dialogo).getByLabelText("Nombre");
     await usuario.clear(nombre);
     await usuario.type(nombre, "Ana Actualizada");
 
-    await usuario.type(within(dialogo).getByLabelText("Contraseña"), "clave-segura");
+    await usuario.type(within(dialogo).getByLabelText(/Nueva contraseña/), "clave-segura");
     await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() => {
       expect(actualizarUsuario).toHaveBeenCalledWith(USUARIO.idUsuario, {
-        idUsuario: USUARIO.idUsuario, nombre: "Ana Actualizada", contrasena: "clave-segura",
+        idUsuario: USUARIO.idUsuario, nombre: "Ana Actualizada", correo: "", telefono: "", contrasena: "clave-segura",
       });
     });
 
@@ -160,8 +161,8 @@ describe("ModalPerfilUsuario (perfil)", () => {
     const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
-    await usuario.type(within(dialogo).getByLabelText("Contraseña"), "secreto123");
+    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
+    await usuario.type(within(dialogo).getByLabelText(/Nueva contraseña/), "secreto123");
     await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() => expect(espiaSetItem).toHaveBeenCalled());
@@ -186,13 +187,13 @@ describe("ModalPerfilUsuario (perfil)", () => {
 
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Modificar" }));
-    await usuario.type(within(dialogo).getByLabelText("Contraseña"), "secreto123");
+    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
+    await usuario.type(within(dialogo).getByLabelText(/Nueva contraseña/), "secreto123");
     await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
 
     const alerta = await within(dialogo).findByRole("alert");
     expect(alerta).toHaveTextContent("Error HTTP 409");
-    expect(screen.getByRole("dialog", { name: "Perfil" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Mi perfil" })).toBeInTheDocument();
     expect(espiaError).toHaveBeenCalled();
 
     espiaError.mockRestore();

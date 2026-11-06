@@ -68,6 +68,7 @@ try {
   const [idUsuario, setIdUsuario] = useState("");
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
+  const [telefono, setTelefono] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -116,10 +117,10 @@ try {
 
     try {
       if (modo === "login") {
-        const idUsuarioLimpio = idUsuario.trim();
+        const identificadorLimpio = idUsuario.trim();
 
-        if (!idUsuarioLimpio) {
-          setMensaje("Ingresa tu identificación o correo.");
+        if (!identificadorLimpio) {
+          setMensaje("Ingresa tu nombre, identificación, correo o teléfono.");
           setCargando(false);
           return;
         }
@@ -131,11 +132,10 @@ try {
         }
 
         try {
-          const respuestaLogin = await iniciarSesion({ idUsuario: idUsuarioLimpio, contrasena });
+          const respuestaLogin = await iniciarSesion({ identificador: identificadorLimpio, contrasena });
           const usuario = respuestaLogin?.datos || respuestaLogin;
           if (usuario?.idUsuario) {
             guardarUsuario(usuario);
-            console.log("Login con idUsuario:", usuario);
             setMensaje("¡Inicio de sesión exitoso!");
             setCargando(false);
             alCerrar();
@@ -156,6 +156,7 @@ try {
       const idUsuarioLimpio = idUsuario.trim();
       const nombreLimpio = nombre.trim();
       const correoLimpio = correo.trim().toLocaleLowerCase("es");
+      const telefonoLimpio = telefono.trim();
 
       if (!idUsuarioLimpio) {
         setMensaje("Ingresa tu cédula o identificación.");
@@ -167,8 +168,13 @@ try {
         setCargando(false);
         return;
       }
-      if (!correoLimpio || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
+      if (correoLimpio && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
         setMensaje("Ingresa un correo electrónico válido.");
+        setCargando(false);
+        return;
+      }
+      if (telefonoLimpio && (!/^\+?[\d\s().-]{7,20}$/.test(telefonoLimpio) || telefonoLimpio.replace(/\D/g, "").length < 7)) {
+        setMensaje("Ingresa un teléfono válido con al menos 7 dígitos.");
         setCargando(false);
         return;
       }
@@ -180,18 +186,17 @@ try {
 
       const fechaCreacion = new Date().toISOString().split("T")[0];
 
-      const respuesta = await crearUsuario({
+      await crearUsuario({
         idUsuario: idUsuarioLimpio,
         nombre: nombreLimpio,
         correo: correoLimpio,
+        telefono: telefonoLimpio,
         contrasena,
         fechaCreacion,
       });
 
-      const respuestaLogin = await iniciarSesion({ idUsuario: idUsuarioLimpio, contrasena });
+      const respuestaLogin = await iniciarSesion({ identificador: idUsuarioLimpio, contrasena });
       const usuarioAutenticado = respuestaLogin?.datos || respuestaLogin;
-
-      console.log("Registro desde AuthModal:", respuesta);
 
       if (usuarioAutenticado?.idUsuario) {
         guardarUsuario(usuarioAutenticado);
@@ -202,7 +207,6 @@ try {
       alCerrar();
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error en registro desde AuthModal:", error);
       setMensaje(error?.message || "Error al crear la cuenta. Intenta de nuevo.");
     } finally {
       setCargando(false);
@@ -258,7 +262,7 @@ try {
                   : "border-transparent text-white/50 hover:text-white/80"
               }`}
             >
-              Registrarse con correo
+              Registrarse
             </button>
           </div>
 
@@ -275,7 +279,7 @@ try {
                     aria-label="Cédula o identificación"
                     value={idUsuario}
                     onChange={(e) => setIdUsuario(e.target.value)}
-                    placeholder="Ej. 1234567890"
+                    placeholder="Identificación"
                     className={CLASE_ENTRADA}
                   />
                 </div>
@@ -288,7 +292,7 @@ try {
                     aria-label="Nombre completo"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Ej. Juan Pérez"
+                    placeholder="Nombre completo"
                     className={CLASE_ENTRADA}
                   />
                 </div>
@@ -296,15 +300,27 @@ try {
                   <input
                     id="auth-registro-correo"
                     type="email"
-                    required
                     autoComplete="email"
                     aria-label="Correo electrónico"
                     value={correo}
                     onChange={(e) => setCorreo(e.target.value)}
-                    placeholder="Ej. tu@correo.com"
+                    placeholder="Correo electrónico"
                     className={CLASE_ENTRADA}
                   />
                 </div>
+                <div>
+                  <input
+                    id="auth-registro-telefono"
+                    type="tel"
+                    autoComplete="tel"
+                    aria-label="Teléfono"
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    placeholder="Teléfono"
+                    className={CLASE_ENTRADA}
+                  />
+                </div>
+                <p className="-mt-3 text-xs text-white/50">Correo y teléfono son opcionales; puedes agregarlos más adelante desde tu perfil.</p>
               </>
             )}
 
@@ -315,10 +331,10 @@ try {
                   type="text"
                   required
                   autoComplete="username"
-                  aria-label="Identificación o correo electrónico"
+                  aria-label="Nombre, identificación, correo o teléfono"
                   value={idUsuario}
                   onChange={(e) => setIdUsuario(e.target.value)}
-                  placeholder="Correo o número de identificación"
+                  placeholder="Nombre, identificación, correo o teléfono"
                   className={CLASE_ENTRADA}
                 />
               </div>

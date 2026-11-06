@@ -23,7 +23,6 @@ import { BotonCerrar } from "../ui/BotonCerrar";
 import { useCierreConEsc } from "../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../hooks/useRetornoDeFoco";
-import { useFuentesUsuario } from "../../hooks/useFuentesUsuario";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 
 /**
@@ -66,7 +65,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
   const { usuario, cerrarSesion } = useUsuarioActivo();
-  const { correo } = useFuentesUsuario(usuario?.idUsuario);
+  const correo = usuario?.correo;
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });

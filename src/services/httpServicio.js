@@ -45,7 +45,12 @@ async function obtenerJson(respuesta) {
 async function leerRespuesta(respuesta, url, metodo) {
   if (respuesta.ok) return obtenerJson(respuesta);
 
-  const consultaSesionSinSesion = respuesta.status === 401 && url.includes("/usuario/activo");
+  const ruta = new URL(url, window.location.origin).pathname;
+  const rutaNormalizada = ruta.replace(/\/$/, "");
+  const solicitudAutenticacion = rutaNormalizada.endsWith("/usuario/login")
+    || (metodo === "POST" && rutaNormalizada.endsWith("/usuario"))
+    || rutaNormalizada.includes("/api/auth/");
+  const consultaSesionSinSesion = respuesta.status === 401 && ruta === "/usuario/activo";
   if (respuesta.status === 401 && !url.includes("/usuario/login") && !url.includes("/api/gmail/")) {
     window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
   }
@@ -53,7 +58,7 @@ async function leerRespuesta(respuesta, url, metodo) {
   const datos = await obtenerJson(respuesta);
   // La consulta de sesión responde 401 cuando la pestaña ya no tiene sesión;
   // ese resultado es parte del flujo normal de inicio, no un error de aplicación.
-  if (!consultaSesionSinSesion) {
+  if (!consultaSesionSinSesion && !solicitudAutenticacion) {
     console.error("[HTTP][ERROR]", {
       url,
       metodo,

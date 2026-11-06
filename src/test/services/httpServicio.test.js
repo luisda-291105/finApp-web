@@ -43,7 +43,7 @@ describe("httpServicio", () => {
     expect(espiaError).not.toHaveBeenCalled();
   });
 
-  it("lanza el mensaje del backend cuando crear recibe 409", async () => {
+  it("lanza el mensaje del backend cuando crear recibe 409 sin registrar credenciales en consola", async () => {
     fetch.mockResolvedValue(
       crearRespuesta({ status: 409, cuerpo: { mensaje: "El usuario ya existe" } }),
     );
@@ -51,10 +51,7 @@ describe("httpServicio", () => {
     await expect(crear("/usuario", { nombre: "Ana" })).rejects.toThrow(
       "El usuario ya existe",
     );
-    expect(espiaError).toHaveBeenCalledWith(
-      "[HTTP][ERROR]",
-      expect.objectContaining({ metodo: "POST", status: 409 }),
-    );
+    expect(espiaError).not.toHaveBeenCalled();
   });
 
   it("lanza el mensaje del backend cuando actualizar recibe 500", async () => {
