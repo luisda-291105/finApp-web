@@ -116,3 +116,11 @@ antes de tocar código** y no revertir sus ediciones.
   corrompe el guardado (se añade en memoria), y una lectura fallida sustituye el dato previo
   por lista vacía en la siguiente escritura. Revisión visual no aplicable (solo lógica).
   Commit `dc3776e`.
+
+- **Tarea suelta (placeholders ModalDetalleGrupo):** `placeholder="Nombre del grupo"` en el
+  `<input>` Nombre y `placeholder="Descripción del grupo"` en el `<textarea>` Descripción del
+  formulario "Datos del grupo" (`src/components/domain/modales/ModalDetalleGrupo.jsx`, línea 228).
+  Sin tocar `<select>` ni otros archivos. Validación: suite de modales en verde (no existe
+  `ModalDetalleGrupo.test.jsx` específica); `npm test`: 575/579 — 4 fallos preexistentes y ajenos
+  en `AsistenteAyuda`/`AsistenteDashboard` (textos estáticos del asistente, no importan el
+  archivo modificado); `npm run build` OK. Sin fallos nuevos introducidos.
