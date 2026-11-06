@@ -35,6 +35,9 @@ export const ENDPOINTS = {
   bolsillo: {
     base: "/bolsillo",
   },
+  movimiento: {
+    base: "/movimiento",
+  },
   tarjeta: {
     base: "/tarjeta",
     porUsuario: "/tarjeta/usuario",

@@ -15,31 +15,28 @@ import ModalCrearMovimientoContable from "../components/domain/modales/ModalCrea
 import ModalBolsillo from "../components/domain/modales/ModalBolsillo";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsilloServicio";
+import { crearMovimiento, listarMovimientos } from "../services/movimientoContableServicio";
 
 const formatoMoneda = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 
-function fechaDeMes(desfase, dia) {
-  const hoy = new Date();
-  const fecha = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() + desfase, dia));
-  return fecha.toISOString().slice(0, 10);
-}
-
-const MOVIMIENTOS_DEMO = [
-  { id: "actual-ingreso", fecha: fechaDeMes(0, 13), concepto: "Pago de nómina", categoria: "Salario", monto: 3800000, tipo: "Ingreso" },
-  { id: "actual-mercado", fecha: fechaDeMes(0, 12), concepto: "Mercado semanal", categoria: "Alimentación", monto: -185000, tipo: "Gasto" },
-  { id: "actual-servicios", fecha: fechaDeMes(0, 10), concepto: "Servicios del hogar", categoria: "Hogar", monto: -92000, tipo: "Gasto" },
-  { id: "actual-ahorro", fecha: fechaDeMes(0, 5), concepto: "Aporte a ahorros", categoria: "Ahorro", monto: -450000, tipo: "Ahorro" },
-  { id: "anterior-ingreso", fecha: fechaDeMes(-1, 15), concepto: "Pago de nómina", categoria: "Salario", monto: 3600000, tipo: "Ingreso" },
-  { id: "anterior-mercado", fecha: fechaDeMes(-1, 12), concepto: "Compras del hogar", categoria: "Alimentación", monto: -210000, tipo: "Gasto" },
-  { id: "anterior-ahorro", fecha: fechaDeMes(-1, 8), concepto: "Ahorro programado", categoria: "Ahorro", monto: -400000, tipo: "Ahorro" },
+const FILTROS_MOVIMIENTO = [
+  { valor: "TODOS", etiqueta: "Todos" },
+  { valor: "INGRESO", etiqueta: "Ingresos" },
+  { valor: "GASTO", etiqueta: "Gastos" },
+  { valor: "AHORRO", etiqueta: "Ahorros" },
 ];
 
 /** Página de bolsillos persistidos y movimientos contables. */
-export default function PaginaDashboardContabilidad({ movimientos: movimientosIniciales = MOVIMIENTOS_DEMO }) {
+export default function PaginaDashboardContabilidad() {
   const navigate = useNavigate();
   const { usuario } = useUsuarioActivo();
-  const [movimientos, setMovimientos] = useState(movimientosIniciales);
+  const [movimientos, setMovimientos] = useState([]);
+  const [bolsilloSeleccionadoId, setBolsilloSeleccionadoId] = useState("");
+  const [filtroMovimiento, setFiltroMovimiento] = useState("TODOS");
+  const [cargandoMovimientos, setCargandoMovimientos] = useState(false);
+  const [errorMovimientos, setErrorMovimientos] = useState("");
+  const [revisionMovimientos, setRevisionMovimientos] = useState(0);
   const [crearMovimientoAbierto, setCrearMovimientoAbierto] = useState(false);
   const [respuesta, setRespuesta] = useState(null);
   const [bolsillos, setBolsillos] = useState([]);
@@ -56,12 +53,37 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
       if (!vigente) return;
       const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
       setBolsillos(lista);
+      setBolsilloSeleccionadoId((actual) => lista.some((item) => item.idBolsillo === actual)
+        ? actual
+        : (lista.find((item) => item.estado !== false) || lista[0])?.idBolsillo || "");
       setErrorBolsillos("");
     }).catch((fallo) => {
       if (vigente) { setBolsillos([]); setErrorBolsillos(fallo?.message || "No se pudieron cargar los bolsillos."); }
     }).finally(() => { if (vigente) setCargandoBolsillos(false); });
     return () => { vigente = false; };
   }, [usuario?.idUsuario]);
+
+  useEffect(() => {
+    let vigente = true;
+    if (!usuario?.idUsuario || !bolsilloSeleccionadoId) {
+      setMovimientos([]);
+      setCargandoMovimientos(false);
+      return undefined;
+    }
+    setCargandoMovimientos(true);
+    listarMovimientos(bolsilloSeleccionadoId, filtroMovimiento).then((respuesta) => {
+      if (!vigente) return;
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      setMovimientos(lista);
+      setErrorMovimientos("");
+    }).catch((fallo) => {
+      if (vigente) {
+        setMovimientos([]);
+        setErrorMovimientos(fallo?.message || "No se pudieron cargar los movimientos.");
+      }
+    }).finally(() => { if (vigente) setCargandoMovimientos(false); });
+    return () => { vigente = false; };
+  }, [usuario?.idUsuario, bolsilloSeleccionadoId, filtroMovimiento, revisionMovimientos]);
 
   const abrirModalBolsillo = (modo, bolsillo, evento) => {
     if (evento?.currentTarget) disparadorBolsilloRef.current = evento.currentTarget;
@@ -74,6 +96,7 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
       const creado = await crearBolsillo(datos);
       const bolsillo = creado?.data || creado;
       setBolsillos((actuales) => [bolsillo, ...actuales]);
+      setBolsilloSeleccionadoId((actual) => actual || bolsillo.idBolsillo || "");
     } else {
       const actualizado = await actualizarBolsillo(modalBolsillo.bolsillo.idBolsillo, datos);
       const bolsillo = actualizado?.data || actualizado || { ...modalBolsillo.bolsillo, ...datos };
@@ -83,14 +106,22 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
 
   const borrarBolsillo = async (idBolsillo) => {
     await eliminarBolsillo(idBolsillo);
-    setBolsillos((actuales) => actuales.filter((item) => item.idBolsillo !== idBolsillo));
+    const restantes = bolsillos.filter((item) => item.idBolsillo !== idBolsillo);
+    setBolsillos(restantes);
+    if (bolsilloSeleccionadoId === idBolsillo) {
+      setBolsilloSeleccionadoId((restantes.find((item) => item.estado !== false) || restantes[0])?.idBolsillo || "");
+    }
   };
 
-  const agregarMovimiento = (movimiento) => {
+  const guardarMovimiento = async (movimiento) => {
     if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; }
-    setMovimientos((actuales) => [movimiento, ...actuales]);
-    setRespuesta({ tipo: "exito", mensaje: "Movimiento agregado a esta demostración." });
+    await crearMovimiento(movimiento);
+    setRespuesta({ tipo: "exito", mensaje: "Movimiento guardado en el bolsillo." });
+    setRevisionMovimientos((revision) => revision + 1);
   };
+
+  const bolsillosActivos = bolsillos.filter((bolsillo) => bolsillo.estado !== false);
+  const bolsilloSeleccionado = bolsillos.find((bolsillo) => bolsillo.idBolsillo === bolsilloSeleccionadoId);
 
   return (
     <section aria-labelledby="contabilidad-titulo" className="space-y-6 pt-6">
@@ -101,7 +132,7 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
           <p className="mt-1 text-sm text-slate-text">Revisa tus gastos, ahorros y balance disponible.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button ref={disparadorMovimientoRef} type="button" onClick={() => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } setRespuesta(null); setCrearMovimientoAbierto(true); }} aria-describedby="movimientos-demo-aviso" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-semibold text-bg-cream shadow-sm transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+          <button ref={disparadorMovimientoRef} type="button" disabled={bolsillosActivos.length === 0} onClick={() => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } setRespuesta(null); setCrearMovimientoAbierto(true); }} title={bolsillosActivos.length === 0 ? "Crea y activa un bolsillo para registrar movimientos" : undefined} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-semibold text-bg-cream shadow-sm transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">
             <Plus className="h-4 w-4" aria-hidden="true" />Nuevo movimiento
           </button>
           <button ref={disparadorBolsilloRef} type="button" onClick={(evento) => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } abrirModalBolsillo("crear", null, evento); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-primary px-4 py-2.5 text-sm font-semibold text-emerald-primary transition-colors hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
@@ -109,8 +140,6 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
           </button>
         </div>
       </header>
-      <p id="movimientos-demo-aviso" className="sr-only">Los movimientos nuevos se guardan solo en esta demostración.</p>
-
       <section aria-labelledby="bolsillos-contables-titulo" className="space-y-4">
         <div>
           <h2 id="bolsillos-contables-titulo" className="font-display text-xl font-semibold text-bg-dark">Bolsillos</h2>
@@ -129,25 +158,38 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
       </section>
 
       <Card como="section" aria-labelledby="movimientos-titulo" className="overflow-hidden">
-        <div className="flex flex-col gap-1 border-b border-border-line/60 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><h2 id="movimientos-titulo" className="font-display text-xl font-semibold text-bg-dark">Movimientos recientes</h2><p className="mt-1 text-sm text-slate-text">Actividad de ejemplo para la vista previa contable.</p></div>
-          <span className="text-xs font-medium uppercase tracking-wide text-slate-text">Demostración</span>
+        <div className="flex flex-col gap-4 border-b border-border-line/60 px-5 py-4 lg:flex-row lg:items-end lg:justify-between">
+          <div><h2 id="movimientos-titulo" className="font-display text-xl font-semibold text-bg-dark">Movimientos</h2><p className="mt-1 text-sm text-slate-text">Consulta los registros guardados en cada bolsillo.</p></div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="flex items-center gap-2 text-sm text-slate-text"><span>Bolsillo</span><select aria-label="Filtrar movimientos por bolsillo" value={bolsilloSeleccionadoId} onChange={(evento) => setBolsilloSeleccionadoId(evento.target.value)} disabled={bolsillos.length === 0} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-3 text-bg-dark">
+              {bolsillos.length === 0 && <option value="">Sin bolsillos</option>}
+              {bolsillos.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre}{bolsillo.estado === false ? " (inactivo)" : ""}</option>)}
+            </select></label>
+          </div>
         </div>
-        {movimientos.length ? <ul aria-label="Movimientos de demostración" className="divide-y divide-border-line/50 px-5">
+        <div className="flex flex-wrap gap-2 border-b border-border-line/30 px-5 py-3" role="group" aria-label="Filtrar movimientos por tipo">
+          {FILTROS_MOVIMIENTO.map((filtro) => <button key={filtro.valor} type="button" aria-pressed={filtroMovimiento === filtro.valor} onClick={() => setFiltroMovimiento(filtro.valor)} className={`min-h-9 rounded-full px-3 text-sm font-medium transition-colors ${filtroMovimiento === filtro.valor ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark"}`}>{filtro.etiqueta}</button>)}
+        </div>
+        {errorMovimientos && <p role="alert" className="m-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMovimientos}</p>}
+        {cargandoMovimientos && <p role="status" className="px-5 py-8 text-center text-sm text-slate-text">Cargando movimientos...</p>}
+        {!cargandoMovimientos && !errorMovimientos && (movimientos.length > 0 ? <ul aria-label={`Movimientos de ${bolsilloSeleccionado?.nombre || "bolsillo"}`} className="divide-y divide-border-line/50 px-5">
           {movimientos.map((movimiento) => {
-            const ingreso = movimiento.monto > 0;
+            const tipo = String(movimiento.tipo || "").toUpperCase();
+            const ingreso = tipo === "INGRESO";
             const IconoMovimiento = ingreso ? ArrowUpRight : ArrowDownRight;
-            const tono = ingreso ? "text-cat-income" : movimiento.tipo === "Ahorro" ? "text-emerald-primary" : "text-cat-expense";
-            return <li key={movimiento.id} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-cream ${tono}`}><IconoMovimiento className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><p className="truncate font-medium text-bg-dark">{movimiento.concepto}</p><time className="text-sm text-slate-text" dateTime={movimiento.fecha}>{formatoFecha.format(new Date(`${movimiento.fecha}T00:00:00Z`))}</time></div></div>
-              <div className="flex items-center justify-between gap-4 pl-[52px] sm:justify-end sm:pl-0"><span className="rounded-full bg-bg-cream px-2.5 py-1 text-xs font-medium text-slate-text">{movimiento.tipo}</span><span className={`min-w-28 text-right font-medium tabular-nums ${tono}`}>{ingreso ? "+" : "−"}{formatoMoneda.format(Math.abs(movimiento.monto))}</span></div>
+            const tono = ingreso ? "text-cat-income" : tipo === "AHORRO" ? "text-emerald-primary" : "text-cat-expense";
+            const monto = Number(movimiento.monto) || 0;
+            const fecha = movimiento.fecha ? new Date(`${movimiento.fecha}T00:00:00Z`) : null;
+            return <li key={movimiento.idMovimiento} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-cream ${tono}`}><IconoMovimiento className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><p className="truncate font-medium text-bg-dark">{movimiento.concepto}</p><p className="truncate text-xs text-slate-text">{movimiento.categoria}</p><time className="text-sm text-slate-text" dateTime={movimiento.fecha}>{fecha && !Number.isNaN(fecha.getTime()) ? formatoFecha.format(fecha) : movimiento.fecha}</time></div></div>
+              <div className="flex items-center justify-between gap-4 pl-[52px] sm:justify-end sm:pl-0"><span className="rounded-full bg-bg-cream px-2.5 py-1 text-xs font-medium text-slate-text">{tipo === "INGRESO" ? "Ingreso" : tipo === "AHORRO" ? "Ahorro" : "Gasto"}</span><span className={`min-w-28 text-right font-medium tabular-nums ${tono}`}>{ingreso ? "+" : "−"}{formatoMoneda.format(monto)}</span></div>
             </li>;
           })}
-        </ul> : <p className="px-5 py-10 text-center text-slate-text">Sin movimientos registrados</p>}
+        </ul> : <p className="px-5 py-10 text-center text-slate-text">Sin movimientos registrados en este filtro.</p>)}
       </Card>
 
       <ModalBolsillo abierto={modalBolsillo.abierto} modo={modalBolsillo.modo} bolsillo={modalBolsillo.bolsillo} triggerRef={disparadorBolsilloRef} alCerrar={() => setModalBolsillo({ abierto: false, modo: "crear", bolsillo: null })} alGuardar={guardarBolsillo} alEliminar={borrarBolsillo} />
-      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} triggerRef={disparadorMovimientoRef} alCerrar={() => setCrearMovimientoAbierto(false)} alGuardar={agregarMovimiento} />
+      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} bolsillos={bolsillosActivos} bolsilloIdInicial={bolsillosActivos[0]?.idBolsillo} triggerRef={disparadorMovimientoRef} alCerrar={() => setCrearMovimientoAbierto(false)} alGuardar={guardarMovimiento} />
     </section>
   );
 }
