@@ -22,6 +22,8 @@ import { crearUsuario, iniciarSesion } from "../../../services/usuarioServicio";
 import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle } from "../../../services/authGoogleServicio";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 
+const CLASE_ENTRADA = "min-h-11 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/40 focus:border-emerald-primary focus-visible:ring-2 focus-visible:ring-mint-accent/60";
+
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
  * clic exterior (la trampa no cancela ni consume el evento) SIN desactivarse; `escapeDeactivates:
@@ -261,47 +263,46 @@ try {
           </div>
 
           {/* Formulario */}
-          <form onSubmit={manejarEnvio} className="space-y-4">
+          <form onSubmit={manejarEnvio} className="space-y-5">
             {modo === "registro" && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1.5">
-                    Cédula / Identificación
-                  </label>
                   <input
+                    id="auth-registro-identificacion"
                     type="text"
                     required
+                    autoComplete="username"
+                    aria-label="Cédula o identificación"
                     value={idUsuario}
                     onChange={(e) => setIdUsuario(e.target.value)}
-                    placeholder="1234567890"
-                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                    placeholder="Ej. 1234567890"
+                    className={CLASE_ENTRADA}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1.5">
-                    Nombre completo
-                  </label>
                   <input
+                    id="auth-registro-nombre"
                     type="text"
                     required
+                    autoComplete="name"
+                    aria-label="Nombre completo"
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Juan Pérez"
-                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                    placeholder="Ej. Juan Pérez"
+                    className={CLASE_ENTRADA}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1.5">
-                    Correo electrónico
-                  </label>
                   <input
+                    id="auth-registro-correo"
                     type="email"
                     required
                     autoComplete="email"
+                    aria-label="Correo electrónico"
                     value={correo}
                     onChange={(e) => setCorreo(e.target.value)}
-                    placeholder="tu@correo.com"
-                    className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                    placeholder="Ej. tu@correo.com"
+                    className={CLASE_ENTRADA}
                   />
                 </div>
               </>
@@ -309,35 +310,36 @@ try {
 
             {modo === "login" && (
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">
-                  Identificación / correo
-                </label>
                 <input
+                  id="auth-login-identificacion"
                   type="text"
                   required
+                  autoComplete="username"
+                  aria-label="Identificación o correo electrónico"
                   value={idUsuario}
                   onChange={(e) => setIdUsuario(e.target.value)}
-                  placeholder="1234567890 o tu@correo.com"
-                  className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                  placeholder="Correo o número de identificación"
+                  className={CLASE_ENTRADA}
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-white/70 mb-1.5">
-                Contraseña
-              </label>
               <input
+                id="auth-contrasena"
                 type="password"
                 required
+                autoComplete={modo === "registro" ? "new-password" : "current-password"}
+                aria-label="Contraseña"
+                aria-describedby={modo === "registro" ? "auth-contrasena-ayuda" : undefined}
                 value={contrasena}
                 onChange={(e) => setContrasena(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Ingresa tu contraseña"
                 minLength={8}
-                className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#1a7a5e] transition-colors"
+                className={CLASE_ENTRADA}
               />
               {modo === "registro" && (
-                <p className="mt-1 text-xs text-white/40">Mínimo 8 caracteres</p>
+                <p id="auth-contrasena-ayuda" className="mt-2 text-xs text-white/50">Mínimo 8 caracteres</p>
               )}
             </div>
 
@@ -372,7 +374,7 @@ try {
             type="button"
             onClick={manejarLoginGoogle}
             disabled={cargando || !GOOGLE_AUTH_CONFIGURADO}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white px-4 py-3 text-sm font-medium text-[#202124] transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-border-line bg-bg-cream px-4 py-3 text-sm font-medium text-bg-dark transition-colors hover:bg-bg-cream/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span aria-hidden="true" className="font-bold text-lg text-[#4285f4]">G</span>
             {cargando

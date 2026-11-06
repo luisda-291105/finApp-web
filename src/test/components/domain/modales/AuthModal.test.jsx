@@ -28,6 +28,9 @@ vi.mock("../../../../config/app.config", async (importOriginal) => {
   const real = await importOriginal();
   return {
     ...real,
+    get TRIAL_MODE() {
+      return estadoTrial.activo ?? real.TRIAL_MODE;
+    },
     get TRIAL_ACTIVO() {
       return estadoTrial.activo ?? real.TRIAL_ACTIVO;
     },
@@ -114,6 +117,21 @@ describe("AuthModal", () => {
       expect(dialogo.getAttribute("aria-modal")).toBe("true");
     });
 
+    it("muestra solo placeholders del login, conserva nombres accesibles y usa un fondo temático en Google", () => {
+      renderModal();
+
+      const identificacion = screen.getByLabelText("Identificación o correo electrónico");
+      const contrasena = screen.getByLabelText("Contraseña");
+      const botonGoogle = screen.getByRole("button", { name: "Iniciar sesión con Google" });
+
+      expect(screen.queryByText("Identificación o correo electrónico")).not.toBeInTheDocument();
+      expect(screen.queryByText("Contraseña")).not.toBeInTheDocument();
+      expect(identificacion).toHaveAttribute("placeholder", "Correo o número de identificación");
+      expect(contrasena).toHaveAttribute("placeholder", "Ingresa tu contraseña");
+      expect(botonGoogle).toHaveClass("bg-bg-cream", "text-bg-dark");
+      expect(botonGoogle).not.toHaveClass("bg-white");
+    });
+
     it("la «X» está dentro del panel y tiene nombre accesible específico (ya no «Cerrar modal»)", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
@@ -172,7 +190,7 @@ describe("AuthModal", () => {
       const usuario = userEvent.setup();
       renderModal({ alCerrar });
 
-      const identificacion = screen.getByPlaceholderText(/1234567890/);
+      const identificacion = screen.getByLabelText("Identificación o correo electrónico");
       await usuario.click(identificacion);
       expect(document.activeElement).toBe(identificacion);
 
@@ -248,7 +266,7 @@ describe("AuthModal", () => {
       renderModal({ alCerrar });
       await esperarFocoEnContenedor(obtenerDialogo());
 
-      const identificacion = screen.getByPlaceholderText(/1234567890/);
+      const identificacion = screen.getByLabelText("Identificación o correo electrónico");
       dispararPuntero(identificacion, "pointerdown", { clientY: 0 });
       dispararPuntero(identificacion, "pointermove", { clientY: 200 });
       dispararPuntero(identificacion, "pointerup", { clientY: 200 });
@@ -273,16 +291,16 @@ describe("AuthModal", () => {
 
   describe("AC-22: cerrar NO borra lo escrito", () => {
     const escribirCampos = async (usuario) => {
-          const idInput = screen.getByPlaceholderText(/1234567890/);
+          const idInput = screen.getByLabelText("Cédula o identificación");
           await usuario.type(idInput, "12345678");
-          await usuario.type(screen.getByPlaceholderText("Juan Pérez"), "Ana Pérez");
-          await usuario.type(screen.getByPlaceholderText("••••••••"), "secreta123");
+          await usuario.type(screen.getByLabelText("Nombre completo"), "Ana Pérez");
+          await usuario.type(screen.getByLabelText("Contraseña"), "secreta123");
         };
 
         const comprobarCamposConservados = () => {
-          expect(screen.getByPlaceholderText(/1234567890/).value).toBe("12345678");
-          expect(screen.getByPlaceholderText("Juan Pérez").value).toBe("Ana Pérez");
-          expect(screen.getByPlaceholderText("••••••••").value).toBe("secreta123");
+          expect(screen.getByLabelText("Cédula o identificación").value).toBe("12345678");
+          expect(screen.getByLabelText("Nombre completo").value).toBe("Ana Pérez");
+          expect(screen.getByLabelText("Contraseña").value).toBe("secreta123");
         };
 
     it("conserva identificación, nombre y contraseña al cerrar con la «X» y reabrir", async () => {

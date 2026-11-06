@@ -358,7 +358,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
       );
       expect(etiquetas).toEqual([
         "Elegir fuente",
-        "Bolsillos",
+        "Grupos",
         "Contabilidad",
         "Ingresos",
         "Gastos",
@@ -770,10 +770,10 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       await crearMuestra({ titulo: "Uso de tarjeta", fuente: "tarjetas", tipo: "tarjeta" });
 
       expect(screen.getAllByText("$2,300.00").length).toBeGreaterThan(0);
-      expect(screen.getByText("$5,800.00")).toBeInTheDocument();
+      expect(screen.getAllByText("$3,473,000.00").length).toBeGreaterThan(0);
       expect(screen.getAllByText("$4,250.00").length).toBeGreaterThan(0);
-      expect(screen.getByText("$1,820.75")).toBeInTheDocument();
-      expect(screen.getByText("$890.40")).toBeInTheDocument();
+      expect(screen.getAllByText("$1,820.75").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("$890.40").length).toBeGreaterThan(0);
     });
   });
 
@@ -859,7 +859,7 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       ]);
       renderPagina();
 
-      expect(await screen.findByText("Sin datos disponibles")).toBeInTheDocument();
+      expect((await screen.findAllByText("Sin datos disponibles")).length).toBeGreaterThan(0);
       // La muestra sigue identificable por su título (la activación llega en T8).
       expect(screen.getByRole("heading", { name: "Fuente huérfana" })).toBeInTheDocument();
     });
@@ -870,7 +870,7 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       ]);
       renderPagina();
 
-      expect(await screen.findByText("Sin datos disponibles")).toBeInTheDocument();
+      expect((await screen.findAllByText("Sin datos disponibles")).length).toBeGreaterThan(0);
     });
   });
 });
@@ -981,11 +981,11 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
     await userEvent.click(botonIrAFuente);
   };
 
-  it("activar una muestra Bolsillos navega a /dashboard/bolsillos (AC-21)", async () => {
+  it("activar una muestra Grupos navega a /dashboard/grupos (AC-21)", async () => {
     renderConNavegacion();
     await crearMuestra({ titulo: "Muestra prueba", fuente: "bolsillos", tipo: "tarjeta" });
     await abrirDetalleYIrAFuente();
-    expect(navigateRef).toHaveBeenCalledWith("/dashboard/bolsillos");
+    expect(navigateRef).toHaveBeenCalledWith("/dashboard/grupos");
   });
 
   it("activar una muestra Contabilidad navega a /dashboard/contabilidad (AC-22)", async () => {

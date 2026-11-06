@@ -154,7 +154,7 @@ describe("PaginaDashboardConfiguracion", () => {
       estado: false,
       usuario: { idUsuario: USUARIO.idUsuario },
     }), USUARIO.idUsuario));
-    expect(await screen.findByText("Inactivo")).toBeInTheDocument();
+    expect((await screen.findAllByText("Inactiva")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("+573001234567")).toHaveLength(2);
   });
 
@@ -180,7 +180,8 @@ describe("PaginaDashboardConfiguracion", () => {
     }]);
     render(<PaginaDashboardConfiguracion />);
     expect(await screen.findAllByText("correo-muy-largo@ejemplo.test")).toHaveLength(2);
-    expect(screen.getByText("CORREO · Inactivo")).toBeInTheDocument();
+    expect(screen.getAllByText("CORREO").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Inactiva").length).toBeGreaterThan(0);
     expect(screen.getByText("Fecha: 2026-10-20")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Editar fuente correo-muy-largo@ejemplo.test en móvil" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Eliminar fuente correo-muy-largo@ejemplo.test en móvil" })).toBeInTheDocument();

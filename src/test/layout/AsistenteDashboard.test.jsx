@@ -293,12 +293,13 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       // Textos únicos que aparecen en un solo elemento (versión actual del componente)
       [
         "Asistente de FinApp",
-        "Respuestas con documentación y búsqueda pública.",
-        "Pregunta sobre cómo usar FinApp o solicita información pública actual.",
+        "Consulta tus datos o pregunta sobre cómo usar la app.",
+        "Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app.",
+        "¿Qué contactos tengo registrados?",
+        "¿Qué correos están activos?",
+        "¿Cuáles son mis grupos activos?",
         "¿Dónde veo mis tarjetas?",
-        "¿Cómo cambio la apariencia?",
-        "¿Qué datos consulta este chat?",
-        "No escribas datos personales, números de tarjeta, CVV ni contraseñas. El chat no consulta tu cuenta.",
+        "Puedes preguntar por tus contactos, grupos, correos y tarjetas. No escribas contraseñas ni CVV.",
         "Tu pregunta",
         "Enviar",
       ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
@@ -316,7 +317,7 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       const dialogo = await abrirAsistente(user);
 
       // En estado vacío el componente muestra las sugerencias y el texto de aviso
-      expect(dialogo).toHaveTextContent("Pregunta sobre cómo usar FinApp o solicita información pública actual");
+      expect(dialogo).toHaveTextContent("Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app");
       expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
       expect(within(dialogo).queryByRole("button", { name: /conversación/i })).not.toBeInTheDocument();
     });

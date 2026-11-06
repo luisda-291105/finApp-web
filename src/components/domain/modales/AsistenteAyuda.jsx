@@ -1,9 +1,9 @@
 /**
  * @uso        Asistente de chat del dashboard con respuestas basadas en fuentes
  * @funciones  AsistenteAyuda({ abierto, alCerrar, triggerRef })
- * @datos      Mantiene mensajes solo en memoria; consulta el backend para generar respuestas
- * @eventos    Enviar pregunta o sugerencia, cancelar petición y cerrar el diálogo
- * @estados    mensajes, entrada, cargando, error, consultaFallida
+ * @datos      Persiste mensajes en sessionStorage; consulta el backend para generar respuestas
+ * @eventos    Enviar pregunta o sugerencia, cancelar petición, limpiar historial y cerrar el diálogo
+ * @estados    mensajes (persistidos), entrada, cargando, error, consultaFallida
  * @usadoPor   DashboardLayout
  */
 import { useEffect, useRef, useState } from "react";
@@ -12,12 +12,14 @@ import { BotonCerrar } from "../../ui/BotonCerrar";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
+import { useAsistenteHistorial } from "../../../hooks/useAsistenteHistorial";
 import { conversarConAsistente } from "../../../services/asistenteServicio";
 
 const SUGERENCIAS = [
+  "¿Qué contactos tengo registrados?",
+  "¿Qué correos están activos?",
+  "¿Cuáles son mis grupos activos?",
   "¿Dónde veo mis tarjetas?",
-  "¿Cómo cambio la apariencia?",
-  "¿Qué datos consulta este chat?",
 ];
 
 function crearOpcionesTrampa(refPanel) {
@@ -33,7 +35,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
   const logRef = useRef(null);
   const peticionRef = useRef(null);
-  const [mensajes, setMensajes] = useState([]);
+  const { mensajes, setMensajes, limpiar } = useAsistenteHistorial();
   const [entrada, setEntrada] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
@@ -116,13 +118,32 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-line/30 px-5 py-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <h2 id="asistente-titulo" className="font-display text-lg font-semibold">Asistente de FinApp</h2>
-              <p className="text-xs text-slate-text">Respuestas con documentación y búsqueda pública.</p>
+              <p className="text-xs text-slate-text">Consulta tus datos o pregunta sobre cómo usar la app.</p>
             </div>
-            <BotonCerrar
-              ariaLabel="Cerrar asistente de ayuda"
-              alCerrar={alCerrar}
-              className="shrink-0 text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
-            />
+            <div className="flex shrink-0 items-center gap-1">
+              {mensajes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={limpiar}
+                  disabled={cargando}
+                  aria-label="Limpiar conversación"
+                  title="Limpiar conversación"
+                  className="rounded-full p-2 text-slate-text outline-none hover:bg-red-100 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-40"
+                >
+                  <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4h6v2" />
+                  </svg>
+                </button>
+              )}
+              <BotonCerrar
+                ariaLabel="Cerrar asistente de ayuda"
+                alCerrar={alCerrar}
+                className="text-slate-text hover:text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
+              />
+            </div>
           </header>
 
           <div
@@ -137,7 +158,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
             {mensajes.length === 0 ? (
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-slate-text">
-                  Pregunta sobre cómo usar FinApp o solicita información pública actual.
+                  Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SUGERENCIAS.map((sugerencia) => (
@@ -173,7 +194,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
 
           <footer className="flex shrink-0 flex-col gap-2 border-t border-border-line/30 px-5 py-4">
             <p id="asistente-aviso" className="text-xs text-slate-text">
-              No escribas datos personales, números de tarjeta, CVV ni contraseñas. El chat no consulta tu cuenta.
+              Puedes preguntar por tus contactos, grupos, correos y tarjetas. No escribas contraseñas ni CVV.
             </p>
             {error && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">

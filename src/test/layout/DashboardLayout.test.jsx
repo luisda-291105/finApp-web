@@ -299,7 +299,7 @@ describe("DashboardLayout — dos versiones de vista", () => {
       // El drawer conserva exactamente su contrato (sin props nuevas en sidebars)
       const drawerProps = propsDe(DashboardDrawer);
       expect(Object.keys(drawerProps).sort()).toEqual(
-        ["abierto", "alCerrar", "children", "triggerRef"].sort()
+        ["abierto", "alCerrar", "children", "triggerRef", "temaClaro"].sort()
       );
       expect(drawerProps).not.toHaveProperty("esMobile");
     });

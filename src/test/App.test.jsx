@@ -194,7 +194,8 @@ describe("rutas de la aplicación", () => {
     renderRuta("/dashboard/contabilidad");
 
     expect(screen.getByRole("heading", { name: "Contabilidad", level: 1 })).toBeDefined();
-    expect(screen.getByText("Datos de demostración")).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Bolsillos", level: 2 })).toBeDefined();
+    expect(screen.queryByText("Datos de demostración")).toBeNull();
   });
 
   it("muestra las tarjetas vacías para el usuario autenticado", async () => {
@@ -286,17 +287,17 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
   };
 
   /** La navegación se completa cuando la vista de destino ya está renderizada. */
-  const esperarDestinoDashboard = async () => {
+  const esperarDestinoLanding = async () => {
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "dashboard" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: /Controla tu dinero/ })).toBeTruthy();
     });
   };
 
   it.each([
-    ["móvil", 375, 'nav[role="navigation"] button[aria-label="Abrir menú"]'],
-    ["pantallas grandes (≥768px)", 1024, 'aside[role="navigation"] button'],
+    ["móvil", 375, 'header a[href="/"]'],
+    ["pantallas grandes (≥768px)", 1024, 'header a[href="/"]'],
   ])(
-    "AC-22(a): en %s, cerrar con la «X» navega a /dashboard y el foco queda en el control estable de la versión",
+    "AC-22(a): en %s, cerrar con la «X» llega a la landing y enfoca su primer control",
     async (_versionVista, ancho, selectorDestino) => {
       fijarAncho(ancho);
       const usuario = userEvent.setup();
@@ -306,7 +307,7 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
       await usuario.click(
         screen.getByRole("button", { name: "Cerrar ventana de acceso" })
       );
-      await esperarDestinoDashboard();
+      await esperarDestinoLanding();
 
       const controlDestino = document.querySelector(selectorDestino);
       expect(controlDestino).toBeTruthy();
@@ -315,18 +316,16 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
     }
   );
 
-  it("AC-22(a): con Esc en móvil, el cierre que navega también deja el foco en el destino", async () => {
+  it("AC-22(a): con Esc en móvil, el cierre llega a la landing y enfoca el destino", async () => {
     fijarAncho(375);
     const usuario = userEvent.setup();
     renderLogin();
     await esperarFocoEnElDialogo();
 
     await usuario.keyboard("{Escape}");
-    await esperarDestinoDashboard();
+    await esperarDestinoLanding();
 
-    const controlDestino = document.querySelector(
-      'nav[role="navigation"] button[aria-label="Abrir menú"]'
-    );
+    const controlDestino = document.querySelector('header a[href="/"]');
     expect(controlDestino).toBeTruthy();
     await waitFor(() => expect(document.activeElement).toBe(controlDestino));
   });
@@ -340,19 +339,17 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
     await usuario.click(
       screen.getByRole("button", { name: "Cerrar ventana de acceso" })
     );
-    await esperarDestinoDashboard();
+    await esperarDestinoLanding();
 
     // Ninguna superficie modal sobrevive a la navegación…
     expect(screen.queryByRole("dialog")).toBeNull();
 
     // …y el candidato elegido pertenece a la navegación de la vista de destino.
-    const controlDestino = document.querySelector(
-      'nav[role="navigation"] button[aria-label="Abrir menú"]'
-    );
+    const controlDestino = document.querySelector('header a[href="/"]');
     await waitFor(() => expect(document.activeElement).toBe(controlDestino));
     expect(document.activeElement.closest('[role="dialog"]')).toBeNull();
     expect(
-      document.querySelector('nav[role="navigation"]').contains(document.activeElement)
+      document.querySelector("header").contains(document.activeElement)
     ).toBe(true);
   });
 

@@ -33,21 +33,22 @@ if (typeof global.PointerEvent === "undefined") {
 
 // Literales del componente actual (no de la spec 014, que quedó obsoleta)
 const TITULO = "Asistente de FinApp";
-const SUBTITULO = "Respuestas con documentación y búsqueda pública.";
+const SUBTITULO = "Consulta tus datos o pregunta sobre cómo usar la app.";
 const ARIA_CERRAR = "Cerrar asistente de ayuda";
 const TEXTO_VACIO =
-  "Pregunta sobre cómo usar FinApp o solicita información pública actual.";
+  "Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app.";
 const ARIA_LOG = "Mensajes del asistente";
 const SUGERENCIAS = [
+  "¿Qué contactos tengo registrados?",
+  "¿Qué correos están activos?",
+  "¿Cuáles son mis grupos activos?",
   "¿Dónde veo mis tarjetas?",
-  "¿Cómo cambio la apariencia?",
-  "¿Qué datos consulta este chat?",
 ];
 const LABEL_ENTRADA = "Tu pregunta";
 const PLACEHOLDER = "Escribe una pregunta…";
 const BOTON_ENVIAR = "Enviar";
 const AVISO_PIE =
-  "No escribas datos personales, números de tarjeta, CVV ni contraseñas. El chat no consulta tu cuenta.";
+  "Puedes preguntar por tus contactos, grupos, correos y tarjetas. No escribas contraseñas ni CVV.";
 
 const renderizar = (props = {}) =>
   render(<AsistenteAyuda abierto alCerrar={vi.fn()} {...props} />);
@@ -419,10 +420,11 @@ describe("AsistenteAyuda — cromo: «X», Esc, clic fuera y foco (T6)", () => {
       expect(primero).toHaveFocus();
       expect(dialogo.contains(document.activeElement)).toBe(true);
 
-      // Tab avanza por los chips de sugerencia (3), luego input
+      // Tab avanza por los chips de sugerencia (4), luego input
       await usuario.tab(); // chip 1
       await usuario.tab(); // chip 2
       await usuario.tab(); // chip 3
+      await usuario.tab(); // chip 4
       const entrada = screen.getByLabelText(LABEL_ENTRADA);
       await usuario.tab(); // input
       expect(entrada).toHaveFocus();

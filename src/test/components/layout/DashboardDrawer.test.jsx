@@ -299,7 +299,7 @@ describe("DashboardDrawer", () => {
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar menú");
       expect(focusables[1].tagName).toBe("A"); // Inicio
       expect(focusables[2].tagName).toBe("A"); // Tarjetas
-      expect(focusables[3].getAttribute("href")).toBe("/dashboard/bolsillos");
+      expect(focusables[3].getAttribute("href")).toBe("/dashboard/grupos");
       expect(focusables[4].getAttribute("href")).toBe("/dashboard/contactos");
       expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
       expect(focusables[6].getAttribute("href")).toBe("/dashboard/contabilidad");

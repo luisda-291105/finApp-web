@@ -67,7 +67,6 @@ describe("PaginaDashboardTarjetas", () => {
     await usuario.type(screen.getByLabelText("Titular"), "Ana Pérez");
     await usuario.type(screen.getByLabelText("Número de tarjeta"), "4111111111111");
     await usuario.type(screen.getByLabelText("Vencimiento (MM/AA)"), "12/30");
-    await usuario.type(screen.getByLabelText("CVV"), "123");
     await usuario.type(screen.getByLabelText("Entidad financiera"), "Banco FinApp");
     await usuario.click(screen.getByRole("button", { name: "Guardar registro" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("14 a 19");

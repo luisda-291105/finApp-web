@@ -564,7 +564,7 @@ const SUPERFICIES_PARIDAD = [
       render(<Arnes />);
     },
     cerrar: () =>
-      userEvent.click(screen.getByRole("button", { name: "Cerrar detalle de tarjeta" })),
+      userEvent.click(screen.getByRole("button", { name: /Cerrar Tarjeta de/ })),
   },
 ];
 

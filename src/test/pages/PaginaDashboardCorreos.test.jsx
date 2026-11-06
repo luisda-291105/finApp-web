@@ -62,14 +62,14 @@ function renderPagina() {
 }
 
 describe("PaginaDashboardCorreos", () => {
-  it("carga las fuentes y muestra mensajes filtrables de la cuenta seleccionada", async () => {
+  it("muestra fuentes en tarjetas, oculta el selector y abre las consultas en su modal", async () => {
     const user = userEvent.setup();
     renderPagina();
 
     expect(await screen.findByText(FUENTE.contenido)).toBeInTheDocument();
     expect(obtenerFuentesPorUsuario).toHaveBeenCalledWith("usuario-prueba");
-    expect(screen.getByLabelText("Cuenta Gmail para consultar")).toHaveValue("12");
-    expect(screen.getByText("Conectado a Gmail como cuenta@ejemplo.test")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Cuenta Gmail para consultar")).not.toBeInTheDocument();
+    expect(screen.getByText(/Consulta automática desde cuenta@ejemplo.test/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: `Ver correos de ${FUENTE.contenido}` }));
     expect(await screen.findByText("Factura de servicio")).toBeInTheDocument();
@@ -80,11 +80,11 @@ describe("PaginaDashboardCorreos", () => {
     expect(within(dialog).getByText("Factura de servicio")).toBeInTheDocument();
   });
 
-  it("permite cambiar la cuenta Gmail desde el selector", async () => {
+  it("muestra las cuentas conectadas como tarjetas consultables, sin barra de selección", async () => {
     renderPagina();
-    const user = userEvent.setup();
-    await user.selectOptions(await screen.findByLabelText("Cuenta Gmail para consultar"), "15");
-    expect(gmailMock.seleccionarCuentaGmail).toHaveBeenCalledWith("15");
+    expect(await screen.findByRole("button", { name: "Ver correos de cuenta@ejemplo.test" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver correos de personal@ejemplo.test" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
   it("consulta cada fuente seleccionada por separado y descarta mensajes de otras direcciones", async () => {
@@ -96,7 +96,7 @@ describe("PaginaDashboardCorreos", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: `Ver correos de ${otraFuente.contenido}` }));
 
-    expect(obtenerCorreosGmail).toHaveBeenLastCalledWith("token-prueba", [otraFuente]);
+    expect(obtenerCorreosGmail).toHaveBeenCalledWith("token-prueba", [otraFuente]);
     const dialog = screen.getByRole("dialog", { name: `Correos de ${otraFuente.contenido}` });
     expect(await within(dialog).findByText("Plan de entretenimiento")).toBeInTheDocument();
     expect(within(dialog).queryByText("Factura de servicio")).not.toBeInTheDocument();
@@ -104,9 +104,10 @@ describe("PaginaDashboardCorreos", () => {
 
   it("muestra el estado vacío cuando el usuario no registró fuentes", async () => {
     obtenerFuentesPorUsuario.mockResolvedValue([]);
+    gmailMock.cuentasGmail = [];
     renderPagina();
-    expect(await screen.findByText(/Agrega una fuente de tipo correo/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Conectar Gmail" })).not.toBeInTheDocument();
+    expect(await screen.findByText(/registra una fuente de correo para consultar mensajes/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Cuenta Gmail para consultar")).not.toBeInTheDocument();
   });
 
   it("muestra errores de carga de fuentes", async () => {
@@ -117,10 +118,11 @@ describe("PaginaDashboardCorreos", () => {
 
   it("mantiene inactiva una fuente hasta que se active desde Configuración", async () => {
     obtenerFuentesPorUsuario.mockResolvedValue([{ ...FUENTE, estado: false }]);
+    gmailMock.cuentasGmail = [];
     renderPagina();
     const card = await screen.findByRole("button", { name: `Ver correos de ${FUENTE.contenido}` });
     expect(card).toBeEnabled();
-    expect(screen.getByText("Inactiva · no se pudo activar")).toBeInTheDocument();
+    expect(screen.getByText("Inactiva · deshabilitada")).toBeInTheDocument();
     await userEvent.click(card);
     expect(await screen.findByText(/Esta dirección está registrada, pero inactiva/)).toBeInTheDocument();
     expect(obtenerCorreosGmail).not.toHaveBeenCalled();

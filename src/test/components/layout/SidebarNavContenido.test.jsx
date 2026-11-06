@@ -73,9 +73,9 @@ describe("SidebarNavContenido", () => {
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
 
-      const bolsillosLink = screen.getByRole("link", { name: /Bolsillos/i });
-      expect(bolsillosLink.getAttribute("href")).toBe("/dashboard/bolsillos");
-      expect(bolsillosLink.querySelector("svg.lucide-users")).toBeTruthy();
+      const gruposLink = screen.getByRole("link", { name: /Grupos/i });
+      expect(gruposLink.getAttribute("href")).toBe("/dashboard/grupos");
+      expect(gruposLink.querySelector("svg.lucide-users")).toBeTruthy();
 
       const contactosLink = screen.getByRole("link", { name: /Contactos/i });
       expect(contactosLink.getAttribute("href")).toBe("/dashboard/contactos");

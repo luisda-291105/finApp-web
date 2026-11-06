@@ -22,7 +22,10 @@ export function ProtectedRoute({ children }) {
   }
 
   if (!usuario || estadoSesion !== "autenticado") {
-    return <Navigate to="/" replace state={{ from: location }} />;
+    return <Navigate to="/" replace state={{
+      from: location,
+      focoEnDestino: location.state?.focoEnDestino === true,
+    }} />;
   }
 
   return children;
