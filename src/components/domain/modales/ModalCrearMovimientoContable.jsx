@@ -21,7 +21,7 @@ function fechaLocal() {
 }
 
 function valoresIniciales() {
-  return { tipo: "GASTO", fecha: fechaLocal(), monto: "", categoria: "", concepto: "" };
+  return { idBolsillo: "", fecha: fechaLocal(), monto: "", categoria: "", concepto: "" };
 }
 
 const opcionesTrampa = (ref) => ({
@@ -41,12 +41,12 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
   useEffect(() => {
     if (abierto) {
       setValores(modo === "editar" && movimiento ? {
-        tipo: movimiento.tipo || bolsillos[0]?.tipo || "GASTO",
+        idBolsillo: movimiento.idBolsillo || "",
         fecha: movimiento.fecha || fechaLocal(),
         monto: formatearPesos(movimiento.monto ?? ""),
         categoria: movimiento.categoria || "",
         concepto: movimiento.concepto || "",
-      } : { ...valoresIniciales(), tipo: bolsillos[0]?.tipo || "GASTO" });
+      } : { ...valoresIniciales(), idBolsillo: bolsillos[0]?.idBolsillo || "" });
       setRespuesta(null);
       setOcupado(false);
     }
@@ -65,7 +65,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
 
   const enviar = async (evento) => {
     evento.preventDefault();
-    const requeridos = ["tipo", "fecha", "monto", "categoria", "concepto"];
+    const requeridos = ["idBolsillo", "fecha", "monto", "categoria"];
     const faltante = requeridos.find((campo) => !String(valores[campo] ?? "").trim());
     const monto = parsearPesos(valores.monto);
 
@@ -75,7 +75,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
         campo: faltante || "monto",
         mensaje: faltante ? "Completa todos los campos requeridos." : "El monto debe ser mayor que cero.",
       });
-      const campoFoco = faltante || "monto";
+      const campoFoco = faltante === "idBolsillo" ? "bolsillo" : faltante || "monto";
       document.getElementById(`nuevo-movimiento-${campoFoco}`)?.focus();
       return;
     }
@@ -107,7 +107,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-emerald-primary">Registro contable</p>
               <h2 id="crear-movimiento-titulo" className="mt-1 font-display text-2xl font-semibold">{modo === "editar" ? "Editar movimiento" : "Nuevo movimiento"}</h2>
-              <p className="mt-1 text-sm text-slate-text">El tipo asigna el movimiento al bolsillo correspondiente.</p>
+              <p className="mt-1 text-sm text-slate-text">Elige el bolsillo al que pertenece este movimiento.</p>
             </div>
             <BotonCerrar ariaLabel="Cerrar nuevo movimiento" alCerrar={cerrar} className="text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary" />
           </header>
@@ -115,10 +115,12 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
           <form onSubmit={enviar} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-tipo">Tipo de movimiento</label>
-                <select id="nuevo-movimiento-tipo" required value={valores.tipo} onChange={(evento) => cambiar("tipo", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
-                  {Array.from(new Set(bolsillos.map((bolsillo) => bolsillo.tipo).filter(Boolean))).map((tipo) => <option key={tipo} value={tipo}>{tipo === "INGRESO" ? "Ingreso" : tipo === "AHORRO" ? "Ahorro" : tipo === "GASTO" ? "Gasto" : tipo}</option>)}
+                <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-bolsillo">Bolsillo</label>
+                <select id="nuevo-movimiento-bolsillo" required value={valores.idBolsillo} onChange={(evento) => cambiar("idBolsillo", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
+                  <option value="" disabled>Selecciona un bolsillo</option>
+                  {bolsillos.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre} · {bolsillo.tipo}{bolsillo.estado === false ? " · Inactivo" : ""}</option>)}
                 </select>
+                {bolsillos.find((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo) && <p className="mt-1 text-xs text-slate-text">Tipo: {bolsillos.find((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo)?.tipo}</p>}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-fecha">Fecha</label>
@@ -134,13 +136,13 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-concepto">Concepto</label>
-              <input id="nuevo-movimiento-concepto" required maxLength={160} placeholder="Ej. Compra semanal del hogar" value={valores.concepto} onChange={(evento) => cambiar("concepto", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text/70" />
+              <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-concepto">Concepto <span className="font-normal text-slate-text">(opcional)</span></label>
+              <input id="nuevo-movimiento-concepto" maxLength={160} placeholder="Ej. Compra semanal del hogar" value={valores.concepto} onChange={(evento) => cambiar("concepto", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text/70" />
             </div>
             <RespuestaModal respuesta={respuesta} />
             <div className="flex justify-end gap-2">
               <button type="button" disabled={ocupado} onClick={cerrar} className="min-h-11 rounded-xl border border-border-line px-4 text-sm font-medium hover:bg-white disabled:opacity-50">Cancelar</button>
-              <button type="submit" disabled={ocupado || bolsillos.length === 0 || !bolsillos.some((bolsillo) => bolsillo.tipo?.toLocaleUpperCase("es-CO") === valores.tipo?.toLocaleUpperCase("es-CO"))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>
+              <button type="submit" disabled={ocupado || bolsillos.length === 0 || !bolsillos.some((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo && (bolsillo.estado !== false || movimiento?.idBolsillo === bolsillo.idBolsillo))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>
             </div>
           </form>
         </section>
