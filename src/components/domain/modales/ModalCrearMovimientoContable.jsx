@@ -21,7 +21,7 @@ function fechaLocal() {
 }
 
 function valoresIniciales() {
-  return { idBolsillo: "", fecha: fechaLocal(), monto: "", categoria: "", concepto: "" };
+  return { idBolsillo: "", tipo: "", fecha: fechaLocal(), monto: "", categoria: "", concepto: "" };
 }
 
 const opcionesTrampa = (ref) => ({
@@ -42,6 +42,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
     if (abierto) {
       setValores(modo === "editar" && movimiento ? {
         idBolsillo: movimiento.idBolsillo || "",
+        tipo: movimiento.tipo || "GASTO",
         fecha: movimiento.fecha || fechaLocal(),
         monto: formatearPesos(movimiento.monto ?? ""),
         categoria: movimiento.categoria || "",
@@ -65,7 +66,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
 
   const enviar = async (evento) => {
     evento.preventDefault();
-    const requeridos = ["idBolsillo", "fecha", "monto", "categoria"];
+    const requeridos = ["idBolsillo", "tipo", "fecha", "monto", "categoria"];
     const faltante = requeridos.find((campo) => !String(valores[campo] ?? "").trim());
     const monto = parsearPesos(valores.monto);
 
@@ -98,6 +99,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
   };
 
   const cerrar = () => { if (!ocupado) alCerrar(); };
+  const tiposMovimiento = Array.from(new Set(["INGRESO", "GASTO", "AHORRO", ...bolsillos.map((bolsillo) => bolsillo.tipo).filter(Boolean)]));
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-bg-dark/70 p-4" onClick={(evento) => evento.target === evento.currentTarget && cerrar()}>
@@ -107,7 +109,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-emerald-primary">Registro contable</p>
               <h2 id="crear-movimiento-titulo" className="mt-1 font-display text-2xl font-semibold">{modo === "editar" ? "Editar movimiento" : "Nuevo movimiento"}</h2>
-              <p className="mt-1 text-sm text-slate-text">Elige el bolsillo al que pertenece este movimiento.</p>
+              <p className="mt-1 text-sm text-slate-text">Los ingresos suman al bolsillo elegido. Los demás tipos se descuentan del bolsillo de origen.</p>
             </div>
             <BotonCerrar ariaLabel="Cerrar nuevo movimiento" alCerrar={cerrar} className="text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary" />
           </header>
@@ -115,12 +117,19 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
           <form onSubmit={enviar} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-bolsillo">Bolsillo</label>
+                <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-bolsillo">{valores.tipo?.toUpperCase() === "INGRESO" ? "Bolsillo donde ingresa" : "Bolsillo de origen"}</label>
                 <select id="nuevo-movimiento-bolsillo" required value={valores.idBolsillo} onChange={(evento) => cambiar("idBolsillo", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
-                  <option value="" disabled>Selecciona un bolsillo</option>
+                  <option value="" disabled>{valores.tipo?.toUpperCase() === "INGRESO" ? "Selecciona dónde registrar el ingreso" : "Selecciona de dónde descontar"}</option>
                   {bolsillos.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre} · {bolsillo.tipo}{bolsillo.estado === false ? " · Inactivo" : ""}</option>)}
                 </select>
                 {bolsillos.find((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo) && <p className="mt-1 text-xs text-slate-text">Tipo: {bolsillos.find((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo)?.tipo}</p>}
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-tipo">Operación</label>
+                <select id="nuevo-movimiento-tipo" required value={valores.tipo} onChange={(evento) => cambiar("tipo", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
+                  <option value="" disabled>Selecciona la operación</option>
+                  {tiposMovimiento.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-fecha">Fecha</label>
@@ -142,7 +151,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
             <RespuestaModal respuesta={respuesta} />
             <div className="flex justify-end gap-2">
               <button type="button" disabled={ocupado} onClick={cerrar} className="min-h-11 rounded-xl border border-border-line px-4 text-sm font-medium hover:bg-white disabled:opacity-50">Cancelar</button>
-              <button type="submit" disabled={ocupado || bolsillos.length === 0 || !bolsillos.some((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo && (bolsillo.estado !== false || movimiento?.idBolsillo === bolsillo.idBolsillo))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>
+              <button type="submit" disabled={ocupado || !valores.tipo || !bolsillos.some((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo && (bolsillo.estado !== false || movimiento?.idBolsillo === bolsillo.idBolsillo))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>
             </div>
           </form>
         </section>
