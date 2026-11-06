@@ -39,3 +39,28 @@ export async function conversarConAsistente(peticion, signal) {
   }
   return datos;
 }
+
+/** Confirma una operación propuesta por el asistente; el servidor vuelve a validar la sesión y propietario. */
+export async function confirmarAccionAsistente(token, signal) {
+  let respuesta;
+  try {
+    respuesta = await fetch(getEndpoint("asistente.confirmar"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ token }),
+      signal,
+    });
+  } catch (error) {
+    if (error.name === "AbortError") throw error;
+    throw new Error("No se pudo conectar con FinApp para confirmar la operación.");
+  }
+  const texto = await respuesta.text().catch(() => "");
+  let datos = {};
+  try { datos = JSON.parse(texto); } catch { datos = { mensaje: texto }; }
+  if (!respuesta.ok) {
+    console.error("[Asistente][Error al confirmar]", respuesta.status, datos);
+    throw new Error(datos.mensaje || datos.error || `Error HTTP ${respuesta.status}`);
+  }
+  return datos;
+}

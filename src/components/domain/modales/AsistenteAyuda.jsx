@@ -13,7 +13,7 @@ import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
 import { useAsistenteHistorial } from "../../../hooks/useAsistenteHistorial";
-import { conversarConAsistente } from "../../../services/asistenteServicio";
+import { confirmarAccionAsistente as confirmarAccionEnBackend, conversarConAsistente } from "../../../services/asistenteServicio";
 
 const SUGERENCIAS = [
   "¿Qué contactos tengo registrados?",
@@ -82,6 +82,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
         contenido: datos.respuesta,
         fuentes: datos.fuentes || [],
         aviso: datos.aviso || "",
+        accionPendiente: datos.accionPendiente || null,
       }]);
     } catch (fallo) {
       if (fallo.name !== "AbortError") {
@@ -99,6 +100,33 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
   const enviarFormulario = (evento) => {
     evento.preventDefault();
     void enviarMensaje(entrada);
+  };
+
+  const confirmarOperacion = async (mensaje) => {
+    if (!mensaje?.accionPendiente?.token || cargando) return;
+    setCargando(true);
+    setError("");
+    const controlador = new AbortController();
+    peticionRef.current = controlador;
+    try {
+      const resultado = await confirmarAccionEnBackend(mensaje.accionPendiente.token, controlador.signal);
+      setMensajes((actuales) => [...actuales.map((item) => item === mensaje
+        ? { ...item, accionPendiente: null }
+        : item), { rol: "assistant", contenido: resultado.respuesta || "Operación completada." }]);
+    } catch (fallo) {
+      if (fallo.name !== "AbortError") setError(fallo.message || "No se pudo completar la operación.");
+    } finally {
+      if (peticionRef.current === controlador) {
+        peticionRef.current = null;
+        setCargando(false);
+      }
+    }
+  };
+
+  const cancelarOperacion = (mensaje) => {
+    setMensajes((actuales) => [...actuales.map((item) => item === mensaje
+      ? { ...item, accionPendiente: null }
+      : item), { rol: "assistant", contenido: "Operación cancelada; no realicé cambios." }]);
   };
 
   return (
@@ -159,7 +187,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
             {mensajes.length === 0 ? (
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-slate-text">
-                  Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app.
+                  Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos. Cada cambio requiere tu confirmación.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SUGERENCIAS.map((sugerencia) => (
@@ -185,6 +213,22 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                     >
                       <p className="whitespace-pre-line leading-relaxed">{mensaje.contenido}</p>
                       {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
+                      {mensaje.accionPendiente && (
+                        <div className="mt-3 rounded-xl border border-border-line/60 bg-bg-dark/5 p-3">
+                          <p className="text-xs font-semibold">{mensaje.accionPendiente.descripcion}</p>
+                          <p className="mt-1 text-[11px] text-slate-text">Solo se aplicará a tus datos al confirmar.</p>
+                          <div className="mt-3 flex justify-end gap-2">
+                            <button type="button" onClick={() => cancelarOperacion(mensaje)} disabled={cargando}
+                              className="rounded-lg border border-border-line/60 px-3 py-1.5 text-xs hover:bg-bg-cream disabled:opacity-50">
+                              Cancelar
+                            </button>
+                            <button type="button" onClick={() => void confirmarOperacion(mensaje)} disabled={cargando}
+                              className="rounded-lg bg-emerald-primary px-3 py-1.5 text-xs font-semibold text-bg-cream hover:bg-emerald-hover disabled:opacity-50">
+                              {cargando ? "Procesando…" : "Confirmar"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -195,7 +239,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
 
           <footer className="flex shrink-0 flex-col gap-2 border-t border-border-line/30 px-5 py-4">
             <p id="asistente-aviso" className="text-xs text-slate-text">
-              Puedes preguntar por tus contactos, grupos, correos y tarjetas. El asistente conserva los últimos 20 mensajes para dar continuidad. No escribas contraseñas ni CVV.
+              Puedes consultar y administrar tus registros. Los cambios requieren confirmación; las tarjetas, la conexión de Gmail y tu perfil se administran en sus secciones. No escribas contraseñas ni CVV.
             </p>
             {error && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
