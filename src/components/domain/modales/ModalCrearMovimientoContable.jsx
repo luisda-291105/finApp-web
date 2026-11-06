@@ -13,14 +13,15 @@ import RespuestaModal from "../../ui/RespuestaModal";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
+import { desagruparPesos, formatearPesos, limpiarEntradaPesos, parsearPesos } from "../../../utils/formatoPesos";
 
 function fechaLocal() {
   const hoy = new Date();
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
 }
 
-function valoresIniciales(idBolsillo) {
-  return { idBolsillo: idBolsillo || "", tipo: "GASTO", fecha: fechaLocal(), monto: "", categoria: "", concepto: "" };
+function valoresIniciales() {
+  return { tipo: "GASTO", fecha: fechaLocal(), monto: "", categoria: "", concepto: "" };
 }
 
 const opcionesTrampa = (ref) => ({
@@ -30,20 +31,20 @@ const opcionesTrampa = (ref) => ({
   returnFocusOnDeactivate: false,
 });
 
-/** Permite crear movimientos con validación y bolsillo explícito. */
-export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], bolsilloIdInicial, triggerRef, alCerrar, alGuardar }) {
+/** Permite crear movimientos, que se asignan al bolsillo del tipo elegido. */
+export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], triggerRef, alCerrar, alGuardar }) {
   const panelRef = useRef(null);
-  const [valores, setValores] = useState(() => valoresIniciales(bolsilloIdInicial));
+  const [valores, setValores] = useState(() => valoresIniciales());
   const [respuesta, setRespuesta] = useState(null);
   const [ocupado, setOcupado] = useState(false);
 
   useEffect(() => {
     if (abierto) {
-      setValores(valoresIniciales(bolsilloIdInicial));
+      setValores({ ...valoresIniciales(), tipo: bolsillos[0]?.tipo || "GASTO" });
       setRespuesta(null);
       setOcupado(false);
     }
-  }, [abierto, bolsilloIdInicial]);
+  }, [abierto, bolsillos]);
 
   useCierreConEsc({ activo: abierto, zIndex: 70, alCerrar: () => !ocupado && alCerrar() });
   useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar: () => !ocupado && alCerrar() });
@@ -58,9 +59,9 @@ export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], 
 
   const enviar = async (evento) => {
     evento.preventDefault();
-    const requeridos = ["idBolsillo", "fecha", "monto", "categoria", "concepto"];
+    const requeridos = ["tipo", "fecha", "monto", "categoria", "concepto"];
     const faltante = requeridos.find((campo) => !String(valores[campo] ?? "").trim());
-    const monto = Number(valores.monto);
+    const monto = parsearPesos(valores.monto);
 
     if (faltante || !Number.isFinite(monto) || monto <= 0) {
       setRespuesta({
@@ -68,7 +69,7 @@ export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], 
         campo: faltante || "monto",
         mensaje: faltante ? "Completa todos los campos requeridos." : "El monto debe ser mayor que cero.",
       });
-      const campoFoco = faltante === "idBolsillo" ? "bolsillo" : faltante || "monto";
+      const campoFoco = faltante || "monto";
       document.getElementById(`nuevo-movimiento-${campoFoco}`)?.focus();
       return;
     }
@@ -100,26 +101,17 @@ export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], 
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-emerald-primary">Registro contable</p>
               <h2 id="crear-movimiento-titulo" className="mt-1 font-display text-2xl font-semibold">Nuevo movimiento</h2>
-              <p className="mt-1 text-sm text-slate-text">Elige el bolsillo al que pertenece este movimiento.</p>
+              <p className="mt-1 text-sm text-slate-text">El tipo asigna el movimiento al bolsillo correspondiente.</p>
             </div>
             <BotonCerrar ariaLabel="Cerrar nuevo movimiento" alCerrar={cerrar} className="text-bg-dark hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary" />
           </header>
 
           <form onSubmit={enviar} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-bolsillo">Bolsillo</label>
-              <select id="nuevo-movimiento-bolsillo" required value={valores.idBolsillo} onChange={(evento) => cambiar("idBolsillo", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
-                <option value="" disabled>Selecciona un bolsillo</option>
-                {bolsillos.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre}</option>)}
-              </select>
-            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-tipo">Tipo de movimiento</label>
                 <select id="nuevo-movimiento-tipo" required value={valores.tipo} onChange={(evento) => cambiar("tipo", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
-                  <option value="INGRESO">Ingreso</option>
-                  <option value="GASTO">Gasto</option>
-                  <option value="AHORRO">Ahorro</option>
+                  {Array.from(new Set(bolsillos.map((bolsillo) => bolsillo.tipo).filter(Boolean))).map((tipo) => <option key={tipo} value={tipo}>{tipo === "INGRESO" ? "Ingreso" : tipo === "AHORRO" ? "Ahorro" : "Gasto"}</option>)}
                 </select>
               </div>
               <div>
@@ -128,7 +120,7 @@ export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], 
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-monto">Monto (COP)</label>
-                <input id="nuevo-movimiento-monto" required type="number" min="0.01" step="0.01" placeholder="Ej. 125000" value={valores.monto} onChange={(evento) => cambiar("monto", evento.target.value)} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text/70" />
+                <input id="nuevo-movimiento-monto" required type="text" inputMode="decimal" placeholder="12.000,00" value={valores.monto} onFocus={() => cambiar("monto", desagruparPesos(valores.monto))} onChange={(evento) => cambiar("monto", limpiarEntradaPesos(evento.target.value))} onBlur={() => { const numero = parsearPesos(valores.monto); cambiar("monto", numero === null ? valores.monto : formatearPesos(numero)); }} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text/70" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-categoria">Categoría</label>
@@ -142,7 +134,7 @@ export default function ModalCrearMovimientoContable({ abierto, bolsillos = [], 
             <RespuestaModal respuesta={respuesta} />
             <div className="flex justify-end gap-2">
               <button type="button" disabled={ocupado} onClick={cerrar} className="min-h-11 rounded-xl border border-border-line px-4 text-sm font-medium hover:bg-white disabled:opacity-50">Cancelar</button>
-              <button type="submit" disabled={ocupado || bolsillos.length === 0} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : "Guardar movimiento"}</button>
+              <button type="submit" disabled={ocupado || bolsillos.length === 0 || !bolsillos.some((bolsillo) => bolsillo.tipo === valores.tipo)} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : "Guardar movimiento"}</button>
             </div>
           </form>
         </section>

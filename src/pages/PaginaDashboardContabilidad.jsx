@@ -64,9 +64,9 @@ export default function PaginaDashboardContabilidad() {
 
   useEffect(() => {
     let vigente = true;
-    if (!usuario?.idUsuario) {
+    if (!usuario?.idUsuario || cargandoBolsillos) {
       setMovimientos([]);
-      setCargandoMovimientos(false);
+      setCargandoMovimientos(Boolean(usuario?.idUsuario && cargandoBolsillos));
       return undefined;
     }
     setCargandoMovimientos(true);
@@ -82,7 +82,7 @@ export default function PaginaDashboardContabilidad() {
       }
     }).finally(() => { if (vigente) setCargandoMovimientos(false); });
     return () => { vigente = false; };
-  }, [usuario?.idUsuario, filtroMovimiento, revisionMovimientos]);
+  }, [usuario?.idUsuario, cargandoBolsillos, filtroMovimiento, revisionMovimientos]);
 
   useEffect(() => {
     let vigente = true;
@@ -218,7 +218,7 @@ export default function PaginaDashboardContabilidad() {
       </Card>
 
       <ModalBolsillo abierto={modalBolsillo.abierto} modo={modalBolsillo.modo} bolsillo={modalBolsillo.bolsillo} triggerRef={disparadorBolsilloRef} alCerrar={() => setModalBolsillo({ abierto: false, modo: "crear", bolsillo: null })} alGuardar={guardarBolsillo} alEliminar={borrarBolsillo} />
-      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} bolsillos={bolsillosActivos} bolsilloIdInicial={bolsillosActivos[0]?.idBolsillo} triggerRef={disparadorMovimientoRef} alCerrar={() => setCrearMovimientoAbierto(false)} alGuardar={guardarMovimiento} />
+      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} bolsillos={bolsillosActivos} triggerRef={disparadorMovimientoRef} alCerrar={() => setCrearMovimientoAbierto(false)} alGuardar={guardarMovimiento} />
     </section>
   );
 }
