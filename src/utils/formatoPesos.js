@@ -45,3 +45,11 @@ export function limpiarEntradaPesos(valor) {
   if (fracciones.length === 0) return parteEntera;
   return `${parteEntera},${fracciones.join("").slice(0, 2)}`;
 }
+
+/** Agrega separadores de miles mientras se escribe, conservando la coma decimal. */
+export function agruparEntradaPesos(valor) {
+  const limpio = limpiarEntradaPesos(valor);
+  const [entero = "", ...fracciones] = limpio.split(",");
+  const enteroAgrupado = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return fracciones.length ? `${enteroAgrupado},${fracciones.join("")}` : enteroAgrupado;
+}

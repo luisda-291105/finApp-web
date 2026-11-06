@@ -17,6 +17,7 @@ import ModalDetalleRegistro from "../components/domain/modales/ModalDetalleRegis
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsilloServicio";
 import { actualizarMovimiento, crearMovimiento, eliminarMovimiento, listarMovimientos, obtenerResumenesBolsillos } from "../services/movimientoContableServicio";
+import { formatearPesos } from "../utils/formatoPesos";
 
 const formatoMoneda = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -210,7 +211,7 @@ export default function PaginaDashboardContabilidad() {
                   <div><p className="text-xs text-slate-text">Gastos</p><p className="mt-0.5 text-sm font-medium text-cat-expense">{formatoMoneda.format(Number(resumen.gastos) || 0)}</p></div>
                 </div>}
                 <div className="border-t border-border-line/30 pt-2">
-                  <div className="flex justify-between gap-2 text-xs"><span className="text-slate-text">Objetivo</span><span className="font-medium text-bg-dark">{formatoMoneda.format(objetivo)}</span></div>
+                  <div className="flex justify-between gap-2 text-xs"><span className="text-slate-text">Objetivo (COP)</span><span className="font-medium text-bg-dark">{formatearPesos(objetivo)}</span></div>
                   {objetivo > 0 && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border-line/30" role="progressbar" aria-label={`Avance del objetivo de ${bolsillo.nombre}`} aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(avance)}><div className="h-full rounded-full bg-emerald-primary transition-[width]" style={{ width: `${avance}%` }} /></div>}
                 </div>
               </div>;

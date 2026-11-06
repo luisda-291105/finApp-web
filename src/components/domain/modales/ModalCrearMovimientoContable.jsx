@@ -13,7 +13,7 @@ import RespuestaModal from "../../ui/RespuestaModal";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
-import { desagruparPesos, formatearPesos, limpiarEntradaPesos, parsearPesos } from "../../../utils/formatoPesos";
+import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../utils/formatoPesos";
 
 function fechaLocal() {
   const hoy = new Date();
@@ -126,7 +126,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-monto">Monto (COP)</label>
-                <input id="nuevo-movimiento-monto" required type="text" inputMode="decimal" placeholder="12.000,00" value={valores.monto} onFocus={() => cambiar("monto", desagruparPesos(valores.monto))} onChange={(evento) => cambiar("monto", limpiarEntradaPesos(evento.target.value))} onBlur={() => { const numero = parsearPesos(valores.monto); cambiar("monto", numero === null ? valores.monto : formatearPesos(numero)); }} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text/70" />
+                <input id="nuevo-movimiento-monto" required type="text" inputMode="decimal" placeholder="12.000,00" value={valores.monto} onFocus={() => cambiar("monto", desagruparPesos(valores.monto))} onChange={(evento) => cambiar("monto", agruparEntradaPesos(evento.target.value))} onBlur={() => { const numero = parsearPesos(valores.monto); cambiar("monto", numero === null ? valores.monto : formatearPesos(numero)); }} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text/70" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-categoria">Categoría</label>
