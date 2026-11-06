@@ -36,7 +36,7 @@ const TITULO = "Asistente de FinApp";
 const SUBTITULO = "Consulta tus datos o pregunta sobre cómo usar la app.";
 const ARIA_CERRAR = "Cerrar asistente de ayuda";
 const TEXTO_VACIO =
-  "Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app.";
+  "Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos. Cada cambio requiere tu confirmación.";
 const ARIA_LOG = "Mensajes del asistente";
 const SUGERENCIAS = [
   "¿Qué contactos tengo registrados?",
@@ -48,7 +48,7 @@ const LABEL_ENTRADA = "Tu pregunta";
 const PLACEHOLDER = "Escribe una pregunta con el contexto que necesites…";
 const BOTON_ENVIAR = "Enviar";
 const AVISO_PIE =
-  "Puedes preguntar por tus contactos, grupos, correos y tarjetas. El asistente conserva los últimos 20 mensajes para dar continuidad. No escribas contraseñas ni CVV.";
+  "Puedes consultar y administrar tus registros. Los cambios requieren confirmación; las tarjetas, la conexión de Gmail y tu perfil se administran en sus secciones. No escribas contraseñas ni CVV.";
 
 const renderizar = (props = {}) =>
   render(<AsistenteAyuda abierto alCerrar={vi.fn()} {...props} />);

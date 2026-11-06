@@ -285,7 +285,7 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
     useBreakpoint.mockReturnValue(VERSION_MOVIL);
   });
 
-  it("conserva los textos estáticos aprobados de la 014", async () => {
+  it("presenta consultas y CRUD con confirmación en el asistente", async () => {
       const user = userEvent.setup();
       renderDashboard();
       const dialogo = await abrirAsistente(user);
@@ -294,18 +294,18 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       [
         "Asistente de FinApp",
         "Consulta tus datos o pregunta sobre cómo usar la app.",
-        "Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app.",
+        "Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos. Cada cambio requiere tu confirmación.",
         "¿Qué contactos tengo registrados?",
         "¿Qué correos están activos?",
         "¿Cuáles son mis grupos activos?",
         "¿Dónde veo mis tarjetas?",
-        "Puedes preguntar por tus contactos, grupos, correos y tarjetas. No escribas contraseñas ni CVV.",
+        "Puedes consultar y administrar tus registros. Los cambios requieren confirmación; las tarjetas, la conexión de Gmail y tu perfil se administran en sus secciones. No escribas contraseñas ni CVV.",
         "Tu pregunta",
         "Enviar",
       ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
 
       expect(within(dialogo).getByLabelText("Tu pregunta")).toBeInTheDocument();
-      expect(within(dialogo).getByPlaceholderText("Escribe una pregunta…")).toBeInTheDocument();
+      expect(within(dialogo).getByPlaceholderText("Escribe una pregunta con el contexto que necesites…")).toBeInTheDocument();
       expect(within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })).toBeInTheDocument();
       expect(within(dialogo).getByRole("log", { name: "Mensajes del asistente" })).toBeInTheDocument();
       expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
@@ -317,7 +317,7 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       const dialogo = await abrirAsistente(user);
 
       // En estado vacío el componente muestra las sugerencias y el texto de aviso
-      expect(dialogo).toHaveTextContent("Pregunta por tus contactos, grupos, correos o tarjetas, o sobre cómo usar la app");
+      expect(dialogo).toHaveTextContent("Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos");
       expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
       expect(within(dialogo).queryByRole("button", { name: /conversación/i })).not.toBeInTheDocument();
     });
