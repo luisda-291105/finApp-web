@@ -535,6 +535,7 @@ export default function PaginaDashboardInicio() {
               </label>
               <input
                 id="muestra-titulo"
+                placeholder="Ej. Mis gastos de la semana"
                 type="text"
                 maxLength={255}
                 value={borrador.titulo}
@@ -776,6 +777,7 @@ export default function PaginaDashboardInicio() {
         {/* Cabecera exclusiva de esta página: título "dashboard" y botón "crear muestra" a la derecha */}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
+            <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
             <h1 id="dashboard-title" className="font-display text-3xl font-medium text-bg-dark">
               dashboard
             </h1>
