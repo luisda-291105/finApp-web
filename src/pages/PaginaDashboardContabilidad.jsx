@@ -18,6 +18,7 @@ import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsilloServicio";
 import { actualizarMovimiento, crearMovimiento, eliminarMovimiento, listarMovimientos, obtenerResumenesBolsillos } from "../services/movimientoContableServicio";
 import { formatearPesos } from "../utils/formatoPesos";
+import { obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
 
 const formatoMoneda = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -44,6 +45,7 @@ export default function PaginaDashboardContabilidad() {
   const [errorEliminarMovimiento, setErrorEliminarMovimiento] = useState("");
   const [respuesta, setRespuesta] = useState(null);
   const [bolsillos, setBolsillos] = useState([]);
+  const [tarjetas, setTarjetas] = useState([]);
   const [cargandoBolsillos, setCargandoBolsillos] = useState(true);
   const [errorBolsillos, setErrorBolsillos] = useState("");
   const [modalBolsillo, setModalBolsillo] = useState({ abierto: false, modo: "crear", bolsillo: null });
@@ -61,6 +63,17 @@ export default function PaginaDashboardContabilidad() {
     }).catch((fallo) => {
       if (vigente) { setBolsillos([]); setErrorBolsillos(fallo?.message || "No se pudieron cargar los bolsillos."); }
     }).finally(() => { if (vigente) setCargandoBolsillos(false); });
+    return () => { vigente = false; };
+  }, [usuario?.idUsuario]);
+
+  useEffect(() => {
+    let vigente = true;
+    if (!usuario?.idUsuario) { setTarjetas([]); return undefined; }
+    obtenerTarjetasPorUsuario(usuario.idUsuario).then((respuesta) => {
+      if (!vigente) return;
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      setTarjetas(lista);
+    }).catch(() => { if (vigente) setTarjetas([]); });
     return () => { vigente = false; };
   }, [usuario?.idUsuario]);
 
@@ -164,6 +177,11 @@ export default function PaginaDashboardContabilidad() {
   };
 
   const bolsillosActivos = bolsillos.filter((bolsillo) => bolsillo.estado !== false);
+  const bolsillosConSaldo = bolsillos.map((bolsillo) => ({
+    ...bolsillo,
+    saldoDisponible: Number(resumenesBolsillos[bolsillo.idBolsillo]?.saldo) || 0,
+  }));
+  const bolsillosMovimiento = movimientoEditando ? bolsillosConSaldo : bolsillosConSaldo.filter((bolsillo) => bolsillo.estado !== false);
   const filtrosMovimiento = [
     { valor: "TODOS", etiqueta: "Todos" },
     ...Array.from(new Set([...TIPOS_BASE, ...bolsillos.map((bolsillo) => bolsillo.tipo).filter(Boolean)]))
@@ -242,7 +260,7 @@ export default function PaginaDashboardContabilidad() {
             const monto = Number(movimiento.monto) || 0;
             const fecha = movimiento.fecha ? new Date(`${movimiento.fecha}T00:00:00Z`) : null;
             return <li key={movimiento.idMovimiento} className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-cream ${tono}`}><IconoMovimiento className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><p className="truncate font-medium text-bg-dark">{movimiento.concepto?.trim() || movimiento.categoria}</p><p className="truncate text-xs text-emerald-primary">{movimiento.nombreBolsillo}</p>{movimiento.concepto?.trim() && <p className="truncate text-xs text-slate-text">{movimiento.categoria}</p>}<time className="text-sm text-slate-text" dateTime={movimiento.fecha}>{fecha && !Number.isNaN(fecha.getTime()) ? formatoFecha.format(fecha) : movimiento.fecha}</time></div></div>
+              <div className="flex min-w-0 items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-cream ${tono}`}><IconoMovimiento className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><p className="truncate font-medium text-bg-dark">{movimiento.concepto?.trim() || movimiento.categoria}</p><p className="truncate text-xs text-emerald-primary">{movimiento.nombreBolsillo}</p>{movimiento.concepto?.trim() && <p className="truncate text-xs text-slate-text">{movimiento.categoria}</p>}{movimiento.origenNombre && <p className="truncate text-xs text-slate-text">Origen: {movimiento.origenNombre}</p>}<time className="text-sm text-slate-text" dateTime={movimiento.fecha}>{fecha && !Number.isNaN(fecha.getTime()) ? formatoFecha.format(fecha) : movimiento.fecha}</time></div></div>
               <div className="flex flex-col items-stretch gap-2 pl-[52px] sm:items-end sm:pl-0"><div className="flex items-center justify-between gap-4 sm:justify-end"><span className="rounded-full bg-bg-cream px-2.5 py-1 text-xs font-medium text-slate-text">{tipo}</span><span className={`min-w-28 text-right font-medium tabular-nums ${tono}`}>{ingreso ? "+" : "−"}{formatoMoneda.format(monto)}</span></div><div className="flex justify-end gap-1.5"><button type="button" onClick={(evento) => editarMovimiento(movimiento, evento)} aria-label={`Editar movimiento ${movimiento.concepto || movimiento.categoria}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"><Pencil className="h-3.5 w-3.5" aria-hidden="true" />Editar</button><button type="button" onClick={(evento) => { disparadorMovimientoRef.current = evento.currentTarget; setErrorEliminarMovimiento(""); setMovimientoEliminando(movimiento); }} aria-label={`Eliminar movimiento ${movimiento.concepto || movimiento.categoria}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" />Eliminar</button></div></div>
             </li>;
           })}
@@ -250,7 +268,7 @@ export default function PaginaDashboardContabilidad() {
       </Card>
 
       <ModalBolsillo abierto={modalBolsillo.abierto} modo={modalBolsillo.modo} bolsillo={modalBolsillo.bolsillo} bolsillos={bolsillos} triggerRef={disparadorBolsilloRef} alCerrar={() => setModalBolsillo({ abierto: false, modo: "crear", bolsillo: null })} alGuardar={guardarBolsillo} alEliminar={borrarBolsillo} />
-      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} bolsillos={movimientoEditando ? bolsillos : bolsillosActivos} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); }} alGuardar={guardarMovimiento} />
+      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} bolsillos={bolsillosMovimiento} tarjetas={tarjetas} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); }} alGuardar={guardarMovimiento} />
       <ModalDetalleRegistro abierto={Boolean(movimientoEliminando)} titulo="Eliminar movimiento" triggerRef={disparadorMovimientoRef} alCerrar={() => !eliminandoMovimiento && setMovimientoEliminando(null)} ancho="max-w-md">
         <p className="mb-4 text-sm text-slate-text">¿Eliminar definitivamente el movimiento <strong className="text-bg-dark">{movimientoEliminando?.concepto || movimientoEliminando?.categoria}</strong>? Esta acción no se puede deshacer.</p>
         {errorEliminarMovimiento && <p role="alert" className="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{errorEliminarMovimiento}</p>}
