@@ -79,6 +79,43 @@
 :root[data-tema="oscuro"] :is(.border-red-200, .border-red-700\/30) { border-color: #71363d; }
 :root[data-tema="oscuro"] :is(.text-red-700, .text-red-900) { color: #fca5a5; }
 
+/* La landing conserva su paleta propia aunque el dashboard esté en tema oscuro. */
+.landing-theme {
+  color-scheme: light;
+  --color-bg-cream: #f7f6f2;
+  --color-slate-text: #5a6475;
+  --color-border-line: #e0ddd8;
+}
+
+:root[data-tema="oscuro"] .landing-theme .glass-card {
+  background: #ffffff;
+  color: #0f1117;
+  border-color: color-mix(in srgb, #e0ddd8 80%, transparent);
+}
+
+:root[data-tema="oscuro"] .landing-theme .bg-white {
+  background-color: #ffffff;
+}
+
+.google-auth-button {
+  border-color: #dadce0;
+  background-color: #ffffff;
+  color: #3c4043;
+  box-shadow: 0 1px 2px rgb(60 64 67 / 20%);
+}
+
+.google-auth-button:hover:not(:disabled) {
+  border-color: #c6c9ce;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 5px rgb(60 64 67 / 25%);
+}
+
+.google-auth-button:disabled {
+  background-color: #ffffff;
+  color: #5f6368;
+  opacity: 0.85;
+}
+
 /* Grilla técnica del Hero */
 .hero-grid {
   background-image: 

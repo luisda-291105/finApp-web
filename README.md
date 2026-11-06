@@ -852,3 +852,16 @@ Correo + WhatsApp + bancos + calendario + contactos
  El objetivo no es controlar la vida de la persona, sino **darle una visión centralizada y organizada de la información que decide conectar para que pueda gestionarla de forma más sencilla.**
 
  Este documento ya puede funcionar como **base conceptual del proyecto**. La siguiente evolución natural sería separar esta visión de la documentación técnica: `README.md` para explicar FinApp rápidamente y documentos específicos para **arquitectura, permisos, modelo de datos, IA/n8n y roadmap**.
+
+
+---
+
+## Landing pública — paso a paso
+
+La ruta pública `/` presenta la landing de FinApp, que incluye la sección **“Cómo funciona”** con los tres pasos guiados:
+
+1. **Crea tu cuenta en minutos** — registro simple y seguro, sin tarjetas de crédito ni costos ocultos.
+2. **Registra tus movimientos** — categoriza ingresos, salidas y ahorros con una interfaz ágil pensada para el día a día.
+3. **Toma el control financiero** — monitorea el resumen mensual y toma decisiones con datos claros y actualizados.
+
+La paleta de esta sección conserva los literales hexadecimales heredados de la landing (`bg-white`, `border-[#e0ddd8]/60`, `text-[#1a7a5e]`, `text-[#0f1117]`, `text-[#e0ddd8]/70`, `text-[#5a6475]`), tal como se decide en `PaginaInicio.jsx`. Se mantienen fijos sin depender del modo claro/oscuro del tema, ya que la página de inicio es una vista pública estática y no debe verse afectada por la preferencia de tema del usuario.

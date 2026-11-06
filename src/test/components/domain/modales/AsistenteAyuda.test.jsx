@@ -45,10 +45,10 @@ const SUGERENCIAS = [
   "¿Dónde veo mis tarjetas?",
 ];
 const LABEL_ENTRADA = "Tu pregunta";
-const PLACEHOLDER = "Escribe una pregunta…";
+const PLACEHOLDER = "Escribe una pregunta con el contexto que necesites…";
 const BOTON_ENVIAR = "Enviar";
 const AVISO_PIE =
-  "Puedes preguntar por tus contactos, grupos, correos y tarjetas. No escribas contraseñas ni CVV.";
+  "Puedes preguntar por tus contactos, grupos, correos y tarjetas. El asistente conserva los últimos 20 mensajes para dar continuidad. No escribas contraseñas ni CVV.";
 
 const renderizar = (props = {}) =>
   render(<AsistenteAyuda abierto alCerrar={vi.fn()} {...props} />);
@@ -284,7 +284,7 @@ describe("AsistenteAyuda — pie: aviso, campo y «Enviar» (T5)", () => {
     expect(entrada).toHaveAttribute("placeholder", PLACEHOLDER);
   });
 
-  it("el campo es controlado, tiene maxLength 500 y escribir no altera el log", async () => {
+  it("el campo es controlado, tiene maxLength 2000 y escribir no altera el log", async () => {
       const usuario = userEvent.setup();
 
       renderizar();
@@ -292,7 +292,7 @@ describe("AsistenteAyuda — pie: aviso, campo y «Enviar» (T5)", () => {
       const entrada = screen.getByLabelText(LABEL_ENTRADA);
       const log = screen.getByRole("log");
 
-      expect(entrada).toHaveAttribute("maxLength", "500");
+      expect(entrada).toHaveAttribute("maxLength", "2000");
       expect(entrada).toHaveValue("");
 
       await usuario.type(entrada, "¿Cómo salgo del demo?");

@@ -21,6 +21,7 @@ const SUGERENCIAS = [
   "¿Cuáles son mis grupos activos?",
   "¿Dónde veo mis tarjetas?",
 ];
+const MAX_CARACTERES_PREGUNTA = 2000;
 
 function crearOpcionesTrampa(refPanel) {
   return {
@@ -61,9 +62,9 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
 
   const enviarMensaje = async (texto, incluirEnConversacion = true) => {
     const pregunta = String(texto || "").trim();
-    if (!pregunta || cargando || pregunta.length > 500) return;
+    if (!pregunta || cargando || pregunta.length > MAX_CARACTERES_PREGUNTA) return;
 
-    const historial = mensajes.slice(-8).map(({ rol, contenido }) => ({ rol, contenido }));
+    const historial = mensajes.slice(-20).map(({ rol, contenido }) => ({ rol, contenido }));
     if (incluirEnConversacion) {
       setMensajes((actuales) => [...actuales, { rol: "user", contenido: pregunta }]);
     }
@@ -194,7 +195,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
 
           <footer className="flex shrink-0 flex-col gap-2 border-t border-border-line/30 px-5 py-4">
             <p id="asistente-aviso" className="text-xs text-slate-text">
-              Puedes preguntar por tus contactos, grupos, correos y tarjetas. No escribas contraseñas ni CVV.
+              Puedes preguntar por tus contactos, grupos, correos y tarjetas. El asistente conserva los últimos 20 mensajes para dar continuidad. No escribas contraseñas ni CVV.
             </p>
             {error && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -208,9 +209,9 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                 id="asistente-entrada"
                 type="text"
                 value={entrada}
-                maxLength={500}
+                maxLength={MAX_CARACTERES_PREGUNTA}
                 onChange={(evento) => setEntrada(evento.target.value)}
-                placeholder="Escribe una pregunta…"
+                placeholder="Escribe una pregunta con el contexto que necesites…"
                 disabled={cargando}
                 className="min-w-0 flex-1 rounded-xl border border-border-line/60 bg-bg-cream px-3 py-2 text-sm text-bg-dark placeholder:text-slate-text outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60"
               />
@@ -222,6 +223,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                 {cargando ? "Enviando…" : "Enviar"}
               </button>
             </form>
+            <p className="text-right text-[11px] text-slate-text">{entrada.length}/{MAX_CARACTERES_PREGUNTA}</p>
           </footer>
         </section>
       </FocusTrap>

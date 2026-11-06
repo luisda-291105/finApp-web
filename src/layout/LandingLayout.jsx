@@ -23,7 +23,7 @@ import Footer from "../components/layout/Footer";
  */
 export default function LandingLayout({ alAbrirAuth, children }) {
   return (
-    <div className="min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body">
+    <div data-testid="landing-theme" className="landing-theme min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body">
       {/* Header principal */}
       <Header alAbrirAuth={alAbrirAuth} modo="landing" />
 
