@@ -1,10 +1,10 @@
 /**
- * @uso        Pagina de Bolsillos Grupales conectada al backend (grupos)
+ * @uso        Página de Grupos con fuentes vinculadas y chat
  * @funciones  PaginaDashboardBolsillos()
  * @datos      Obtiene grupos desde grupoServicio.obtenerGrupos()
  * @eventos    click en Compartir entrada, click en Nuevo bolsillo
  * @estados    grupos (array), cargando (boolean), error (string), feedbackCopia (string), mensajeCrear (boolean)
- * @usadoPor   App.jsx (ruta /dashboard/bolsillos)
+ * @usadoPor   App.jsx (ruta /dashboard/grupos)
  */
 
 
@@ -86,10 +86,10 @@ export default function PaginaDashboardBolsillos() {
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
           <h1 id="bolsillos-titulo" className="mt-1 font-display text-3xl font-medium text-bg-dark">
-            Bolsillos Grupales
+            Grupos
           </h1>
           <p className="mt-1 text-sm text-slate-text">
-            Gestiona fondos colaborativos, fuentes compartidas y aportes de tu equipo.
+            Gestiona tus grupos, sus fuentes vinculadas y la conversación de cada grupo.
           </p>
         </div>
 
@@ -97,11 +97,11 @@ export default function PaginaDashboardBolsillos() {
           type="button"
           ref={disparadorRef}
           onClick={() => setModalAbierto(true)}
-          aria-label="Crear nuevo bolsillo grupal"
+          aria-label="Crear nuevo grupo"
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-primary hover:bg-emerald-hover text-bg-cream text-sm font-medium shadow-md transition-all cursor-pointer hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>Nuevo Grupo</span>
+          <span>Nuevo grupo</span>
         </button>
       </div>
 

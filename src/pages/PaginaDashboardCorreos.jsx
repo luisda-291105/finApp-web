@@ -33,6 +33,23 @@ function extraerLista(respuesta) {
   return respuesta?.data || respuesta?.content || [];
 }
 
+function normalizarDireccion(direccion) {
+  return String(direccion || "").trim().toLocaleLowerCase("es");
+}
+
+function quitarFuentesDuplicadas(fuentes) {
+  const unicas = new Map();
+  fuentes.forEach((fuente) => {
+    const clave = normalizarDireccion(fuente.contenido);
+    if (!clave) return;
+    const existente = unicas.get(clave);
+    if (!existente || (existente.estado === false && fuente.estado !== false)) {
+      unicas.set(clave, fuente);
+    }
+  });
+  return [...unicas.values()];
+}
+
 function fechaLegible(fecha) {
   const instante = new Date(fecha);
   if (Number.isNaN(instante.getTime())) return fecha || "";
@@ -80,7 +97,7 @@ export default function PaginaDashboardCorreos() {
       setCargandoFuentes(true);
       setError("");
       const lista = extraerLista(await obtenerFuentesPorUsuario(usuario.idUsuario));
-      const correos = lista.filter((fuente) => fuente.tipo === "CORREO");
+      const correos = quitarFuentesDuplicadas(lista.filter((fuente) => fuente.tipo === "CORREO"));
       setFuentes(correos);
       return correos;
     } catch (fallo) {
@@ -115,30 +132,46 @@ export default function PaginaDashboardCorreos() {
     }
   }, [tokenGmail, desconectarGmail]);
 
-  const tarjetasCorreo = [
-    ...fuentes.map((fuente) => ({
-      ...fuente,
-      tipoTarjeta: "FUENTE",
-      cuentaGmailId: cuentasGmail.find((cuenta) => cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase())?.id,
-    })),
-    ...cuentasGmail.map((cuenta) => ({
+  const tarjetasPorDireccion = new Map();
+  fuentes.forEach((fuente) => {
+    const clave = normalizarDireccion(fuente.contenido);
+    if (clave) tarjetasPorDireccion.set(clave, { ...fuente, tipoTarjeta: "FUENTE" });
+  });
+  cuentasGmail.forEach((cuenta) => {
+    const clave = normalizarDireccion(cuenta.email);
+    if (!clave) return;
+    const fuenteExistente = tarjetasPorDireccion.get(clave);
+    if (fuenteExistente) {
+      const debePreferirse = String(cuenta.id) === String(cuentaSeleccionadaId);
+      tarjetasPorDireccion.set(clave, {
+        ...fuenteExistente,
+        cuentaGmailId: debePreferirse || !fuenteExistente.cuentaGmailId ? cuenta.id : fuenteExistente.cuentaGmailId,
+      });
+      return;
+    }
+    tarjetasPorDireccion.set(clave, {
       idFuente: `gmail-${cuenta.id}`,
       contenido: cuenta.email,
       tipo: "CORREO",
       estado: true,
       tipoTarjeta: "CUENTA_GMAIL",
       cuentaGmailId: cuenta.id,
-    })),
-  ];
+    });
+  });
+  const tarjetasCorreo = [...tarjetasPorDireccion.values()];
 
   const consultarFuentesRegistradas = useCallback(async () => {
     if (!tokenGmail) return;
     const activas = fuentes.filter((fuente) => fuente.estado !== false);
     const cuentaActual = cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaSeleccionadaId));
-    const destinos = [...activas];
+    const destinosPorDireccion = new Map(activas.map((fuente) => [normalizarDireccion(fuente.contenido), fuente]));
     if (cuentaActual) {
-      destinos.push({ idFuente: `gmail-${cuentaActual.id}`, contenido: cuentaActual.email, estado: true });
+      const claveCuenta = normalizarDireccion(cuentaActual.email);
+      if (!destinosPorDireccion.has(claveCuenta)) {
+        destinosPorDireccion.set(claveCuenta, { idFuente: `gmail-${cuentaActual.id}`, contenido: cuentaActual.email, estado: true });
+      }
     }
+    const destinos = [...destinosPorDireccion.values()];
     if (destinos.length === 0) return;
     try {
       setCargandoMensajes(true);

@@ -71,7 +71,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
   const paginaActual = [
     ["/dashboard", "Inicio"],
     ["/dashboard/tarjetas", "Tarjetas"],
-    ["/dashboard/bolsillos", "Bolsillos"],
+    ["/dashboard/grupos", "Grupos"],
     ["/dashboard/contactos", "Contactos"],
     ["/dashboard/correos", "Correos"],
     ["/dashboard/contabilidad", "Contabilidad"],

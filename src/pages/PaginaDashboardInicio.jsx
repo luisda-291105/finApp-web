@@ -43,7 +43,7 @@ import { actualizarMuestra, crearMuestra, eliminarMuestra, listarMuestras } from
  * página del dashboard (RF-13); la redirección se usa al activar la muestra (T8).
  */
 const FUENTES_DEMO = [
-  { valor: "bolsillos", etiqueta: "Bolsillos", destino: "/dashboard/bolsillos" },
+  { valor: "bolsillos", etiqueta: "Grupos", destino: "/dashboard/grupos" },
   { valor: "contabilidad", etiqueta: "Contabilidad", destino: "/dashboard/contabilidad" },
   { valor: "ingresos", etiqueta: "Ingresos", destino: "/dashboard/contabilidad" },
   { valor: "gastos", etiqueta: "Gastos", destino: "/dashboard/contabilidad" },

@@ -1,19 +1,20 @@
 /**
- * @uso        Resúmenes contables demostrativos con detalle por periodo (spec 042)
+ * @uso        Contabilidad con bolsillos persistidos y movimientos
  * @funciones  PaginaDashboardContabilidad({ movimientos })
  * @datos      Datos de demostración en memoria; no consulta servicios ni persiste cambios
- * @eventos    Apertura/cierre de modales y creación de resúmenes de demostración
- * @estados    movimientos, detalle activo, modal de creación y respuesta
+ * @eventos    Apertura/cierre de modales y creación de resúmenes y movimientos de demostración
+ * @estados    movimientos, detalle activo, modales de creación y respuesta
  * @usadoPor   App.jsx (ruta /dashboard/contabilidad)
  */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowDownRight, ArrowUpRight, PiggyBank, Plus, Wallet } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import RespuestaModal from "../components/ui/RespuestaModal";
-import ModalDetalleResumenContable from "../components/domain/modales/ModalDetalleResumenContable";
-import ModalCrearResumenContable from "../components/domain/modales/ModalCrearResumenContable";
+import ModalCrearMovimientoContable from "../components/domain/modales/ModalCrearMovimientoContable";
+import ModalBolsillo from "../components/domain/modales/ModalBolsillo";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
+import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsilloServicio";
 
 const formatoMoneda = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -34,38 +35,61 @@ const MOVIMIENTOS_DEMO = [
   { id: "anterior-ahorro", fecha: fechaDeMes(-1, 8), concepto: "Ahorro programado", categoria: "Ahorro", monto: -400000, tipo: "Ahorro" },
 ];
 
-const indicadores = [
-  { tipo: "gastos", etiqueta: "Gastos", icono: ArrowDownRight, tono: "text-cat-expense", fondo: "bg-cat-expense/10" },
-  { tipo: "ahorros", etiqueta: "Ahorros", icono: PiggyBank, tono: "text-emerald-primary", fondo: "bg-emerald-primary/10" },
-  { tipo: "balance", etiqueta: "Balance disponible", icono: Wallet, tono: "text-cat-income", fondo: "bg-cat-income/10" },
-];
-
-/** Página de resúmenes contables y movimientos de ejemplo. */
+/** Página de bolsillos persistidos y movimientos contables. */
 export default function PaginaDashboardContabilidad({ movimientos: movimientosIniciales = MOVIMIENTOS_DEMO }) {
   const navigate = useNavigate();
   const { usuario } = useUsuarioActivo();
   const [movimientos, setMovimientos] = useState(movimientosIniciales);
-  const [detalle, setDetalle] = useState(null);
-  const [crearAbierto, setCrearAbierto] = useState(false);
+  const [crearMovimientoAbierto, setCrearMovimientoAbierto] = useState(false);
   const [respuesta, setRespuesta] = useState(null);
-  const disparadorRef = useRef(null);
-  const movimientosDelMes = useMemo(() => {
-    const hoy = new Date();
-    const mes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
-    return movimientos.filter((m) => m.fecha.slice(0, 7) === mes);
-  }, [movimientos]);
-  const gastos = movimientosDelMes.filter((m) => m.tipo.toLowerCase() === "gasto").reduce((total, m) => total + Math.abs(m.monto), 0);
-  const ahorros = movimientosDelMes.filter((m) => m.tipo.toLowerCase() === "ahorro").reduce((total, m) => total + Math.abs(m.monto), 0);
-  const balance = movimientosDelMes.reduce((total, m) => total + m.monto, 0);
-  const importes = { gastos, ahorros, balance };
+  const [bolsillos, setBolsillos] = useState([]);
+  const [cargandoBolsillos, setCargandoBolsillos] = useState(true);
+  const [errorBolsillos, setErrorBolsillos] = useState("");
+  const [modalBolsillo, setModalBolsillo] = useState({ abierto: false, modo: "crear", bolsillo: null });
+  const disparadorBolsilloRef = useRef(null);
+  const disparadorMovimientoRef = useRef(null);
+  useEffect(() => {
+    let vigente = true;
+    if (!usuario?.idUsuario) { setBolsillos([]); setCargandoBolsillos(false); return undefined; }
+    setCargandoBolsillos(true);
+    listarBolsillos().then((respuesta) => {
+      if (!vigente) return;
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      setBolsillos(lista);
+      setErrorBolsillos("");
+    }).catch((fallo) => {
+      if (vigente) { setBolsillos([]); setErrorBolsillos(fallo?.message || "No se pudieron cargar los bolsillos."); }
+    }).finally(() => { if (vigente) setCargandoBolsillos(false); });
+    return () => { vigente = false; };
+  }, [usuario?.idUsuario]);
 
-  const agregarResumen = (resumen) => {
+  const abrirModalBolsillo = (modo, bolsillo, evento) => {
+    if (evento?.currentTarget) disparadorBolsilloRef.current = evento.currentTarget;
+    setErrorBolsillos("");
+    setModalBolsillo({ abierto: true, modo, bolsillo });
+  };
+
+  const guardarBolsillo = async (datos) => {
+    if (modalBolsillo.modo === "crear") {
+      const creado = await crearBolsillo(datos);
+      const bolsillo = creado?.data || creado;
+      setBolsillos((actuales) => [bolsillo, ...actuales]);
+    } else {
+      const actualizado = await actualizarBolsillo(modalBolsillo.bolsillo.idBolsillo, datos);
+      const bolsillo = actualizado?.data || actualizado || { ...modalBolsillo.bolsillo, ...datos };
+      setBolsillos((actuales) => actuales.map((item) => item.idBolsillo === bolsillo.idBolsillo ? { ...item, ...bolsillo } : item));
+    }
+  };
+
+  const borrarBolsillo = async (idBolsillo) => {
+    await eliminarBolsillo(idBolsillo);
+    setBolsillos((actuales) => actuales.filter((item) => item.idBolsillo !== idBolsillo));
+  };
+
+  const agregarMovimiento = (movimiento) => {
     if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; }
-    const tipo = resumen.tipoMovimiento === "gasto" ? "Gasto" : resumen.tipoMovimiento === "ahorro" ? "Ahorro" : "Ingreso";
-    const monto = resumen.tipoMovimiento === "gasto" || resumen.tipoMovimiento === "ahorro" ? -resumen.monto : resumen.monto;
-    const fecha = `${resumen.periodo}-${resumen.fecha.slice(-2)}`;
-    setMovimientos((actuales) => [{ id: resumen.id, fecha, concepto: resumen.concepto, categoria: resumen.categoria, monto, tipo }, ...actuales]);
-    setRespuesta({ tipo: "exito", mensaje: "Resumen agregado a esta demostración." });
+    setMovimientos((actuales) => [movimiento, ...actuales]);
+    setRespuesta({ tipo: "exito", mensaje: "Movimiento agregado a esta demostración." });
   };
 
   return (
@@ -76,36 +100,32 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
           <h1 id="contabilidad-titulo" className="mt-1 font-display text-3xl font-medium text-bg-dark">Contabilidad</h1>
           <p className="mt-1 text-sm text-slate-text">Revisa tus gastos, ahorros y balance disponible.</p>
         </div>
-        <button type="button" disabled aria-describedby="movimientos-demo-aviso" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream opacity-50 shadow-sm cursor-not-allowed">
-          <Plus className="h-4 w-4" aria-hidden="true" />Nuevo movimiento
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button ref={disparadorMovimientoRef} type="button" onClick={() => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } setRespuesta(null); setCrearMovimientoAbierto(true); }} aria-describedby="movimientos-demo-aviso" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-semibold text-bg-cream shadow-sm transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+            <Plus className="h-4 w-4" aria-hidden="true" />Nuevo movimiento
+          </button>
+          <button ref={disparadorBolsilloRef} type="button" onClick={(evento) => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } abrirModalBolsillo("crear", null, evento); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-primary px-4 py-2.5 text-sm font-semibold text-emerald-primary transition-colors hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+            <Plus className="h-4 w-4" aria-hidden="true" />Nuevo bolsillo
+          </button>
+        </div>
       </header>
-      <p id="movimientos-demo-aviso" className="sr-only">El registro de movimientos no está disponible en esta demostración.</p>
+      <p id="movimientos-demo-aviso" className="sr-only">Los movimientos nuevos se guardan solo en esta demostración.</p>
 
-      <section aria-labelledby="resumen-contable-titulo" className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 id="resumen-contable-titulo" className="font-display text-xl font-semibold text-bg-dark">Resumen contable</h2>
-            <p className="mt-1 text-xs text-slate-text">Selecciona una tarjeta para ver el detalle por periodo.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-emerald-primary/10 px-3 py-1 text-xs font-medium text-emerald-primary">Datos de demostración</span>
-            <button ref={disparadorRef} type="button" onClick={(evento) => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } disparadorRef.current = evento.currentTarget; setRespuesta(null); setCrearAbierto(true); }} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-3 py-2 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-              <Plus className="h-4 w-4" aria-hidden="true" />Agregar nuevo resumen
-            </button>
-          </div>
+      <section aria-labelledby="bolsillos-contables-titulo" className="space-y-4">
+        <div>
+          <h2 id="bolsillos-contables-titulo" className="font-display text-xl font-semibold text-bg-dark">Bolsillos</h2>
+          <p className="mt-1 text-sm text-slate-text">Organiza tu dinero en espacios con nombre y estado propio.</p>
         </div>
+        {errorBolsillos && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorBolsillos}</p>}
+        {cargandoBolsillos && <p role="status" className="text-sm text-slate-text">Cargando bolsillos…</p>}
+        {!cargandoBolsillos && !errorBolsillos && bolsillos.length === 0 && <Card className="p-8 text-center"><Wallet className="mx-auto h-8 w-8 text-emerald-primary" aria-hidden="true" /><p className="mt-3 font-medium text-bg-dark">Todavía no tienes bolsillos</p><p className="mt-1 text-sm text-slate-text">Crea uno para empezar a organizar tu contabilidad.</p></Card>}
+        {!cargandoBolsillos && bolsillos.length > 0 && <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {bolsillos.map((bolsillo) => <Card key={bolsillo.idBolsillo} className="flex flex-col justify-between gap-5 border border-border-line/40 p-5">
+            <div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-primary/10 text-emerald-primary"><Wallet className="h-5 w-5" aria-hidden="true" /></span><div className="min-w-0"><h3 className="break-words font-display text-lg font-semibold text-bg-dark">{bolsillo.nombre}</h3><span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${bolsillo.estado === false ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}><span className={`h-1.5 w-1.5 rounded-full ${bolsillo.estado === false ? "bg-slate-500" : "bg-emerald-600"}`} aria-hidden="true" />{bolsillo.estado === false ? "Inactivo" : "Activo"}</span></div></div>
+            <div className="flex justify-end gap-2 border-t border-border-line/30 pt-3"><button type="button" onClick={(evento) => abrirModalBolsillo("editar", bolsillo, evento)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"><Pencil className="h-4 w-4" aria-hidden="true" />Editar</button><button type="button" onClick={(evento) => abrirModalBolsillo("eliminar", bolsillo, evento)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"><Trash2 className="h-4 w-4" aria-hidden="true" />Eliminar</button></div>
+          </Card>)}
+        </div>}
         <RespuestaModal respuesta={respuesta} />
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {indicadores.map(({ tipo, etiqueta, icono: Icono, tono, fondo }) => (
-            <Card key={tipo} como="button" type="button" aria-label={`Ver detalle de ${etiqueta}`} aria-haspopup="dialog" onClick={(evento) => { disparadorRef.current = evento.currentTarget; setDetalle(tipo); }} className="group w-full cursor-pointer p-5 text-left transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-              <div className="flex items-start justify-between gap-3">
-                <div><h3 className="text-sm font-medium text-slate-text">{etiqueta}</h3><p className="mt-2 font-display text-2xl font-semibold tabular-nums text-bg-dark">{formatoMoneda.format(importes[tipo])}</p><span className="mt-3 inline-block text-xs font-medium text-emerald-primary">Ver detalle →</span></div>
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${fondo} ${tono}`}><Icono className="h-5 w-5" aria-hidden="true" /></span>
-              </div>
-            </Card>
-          ))}
-        </div>
       </section>
 
       <Card como="section" aria-labelledby="movimientos-titulo" className="overflow-hidden">
@@ -126,8 +146,8 @@ export default function PaginaDashboardContabilidad({ movimientos: movimientosIn
         </ul> : <p className="px-5 py-10 text-center text-slate-text">Sin movimientos registrados</p>}
       </Card>
 
-      <ModalDetalleResumenContable abierto={Boolean(detalle)} tipo={detalle} movimientos={movimientos} triggerRef={disparadorRef} alCerrar={() => setDetalle(null)} />
-      <ModalCrearResumenContable abierto={crearAbierto} triggerRef={disparadorRef} alCerrar={() => setCrearAbierto(false)} alGuardar={agregarResumen} />
+      <ModalBolsillo abierto={modalBolsillo.abierto} modo={modalBolsillo.modo} bolsillo={modalBolsillo.bolsillo} triggerRef={disparadorBolsilloRef} alCerrar={() => setModalBolsillo({ abierto: false, modo: "crear", bolsillo: null })} alGuardar={guardarBolsillo} alEliminar={borrarBolsillo} />
+      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} triggerRef={disparadorMovimientoRef} alCerrar={() => setCrearMovimientoAbierto(false)} alGuardar={agregarMovimiento} />
     </section>
   );
 }

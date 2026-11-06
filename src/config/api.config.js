@@ -32,6 +32,9 @@ export const ENDPOINTS = {
     porNombre: "/grupo/nombre",
     porId: "/grupo/id",
   },
+  bolsillo: {
+    base: "/bolsillo",
+  },
   tarjeta: {
     base: "/tarjeta",
     porUsuario: "/tarjeta/usuario",

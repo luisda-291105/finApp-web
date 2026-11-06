@@ -41,7 +41,8 @@ export default function App() {
               <Route path="/dashboard" element={<PaginaDashboardInicio />} />
               <Route path="/dashboard/tarjetas" element={<PaginaDashboardTarjetas />} />
               <Route path="/dashboard/configuracion" element={<PaginaDashboardConfiguracion />} />
-              <Route path="/dashboard/bolsillos" element={<PaginaDashboardBolsillos />} />
+              <Route path="/dashboard/bolsillos" element={<Navigate to="/dashboard/grupos" replace />} />
+              <Route path="/dashboard/grupos" element={<PaginaDashboardBolsillos />} />
               <Route path="/dashboard/contactos" element={<PaginaDashboardContactos />} />
               <Route path="/dashboard/correos" element={<PaginaDashboardCorreos />} />
               <Route path="/dashboard/contabilidad" element={<PaginaDashboardContabilidad />} />
