@@ -46,7 +46,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
         monto: formatearPesos(movimiento.monto ?? ""),
         categoria: movimiento.categoria || "",
         concepto: movimiento.concepto || "",
-      } : { ...valoresIniciales(), idBolsillo: bolsillos[0]?.idBolsillo || "" });
+      } : valoresIniciales());
       setRespuesta(null);
       setOcupado(false);
     }
