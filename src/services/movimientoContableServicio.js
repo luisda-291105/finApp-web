@@ -7,7 +7,7 @@
  * @usadoPor   PaginaDashboardContabilidad
  */
 import { getEndpoint } from "../config/api.config";
-import { crear, obtener } from "./httpServicio";
+import { crear, obtener, actualizar, eliminar } from "./httpServicio";
 
 const rutaBase = getEndpoint("movimiento.base");
 const rutaResumen = getEndpoint("movimiento.resumen");
@@ -22,6 +22,16 @@ export function listarMovimientos(idBolsillo, tipo = "TODOS") {
 /** Registra un movimiento financiero en un bolsillo propio. */
 export function crearMovimiento(movimiento) {
   return crear(rutaBase, movimiento);
+}
+
+/** Actualiza un movimiento propio del usuario activo. */
+export function actualizarMovimiento(idMovimiento, movimiento) {
+  return actualizar(`${rutaBase}/${encodeURIComponent(idMovimiento)}`, movimiento);
+}
+
+/** Elimina un movimiento propio del usuario activo. */
+export function eliminarMovimiento(idMovimiento) {
+  return eliminar(`${rutaBase}/${encodeURIComponent(idMovimiento)}`);
 }
 
 /** Consulta cantidad y totales por cada bolsillo del usuario activo. */
