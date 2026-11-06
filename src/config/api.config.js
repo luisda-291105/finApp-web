@@ -37,6 +37,7 @@ export const ENDPOINTS = {
   },
   movimiento: {
     base: "/movimiento",
+    resumen: "/movimiento/resumen",
   },
   tarjeta: {
     base: "/tarjeta",
