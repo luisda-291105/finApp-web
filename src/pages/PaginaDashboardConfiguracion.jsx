@@ -148,6 +148,11 @@ export default function PaginaDashboardConfiguracion() {
     }
   };
 
+  const cuentaVinculada = (fuente) => fuente.tipo?.toUpperCase() === "CORREO"
+    ? cuentasGmail.find((cuenta) => cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase())
+    : null;
+  const cuentasSinFuente = cuentasGmail.filter((cuenta) => !fuentes.some((fuente) => fuente.tipo?.toUpperCase() === "CORREO" && cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase()));
+
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
       <div>
@@ -223,8 +228,6 @@ export default function PaginaDashboardConfiguracion() {
         {!GMAIL_CONFIGURADO && <p className="text-sm text-amber-800">Configura VITE_GOOGLE_CLIENT_ID para habilitar la conexión.</p>}
         {errorGmail && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorGmail}</p>}
         {tokenGmail && <p className="text-sm text-emerald-primary">Gmail conectado como {cuentaGmail}. La conexión se guarda para restaurarse al volver a entrar y las fuentes nuevas se registran activas.</p>}
-        {cuentasGmail.length > 0 && <ul className="grid gap-2 sm:grid-cols-2" aria-label="Cuentas Gmail conectadas">{cuentasGmail.map((cuenta) => <li key={cuenta.id} className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/50 px-3 py-2"><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-w-0 truncate text-left text-sm font-medium text-bg-dark">{cuenta.email}{String(cuenta.id) === String(cuentaSeleccionadaId) ? " · seleccionada" : ""}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></li>)}</ul>}
-
         {/* Listado renderizado de fuentes */}
         <div className="pt-2">
           {cargandoFuentes && (
@@ -235,13 +238,13 @@ export default function PaginaDashboardConfiguracion() {
             <p role="alert" className="text-xs text-red-600">{errorFuentes}</p>
           )}
 
-          {!cargandoFuentes && !errorFuentes && fuentes.length === 0 && (
+          {!cargandoFuentes && !errorFuentes && fuentes.length === 0 && cuentasGmail.length === 0 && (
             <p className="text-sm text-slate-text">
               No hay fuentes registradas actualmente.
             </p>
           )}
 
-          {!cargandoFuentes && !errorFuentes && fuentes.length > 0 && (
+          {!cargandoFuentes && !errorFuentes && (fuentes.length > 0 || cuentasGmail.length > 0) && (
             <>
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
@@ -284,7 +287,8 @@ export default function PaginaDashboardConfiguracion() {
                         </span>
                       </td>
                       <td className="py-2.5 pr-4 text-bg-dark">
-                        {fuente.contenido || "-"}
+                        <span className="block">{fuente.contenido || "-"}</span>
+                        {cuentaVinculada(fuente) && <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" aria-hidden="true" />Cuenta Gmail conectada</span>}
                       </td>
                       <td className="py-2.5 pr-4"><EstadoFuente activo={fuente.estado !== false} /></td>
                       <td className="py-2.5 text-xs text-slate-text">
@@ -294,13 +298,14 @@ export default function PaginaDashboardConfiguracion() {
                         {fuenteEliminando?.idFuente === fuente.idFuente ? (
                           <div className="flex flex-wrap items-center gap-2"><span className="text-xs text-slate-text">¿Eliminar esta fuente?</span><button type="button" disabled={operacionFuente} onClick={confirmarEliminacionFuente} className="min-h-9 rounded-lg bg-red-700 px-3 text-xs font-semibold text-white hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 disabled:opacity-50">Confirmar</button><button type="button" disabled={operacionFuente} onClick={() => setFuenteEliminando(null)} className="min-h-9 rounded-lg px-2 text-xs font-medium text-slate-text hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Cancelar</button></div>
                         ) : (
-                          <div className="flex gap-2"><button type="button" aria-label={`Editar fuente ${fuente.contenido}`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-9 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido}`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-9 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700">Eliminar</button></div>
+                          <div className="flex flex-wrap gap-1">{cuentaVinculada(fuente) && <><button type="button" onClick={() => seleccionarCuentaGmail(cuentaVinculada(fuente).id)} className="min-h-9 rounded-lg px-2 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuentaVinculada(fuente).id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuentaVinculada(fuente).id)} className="min-h-9 rounded-lg px-2 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></>}<button type="button" aria-label={`Editar fuente ${fuente.contenido}`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-9 rounded-lg px-2 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido}`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-9 rounded-lg px-2 text-xs font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700">Eliminar</button></div>
                         )}
                       </td>
                         </>
                       )}
                     </tr>
                   ))}
+                  {cuentasSinFuente.map((cuenta) => <tr key={`gmail-${cuenta.id}`} className="border-b border-border-line/20"><td className="py-2.5 pr-4"><span className="inline-block rounded bg-emerald-primary/10 px-2 py-0.5 text-xs text-emerald-primary">GMAIL</span></td><td className="py-2.5 pr-4 text-bg-dark">{cuenta.email}</td><td className="py-2.5 pr-4"><EstadoFuente activo /></td><td className="py-2.5 text-xs text-slate-text">Cuenta conectada</td><td className="py-2.5 pl-4"><div className="flex gap-2"><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-h-9 rounded-lg px-2 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuenta.id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="min-h-9 rounded-lg px-2 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></div></td></tr>)}
                 </tbody>
               </table>
             </div>
@@ -312,10 +317,11 @@ export default function PaginaDashboardConfiguracion() {
                   <label className="grid gap-1 text-xs text-slate-text">Estado en móvil<select aria-label="Estado de la fuente en móvil" value={String(fuenteEditando.estado !== false)} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, estado: evento.target.value === "true" }))} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-2 text-sm"><option value="true">Activo</option><option value="false">Inactivo</option></select></label>
                   <p className="text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p><div className="flex flex-wrap gap-2"><button type="submit" disabled={operacionFuente || !fuenteEditando.contenido.trim()} aria-label="Guardar cambios de fuente en móvil" className="min-h-10 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream disabled:opacity-50">Guardar</button><button type="button" disabled={operacionFuente} onClick={() => setFuenteEditando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div>
                 </form> : <>
-                  <div className="flex items-center justify-between gap-3"><p className="text-xs uppercase tracking-wide text-slate-text">{fuente.tipo || "OTRO"}</p><EstadoFuente activo={fuente.estado !== false} /></div><p className="mt-1 break-all text-sm font-medium text-bg-dark">{fuente.contenido || "-"}</p><p className="mt-1 text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p>
-                  {fuenteEliminando?.idFuente === fuente.idFuente ? <div className="mt-3 flex flex-wrap items-center gap-2"><span className="text-xs text-slate-text">¿Eliminar esta fuente?</span><button type="button" disabled={operacionFuente} onClick={confirmarEliminacionFuente} aria-label={`Confirmar eliminación de ${fuente.contenido}`} className="min-h-10 rounded-lg bg-red-700 px-3 text-xs font-semibold text-white">Confirmar</button><button type="button" onClick={() => setFuenteEliminando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div> : <div className="mt-3 flex flex-wrap gap-2"><button type="button" aria-label={`Editar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Eliminar</button></div>}
+                  <div className="flex items-center justify-between gap-3"><p className="text-xs uppercase tracking-wide text-slate-text">{fuente.tipo || "OTRO"}</p><EstadoFuente activo={fuente.estado !== false} /></div><p className="mt-1 break-all text-sm font-medium text-bg-dark">{fuente.contenido || "-"}</p>{cuentaVinculada(fuente) && <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-600" aria-hidden="true" />Cuenta Gmail conectada</span>}<p className="mt-1 text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p>
+                  {fuenteEliminando?.idFuente === fuente.idFuente ? <div className="mt-3 flex flex-wrap items-center gap-2"><span className="text-xs text-slate-text">¿Eliminar esta fuente?</span><button type="button" disabled={operacionFuente} onClick={confirmarEliminacionFuente} aria-label={`Confirmar eliminación de ${fuente.contenido}`} className="min-h-10 rounded-lg bg-red-700 px-3 text-xs font-semibold text-white">Confirmar</button><button type="button" onClick={() => setFuenteEliminando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div> : <div className="mt-3 flex flex-wrap gap-2">{cuentaVinculada(fuente) && <><button type="button" onClick={() => seleccionarCuentaGmail(cuentaVinculada(fuente).id)} className="min-h-10 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuentaVinculada(fuente).id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuentaVinculada(fuente).id)} className="min-h-10 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar Gmail</button></>}<button type="button" aria-label={`Editar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Eliminar</button></div>}
                 </>}
               </li>)}
+              {cuentasSinFuente.map((cuenta) => <li key={`gmail-movil-${cuenta.id}`} className="min-w-0 rounded-xl border border-border-line/40 bg-bg-cream/60 p-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-semibold uppercase tracking-wide text-emerald-primary">Gmail</span><EstadoFuente activo /></div><p className="mt-1 break-all text-sm font-medium text-bg-dark">{cuenta.email}</p><p className="mt-1 text-xs text-slate-text">Cuenta conectada</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-h-10 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuenta.id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="min-h-10 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></div></li>)}
             </ul>
             </>
           )}

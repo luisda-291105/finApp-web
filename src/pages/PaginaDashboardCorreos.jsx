@@ -7,7 +7,7 @@
  * @usadoPor   App.jsx (/dashboard/correos)
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Mail, RefreshCw } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import ModalDetalleRegistro from "../components/domain/modales/ModalDetalleRegistro";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
@@ -193,7 +193,12 @@ export default function PaginaDashboardCorreos() {
 
       <Card className="space-y-3 p-5">
         <h2 className="font-display text-base font-semibold text-bg-dark">Fuentes vigiladas</h2>
-        {cuentasGmail.length > 1 && <div className="space-y-2"><p className="text-sm text-slate-text">Cuenta conectada para consultar</p><div className="flex flex-wrap gap-2" role="group" aria-label="Elegir cuenta Gmail conectada">{cuentasGmail.map((cuenta) => <button key={cuenta.id} type="button" disabled={conexionCargando} aria-pressed={String(cuentaSeleccionadaId) === String(cuenta.id)} onClick={() => cambiarCuentaGmail(cuenta.id)} className={`min-h-9 rounded-full border px-3 text-sm transition-colors disabled:opacity-50 ${String(cuentaSeleccionadaId) === String(cuenta.id) ? "border-emerald-primary bg-emerald-primary/10 font-medium text-emerald-primary" : "border-border-line/50 text-slate-text hover:bg-emerald-primary/5"}`}>{cuenta.email}</button>)}</div></div>}
+        {cuentasGmail.length > 0 && <section aria-labelledby="cuentas-gmail-titulo" className="space-y-3"><h3 id="cuentas-gmail-titulo" className="text-sm font-medium text-slate-text">Cuentas Gmail conectadas</h3><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Cuentas Gmail disponibles para consultar">{cuentasGmail.map((cuenta) => {
+          const seleccionada = String(cuentaSeleccionadaId) === String(cuenta.id);
+          const activa = seleccionada && Boolean(tokenGmail) && !conexionCargando;
+          const estadoCuenta = conexionCargando && seleccionada ? "Conectando" : activa ? "Activa" : seleccionada ? "Inactiva" : "Conectada";
+          return <button key={cuenta.id} type="button" disabled={conexionCargando} aria-pressed={seleccionada} onClick={() => cambiarCuentaGmail(cuenta.id)} className={`rounded-2xl border p-4 text-left transition-colors hover:border-emerald-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-60 ${activa ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}><span className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-text"><Mail className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Cuenta Gmail</span><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${activa ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}><span className={`h-1.5 w-1.5 rounded-full ${activa ? "animate-pulse bg-emerald-600" : "bg-slate-500"}`} aria-hidden="true" />{estadoCuenta}</span></span><span className="mt-2 block break-all text-sm font-medium text-bg-dark">{cuenta.email}</span><span className="mt-2 block text-xs text-slate-text">{activa ? "Puede consultar las fuentes activas" : estadoCuenta === "Inactiva" ? "No se pudo activar la consulta" : "Selecciona para consultar sus correos"}</span></button>;
+        })}</div></section>}
         {cuentaGmail && <p className="text-xs text-emerald-primary">Consulta automática desde {cuentaGmail}</p>}
         {cargandoFuentes && <p role="status" className="text-sm text-slate-text">Cargando fuentes...</p>}
         {!cargandoFuentes && !usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para conectar tus fuentes.</p>}
@@ -212,7 +217,8 @@ export default function PaginaDashboardCorreos() {
                 >
                   <span className="block text-xs uppercase tracking-wide text-slate-text">Fuente de correo</span>
                   <span className="mt-1 block break-all font-medium text-bg-dark">{fuente.contenido}</span>
-                  <span className={`mt-2 block text-xs font-medium ${inactiva ? "text-slate-text" : "text-emerald-primary"}`}>
+                  <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${inactiva ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${inactiva ? "bg-slate-500" : "animate-pulse bg-emerald-600"}`} aria-hidden="true" />
                     {inactiva
                       ? tokenGmail ? "Inactiva · no se pudo activar" : "Inactiva · conecta Gmail"
                       : `${mensajesPorFuente[fuente.idFuente]?.length ?? 0} mensajes · consulta automática`}
