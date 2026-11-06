@@ -26,6 +26,7 @@ const CATEGORIAS = [
   { id: "ENTRETENIMIENTO", etiqueta: "Entretenimiento" },
   { id: "OTROS", etiqueta: "Otros" },
 ];
+const INTERVALO_CONSULTA_MS = 5 * 60 * 1000;
 
 function extraerLista(respuesta) {
   if (Array.isArray(respuesta)) return respuesta;
@@ -49,13 +50,22 @@ function coincideCategoria(correo, categoria) {
   }
 }
 
+function coincideDestino(correo, direccion) {
+  return String(correo.destinatario || "").toLocaleLowerCase("es").split(/[;,]/).some((destino) => {
+    const direccionEncontrada = destino.match(/<?([^<>\s,;]+@[^<>\s,;]+)>?/);
+    return direccionEncontrada?.[1] === direccion.trim().toLocaleLowerCase("es");
+  });
+}
+
 export default function PaginaDashboardCorreos() {
   const { usuario } = useUsuarioActivo();
-  const { tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, conexionCargando } = useGmail();
+  const { tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, conexionCargando, desconectarGmail } = useGmail();
   const [fuentes, setFuentes] = useState([]);
   const [categoria, setCategoria] = useState("TODOS");
   const [fuenteSeleccionada, setFuenteSeleccionada] = useState(null);
   const [mensajesFuente, setMensajesFuente] = useState([]);
+  const [mensajesPorFuente, setMensajesPorFuente] = useState({});
+  const [ultimaConsulta, setUltimaConsulta] = useState(null);
   const disparadorFuenteRef = useRef(null);
   const [cargandoFuentes, setCargandoFuentes] = useState(false);
   const [cargandoMensajes, setCargandoMensajes] = useState(false);
@@ -70,10 +80,13 @@ export default function PaginaDashboardCorreos() {
       setCargandoFuentes(true);
       setError("");
       const lista = extraerLista(await obtenerFuentesPorUsuario(usuario.idUsuario));
-      setFuentes(lista.filter((fuente) => fuente.tipo === "CORREO"));
+      const correos = lista.filter((fuente) => fuente.tipo === "CORREO");
+      setFuentes(correos);
+      return correos;
     } catch (fallo) {
       setFuentes([]);
       setError(fallo?.message || "No se pudieron cargar tus fuentes de correo.");
+      return [];
     } finally {
       setCargandoFuentes(false);
     }
@@ -89,11 +102,8 @@ export default function PaginaDashboardCorreos() {
       setCargandoMensajes(true);
       setError("");
       const respuesta = await obtenerCorreosGmail(token, [fuente]);
-      const direccion = fuente.contenido.trim().toLocaleLowerCase("es");
-      const recibidos = respuesta.filter((correo) => String(correo.destinatario || "").toLocaleLowerCase("es").split(/[;,]/).some((destino) => {
-        const direccionEncontrada = destino.match(/<?([^<>\s,;]+@[^<>\s,;]+)>?/);
-        return direccionEncontrada?.[1] === direccion;
-      }));
+      const recibidos = respuesta.filter((correo) => coincideDestino(correo, fuente.contenido));
+      setMensajesPorFuente((actuales) => ({ ...actuales, [fuente.idFuente]: recibidos }));
       setMensajesFuente(recibidos);
     } catch (fallo) {
       setError(fallo?.message || "No se pudieron consultar los mensajes de Gmail.");
@@ -105,6 +115,31 @@ export default function PaginaDashboardCorreos() {
     }
   }, [tokenGmail, desconectarGmail]);
 
+  const consultarFuentesRegistradas = useCallback(async () => {
+    if (!tokenGmail || fuentes.length === 0) return;
+    const activas = fuentes.filter((fuente) => fuente.estado !== false);
+    if (activas.length === 0) return;
+    try {
+      setCargandoMensajes(true);
+      setError("");
+      const resultados = await Promise.all(activas.map(async (fuente) => {
+        const respuesta = await obtenerCorreosGmail(tokenGmail, [fuente]);
+        return [fuente.idFuente, respuesta.filter((correo) => coincideDestino(correo, fuente.contenido))];
+      }));
+      const nuevosMensajes = Object.fromEntries(resultados);
+      setMensajesPorFuente((actuales) => ({ ...actuales, ...nuevosMensajes }));
+      if (fuenteSeleccionada && nuevosMensajes[fuenteSeleccionada.idFuente]) {
+        setMensajesFuente(nuevosMensajes[fuenteSeleccionada.idFuente]);
+      }
+      setUltimaConsulta(new Date());
+    } catch (fallo) {
+      setError(fallo?.message || "No se pudieron actualizar las fuentes de correo.");
+      if (/autorización de Gmail venció/i.test(fallo?.message || "")) desconectarGmail(false);
+    } finally {
+      setCargandoMensajes(false);
+    }
+  }, [tokenGmail, fuentes, fuenteSeleccionada, desconectarGmail]);
+
   const seleccionarFuente = async (fuente, evento) => {
     disparadorFuenteRef.current = evento.currentTarget;
     setFuenteSeleccionada(fuente);
@@ -114,10 +149,10 @@ export default function PaginaDashboardCorreos() {
     if (tokenGmail && fuente.estado !== false) await cargarMensajesFuente(fuente, tokenGmail);
   };
 
-  const cambiarCuentaGmail = (evento) => {
+  const cambiarCuentaGmail = (id) => {
     setMensajesFuente([]);
     setError("");
-    seleccionarCuentaGmail(evento.target.value || null);
+    seleccionarCuentaGmail(id);
   };
 
   useEffect(() => {
@@ -125,6 +160,16 @@ export default function PaginaDashboardCorreos() {
       cargarMensajesFuente(fuenteSeleccionada, tokenGmail);
     }
   }, [tokenGmail]);
+
+  useEffect(() => {
+    if (!tokenGmail || !usuario?.idUsuario || fuentes.length === 0) return undefined;
+    consultarFuentesRegistradas();
+    const temporizador = window.setInterval(() => {
+      cargarFuentes();
+      consultarFuentesRegistradas();
+    }, INTERVALO_CONSULTA_MS);
+    return () => window.clearInterval(temporizador);
+  }, [tokenGmail, usuario?.idUsuario, fuentes, cargarFuentes, consultarFuentesRegistradas]);
 
   const mensajesVisibles = mensajesFuente.filter((correo) => coincideCategoria(correo, categoria));
   const noHayFuentes = !cargandoFuentes && fuentes.length === 0;
@@ -139,22 +184,17 @@ export default function PaginaDashboardCorreos() {
         </div>
         <div className="flex flex-wrap gap-2">
           {tokenGmail ? (
-            <>
-              <button type="button" onClick={() => fuenteSeleccionada ? cargarMensajesFuente(fuenteSeleccionada) : setError("Abre una fuente para actualizar sus correos.")} disabled={cargandoMensajes || noHayFuentes} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
+              <button type="button" onClick={consultarFuentesRegistradas} disabled={cargandoMensajes || noHayFuentes} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
                 <RefreshCw className="h-4 w-4" aria-hidden="true" /><span>{cargandoMensajes ? "Actualizando..." : "Actualizar"}</span>
               </button>
-            </>
           ) : <Link to="/dashboard/configuracion" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream transition-colors hover:bg-emerald-hover">Ir a Configuración para conectar Gmail</Link>}
         </div>
       </div>
 
       <Card className="space-y-3 p-5">
         <h2 className="font-display text-base font-semibold text-bg-dark">Fuentes vigiladas</h2>
-        {cuentasGmail.length > 0 && <label className="flex max-w-xl flex-col gap-1.5 text-sm text-slate-text">Cuenta Gmail para consultar
-          <select value={cuentaSeleccionadaId ?? ""} onChange={cambiarCuentaGmail} disabled={conexionCargando} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-3 text-bg-dark disabled:opacity-60">
-            {cuentasGmail.map((cuenta) => <option key={cuenta.id} value={cuenta.id}>{cuenta.email}</option>)}
-          </select>
-        </label>}
+        {cuentasGmail.length > 1 && <div className="space-y-2"><p className="text-sm text-slate-text">Cuenta conectada para consultar</p><div className="flex flex-wrap gap-2" role="group" aria-label="Elegir cuenta Gmail conectada">{cuentasGmail.map((cuenta) => <button key={cuenta.id} type="button" disabled={conexionCargando} aria-pressed={String(cuentaSeleccionadaId) === String(cuenta.id)} onClick={() => cambiarCuentaGmail(cuenta.id)} className={`min-h-9 rounded-full border px-3 text-sm transition-colors disabled:opacity-50 ${String(cuentaSeleccionadaId) === String(cuenta.id) ? "border-emerald-primary bg-emerald-primary/10 font-medium text-emerald-primary" : "border-border-line/50 text-slate-text hover:bg-emerald-primary/5"}`}>{cuenta.email}</button>)}</div></div>}
+        {cuentaGmail && <p className="text-xs text-emerald-primary">Consulta automática desde {cuentaGmail}</p>}
         {cargandoFuentes && <p role="status" className="text-sm text-slate-text">Cargando fuentes...</p>}
         {!cargandoFuentes && !usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para conectar tus fuentes.</p>}
         {noHayFuentes && <p className="text-sm text-slate-text">Agrega una fuente de tipo correo para elegir a qué direcciones entrantes buscar mensajes.</p>}
@@ -175,7 +215,7 @@ export default function PaginaDashboardCorreos() {
                   <span className={`mt-2 block text-xs font-medium ${inactiva ? "text-slate-text" : "text-emerald-primary"}`}>
                     {inactiva
                       ? tokenGmail ? "Inactiva · no se pudo activar" : "Inactiva · conecta Gmail"
-                      : fuenteSeleccionada?.idFuente === fuente.idFuente ? `${mensajesFuente.length} mensajes` : "Activa · selecciona para consultar"}
+                      : `${mensajesPorFuente[fuente.idFuente]?.length ?? 0} mensajes · consulta automática`}
                   </span>
                 </button>
               );
@@ -183,7 +223,7 @@ export default function PaginaDashboardCorreos() {
           </div>
         )}
         {fuentes.length > 0 && !tokenGmail && <p className="text-xs text-slate-text">Al conectar Gmail, Google solicitará permiso de solo lectura para toda la bandeja. FinApp limitará sus búsquedas a mensajes recibidos en estas direcciones y no guardará los mensajes.</p>}
-        {cuentaGmail && <p className="text-xs text-emerald-primary">Conectado a Gmail como {cuentaGmail}</p>}
+        {ultimaConsulta && <p className="text-xs text-slate-text">Última consulta: {fechaLegible(ultimaConsulta.toISOString())} · actualización cada 5 minutos mientras esta página esté abierta.</p>}
       </Card>
 
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}

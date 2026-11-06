@@ -13,7 +13,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Card } from "../components/ui/Card";
 import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
-import { obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
+import { actualizarTarjeta, eliminarTarjeta, obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
 import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
 
 function mostrarVencimiento(vencimiento) {
@@ -62,6 +62,19 @@ export default function PaginaDashboardTarjetas() {
   }, [usuario?.idUsuario]);
 
   useEffect(() => { cargarTarjetas(); }, [cargarTarjetas]);
+
+  const guardarTarjeta = async (idTarjeta, cambios) => {
+    const actualizada = await actualizarTarjeta(idTarjeta, cambios);
+    const tarjetaLista = { ...actualizada, expiracion: mostrarVencimiento(actualizada.expiracion) };
+    setTarjetas((actuales) => actuales.map((tarjeta) => tarjeta.idTarjeta === idTarjeta ? tarjetaLista : tarjeta));
+    setTarjetaSeleccionada(tarjetaLista);
+  };
+
+  const borrarTarjeta = async (idTarjeta) => {
+    await eliminarTarjeta(idTarjeta);
+    setTarjetas((actuales) => actuales.filter((tarjeta) => tarjeta.idTarjeta !== idTarjeta));
+    setTarjetaSeleccionada(null);
+  };
 
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
@@ -133,7 +146,7 @@ export default function PaginaDashboardTarjetas() {
           </ul>
         )}
       </Card>
-      <ModalTarjeta tarjeta={tarjetaSeleccionada} triggerRef={disparadorDetalleRef} onCerrar={() => setTarjetaSeleccionada(null)} />
+      <ModalTarjeta tarjeta={tarjetaSeleccionada} triggerRef={disparadorDetalleRef} onCerrar={() => setTarjetaSeleccionada(null)} onGuardar={guardarTarjeta} onEliminar={borrarTarjeta} />
       <ModalRegistroEntidad tipo="tarjeta" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarTarjetas} />
     </section>
   );

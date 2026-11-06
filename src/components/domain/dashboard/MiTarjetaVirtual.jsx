@@ -93,20 +93,14 @@ export default function MiTarjetaVirtual({ titular, numero, expiracion, cvv = ""
 
             <div className="flex-1 p-6 flex flex-col justify-end">
               <div className="flex items-end justify-between w-full">
-                <div className="bg-white rounded-lg p-3 min-w-[80px] border border-border-line">
-                  <p className="text-xs text-slate-text uppercase tracking-wider">CVV</p>
-                  <p className="font-mono text-lg font-semibold text-bg-dark tabular-nums" aria-label={`Código de seguridad ${cvv}`}>{cvv}</p>
-                </div>
-                <div className="text-right ml-4">
-                  <p className="text-xs text-slate-text uppercase tracking-wider">CÓDIGO DE SEGURIDAD</p>
-                  <p className="text-xs text-slate-text">Los 3 dígitos al reverso</p>
+                <div className="rounded-lg border border-border-line bg-white p-3 text-sm text-slate-text">
+                  Código de seguridad no almacenado
                 </div>
               </div>
 
               <div className="mt-6 pt-2 border-t border-border-line">
                 <p className="text-xs text-slate-text leading-relaxed">
-                  Tarjeta virtual emitida por {entidad}. Úsela para compras en línea seguras.
-                  No comparta el CVV. Contacto: soporte@finapp.com
+                  Tarjeta registrada en FinApp. El código de seguridad no se almacena.
                 </p>
               </div>
 

@@ -7,6 +7,7 @@
  * @usadoPor   PaginaDashboardBolsillos
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Settings2 } from "lucide-react";
 import ModalDetalleRegistro from "./ModalDetalleRegistro";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { crearFuente, obtenerFuentesPorUsuario } from "../../../services/fuenteServicio";
@@ -44,6 +45,7 @@ export default function ModalDetalleGrupo({ grupo, abierto, alCerrar, triggerRef
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
   const [nombreEditado, setNombreEditado] = useState("");
   const [descripcionEditada, setDescripcionEditada] = useState("");
+  const [configuracionAbierta, setConfiguracionAbierta] = useState(false);
 
   const fuentesVinculadas = useMemo(() => grupo?.fuentes || [], [grupo?.fuentes]);
   const idsVinculados = useMemo(() => new Set(fuentesVinculadas.map((fuente) => fuente.idFuente)), [fuentesVinculadas]);
@@ -53,6 +55,7 @@ export default function ModalDetalleGrupo({ grupo, abierto, alCerrar, triggerRef
     if (!abierto || !grupo?.id || !usuario?.idUsuario) return;
     let vigente = true;
     setPestana("Fuentes");
+    setConfiguracionAbierta(false);
     setEditando(false);
     setConfirmarBorrado(false);
     setNombreEditado(grupo.nombre || "");
@@ -200,29 +203,43 @@ export default function ModalDetalleGrupo({ grupo, abierto, alCerrar, triggerRef
 
   return (
     <ModalDetalleRegistro abierto={abierto} titulo={grupo.nombre} etiquetaCerrar={`Cerrar grupo ${grupo.nombre}`} alCerrar={cerrar} triggerRef={triggerRef}>
-          <header className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-emerald-primary">Contenido del grupo</p>
-              <h2 id="detalle-grupo-titulo" className="mt-1 font-display text-2xl font-semibold">{grupo.nombre}</h2>
-              <p className="mt-1 text-sm text-slate-text">{grupo.descripcion}</p>
-            </div>
-          </header>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="min-w-0 text-sm text-slate-text">{grupo.descripcion}</p>
+            <button type="button" aria-pressed={configuracionAbierta} onClick={() => { setConfiguracionAbierta((actual) => !actual); setError(""); setAviso(""); }} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${configuracionAbierta ? "border-emerald-primary bg-emerald-primary/10 text-emerald-primary" : "border-border-line/50 text-slate-text hover:bg-emerald-primary/5 hover:text-bg-dark"}`}><Settings2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Configuración</span></button>
+          </div>
 
-          <div className="mb-4 flex flex-wrap gap-2"><button type="button" disabled={cargando} onClick={() => { setEditando((actual) => !actual); setNombreEditado(grupo.nombre || ""); setDescripcionEditada(grupo.descripcion || ""); }} className="min-h-10 rounded-lg border border-emerald-primary/40 px-3 text-sm font-medium text-emerald-primary">{editando ? "Cancelar edición" : "Editar grupo"}</button><button type="button" disabled={cargando} onClick={() => setConfirmarBorrado(true)} className="min-h-10 rounded-lg border border-red-700/30 px-3 text-sm font-medium text-red-700">Eliminar grupo</button></div>
-          {editando && <form onSubmit={guardarGrupo} className="mb-4 grid gap-3 rounded-xl border border-border-line/40 p-4"><label className="grid gap-1 text-sm">Nombre<input required value={nombreEditado} maxLength={100} onChange={(evento) => setNombreEditado(evento.target.value)} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-3" /></label><label className="grid gap-1 text-sm">Descripción<textarea required value={descripcionEditada} maxLength={255} onChange={(evento) => setDescripcionEditada(evento.target.value)} className="min-h-20 rounded-lg border border-border-line bg-bg-cream px-3" /></label><button type="submit" disabled={cargando} className="min-h-10 justify-self-start rounded-lg bg-emerald-primary px-4 text-sm font-medium text-bg-cream disabled:opacity-50">Guardar cambios</button></form>}
-          {confirmarBorrado && <div role="alertdialog" aria-label="Confirmar eliminación de grupo" className="mb-4 rounded-xl border border-red-700/30 bg-red-50 p-4"><p className="text-sm text-red-900">¿Eliminar el grupo {grupo.nombre}? Las fuentes vinculadas seguirán registradas en tu cuenta.</p><div className="mt-3 flex gap-2"><button type="button" disabled={cargando} onClick={borrarGrupo} className="min-h-10 rounded-lg bg-red-700 px-4 text-sm font-medium text-white">Confirmar eliminación</button><button type="button" onClick={() => setConfirmarBorrado(false)} className="min-h-10 rounded-lg px-3 text-sm">Cancelar</button></div></div>}
-          <div className="mt-5 flex flex-wrap gap-2 border-b border-border-line/40" role="tablist" aria-label={`Secciones de ${grupo.nombre}`}>
+          {!configuracionAbierta && <div className="flex flex-wrap gap-2 border-b border-border-line/40" role="tablist" aria-label={`Secciones de ${grupo.nombre}`}>
             {PESTANAS.map((nombre) => (
               <button key={nombre} type="button" role="tab" aria-selected={pestana === nombre} onClick={() => { setPestana(nombre); setError(""); setAviso(""); }} className={`min-h-10 rounded-t-lg border-b-2 px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${pestana === nombre ? "border-emerald-primary text-emerald-primary" : "border-transparent text-slate-text hover:text-bg-dark"}`}>
                 {nombre}
               </button>
             ))}
-          </div>
+          </div>}
 
           {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
           {aviso && <p role="status" className="mt-4 rounded-xl border border-emerald-primary/20 bg-emerald-primary/10 p-3 text-sm text-bg-dark">{aviso}</p>}
 
-          {pestana === "Fuentes" ? (
+          {configuracionAbierta ? (
+            <div className="mt-5 space-y-5">
+              <section className="rounded-2xl border border-border-line/40 p-4">
+                <h3 className="font-semibold">Datos del grupo</h3>
+                <p className="mt-1 text-sm text-slate-text">Actualiza el nombre y la descripción o elimina este grupo.</p>
+                <div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={cargando} onClick={() => { setEditando((actual) => !actual); setNombreEditado(grupo.nombre || ""); setDescripcionEditada(grupo.descripcion || ""); setConfirmarBorrado(false); }} className="min-h-10 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/5">{editando ? "Cancelar edición" : "Editar grupo"}</button><button type="button" disabled={cargando} onClick={() => { setConfirmarBorrado(true); setEditando(false); }} className="min-h-10 rounded-xl border border-red-700/30 px-4 text-sm font-medium text-red-700 hover:bg-red-50">Eliminar grupo</button></div>
+                {editando && <form onSubmit={guardarGrupo} className="mt-4 grid gap-3 border-t border-border-line/30 pt-4"><label className="grid gap-1 text-sm font-medium">Nombre<input required value={nombreEditado} maxLength={100} onChange={(evento) => setNombreEditado(evento.target.value)} className="min-h-10 rounded-xl border border-border-line bg-bg-cream px-3 font-normal" /></label><label className="grid gap-1 text-sm font-medium">Descripción<textarea required value={descripcionEditada} maxLength={255} onChange={(evento) => setDescripcionEditada(evento.target.value)} className="min-h-20 rounded-xl border border-border-line bg-bg-cream px-3 py-2 font-normal" /></label><button type="submit" disabled={cargando} className="min-h-10 justify-self-start rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover disabled:opacity-50">Guardar cambios</button></form>}
+                {confirmarBorrado && <div role="alertdialog" aria-label="Confirmar eliminación de grupo" className="mt-4 rounded-xl border border-red-700/30 bg-red-50 p-4"><p className="text-sm text-red-900">¿Eliminar el grupo {grupo.nombre}? Las fuentes vinculadas seguirán registradas en tu cuenta.</p><div className="mt-3 flex gap-2"><button type="button" disabled={cargando} onClick={borrarGrupo} className="min-h-10 rounded-lg bg-red-700 px-4 text-sm font-medium text-white">Confirmar eliminación</button><button type="button" onClick={() => setConfirmarBorrado(false)} className="min-h-10 rounded-lg px-3 text-sm">Cancelar</button></div></div>}
+              </section>
+              <section className="rounded-2xl border border-border-line/40 p-4"><h3 className="font-semibold">Invitaciones</h3><p className="mt-1 text-sm text-slate-text">El envío de invitaciones estará disponible al conectar el servicio de grupos.</p><form onSubmit={prepararInvitacion} className="mt-3 flex flex-col gap-2 sm:flex-row"><label className="sr-only" htmlFor="grupo-invitacion-correo">Correo de la persona</label><input id="grupo-invitacion-correo" type="email" required value={correoInvitacion} onChange={(evento) => setCorreoInvitacion(evento.target.value)} placeholder="persona@correo.com" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /><button type="submit" className="min-h-11 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10">Preparar invitación</button></form></section>
+              <details className="rounded-2xl border border-border-line/40 p-4">
+                <summary className="cursor-pointer font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Registrar una fuente nueva para este grupo</summary>
+                <form onSubmit={registrarYVincular} className="mt-4 grid gap-3 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
+                  <div className="flex flex-col gap-1.5"><label htmlFor="grupo-nueva-fuente-tipo" className="text-sm font-medium">Tipo</label><select id="grupo-nueva-fuente-tipo" value={tipoNuevaFuente} onChange={(evento) => setTipoNuevaFuente(evento.target.value)} disabled={cargando} className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm"><option value="CORREO">Correo electrónico</option><option value="TELEFONO">Teléfono</option><option value="OTRO">Otro</option></select></div>
+                  <div className="flex flex-col gap-1.5"><label htmlFor="grupo-nueva-fuente-contenido" className="text-sm font-medium">Contenido</label><input id="grupo-nueva-fuente-contenido" value={contenidoNuevaFuente} onChange={(evento) => setContenidoNuevaFuente(evento.target.value)} maxLength={255} required disabled={cargando} className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /></div>
+                  <button type="submit" disabled={cargando} className="min-h-11 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">{cargando ? "Guardando…" : "Registrar y vincular"}</button>
+                </form>
+                <p className="mt-2 text-xs text-slate-text">La fuente se registra a tu usuario y luego se asocia al grupo.</p>
+              </details>
+            </div>
+          ) : pestana === "Fuentes" ? (
             <div className="mt-5 space-y-6">
               <section aria-labelledby="fuentes-vinculadas-titulo">
                 <h3 id="fuentes-vinculadas-titulo" className="font-semibold">Fuentes vinculadas</h3>
@@ -252,15 +269,6 @@ export default function ModalDetalleGrupo({ grupo, abierto, alCerrar, triggerRef
                 ) : <p className="mt-2 text-sm text-slate-text">No hay otras fuentes registradas para vincular.</p>}
               </section>
 
-              <details className="rounded-2xl border border-border-line/50 p-4">
-                <summary className="cursor-pointer font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Registrar una fuente nueva para este grupo</summary>
-                <form onSubmit={registrarYVincular} className="mt-4 grid gap-3 sm:grid-cols-[1fr_2fr_auto] sm:items-end">
-                  <div className="flex flex-col gap-1.5"><label htmlFor="grupo-nueva-fuente-tipo" className="text-sm font-medium">Tipo</label><select id="grupo-nueva-fuente-tipo" value={tipoNuevaFuente} onChange={(evento) => setTipoNuevaFuente(evento.target.value)} disabled={cargando} className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm"><option value="CORREO">Correo electrónico</option><option value="TELEFONO">Teléfono</option><option value="OTRO">Otro</option></select></div>
-                  <div className="flex flex-col gap-1.5"><label htmlFor="grupo-nueva-fuente-contenido" className="text-sm font-medium">Contenido</label><input id="grupo-nueva-fuente-contenido" value={contenidoNuevaFuente} onChange={(evento) => setContenidoNuevaFuente(evento.target.value)} maxLength={255} required disabled={cargando} className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /></div>
-                  <button type="submit" disabled={cargando} className="min-h-11 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">{cargando ? "Guardando…" : "Registrar y vincular"}</button>
-                </form>
-                <p className="mt-2 text-xs text-slate-text">La fuente se registra a tu usuario y luego se asocia al grupo.</p>
-              </details>
             </div>
           ) : (
             <div className="mt-5 space-y-5">
@@ -269,7 +277,6 @@ export default function ModalDetalleGrupo({ grupo, abierto, alCerrar, triggerRef
                 {mensajes.length ? mensajes.map((mensaje) => <p key={mensaje.id} className="w-fit max-w-full break-words rounded-xl bg-emerald-primary/10 px-3 py-2 text-sm">{mensaje.texto}</p>) : <p className="text-sm text-slate-text">Aún no hay mensajes en esta demostración.</p>}
               </section>
               <form onSubmit={enviarMensaje} className="flex gap-2"><label className="sr-only" htmlFor="grupo-chat-mensaje">Mensaje</label><input id="grupo-chat-mensaje" value={borrador} onChange={(evento) => setBorrador(evento.target.value)} maxLength={500} placeholder="Escribe un mensaje" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /><button type="submit" className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Enviar</button></form>
-              <form onSubmit={prepararInvitacion} className="rounded-2xl border border-border-line/50 p-4"><h3 className="font-semibold">Invitar usuarios</h3><div className="mt-3 flex flex-col gap-2 sm:flex-row"><label className="sr-only" htmlFor="grupo-invitacion-correo">Correo de la persona</label><input id="grupo-invitacion-correo" type="email" required value={correoInvitacion} onChange={(evento) => setCorreoInvitacion(evento.target.value)} placeholder="persona@correo.com" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /><button type="submit" className="min-h-11 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Preparar invitación</button></div></form>
             </div>
           )}
       </ModalDetalleRegistro>

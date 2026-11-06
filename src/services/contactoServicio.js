@@ -42,7 +42,7 @@ export async function obtenerContactosPorUsuario(idUsuario) {
  * @returns {Promise<any>}
  */
 export async function obtenerContactoPorId(idContacto) {
-  const ruta = `${getEndpoint("contacto.porId")}/${idContacto}`;
+  const ruta = `${getEndpoint("contacto.porId")}/${encodeURIComponent(idContacto)}`;
   return obtener(ruta);
 }
 
@@ -53,7 +53,7 @@ export async function obtenerContactoPorId(idContacto) {
  * @returns {Promise<any>}
  */
 export async function obtenerContactoPorNombre(nombre) {
-  const ruta = `${getEndpoint("contacto.porNombre")}/${nombre}`;
+  const ruta = `${getEndpoint("contacto.porNombre")}/${encodeURIComponent(nombre)}`;
   return obtener(ruta);
 }
 
@@ -64,7 +64,7 @@ export async function obtenerContactoPorNombre(nombre) {
  * @returns {Promise<any>}
  */
 export async function obtenerContactoPorNota(nota) {
-  const ruta = `${getEndpoint("contacto.porNota")}/${nota}`;
+  const ruta = `${getEndpoint("contacto.porNota")}/${encodeURIComponent(nota)}`;
   return obtener(ruta);
 }
 
@@ -75,7 +75,7 @@ export async function obtenerContactoPorNota(nota) {
  * @returns {Promise<any>}
  */
 export async function obtenerContactoPorTelefono(telefono) {
-  const ruta = `${getEndpoint("contacto.porTelefono")}/${telefono}`;
+  const ruta = `${getEndpoint("contacto.porTelefono")}/${encodeURIComponent(telefono)}`;
   return obtener(ruta);
 }
 
@@ -86,7 +86,7 @@ export async function obtenerContactoPorTelefono(telefono) {
  * @returns {Promise<any>}
  */
 export async function eliminarContacto(idContacto) {
-  const ruta = `${rutaBase}/${idContacto}`;
+  const ruta = `${rutaBase}/${encodeURIComponent(idContacto)}`;
   return eliminar(ruta);
 }
 
@@ -98,6 +98,6 @@ export async function eliminarContacto(idContacto) {
  * @returns {Promise<any>}
  */
 export async function actualizarContacto(idContacto, contacto) {
-  const ruta = `${rutaBase}/${idContacto}`;
+  const ruta = `${rutaBase}/${encodeURIComponent(idContacto)}`;
   return actualizar(ruta, contacto);
 }

@@ -19,11 +19,12 @@ import { crearGrupo } from "../../../services/grupoServicio";
 const CONFIGURACION = {
   tarjeta: {
     titulo: "Registrar tarjeta",
-    inicial: { titular: "", numero: "", expiracion: "", cvv: "", entidad: "" },
+    inicial: { titular: "", numero: "", expiracion: "", entidad: "" },
     campos: [
-      ["titular", "Titular", "text"], ["numero", "Número de tarjeta", "text"],
-      ["expiracion", "Vencimiento (MM/AA)", "text"], ["cvv", "CVV", "password"],
-      ["entidad", "Entidad financiera", "text"],
+      ["titular", "Titular", "text", "Ej. Ana Pérez"],
+      ["numero", "Número de tarjeta", "text", "Ej. 4111111111111111"],
+      ["expiracion", "Vencimiento (MM/AA)", "text", "MM/AA"],
+      ["entidad", "Entidad financiera", "text", "Ej. Banco Nacional"],
     ],
     crear: crearTarjeta,
   },
@@ -65,9 +66,6 @@ function validarTarjeta(valores) {
   const hoy = new Date();
   if (anio < hoy.getFullYear() || (anio === hoy.getFullYear() && mes < hoy.getMonth() + 1)) {
     return { campo: "expiracion", mensaje: "La fecha de vencimiento debe ser el mes actual o uno futuro." };
-  }
-  if (!/^\d{3}$/.test(valores.cvv || "")) {
-    return { campo: "cvv", mensaje: "El CVV debe tener exactamente 3 dígitos." };
   }
   if (typeof valores.entidad !== "string" || !valores.entidad.trim()) {
     return { campo: "entidad", mensaje: "La entidad financiera es obligatoria." };
@@ -142,13 +140,13 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
     setCargando(true);
     setError("");
     try {
-      const payload = {
+      const payload = tipo === "tarjeta" ? {
+        titular: valores.titular.trim(),
+        numero: valores.numero,
+        expiracion: convertirVencimientoAFecha(valores.expiracion),
+        entidad: valores.entidad.trim(),
+      } : {
         ...valores,
-        ...(tipo === "tarjeta" && {
-          titular: valores.titular.trim(),
-          expiracion: convertirVencimientoAFecha(valores.expiracion),
-          idTarjeta: generarId(),
-        }),
         ...(tipo === "contacto" && { idContacto: generarId() }),
         ...(tipo === "grupo" && { idGrupo: generarId(), estado: true }),
         fechaCreacion: fechaLocal(),
@@ -176,24 +174,24 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
             <BotonCerrar ariaLabel={`Cerrar ${configuracion.titulo.toLowerCase()}`} alCerrar={alCerrar} />
           </header>
           <form onSubmit={enviar} noValidate={tipo === "tarjeta"} className="space-y-4">
-            {configuracion.campos.map(([campo, etiqueta, tipoCampo]) => (
+            {configuracion.campos.map(([campo, etiqueta, tipoCampo, placeholder]) => (
               <div key={campo} className="flex flex-col gap-1.5">
                 <label htmlFor={`registro-${tipo}-${campo}`} className="text-sm font-medium">{etiqueta}</label>
               <input
                 id={`registro-${tipo}-${campo}`}
                 required
                 type={tipoCampo}
-                inputMode={tipo === "tarjeta" && ["numero", "expiracion", "cvv"].includes(campo) ? "numeric" : undefined}
-                placeholder={campo === "expiracion" && tipo === "tarjeta" ? "MM/AA" : undefined}
-                pattern={campo === "numero" && tipo === "tarjeta" ? "[0-9]{14,19}" : campo === "expiracion" && tipo === "tarjeta" ? "(0[1-9]|1[0-2])/[0-9]{2}" : campo === "cvv" && tipo === "tarjeta" ? "[0-9]{3}" : undefined}
+                inputMode={tipo === "tarjeta" && ["numero", "expiracion"].includes(campo) ? "numeric" : undefined}
+                placeholder={placeholder}
+                pattern={campo === "numero" && tipo === "tarjeta" ? "[0-9]{14,19}" : campo === "expiracion" && tipo === "tarjeta" ? "(0[1-9]|1[0-2])/[0-9]{2}" : undefined}
                 value={valores[campo]}
                 aria-invalid={campoConError === campo}
                 aria-describedby={campoConError === campo ? "registro-tarjeta-error" : undefined}
                 onChange={(e) => {
                   const valor = tipo === "tarjeta" && campo === "expiracion"
                     ? formatearVencimiento(e.target.value)
-                    : tipo === "tarjeta" && ["numero", "cvv"].includes(campo)
-                      ? e.target.value.replace(/\D/g, "").slice(0, campo === "cvv" ? 3 : 19)
+                    : tipo === "tarjeta" && campo === "numero"
+                      ? e.target.value.replace(/\D/g, "").slice(0, 19)
                       : e.target.value;
                   cambiar(campo, valor);
                   if (campoConError === campo) { setCampoConError(""); setError(""); }
@@ -201,14 +199,14 @@ export default function ModalRegistroEntidad({ tipo, abierto, alCerrar, triggerR
                 onBlur={tipo === "tarjeta" && campo === "expiracion"
                   ? (e) => cambiar(campo, completarVencimientoAlSalir(e.target.value))
                   : undefined}
-                maxLength={campo === "numero" ? 19 : campo === "expiracion" && tipo === "tarjeta" ? 5 : campo === "cvv" && tipo === "tarjeta" ? 3 : 255}
+                maxLength={campo === "numero" ? 19 : campo === "expiracion" && tipo === "tarjeta" ? 5 : 255}
                 disabled={cargando}
                 className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
               />
               </div>
             ))}
             {error && <p id={tipo === "tarjeta" ? "registro-tarjeta-error" : undefined} role="alert" className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
-            <button type="submit" disabled={cargando} className="rounded-xl bg-emerald-primary px-4 py-2.5 font-medium text-bg-cream transition-colors hover:bg-emerald-hover disabled:opacity-50">
+            <button type="submit" disabled={cargando} className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">
               {cargando ? "Guardando..." : "Guardar registro"}
             </button>
           </form>

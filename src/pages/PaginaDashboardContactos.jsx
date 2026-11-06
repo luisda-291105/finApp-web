@@ -10,8 +10,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Mail, Phone, Plus, StickyNote, UserRound } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import ModalRegistroEntidad from "../components/domain/modales/ModalRegistroEntidad";
+import ModalContacto from "../components/domain/modales/ModalContacto";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
-import { obtenerContactosPorUsuario } from "../services/contactoServicio";
+import { actualizarContacto, eliminarContacto, obtenerContactosPorUsuario } from "../services/contactoServicio";
 
 function extraerLista(respuesta) {
   if (Array.isArray(respuesta)) return respuesta;
@@ -24,6 +25,7 @@ export default function PaginaDashboardContactos() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [contactoSeleccionado, setContactoSeleccionado] = useState(null);
   const disparadorRef = useRef(null);
 
   const cargarContactos = useCallback(async () => {
@@ -46,6 +48,18 @@ export default function PaginaDashboardContactos() {
 
   useEffect(() => { cargarContactos(); }, [cargarContactos]);
 
+  const guardarContacto = async (idContacto, cambios) => {
+    await actualizarContacto(idContacto, cambios);
+    setContactos((actuales) => actuales.map((contacto) => contacto.idContacto === idContacto ? { ...contacto, ...cambios } : contacto));
+    setContactoSeleccionado((actual) => actual?.idContacto === idContacto ? { ...actual, ...cambios } : actual);
+  };
+
+  const borrarContacto = async (idContacto) => {
+    await eliminarContacto(idContacto);
+    setContactos((actuales) => actuales.filter((contacto) => contacto.idContacto !== idContacto));
+    setContactoSeleccionado(null);
+  };
+
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -67,12 +81,12 @@ export default function PaginaDashboardContactos() {
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Contactos registrados">
             {contactos.map((contacto, index) => (
               <li key={contacto.idContacto || index}>
-                <article className="h-full rounded-xl border border-border-line/30 bg-bg-cream/70 p-5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-primary/10 text-emerald-primary">
-                      <UserRound className="h-5 w-5" aria-hidden="true" />
+                <article role="button" tabIndex={0} onClick={() => setContactoSeleccionado(contacto)} onKeyDown={(evento) => { if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); setContactoSeleccionado(contacto); } }} aria-label={`Ver contacto ${contacto.nombre || "sin nombre"}`} className="h-full cursor-pointer rounded-xl border border-border-line/30 bg-bg-cream/70 p-5 text-left transition-colors hover:border-emerald-primary/40 hover:bg-bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-primary/10 text-emerald-primary">
+                      <UserRound className="h-6 w-6" aria-hidden="true" />
                     </span>
-                    <h2 className="min-w-0 truncate font-display text-lg font-semibold text-bg-dark">{contacto.nombre || "Contacto sin nombre"}</h2>
+                    <h2 className="max-w-full truncate font-display text-lg font-semibold text-bg-dark">{contacto.nombre || "Contacto sin nombre"}</h2>
                   </div>
                   <dl className="mt-4 space-y-3 text-sm">
                     <div className="flex items-start gap-2 text-slate-text"><Phone className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><div><dt className="sr-only">Teléfono</dt><dd>{contacto.telefono || "Sin teléfono"}</dd></div></div>
@@ -86,6 +100,7 @@ export default function PaginaDashboardContactos() {
         )}
       </Card>
       <ModalRegistroEntidad tipo="contacto" abierto={modalAbierto} alCerrar={() => setModalAbierto(false)} triggerRef={disparadorRef} alGuardar={cargarContactos} />
+      <ModalContacto contacto={contactoSeleccionado} onCerrar={() => setContactoSeleccionado(null)} onGuardar={guardarContacto} onEliminar={borrarContacto} />
     </section>
   );
 }

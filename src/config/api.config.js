@@ -48,7 +48,7 @@ export const ENDPOINTS = {
     porId: "/contacto/id",
     porNombre: "/contacto/nombre",
     porNota: "/contacto/nota",
-    porTelefono: "/contacto/contacto",
+    porTelefono: "/contacto/telefono",
   },
   asistente: {
     chat: "/asistente/chat",

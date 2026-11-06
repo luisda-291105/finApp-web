@@ -18,6 +18,10 @@ import { actualizarFuente, eliminarFuente, obtenerFuentesPorUsuario } from "../s
 import { GMAIL_CONFIGURADO } from "../services/gmailServicio";
 import { Moon, Sun } from "lucide-react";
 
+function EstadoFuente({ activo }) {
+  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${activo ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}><span className={`h-2 w-2 rounded-full ${activo ? "animate-pulse bg-emerald-600" : "bg-slate-500"}`} aria-hidden="true" />{activo ? "Activa" : "Inactiva"}</span>;
+}
+
 export default function PaginaDashboardConfiguracion() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);
   const [usuarioAbierto, setUsuarioAbierto] = useState(false);
@@ -282,17 +286,7 @@ export default function PaginaDashboardConfiguracion() {
                       <td className="py-2.5 pr-4 text-bg-dark">
                         {fuente.contenido || "-"}
                       </td>
-                      <td className="py-2.5 pr-4">
-                        <span
-                          className={`text-xs font-semibold ${
-                            fuente.estado !== false
-                              ? "text-emerald-primary"
-                              : "text-slate-text"
-                          }`}
-                        >
-                          {fuente.estado !== false ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
+                      <td className="py-2.5 pr-4"><EstadoFuente activo={fuente.estado !== false} /></td>
                       <td className="py-2.5 text-xs text-slate-text">
                         {fuente.fechaCreacion || "-"}
                       </td>
@@ -318,7 +312,7 @@ export default function PaginaDashboardConfiguracion() {
                   <label className="grid gap-1 text-xs text-slate-text">Estado en móvil<select aria-label="Estado de la fuente en móvil" value={String(fuenteEditando.estado !== false)} onChange={(evento) => setFuenteEditando((actual) => ({ ...actual, estado: evento.target.value === "true" }))} className="min-h-10 rounded-lg border border-border-line bg-bg-cream px-2 text-sm"><option value="true">Activo</option><option value="false">Inactivo</option></select></label>
                   <p className="text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p><div className="flex flex-wrap gap-2"><button type="submit" disabled={operacionFuente || !fuenteEditando.contenido.trim()} aria-label="Guardar cambios de fuente en móvil" className="min-h-10 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream disabled:opacity-50">Guardar</button><button type="button" disabled={operacionFuente} onClick={() => setFuenteEditando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div>
                 </form> : <>
-                  <p className="text-xs uppercase tracking-wide text-slate-text">{fuente.tipo || "OTRO"} · {fuente.estado !== false ? "Activo" : "Inactivo"}</p><p className="mt-1 break-all text-sm font-medium text-bg-dark">{fuente.contenido || "-"}</p><p className="mt-1 text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p>
+                  <div className="flex items-center justify-between gap-3"><p className="text-xs uppercase tracking-wide text-slate-text">{fuente.tipo || "OTRO"}</p><EstadoFuente activo={fuente.estado !== false} /></div><p className="mt-1 break-all text-sm font-medium text-bg-dark">{fuente.contenido || "-"}</p><p className="mt-1 text-xs text-slate-text">Fecha: {fuente.fechaCreacion || "-"}</p>
                   {fuenteEliminando?.idFuente === fuente.idFuente ? <div className="mt-3 flex flex-wrap items-center gap-2"><span className="text-xs text-slate-text">¿Eliminar esta fuente?</span><button type="button" disabled={operacionFuente} onClick={confirmarEliminacionFuente} aria-label={`Confirmar eliminación de ${fuente.contenido}`} className="min-h-10 rounded-lg bg-red-700 px-3 text-xs font-semibold text-white">Confirmar</button><button type="button" onClick={() => setFuenteEliminando(null)} className="min-h-10 rounded-lg px-3 text-xs">Cancelar</button></div> : <div className="mt-3 flex flex-wrap gap-2"><button type="button" aria-label={`Editar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEliminando(null); setFuenteEditando({ ...fuente, tipo: fuente.tipo || "OTRO", contenido: fuente.contenido || "", estado: fuente.estado !== false }); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">Editar</button><button type="button" aria-label={`Eliminar fuente ${fuente.contenido} en móvil`} onClick={() => { setFuenteEditando(null); setFuenteEliminando(fuente); }} className="min-h-10 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Eliminar</button></div>}
                 </>}
               </li>)}
