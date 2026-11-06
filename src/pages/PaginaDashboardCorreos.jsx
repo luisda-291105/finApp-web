@@ -7,7 +7,7 @@
  * @usadoPor   App.jsx (/dashboard/correos)
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Mail, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Card } from "../components/ui/Card";
 import ModalDetalleRegistro from "../components/domain/modales/ModalDetalleRegistro";
 import { useUsuarioActivo } from "../context/UsuarioActivoContext";
@@ -115,14 +115,35 @@ export default function PaginaDashboardCorreos() {
     }
   }, [tokenGmail, desconectarGmail]);
 
+  const tarjetasCorreo = [
+    ...fuentes.map((fuente) => ({
+      ...fuente,
+      tipoTarjeta: "FUENTE",
+      cuentaGmailId: cuentasGmail.find((cuenta) => cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase())?.id,
+    })),
+    ...cuentasGmail.map((cuenta) => ({
+      idFuente: `gmail-${cuenta.id}`,
+      contenido: cuenta.email,
+      tipo: "CORREO",
+      estado: true,
+      tipoTarjeta: "CUENTA_GMAIL",
+      cuentaGmailId: cuenta.id,
+    })),
+  ];
+
   const consultarFuentesRegistradas = useCallback(async () => {
-    if (!tokenGmail || fuentes.length === 0) return;
+    if (!tokenGmail) return;
     const activas = fuentes.filter((fuente) => fuente.estado !== false);
-    if (activas.length === 0) return;
+    const cuentaActual = cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaSeleccionadaId));
+    const destinos = [...activas];
+    if (cuentaActual) {
+      destinos.push({ idFuente: `gmail-${cuentaActual.id}`, contenido: cuentaActual.email, estado: true });
+    }
+    if (destinos.length === 0) return;
     try {
       setCargandoMensajes(true);
       setError("");
-      const resultados = await Promise.all(activas.map(async (fuente) => {
+      const resultados = await Promise.all(destinos.map(async (fuente) => {
         const respuesta = await obtenerCorreosGmail(tokenGmail, [fuente]);
         return [fuente.idFuente, respuesta.filter((correo) => coincideDestino(correo, fuente.contenido))];
       }));
@@ -138,7 +159,7 @@ export default function PaginaDashboardCorreos() {
     } finally {
       setCargandoMensajes(false);
     }
-  }, [tokenGmail, fuentes, fuenteSeleccionada, desconectarGmail]);
+  }, [tokenGmail, fuentes, cuentasGmail, cuentaSeleccionadaId, fuenteSeleccionada, desconectarGmail]);
 
   const seleccionarFuente = async (fuente, evento) => {
     disparadorFuenteRef.current = evento.currentTarget;
@@ -146,13 +167,11 @@ export default function PaginaDashboardCorreos() {
     setCategoria("TODOS");
     setMensajesFuente([]);
     setError("");
+    if (fuente.cuentaGmailId && String(fuente.cuentaGmailId) !== String(cuentaSeleccionadaId)) {
+      seleccionarCuentaGmail(fuente.cuentaGmailId);
+      return;
+    }
     if (tokenGmail && fuente.estado !== false) await cargarMensajesFuente(fuente, tokenGmail);
-  };
-
-  const cambiarCuentaGmail = (id) => {
-    setMensajesFuente([]);
-    setError("");
-    seleccionarCuentaGmail(id);
   };
 
   useEffect(() => {
@@ -162,17 +181,17 @@ export default function PaginaDashboardCorreos() {
   }, [tokenGmail]);
 
   useEffect(() => {
-    if (!tokenGmail || !usuario?.idUsuario || fuentes.length === 0) return undefined;
+    if (!tokenGmail || !usuario?.idUsuario || (fuentes.length === 0 && cuentasGmail.length === 0)) return undefined;
     consultarFuentesRegistradas();
     const temporizador = window.setInterval(() => {
       cargarFuentes();
       consultarFuentesRegistradas();
     }, INTERVALO_CONSULTA_MS);
     return () => window.clearInterval(temporizador);
-  }, [tokenGmail, usuario?.idUsuario, fuentes, cargarFuentes, consultarFuentesRegistradas]);
+  }, [tokenGmail, usuario?.idUsuario, fuentes, cuentasGmail, cargarFuentes, consultarFuentesRegistradas]);
 
   const mensajesVisibles = mensajesFuente.filter((correo) => coincideCategoria(correo, categoria));
-  const noHayFuentes = !cargandoFuentes && fuentes.length === 0;
+  const noHayFuentes = !cargandoFuentes && fuentes.length === 0 && cuentasGmail.length === 0;
 
   return (
     <section aria-labelledby="dashboard-title" className="space-y-6 pt-6 pb-10">
@@ -180,7 +199,7 @@ export default function PaginaDashboardCorreos() {
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
           <h1 id="dashboard-title" className="mt-1 font-display text-3xl font-medium text-bg-dark">Correos</h1>
-          <p className="mt-1 text-sm text-slate-text">Mensajes recibidos por tus fuentes de correo, organizados por categoría.</p>
+          <p className="mt-1 text-sm text-slate-text">Consulta los mensajes de cada fuente registrada y cuenta Gmail conectada.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {tokenGmail ? (
@@ -192,37 +211,37 @@ export default function PaginaDashboardCorreos() {
       </div>
 
       <Card className="space-y-3 p-5">
-        <h2 className="font-display text-base font-semibold text-bg-dark">Fuentes vigiladas</h2>
-        {cuentasGmail.length > 0 && <section aria-labelledby="cuentas-gmail-titulo" className="space-y-3"><h3 id="cuentas-gmail-titulo" className="text-sm font-medium text-slate-text">Cuentas Gmail conectadas</h3><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="group" aria-label="Cuentas Gmail disponibles para consultar">{cuentasGmail.map((cuenta) => {
-          const seleccionada = String(cuentaSeleccionadaId) === String(cuenta.id);
-          const activa = seleccionada && Boolean(tokenGmail) && !conexionCargando;
-          const estadoCuenta = conexionCargando && seleccionada ? "Conectando" : activa ? "Activa" : seleccionada ? "Inactiva" : "Conectada";
-          return <button key={cuenta.id} type="button" disabled={conexionCargando} aria-pressed={seleccionada} onClick={() => cambiarCuentaGmail(cuenta.id)} className={`rounded-2xl border p-4 text-left transition-colors hover:border-emerald-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-60 ${activa ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}><span className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-slate-text"><Mail className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Cuenta Gmail</span><span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${activa ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}><span className={`h-1.5 w-1.5 rounded-full ${activa ? "animate-pulse bg-emerald-600" : "bg-slate-500"}`} aria-hidden="true" />{estadoCuenta}</span></span><span className="mt-2 block break-all text-sm font-medium text-bg-dark">{cuenta.email}</span><span className="mt-2 block text-xs text-slate-text">{activa ? "Puede consultar las fuentes activas" : estadoCuenta === "Inactiva" ? "No se pudo activar la consulta" : "Selecciona para consultar sus correos"}</span></button>;
-        })}</div></section>}
+        <h2 className="font-display text-base font-semibold text-bg-dark">Fuentes y cuentas para consultar</h2>
         {cuentaGmail && <p className="text-xs text-emerald-primary">Consulta automática desde {cuentaGmail}</p>}
         {cargandoFuentes && <p role="status" className="text-sm text-slate-text">Cargando fuentes...</p>}
         {!cargandoFuentes && !usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para conectar tus fuentes.</p>}
-        {noHayFuentes && <p className="text-sm text-slate-text">Agrega una fuente de tipo correo para elegir a qué direcciones entrantes buscar mensajes.</p>}
-        {!cargandoFuentes && fuentes.length > 0 && (
+        {noHayFuentes && <p className="text-sm text-slate-text">Conecta una cuenta Gmail o registra una fuente de correo para consultar mensajes.</p>}
+        {!cargandoFuentes && tarjetasCorreo.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {fuentes.map((fuente) => {
-              const inactiva = !tokenGmail || fuente.estado === false;
+            {tarjetasCorreo.map((fuente) => {
+              const esCuenta = fuente.tipoTarjeta === "CUENTA_GMAIL";
+              const cuentaSeleccionada = fuente.cuentaGmailId && String(fuente.cuentaGmailId) === String(cuentaSeleccionadaId);
+              const inactiva = fuente.estado === false || (!tokenGmail && !conexionCargando) || (Boolean(fuente.cuentaGmailId) && !cuentaSeleccionada);
+              const estado = esCuenta
+                ? conexionCargando && cuentaSeleccionada ? "Conectando" : cuentaSeleccionada && tokenGmail ? "Activa" : "Conectada · abrir para consultar"
+                : fuente.estado === false ? "Inactiva · deshabilitada" : fuente.cuentaGmailId && !cuentaSeleccionada ? "Conectada · abrir para consultar" : !tokenGmail ? "Inactiva · conecta Gmail" : "Activa · consulta automática";
               return (
                 <button
                   key={fuente.idFuente}
                   type="button"
+                  disabled={conexionCargando && Boolean(fuente.cuentaGmailId)}
                   onClick={(evento) => seleccionarFuente(fuente, evento)}
                   aria-label={`Ver correos de ${fuente.contenido}`}
-                  className={`rounded-2xl border p-4 text-left transition-colors hover:border-emerald-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${fuenteSeleccionada?.idFuente === fuente.idFuente ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}
+                  className={`rounded-2xl border p-4 text-left transition-colors hover:border-emerald-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-60 ${fuenteSeleccionada?.idFuente === fuente.idFuente ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}
                 >
-                  <span className="block text-xs uppercase tracking-wide text-slate-text">Fuente de correo</span>
+                  <span className="block text-xs uppercase tracking-wide text-slate-text">{esCuenta ? "Cuenta Gmail" : "Fuente registrada"}</span>
                   <span className="mt-1 block break-all font-medium text-bg-dark">{fuente.contenido}</span>
                   <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${inactiva ? "bg-slate-200 text-slate-600" : "bg-emerald-100 text-emerald-800"}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${inactiva ? "bg-slate-500" : "animate-pulse bg-emerald-600"}`} aria-hidden="true" />
-                    {inactiva
-                      ? tokenGmail ? "Inactiva · no se pudo activar" : "Inactiva · conecta Gmail"
-                      : `${mensajesPorFuente[fuente.idFuente]?.length ?? 0} mensajes · consulta automática`}
+                    {estado}
                   </span>
+                  {mensajesPorFuente[fuente.idFuente]?.length > 0 && <span className="mt-2 block text-xs text-slate-text">{mensajesPorFuente[fuente.idFuente].length} mensajes consultados</span>}
+                  <span className="mt-2 block text-xs font-medium text-emerald-primary">Abrir consultas</span>
                 </button>
               );
             })}
