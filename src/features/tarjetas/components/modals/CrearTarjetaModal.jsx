@@ -70,8 +70,7 @@ export default function CrearTarjetaModal({ abierto, alCerrar, triggerRef, alGua
       return;
     }
     setCargando(true); setError(""); setCampoConError("");
-    const fecha = new Date();
-    const payload = { titular: valores.titular.trim(), numero: valores.numero, expiracion: convertirVencimientoAFecha(valores.expiracion), entidad: valores.entidad.trim(), fechaCreacion: `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`, usuario: { idUsuario: usuario.idUsuario } };
+    const payload = { titular: valores.titular.trim(), numero: valores.numero, expiracion: convertirVencimientoAFecha(valores.expiracion), entidad: valores.entidad.trim() };
     try { const guardada = await crearTarjeta(payload); alGuardar?.(guardada || payload); alCerrar(); }
     catch (fallo) { setError(fallo?.message || "No se pudo guardar el registro."); }
     finally { setCargando(false); }
