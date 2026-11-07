@@ -299,4 +299,4 @@ presentan enmascarados.
 - `docs/arquitectura-frontend.md` — contrato y orden de migración.
 - `src/features/grupo/` — referencia completa del patrón.
 - `src/features/tarjetas/` — segundo ejemplo, incluido el uso de `ModalDetalleRegistro`.
-- `AGENTS.md`, `.agents/rules/rules.md` y `.agents/skills/file-hearder-template.md/SKILL.md`.
+- `AGENTS.md`, `.agents/rules/rules.md` y `.agents/skills/file-hearder-template/SKILL.md`.

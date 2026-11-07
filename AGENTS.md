@@ -39,8 +39,8 @@ trabajo y respuesta está en [`.agents/response-rules.md`](.agents/response-rule
 - Mantén nombres de props, estados y eventos en español, siguiendo los patrones del
   proyecto.
 - Los componentes, hooks y archivos de configuración nuevos deben seguir
-  `.agents/file-header-template.md`. No se requiere ese header en documentos Markdown
-  ni en archivos de pruebas.
+  `.agents/skills/file-hearder-template/SKILL.md`. No se requiere ese header en documentos
+  Markdown ni en archivos de pruebas.
 - Usa `src/config/api.config.js` para endpoints; no hardcodees URLs en componentes.
 - La paleta debe usar los tokens de `src/styles/index.css`. No añadas hexadecimales a
   JSX/JS; hay literales heredados que no deben copiarse a código nuevo.
