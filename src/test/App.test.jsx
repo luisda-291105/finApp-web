@@ -206,7 +206,7 @@ describe("rutas de la aplicación", () => {
 
     expect(await screen.findByRole("heading", { name: "Tus tarjetas" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Tarjetas registradas" })).toBeDefined();
-    expect(screen.getByText("Todavía no tienes tarjetas registradas.")).toBeDefined();
+    expect(await screen.findByText("Todavía no tienes tarjetas registradas.", {}, ESPERA_CARGA)).toBeDefined();
     expect(screen.queryByText("Datos de demostración")).toBeNull();
   });
 

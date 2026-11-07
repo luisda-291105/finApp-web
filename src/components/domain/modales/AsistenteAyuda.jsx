@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
+import { BotMessageSquare } from "lucide-react";
 import { BotonCerrar } from "../../ui/BotonCerrar";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
@@ -208,10 +209,18 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                 {mensajes.map((mensaje, indice) => (
                   <div key={`${mensaje.rol}-${indice}`} className={mensaje.rol === "user" ? "flex justify-end" : "flex justify-start"}>
                     <div className={mensaje.rol === "user"
-                      ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream"
-                      : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/40 bg-bg-cream px-3.5 py-2.5 text-sm text-bg-dark"}
-                    >
-                      <p className="whitespace-pre-line leading-relaxed">{mensaje.contenido}</p>
+                      ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream shadow-sm"
+                      : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/70 bg-white px-3.5 py-2.5 text-sm text-bg-dark shadow-sm"}>
+                      {mensaje.rol !== "user" && (
+                        <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-primary">
+                          <BotMessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                          Asistente
+                        </p>
+                      )}
+                      <p className="whitespace-pre-line leading-relaxed">
+                        {mensaje.rol === "user" && <span className="sr-only">TÃº: </span>}
+                        {mensaje.contenido}
+                      </p>
                       {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
                       {mensaje.accionPendiente && (
                         <div className="mt-3 rounded-xl border border-border-line/60 bg-bg-dark/5 p-3">
