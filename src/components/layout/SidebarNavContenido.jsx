@@ -1,7 +1,7 @@
 /**
- * @uso        Contenido compartido de navegación: 6 enlaces y avatar → modal
+ * @uso        Contenido compartido de navegación: 7 enlaces y avatar → modal
  * @funciones  SidebarNavContenido({ alAbrirUserModal, colapsada, avatarSeparado })
- * @datos      6 NavLink fijos + avatar con el usuario activo de UsuarioActivoContext (nombre,
+ * @datos      7 NavLink fijos + avatar con el usuario activo de UsuarioActivoContext (nombre,
  *             iniciales derivadas y correo «No registrado»)
  * @eventos    click enlaces (navegan), click avatar → alAbrirUserModal
  * @estados    Ninguno (stateless)
@@ -9,7 +9,7 @@
  */
 
 import { NavLink } from "react-router-dom";
-import { Home, CreditCard, Users, Contact, Mail, Wallet } from "lucide-react";
+import { Home, CreditCard, Users, Contact, Mail, Wallet, Repeat } from "lucide-react";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 import clsx from "clsx";
 
@@ -41,7 +41,7 @@ function calcularIniciales(nombre) {
 /**
  * SidebarNavContenido
  * Componente stateless que renderiza la navegación compartida del dashboard:
- * 6 enlaces con icono + etiqueta, contexto de ubicación, separador y avatar de usuario que abre el modal.
+ * 7 enlaces con icono + etiqueta, contexto de ubicación, separador y avatar de usuario que abre el modal.
  * No gestiona navegación propia (delega a NavLink) ni estado.
  * Cuando `colapsada=true`, oculta las etiquetas de texto de los enlaces.
  * Con `avatarSeparado=true`, renderiza el avatar como bloque hermano de la navegación
@@ -73,6 +73,7 @@ export default function SidebarNavContenido({
     { ruta: "/dashboard/contactos", icono: Contact, etiqueta: "Contactos" },
     { ruta: "/dashboard/correos", icono: Mail, etiqueta: "Correos" },
     { ruta: "/dashboard/contabilidad", icono: Wallet, etiqueta: "Contabilidad" },
+    { ruta: "/dashboard/suscripciones", icono: Repeat, etiqueta: "Suscripciones" },
   ];
 
   const enlacesNavegacion = enlaces.map(({ ruta, icono: Icono, etiqueta, exacto }) => (

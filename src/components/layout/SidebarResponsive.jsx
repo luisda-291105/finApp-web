@@ -5,7 +5,7 @@ import { useTema } from "../../context/TemaContext";
 /** SidebarResponsive
  * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
  * @funciones  SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal })
- * @datos      6 enlaces compartidos; avatar desde SidebarNavContenido; el cierre de sesión vive en DashboardUserModal
+ * @datos      7 enlaces compartidos; avatar desde SidebarNavContenido; el cierre de sesión vive en DashboardUserModal
  * @eventos    click en enlaces, click en logo toggle, click en avatar
  * @estados    colapsada (boolean, controlada desde padre via useBreakpoint)
  * @usadoPor   DashboardLayout

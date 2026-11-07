@@ -19,6 +19,7 @@ import PaginaDashboardBolsillos from "./pages/PaginaDashboardBolsillos";
 import PaginaDashboardContactos from "./pages/PaginaDashboardContactos";
 import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
 import PaginaDashboardContabilidad from "./pages/PaginaDashboardContabilidad";
+import PaginaDashboardSuscripciones from "./pages/PaginaDashboardSuscripciones";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
 import { GmailProvider } from "./context/GmailContext";
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="/dashboard/contactos" element={<PaginaDashboardContactos />} />
               <Route path="/dashboard/correos" element={<PaginaDashboardCorreos />} />
               <Route path="/dashboard/contabilidad" element={<PaginaDashboardContabilidad />} />
+              <Route path="/dashboard/suscripciones" element={<PaginaDashboardSuscripciones />} />
               <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
