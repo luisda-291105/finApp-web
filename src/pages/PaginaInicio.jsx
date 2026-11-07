@@ -9,12 +9,15 @@
  * @estados    modalAbierto (boolean), modoAuth ("login" | "registro"), ayudaAbierta (boolean)
  * @usadoPor   App.jsx (ruta /)
  */
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { BotMessageSquare } from "lucide-react";
 import LandingLayout from "../layout/LandingLayout";
-import AuthModal from "../components/domain/modales/AuthModal";
-import AsistenteAyuda from "../components/domain/modales/AsistenteAyuda";
 import { useFocoEnVistaDestino } from "../hooks/useFocoEnVistaDestino";
+
+// Los modales no forman parte de la primera pintura: se descargan al abrirse por primera vez
+// y permanecen montados después para conservar el foco y los campos (AC-22).
+const AuthModal = lazy(() => import("../components/domain/modales/AuthModal"));
+const AsistenteAyuda = lazy(() => import("../components/domain/modales/AsistenteAyuda"));
 
 /**
  * PaginaInicio
@@ -27,6 +30,8 @@ export default function PaginaInicio() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState("registro");
   const [ayudaAbierta, setAyudaAbierta] = useState(false);
+  const [authMontado, setAuthMontado] = useState(false);
+  const [ayudaMontada, setAyudaMontada] = useState(false);
   const triggerRef = useRef(null);
 
   // Vista de destino del cierre que navega (RF-15): si la entrada de historial trae la marca,
@@ -35,6 +40,7 @@ export default function PaginaInicio() {
   useFocoEnVistaDestino();
 
   const manejarAbrirAuth = (modo) => {
+    setAuthMontado(true);
     setModoAuth(modo);
     setModalAbierto(true);
   };
@@ -44,6 +50,7 @@ export default function PaginaInicio() {
   };
 
   const manejarAbrirAyuda = () => {
+    setAyudaMontada(true);
     setAyudaAbierta(true);
   };
 
@@ -53,20 +60,28 @@ export default function PaginaInicio() {
 
   return (
     <LandingLayout alAbrirAuth={manejarAbrirAuth}>
-      {/* Modal flotante de autenticación */}
-      <AuthModal
-        abierto={modalAbierto}
-        modoInicial={modoAuth}
-        alCerrar={manejarCerrarAuth}
-      />
+      {/* Modal flotante de autenticación: se descarga al abrirse por primera vez */}
+      {authMontado && (
+        <Suspense fallback={null}>
+          <AuthModal
+            abierto={modalAbierto}
+            modoInicial={modoAuth}
+            alCerrar={manejarCerrarAuth}
+          />
+        </Suspense>
+      )}
 
       {/* Asistente de ayuda (solo diseño, spec 014): abre desde el robot flotante */}
-      <AsistenteAyuda
-        abierto={ayudaAbierta}
-        estadoVisual="vacio"
-        alCerrar={manejarCerrarAyuda}
-        triggerRef={triggerRef}
-      />
+      {ayudaMontada && (
+        <Suspense fallback={null}>
+          <AsistenteAyuda
+            abierto={ayudaAbierta}
+            estadoVisual="vacio"
+            alCerrar={manejarCerrarAyuda}
+            triggerRef={triggerRef}
+          />
+        </Suspense>
+      )}
 
       {/* Botón flotante del asistente de ayuda (visible en esquina inferior derecha de la demo) */}
       <button

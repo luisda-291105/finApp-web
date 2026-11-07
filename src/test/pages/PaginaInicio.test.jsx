@@ -166,7 +166,7 @@ describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => 
       await usuario.click(disparador);
 
       expect(
-        screen.getByRole("dialog", { name: "Asistente de FinApp" })
+        await screen.findByRole("dialog", { name: "Asistente de FinApp" })
       ).toBeInTheDocument();
       expect(
         screen.queryByRole("dialog", { name: "Ventana de acceso" })

@@ -114,13 +114,13 @@ describe("rutas informativas de la spec 016", () => {
   it.each([
     ["/dashboard/contactos", "Contactos"],
     ["/dashboard/correos", "Correos"],
-  ])("muestra %s dentro del dashboard de demostración", (ruta, titulo) => {
+  ])("muestra %s dentro del dashboard de demostración", async (ruta, titulo) => {
     render(
       <MemoryRouter initialEntries={[ruta]}>
         <App />
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("heading", { name: titulo, level: 1 })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: titulo, level: 1 }, { timeout: 5000 })).toBeInTheDocument();
   });
 });

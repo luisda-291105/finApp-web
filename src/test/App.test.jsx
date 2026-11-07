@@ -121,6 +121,9 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import App from "../App";
 
+/** Las vistas del dashboard se descargan como chunks: dar margen en la suite completa. */
+const ESPERA_CARGA = { timeout: 5000 };
+
 beforeEach(() => {
   vi.spyOn(sessionStorage, "getItem").mockImplementation((key) =>
     key === "finapp_sesion_pestana" ? "activa" : null
@@ -141,10 +144,10 @@ function renderRuta(ruta) {
 }
 
 describe("rutas de la aplicación", () => {
-  it("redirige la raíz a dashboard si ya hay sesión activa", () => {
+  it("redirige la raíz a dashboard si ya hay sesión activa", async () => {
     renderRuta("/");
 
-    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "dashboard" }, ESPERA_CARGA)).toBeDefined();
   });
 
   it("muestra la landing cuando no hay sesión activa", () => {
@@ -166,18 +169,18 @@ describe("rutas de la aplicación", () => {
     ).toBeDefined();
   });
 
-  it("muestra el login en su ruta directa si no hay sesión", () => {
+  it("muestra el login en su ruta directa si no hay sesión", async () => {
     vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
     renderRuta("/login");
 
-    expect(screen.getByRole("dialog")).toBeDefined();
+    expect(await screen.findByRole("dialog", {}, ESPERA_CARGA)).toBeDefined();
     expect(screen.getByText("Iniciar sesión")).toBeDefined();
   });
 
-  it("permite abrir el dashboard directamente durante el trial", () => {
+  it("permite abrir el dashboard directamente durante el trial", async () => {
     renderRuta("/dashboard");
 
-    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "dashboard" }, ESPERA_CARGA)).toBeDefined();
     expect(screen.getByRole("button", { name: "crear muestra" })).toBeDefined();
   });
 
@@ -190,10 +193,10 @@ describe("rutas de la aplicación", () => {
       expect(await screen.findByRole("heading", { name: /Controla tu dinero/ })).toBeInTheDocument();
     });
 
-  it("permite abrir Contabilidad dentro del dashboard de demostración", () => {
+  it("permite abrir Contabilidad dentro del dashboard de demostración", async () => {
     renderRuta("/dashboard/contabilidad");
 
-    expect(screen.getByRole("heading", { name: "Contabilidad", level: 1 })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "Contabilidad", level: 1 }, ESPERA_CARGA)).toBeDefined();
     expect(screen.getByRole("heading", { name: "Bolsillos", level: 2 })).toBeDefined();
     expect(screen.queryByText("Datos de demostración")).toBeNull();
   });
@@ -207,36 +210,36 @@ describe("rutas de la aplicación", () => {
     expect(screen.queryByText("Datos de demostración")).toBeNull();
   });
 
-  it("muestra la descripción de gestión en la sección tarjetas", () => {
+  it("muestra la descripción de gestión en la sección tarjetas", async () => {
     renderRuta("/dashboard/tarjetas");
 
-    expect(screen.getByText("Administra tus tarjetas y revisa sus saldos.")).toBeDefined();
+    expect(await screen.findByText("Administra tus tarjetas y revisa sus saldos.", {}, ESPERA_CARGA)).toBeDefined();
   });
 
-  it("no renderiza las 3 cards fijas por defecto en la sección inicio", () => {
+  it("no renderiza las 3 cards fijas por defecto en la sección inicio", async () => {
     renderRuta("/dashboard");
 
-    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "dashboard" }, ESPERA_CARGA)).toBeDefined();
     expect(screen.queryByText("Balance disponible")).toBeNull();
     expect(screen.queryByText("Ingresos del mes")).toBeNull();
     expect(screen.queryByText("Gastos del mes")).toBeNull();
   });
 
-  it("redirige la ruta retirada de transacciones al inicio del dashboard", () => {
+  it("redirige la ruta retirada de transacciones al inicio del dashboard", async () => {
     renderRuta("/dashboard/transacciones");
 
-    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "dashboard" }, ESPERA_CARGA)).toBeDefined();
   });
 
-  it("conserva el placeholder en configuración", () => {
+  it("conserva el placeholder en configuración", async () => {
     renderRuta("/dashboard/configuracion");
 
     expect(
-      screen.getByText("Ajusta tus preferencias de cuenta y seguridad.")
+      await screen.findByText("Ajusta tus preferencias de cuenta y seguridad.", {}, ESPERA_CARGA)
     ).toBeDefined();
   });
 
-  it("mantiene la redirección de la ruta splat con las future flags v7 activadas", () => {
+  it("mantiene la redirección de la ruta splat con las future flags v7 activadas", async () => {
     render(
       <MemoryRouter
         initialEntries={["/dashboard/ruta-inexistente"]}
@@ -247,7 +250,7 @@ describe("rutas de la aplicación", () => {
     );
 
     // El catch-all interno de /dashboard/* sigue llevando al inicio del dashboard
-    expect(screen.getByRole("heading", { name: "dashboard" })).toBeDefined();
+    expect(await screen.findByRole("heading", { name: "dashboard" }, ESPERA_CARGA)).toBeDefined();
   });
 });
 
@@ -281,7 +284,7 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
 
   /** La superficie de origen (`AuthModal`) enfoca su contenedor con la trampa real al abrir. */
   const esperarFocoEnElDialogo = async () => {
-    const dialogo = screen.getByRole("dialog");
+    const dialogo = await screen.findByRole("dialog");
     await waitFor(() => expect(document.activeElement).toBe(dialogo));
     return dialogo;
   };
