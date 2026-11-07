@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PaginaDashboardBolsillos from "../../pages/PaginaDashboardBolsillos";
-import { obtenerGruposPorUsuario } from "../../services/grupoServicio";
+import { obtenerGruposPorUsuario, crearGrupo } from "../../features/grupo/services/gruposService";
 
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ usuario: { idUsuario: "usuario-prueba", nombre: "Ana" } }),
 }));
-vi.mock("../../services/grupoServicio", () => ({
+vi.mock("../../features/grupo/services/gruposService", () => ({
   obtenerGruposPorUsuario: vi.fn(), crearGrupo: vi.fn(), actualizarGrupo: vi.fn(),
   eliminarGrupo: vi.fn(), vincularFuenteAGrupo: vi.fn(), desvincularFuenteDeGrupo: vi.fn(),
 }));
@@ -55,5 +55,20 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
     expect(await screen.findByRole("dialog", { name: "Crear grupo" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nombre del grupo")).toBeInTheDocument();
     expect(screen.getByLabelText("Descripción")).toBeInTheDocument();
+  });
+
+  it("guarda desde el modal del feature y recarga los grupos", async () => {
+    const usuario = userEvent.setup();
+    crearGrupo.mockResolvedValue({ idGrupo: "grupo-2", nombre: "Helado" });
+    render(<PaginaDashboardBolsillos />);
+    await usuario.click(await screen.findByRole("button", { name: "Crear nuevo grupo" }));
+    await usuario.type(screen.getByLabelText("Nombre del grupo"), "Helado");
+    await usuario.type(screen.getByLabelText("Descripción"), "Gastos del paseo");
+    await usuario.click(screen.getByRole("button", { name: "Guardar registro" }));
+    expect(screen.queryByRole("dialog", { name: "Crear grupo" })).not.toBeInTheDocument();
+    expect(crearGrupo).toHaveBeenCalledWith(expect.objectContaining({
+      nombre: "Helado", descripcion: "Gastos del paseo", usuario: { idUsuario: "usuario-prueba" }, estado: true,
+    }));
+    expect(obtenerGruposPorUsuario).toHaveBeenCalledTimes(2);
   });
 });
