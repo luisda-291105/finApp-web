@@ -12,13 +12,19 @@
   --font-display: "Fraunces", serif;
   --font-body: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
 
+  /* Escala de texto compacta elevada para mejorar la legibilidad en pantalla. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+
   --color-bg-dark: #0f1117;
 
   --color-bg-cream: #f7f6f2;
   --color-emerald-primary: #1a7a5e;
   --color-emerald-hover: #15634c;
   --color-mint-accent: #6ee7c0;
-  --color-slate-text: #5a6475;
+  --color-slate-text: #4b5563;
   --color-border-line: #e0ddd8;
 
   --color-cat-income: #60a5fa;
@@ -54,10 +60,47 @@
   font-family: var(--font-body);
 }
 
+/* Los controles respetan el ancho disponible dentro de layouts flex/grid y modales. */
+input,
+textarea,
+select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Legibilidad base: texto corrido, formularios y placeholders.
+   Los inputs usan 16px para evitar el zoom automático de iOS y mantener el texto cómodo. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  line-height: 1.6;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+input,
+select,
+textarea {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-slate-text);
+  opacity: 1;
+}
+
 :root[data-tema="oscuro"] {
   color-scheme: dark;
   --color-bg-cream: #171b23;
-  --color-slate-text: #b4bdca;
+  --color-slate-text: #c3ccd8;
   --color-border-line: #39414e;
 }
 

@@ -22,7 +22,7 @@ import { crearUsuario, iniciarSesion } from "../../../services/usuarioServicio";
 import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle } from "../../../services/authGoogleServicio";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 
-const CLASE_ENTRADA = "min-h-11 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/40 focus:border-emerald-primary focus-visible:ring-2 focus-visible:ring-mint-accent/60";
+const CLASE_ENTRADA = "min-h-11 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/70 focus:border-emerald-primary focus-visible:ring-2 focus-visible:ring-mint-accent/60";
 
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
@@ -233,7 +233,7 @@ try {
             type="button"
             onClick={alCerrar}
             aria-label="Cerrar ventana de acceso"
-            className="absolute top-5 right-5 text-white/50 hover:text-white p-1 rounded-lg transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
+            className="absolute top-5 right-5 text-white/70 hover:text-white p-1 rounded-lg transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -248,7 +248,7 @@ try {
               className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
                 modo === "login"
                   ? "border-[#1a7a5e] text-white"
-                  : "border-transparent text-white/50 hover:text-white/80"
+                  : "border-transparent text-white/70 hover:text-white/80"
               }`}
             >
               Iniciar sesión
@@ -259,7 +259,7 @@ try {
               className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
                 modo === "registro"
                   ? "border-[#1a7a5e] text-white"
-                  : "border-transparent text-white/50 hover:text-white/80"
+                  : "border-transparent text-white/70 hover:text-white/80"
               }`}
             >
               Registrarse
@@ -320,7 +320,7 @@ try {
                     className={CLASE_ENTRADA}
                   />
                 </div>
-                <p className="-mt-3 text-xs text-white/50">Correo y teléfono son opcionales; puedes agregarlos más adelante desde tu perfil.</p>
+                <p className="-mt-3 text-xs text-white/70">Correo y teléfono son opcionales; puedes agregarlos más adelante desde tu perfil.</p>
               </>
             )}
 
@@ -355,7 +355,7 @@ try {
                 className={CLASE_ENTRADA}
               />
               {modo === "registro" && (
-                <p id="auth-contrasena-ayuda" className="mt-2 text-xs text-white/50">Mínimo 8 caracteres</p>
+                <p id="auth-contrasena-ayuda" className="mt-2 text-xs text-white/70">Mínimo 8 caracteres</p>
               )}
             </div>
 
@@ -381,7 +381,7 @@ try {
             </button>
           </form>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-white/40" aria-hidden="true">
+          <div className="my-5 flex items-center gap-3 text-xs text-white/60" aria-hidden="true">
             <span className="h-px flex-1 bg-white/10" />
             <span>{modo === "registro" ? "o regístrate con" : "o continúa con"}</span>
             <span className="h-px flex-1 bg-white/10" />
@@ -403,7 +403,7 @@ try {
               : modo === "registro" ? "Registrarse con Google" : "Iniciar sesión con Google"}
           </button>
           {modo === "registro" && (
-            <p className="mt-2 text-center text-xs text-white/50">
+            <p className="mt-2 text-center text-xs text-white/70">
               Google completará tus datos y abrirá tu cuenta automáticamente. Para entrar con identificación y contraseña, regístrate con correo.
             </p>
           )}
