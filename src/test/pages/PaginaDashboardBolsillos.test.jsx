@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import PaginaDashboardBolsillos from "../../pages/PaginaDashboardBolsillos";
+import { GruposPage } from "../../features/grupo";
 import { obtenerGruposPorUsuario, crearGrupo } from "../../features/grupo/services/gruposService";
 
 vi.mock("../../context/UsuarioActivoContext", () => ({
@@ -28,7 +28,7 @@ afterEach(cleanup);
 
 describe("PaginaDashboardBolsillos: página de Grupos", () => {
   it("presenta grupos y fuentes en tarjetas bajo la ruta de Grupos", async () => {
-    render(<PaginaDashboardBolsillos />);
+    render(<GruposPage />);
     expect(await screen.findByRole("heading", { level: 1, name: "Grupos" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Crear nuevo grupo" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Abrir grupo Viaje" })).toHaveTextContent("viaje@example.test");
@@ -37,7 +37,7 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
 
   it("deja las fuentes y el chat como contenido principal del modal", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardBolsillos />);
+    render(<GruposPage />);
     await usuario.click(await screen.findByRole("button", { name: "Abrir grupo Viaje" }));
     expect(await screen.findByRole("dialog", { name: "Viaje" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Fuentes" })).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
 
   it("abre el formulario para registrar un nuevo grupo", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardBolsillos />);
+    render(<GruposPage />);
     await usuario.click(screen.getByRole("button", { name: "Crear nuevo grupo" }));
     expect(await screen.findByRole("dialog", { name: "Crear grupo" })).toBeInTheDocument();
     expect(screen.getByLabelText("Nombre del grupo")).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
   it("guarda desde el modal del feature y recarga los grupos", async () => {
     const usuario = userEvent.setup();
     crearGrupo.mockResolvedValue({ idGrupo: "grupo-2", nombre: "Helado" });
-    render(<PaginaDashboardBolsillos />);
+    render(<GruposPage />);
     await usuario.click(await screen.findByRole("button", { name: "Crear nuevo grupo" }));
     await usuario.type(screen.getByLabelText("Nombre del grupo"), "Helado");
     await usuario.type(screen.getByLabelText("Descripción"), "Gastos del paseo");

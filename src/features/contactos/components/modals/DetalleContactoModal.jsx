@@ -1,6 +1,14 @@
+/**
+ * @uso        Modal de detalle y acciones CRUD de un contacto
+ * @funciones  DetalleContactoModal({ contacto, onCerrar, triggerRef, onGuardar, onEliminar })
+ * @datos      Recibe un contacto seleccionado y delega persistencia al hook de página
+ * @eventos    Editar, eliminar, compartir y cerrar
+ * @estados    modo, valores, error, ocupado
+ * @usadoPor   ContactosPage
+ */
 import { useEffect, useState } from "react";
 import { Pencil, Phone, Share2, StickyNote, Trash2, UserRound } from "lucide-react";
-import ModalDetalleRegistro from "./ModalDetalleRegistro";
+import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 
 export default function ModalContacto({ contacto, onCerrar, triggerRef, onGuardar, onEliminar }) {
   const [modo, setModo] = useState("detalle");
@@ -67,3 +75,4 @@ export default function ModalContacto({ contacto, onCerrar, triggerRef, onGuarda
     </ModalDetalleRegistro>
   );
 }
+

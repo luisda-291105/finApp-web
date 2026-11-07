@@ -39,14 +39,16 @@ Object.defineProperty(window, "innerWidth", {
 });
 
 // Mocks de servicios - DEBEN ir ANTES de cualquier import (vitest los hoistea al tope)
-vi.mock("../services/grupoServicio", () => ({
-  listarGrupos: () => Promise.resolve([]),
+vi.mock("../features/grupo/services/gruposService", () => ({
+  obtenerGruposPorUsuario: () => Promise.resolve([]),
   crearGrupo: () => Promise.resolve({ ok: true }),
   actualizarGrupo: () => Promise.resolve({ ok: true }),
   eliminarGrupo: () => Promise.resolve({ ok: true }),
+  vincularFuenteAGrupo: () => Promise.resolve({ ok: true }),
+  desvincularFuenteDeGrupo: () => Promise.resolve({ ok: true }),
 }));
 
-vi.mock("../services/tarjetaServicio", () => ({
+vi.mock("../features/tarjetas/services/tarjetasService", () => ({
   obtenerTarjetasPorUsuario: () => Promise.resolve([]),
   crearTarjeta: () => Promise.resolve({ ok: true }),
   actualizarTarjeta: () => Promise.resolve({ ok: true }),

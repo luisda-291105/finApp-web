@@ -37,14 +37,14 @@ vi.mock("../services/fuenteServicio", () => ({
   obtenerFuentesPorUsuario: () => Promise.resolve([]),
 }));
 
-vi.mock("../services/grupoServicio", () => ({
-  listarGrupos: () => Promise.resolve([]),
+vi.mock("../features/grupo/services/gruposService", () => ({
+  obtenerGruposPorUsuario: () => Promise.resolve([]),
   crearGrupo: () => Promise.resolve({ ok: true }),
   actualizarGrupo: () => Promise.resolve({ ok: true }),
   eliminarGrupo: () => Promise.resolve({ ok: true }),
 }));
 
-vi.mock("../services/tarjetaServicio", () => ({
+vi.mock("../features/tarjetas/services/tarjetasService", () => ({
   obtenerTarjetasPorUsuario: () => Promise.resolve([]),
   crearTarjeta: () => Promise.resolve({ ok: true }),
   actualizarTarjeta: () => Promise.resolve({ ok: true }),

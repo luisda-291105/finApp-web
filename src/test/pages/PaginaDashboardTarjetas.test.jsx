@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import PaginaDashboardTarjetas from "../../pages/PaginaDashboardTarjetas";
+import { TarjetasPage } from "../../features/tarjetas";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 import { crearTarjeta, obtenerTarjetasPorUsuario } from "../../features/tarjetas/services/tarjetasService";
 
@@ -33,7 +33,7 @@ afterEach(cleanup);
 
 describe("PaginaDashboardTarjetas", () => {
   it("consulta por usuario y presenta tarjetas registradas sin exponer número completo ni CVV", async () => {
-    render(<PaginaDashboardTarjetas />);
+    render(<TarjetasPage />);
 
     expect(await screen.findByRole("heading", { name: "Ana Pérez" })).toBeInTheDocument();
     expect(obtenerTarjetasPorUsuario).toHaveBeenCalledWith("usuario-prueba");
@@ -45,7 +45,7 @@ describe("PaginaDashboardTarjetas", () => {
 
   it("abre el detalle registrado en el modal común sin revelar CVV o número completo", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardTarjetas />);
+    render(<TarjetasPage />);
     await usuario.click(await screen.findByRole("button", { name: "Ver tarjeta de Ana Pérez" }));
     const dialogo = screen.getByRole("dialog", { name: "Tarjeta de Ana Pérez" });
     expect(dialogo).toHaveTextContent("•••• 1111");
@@ -61,7 +61,7 @@ describe("PaginaDashboardTarjetas", () => {
 
   it("no envía una tarjeta con número menor a 14 dígitos y no ofrece tema visual", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardTarjetas />);
+    render(<TarjetasPage />);
     await usuario.click(screen.getByRole("button", { name: "Agregar nueva tarjeta" }));
     expect(screen.queryByLabelText("Tema visual")).not.toBeInTheDocument();
     await usuario.type(screen.getByLabelText("Titular"), "Ana Pérez");
@@ -77,7 +77,7 @@ describe("PaginaDashboardTarjetas", () => {
   it("muestra el estado vacío cuando no hay tarjetas registradas", async () => {
     obtenerTarjetasPorUsuario.mockResolvedValue([]);
 
-    render(<PaginaDashboardTarjetas />);
+    render(<TarjetasPage />);
 
     expect(await screen.findByText("Todavía no tienes tarjetas registradas.")).toBeInTheDocument();
   });
@@ -85,7 +85,7 @@ describe("PaginaDashboardTarjetas", () => {
   it("muestra el error devuelto por el servicio", async () => {
     obtenerTarjetasPorUsuario.mockRejectedValue(new Error("Error al cargar tarjetas"));
 
-    render(<PaginaDashboardTarjetas />);
+    render(<TarjetasPage />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Error al cargar tarjetas");
   });
@@ -93,7 +93,7 @@ describe("PaginaDashboardTarjetas", () => {
   it("no consulta tarjetas si no hay usuario activo", () => {
     useUsuarioActivo.mockReturnValue({ usuario: null });
 
-    render(<PaginaDashboardTarjetas />);
+    render(<TarjetasPage />);
 
     expect(screen.getByText("Inicia sesión para ver tus tarjetas.")).toBeInTheDocument();
     expect(obtenerTarjetasPorUsuario).not.toHaveBeenCalled();

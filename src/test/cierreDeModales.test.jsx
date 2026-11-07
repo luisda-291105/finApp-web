@@ -24,7 +24,7 @@ import DashboardDrawer from "../components/layout/DashboardDrawer";
 import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import DashboardLayout from "../layout/DashboardLayout";
 import AuthModal from "../components/domain/modales/AuthModal";
-import ModalTarjeta from "../components/domain/modales/ModalTarjeta";
+import { DetalleTarjetaModal as ModalTarjeta } from "../features/tarjetas";
 
 const TARJETA_REGISTRADA = {
   titular: "Ana Pérez",

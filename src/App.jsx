@@ -23,7 +23,7 @@ const PaginaDashboardInicio = lazy(() => import("./pages/PaginaDashboardInicio")
 const PaginaDashboardTarjetas = lazy(() => import("./features/tarjetas").then(({ TarjetasPage }) => ({ default: TarjetasPage })));
 const PaginaDashboardConfiguracion = lazy(() => import("./pages/PaginaDashboardConfiguracion"));
 const PaginaDashboardBolsillos = lazy(() => import("./features/grupo").then(({ GruposPage }) => ({ default: GruposPage })));
-const PaginaDashboardContactos = lazy(() => import("./pages/PaginaDashboardContactos"));
+const PaginaDashboardContactos = lazy(() => import("./features/contactos").then(({ ContactosPage }) => ({ default: ContactosPage })));
 const PaginaDashboardCorreos = lazy(() => import("./pages/PaginaDashboardCorreos"));
 const PaginaDashboardContabilidad = lazy(() => import("./pages/PaginaDashboardContabilidad"));
 const PaginaDashboardSuscripciones = lazy(() => import("./pages/PaginaDashboardSuscripciones"));
