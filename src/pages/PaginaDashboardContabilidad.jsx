@@ -18,7 +18,7 @@ import { useUsuarioActivo } from "../context/UsuarioActivoContext";
 import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsilloServicio";
 import { actualizarMovimiento, crearMovimiento, eliminarMovimiento, listarMovimientos, obtenerResumenesBolsillos } from "../services/movimientoContableServicio";
 import { formatearPesos } from "../utils/formatoPesos";
-import { obtenerTarjetasPorUsuario } from "../services/tarjetaServicio";
+import { obtenerTarjetasPorUsuario } from "../features/tarjetas/services/tarjetasService";
 
 const formatoMoneda = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 const formatoFecha = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });

@@ -20,7 +20,7 @@ import { GmailProvider } from "./context/GmailContext";
 const PaginaLogin = lazy(() => import("./pages/PaginaLogin"));
 const DashboardLayout = lazy(() => import("./layout/DashboardLayout"));
 const PaginaDashboardInicio = lazy(() => import("./pages/PaginaDashboardInicio"));
-const PaginaDashboardTarjetas = lazy(() => import("./pages/PaginaDashboardTarjetas"));
+const PaginaDashboardTarjetas = lazy(() => import("./features/tarjetas").then(({ TarjetasPage }) => ({ default: TarjetasPage })));
 const PaginaDashboardConfiguracion = lazy(() => import("./pages/PaginaDashboardConfiguracion"));
 const PaginaDashboardBolsillos = lazy(() => import("./features/grupo").then(({ GruposPage }) => ({ default: GruposPage })));
 const PaginaDashboardContactos = lazy(() => import("./pages/PaginaDashboardContactos"));

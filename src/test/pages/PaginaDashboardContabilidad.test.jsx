@@ -16,7 +16,7 @@ vi.mock("../../services/movimientoContableServicio", () => ({
   listarMovimientos: vi.fn(), crearMovimiento: vi.fn(), actualizarMovimiento: vi.fn(),
   eliminarMovimiento: vi.fn(), obtenerResumenesBolsillos: vi.fn(),
 }));
-vi.mock("../../services/tarjetaServicio", () => ({ obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]) }));
+vi.mock("../../features/tarjetas/services/tarjetasService", () => ({ obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]) }));
 
 const BOLSILLOS = [
   { idBolsillo: "gasto-1", nombre: "Gastos diarios", tipo: "GASTO", estado: true, montoObjetivo: 0 },

@@ -45,8 +45,8 @@ En el estado actual del repositorio, los componentes compartidos siguen en `src/
 
 ## Migración
 
-1. `grupo` es el feature piloto: listado, hook, tarjeta, formulario, modales y servicio ya están agrupados en `src/features/grupo/`.
-2. A continuación se migran contactos y tarjetas, separando el modal genérico actual por dominio.
+1. `grupo` y `tarjetas` ya están agrupados en `src/features/`, con páginas, hooks, tarjetas visuales, formularios, modales, servicios y README.
+2. A continuación se migran contactos, separando el modal genérico actual por dominio.
 3. Después se migran contabilidad, correos, configuración y suscripciones.
 4. Finalmente se agrupan inicio, autenticación, layouts y rutas; se eliminan puentes antiguos y se revisan dependencias entre features.
 

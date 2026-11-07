@@ -3,13 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PaginaDashboardTarjetas from "../../pages/PaginaDashboardTarjetas";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
-import { crearTarjeta, obtenerTarjetasPorUsuario } from "../../services/tarjetaServicio";
+import { crearTarjeta, obtenerTarjetasPorUsuario } from "../../features/tarjetas/services/tarjetasService";
 
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: vi.fn(),
 }));
 
-vi.mock("../../services/tarjetaServicio", () => ({
+vi.mock("../../features/tarjetas/services/tarjetasService", () => ({
   obtenerTarjetasPorUsuario: vi.fn(),
   crearTarjeta: vi.fn(),
 }));
