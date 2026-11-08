@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { clsx } from "clsx";
 import { BotMessageSquare } from "lucide-react";
@@ -13,6 +13,7 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import { AsistenteAyudaModal } from "../features/asistenteia";
 import { useTema } from "../context/TemaContext";
+import { LimiteDeError } from "../components/ui";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
 const SELECTOR_NAVEGACION_LATERAL = 'aside[role="navigation"]';
@@ -216,7 +217,11 @@ export default function DashboardLayout() {
       >
         <Container>
           <main className="pb-20">
-            <Outlet context={{ registrarCierreDetalle }} />
+            <LimiteDeError key={location.pathname}>
+              <Suspense fallback={<div role="status" className="flex min-h-[40vh] items-center justify-center text-sm text-slate-text">Cargando…</div>}>
+                <Outlet context={{ registrarCierreDetalle }} />
+              </Suspense>
+            </LimiteDeError>
           </main>
         </Container>
       </div>
