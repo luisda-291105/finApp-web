@@ -1,13 +1,16 @@
 ---
 name: external-auth-providers
-description: Patrón de armado y edición para proveedores externos de autenticación (Google, Facebook, Apple, etc.) en finApp-web. Úsala al añadir, quitar o modificar un botón social, un servicio OAuth, el callback de login, la conexión de una cuenta externa o sus pruebas; conserva el divisor, el botón, los estados, la configuración y el flujo state/callback.
+description: Patrón de armado y edición para proveedores externos de autenticación (Google, Facebook, Apple, etc.) en finApp-web. Úsala al añadir, quitar o modificar un botón social, un servicio OAuth, el callback de login, la conexión de una cuenta externa o sus pruebas; conserva el divisor, el botón, los estados, la configuración, el flujo state/callback y la fidelidad visual al bloque original de Google.
 ---
 
 # SKILL: external-auth-providers (finApp-web)
 
 Contrato para integrar servicios externos sin romper el ensamblado del modal de acceso.
 La referencia actual es Google en `features/auth`; Facebook, Apple o GitHub deben
-reutilizar la misma estructura y el mismo orden visual.
+reutilizar la misma estructura, el mismo orden y la misma caja visual.
+
+La fidelidad al bloque original es parte del contrato: un proveedor nuevo no debe verse
+como un rediseño, sino como el mismo botón con otro logo.
 
 ## Cuándo usarla
 
@@ -34,6 +37,78 @@ El proveedor cambia; el ensamblado no. Todo proveedor conserva:
 No muevas el divisor encima del formulario, no pongas el botón dentro del `<form>` y no
 cambies el orden por proveedor.
 
+## Fidelidad al original
+
+El original es el bloque de Google del `AuthModal`: formulario, divisor, botón blanco,
+ayuda de registro, aviso de configuración y error externo. Al añadir otro proveedor se
+conserva **todo** salvo el logo y el nombre.
+
+### Medidas y clases que no cambian
+
+| Pieza | Valor de referencia |
+|---|---|
+| Separación vertical del divisor | `my-5` (20px arriba y abajo) |
+| Divisor | `flex items-center gap-3 text-xs text-white/60`; líneas `h-px flex-1 bg-white/10` |
+| Texto del divisor | 12px; login «o continúa con», registro «o regístrate con» |
+| Contenedor de proveedores | `flex flex-col gap-2`; una sola columna |
+| Botón | `flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium` |
+| Radio del botón | `rounded-xl` (12px) |
+| Alto implícito | `py-3` + texto de 14px + icono de 20px |
+| Icono | `h-5 w-5 shrink-0`, `aria-hidden="true"` |
+| Superficie por defecto | Blanca, igual que Google |
+| Ayuda de registro | `mt-2 text-center text-xs text-white/70` |
+| Aviso sin configurar | `mt-2 text-xs text-amber-200`, `role="status"` |
+| Error externo | `mt-3 rounded-xl border border-red-300/30 bg-red-500/10 p-3 text-xs text-red-100` |
+
+### Botón de Google: valores exactos
+
+```css
+.google-auth-button {
+  border-color: #dadce0;
+  background-color: #ffffff;
+  color: #3c4043;
+  box-shadow: 0 1px 2px rgb(60 64 67 / 20%);
+}
+.google-auth-button:hover:not(:disabled) {
+  border-color: #c6c9ce;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 5px rgb(60 64 67 / 25%);
+}
+.google-auth-button:disabled {
+  background-color: #ffffff;
+  color: #5f6368;
+  opacity: 0.85;
+}
+```
+
+- El logo de Google son sus cuatro trazos oficiales; no se recolorea, no se mete en un
+  círculo y no se cambia por un icono genérico.
+- No añadas `bg-white` al botón: el fondo lo pone la clase del proveedor.
+- No cambies `text-sm` por `text-xs` ni el `py-3` para “que quepa mejor”.
+
+### Regla para Facebook, Apple y otros
+
+Por defecto, el botón mantiene la **misma superficie blanca, borde, texto oscuro,
+sombra y medidas** que Google. El único cambio es el logo oficial y el nombre del
+proveedor.
+
+- Facebook no se pinta azul y Apple no se pinta negro por defecto: eso rompe la
+  fidelidad del bloque.
+- Si la guía de marca del proveedor exige un color de fondo, pide aprobación explícita y
+  conserva las medidas; documenta la excepción en el `README.md` del feature.
+- Cualquier variante de color debe cumplir contraste AA y mantener el foco visible.
+
+### Lo que no se toca al añadir un proveedor
+
+- El orden: formulario → divisor → proveedores → ayudas.
+- El texto del divisor y su `aria-hidden="true"`.
+- El ancho completo y la altura del botón.
+- El icono de 20×20 y el gap de 12px.
+- La posición de la ayuda de registro y del aviso de configuración.
+- El estilo del modal oscuro: `max-w-md`, `p-7 md:p-8`, `rounded-3xl`,
+  `bg-[#0f1117]/95`, `border-white/15`, `text-white`, `backdrop-blur-xl`.
+- El fondo y la tipografía del resto del modal.
+
 ## Estructura visual canónica
 
 ```jsx
@@ -50,7 +125,7 @@ cambies el orden por proveedor.
     type="button"
     onClick={manejarProveedor}
     disabled={cargando || !PROVEEDOR_CONFIGURADO}
-    className="provider-button flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed"
+    className="google-auth-button flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed"
   >
     <IconoProveedor className="h-5 w-5 shrink-0" aria-hidden="true" />
     {cargando ? "Conectando con Proveedor…" : "Iniciar sesión con Proveedor"}
@@ -73,13 +148,14 @@ cambies el orden por proveedor.
 
 - El botón base es estructural y compartido: `w-full`, `rounded-xl`, `px-4`, `py-3`,
   `text-sm`, `font-medium`, icono + texto centrados.
-- El color de marca es una excepción permitida, pero va en una clase dedicada del CSS
-  global, no en hexadecimales sueltos dentro del JSX.
-- Google conserva `.google-auth-button` (fondo blanco, borde `#dadce0`, texto `#3c4043`,
-  hover gris claro). Es la referencia visual del modal oscuro.
-- Facebook, Apple u otro proveedor deben mantener la misma caja y solo cambiar la
-  superficie/logo oficial. Si el fondo de marca no alcanza contraste AA, usa una
-  superficie clara con el logo oficial y texto oscuro; no sacrifiques legibilidad.
+- La superficie por defecto es la de Google: fondo blanco, borde `#dadce0`, texto
+  `#3c4043` y sombra suave. Ese es el patrón que se replica.
+- El color de marca **no** se usa como fondo por defecto. El proveedor se identifica por
+  su logo oficial, no por pintar el botón de otro color.
+- Si una guía de marca exige fondo propio, la excepción va en una clase dedicada del CSS
+  global, no en hexadecimales sueltos dentro del JSX, y requiere aprobación.
+- Google conserva `.google-auth-button`; Facebook/Apple pueden compartir la misma clase
+  base visual o una clase de marca que replique exactamente sus valores.
 - No uses `.glass-*` para el botón del proveedor: no es una superficie Fluid Glass.
 - No agregues sombras, alturas ni radios distintos por proveedor.
 
@@ -239,6 +315,8 @@ Renderiza el mismo bloque para todos; no escribas una rama JSX distinta por prov
 ## Antipatrones
 
 - Añadir Facebook con otro alto, otro radio, otro gap u otro orden.
+- Pintar Facebook de azul o Apple de negro sin aprobación, rompiendo el bloque blanco
+  original.
 - Poner el botón dentro del formulario o antes del divisor.
 - Ocultar el botón sin configurar en vez de explicar el estado.
 - Usar solo el logo, sin nombre accesible.
@@ -250,10 +328,25 @@ Renderiza el mismo bloque para todos; no escribas una rama JSX distinta por prov
 - Crear una cuenta nueva sin comprobar el conflicto de correo.
 - Cambiar el flujo de Google al añadir otro proveedor.
 
+## Validación visual
+
+Antes de cerrar un proveedor nuevo, compara el bloque con el original de Google:
+
+- El divisor queda a la misma distancia del formulario y del botón.
+- El botón ocupa el mismo ancho, tiene el mismo alto, radio, padding y gap.
+- El icono mide lo mismo y el texto arranca en la misma posición.
+- La ayuda de registro y el aviso de configuración no cambian de sitio.
+- El modal mantiene `max-w-md`, `p-7 md:p-8`, `rounded-3xl` y el fondo oscuro.
+- Revisa 375px y escritorio; si no hay navegador disponible, informa que la validación
+  visual no se realizó.
+
+Si el resultado se ve como una tarjeta, una fila o un botón distinto, no es fiel al
+original: vuelve a las clases de referencia.
+
 ## Checklist
 
 - [ ] El divisor y el botón conservan la estructura y el orden canónicos.
-- [ ] El botón usa las clases base compartidas y una clase de marca dedicada.
+- [ ] El botón usa las clases base compartidas y la superficie blanca del original.
 - [ ] El nombre accesible incluye acción y proveedor.
 - [ ] El icono es el oficial, 20×20 y `aria-hidden`.
 - [ ] Los estados configurado/cargando/error/cancelado están cubiertos.
@@ -261,6 +354,7 @@ Renderiza el mismo bloque para todos; no escribas una rama JSX distinta por prov
 - [ ] Los endpoints y variables están registrados; el secreto solo en backend.
 - [ ] El callback procesa el resultado una sola vez y limpia la URL.
 - [ ] El backend valida state, verifica correo y rota la sesión.
+- [ ] La validación visual confirma que el bloque se ve igual que el de Google.
 - [ ] Pruebas focales, suite y build en verde.
 
 ## Referencias actuales
