@@ -17,7 +17,7 @@ import { useFocoEnVistaDestino } from "../../../hooks/useFocoEnVistaDestino";
 // Los modales no forman parte de la primera pintura: se descargan al abrirse por primera vez
 // y permanecen montados después para conservar el foco y los campos (AC-22).
 const AuthModal = lazy(() => import("../../auth").then(({ AuthModal }) => ({ default: AuthModal })));
-const AsistenteAyuda = lazy(() => import("../../../components/domain/modales/AsistenteAyuda"));
+const AsistenteAyuda = lazy(() => import("../../asistenteia").then(({ AsistenteAyudaModal }) => ({ default: AsistenteAyudaModal })));
 
 /**
  * LandingPage

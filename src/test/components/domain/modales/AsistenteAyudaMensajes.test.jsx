@@ -1,8 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import AsistenteAyuda from "../../../../components/domain/modales/AsistenteAyuda";
+import AsistenteAyuda from "../../../../features/asistenteia/components/modals/AsistenteAyudaModal";
 
-vi.mock("../../../../hooks/useAsistenteHistorial", () => ({
+vi.mock("../../../../features/asistenteia/hooks/useAsistenteHistorial", () => ({
   useAsistenteHistorial: () => ({
     mensajes: [
       { rol: "user", contenido: "¿Cuánto gasté este mes?" },

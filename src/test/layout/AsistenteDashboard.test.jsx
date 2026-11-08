@@ -285,7 +285,7 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
     useBreakpoint.mockReturnValue(VERSION_MOVIL);
   });
 
-  it("presenta consultas y CRUD con confirmación en el asistente", async () => {
+  it("presenta únicamente ayuda informativa, sin consultas personales ni CRUD", async () => {
       const user = userEvent.setup();
       renderDashboard();
       const dialogo = await abrirAsistente(user);
@@ -293,13 +293,13 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       // Textos únicos que aparecen en un solo elemento (versión actual del componente)
       [
         "Asistente de FinApp",
-        "Consulta tus datos o pregunta sobre cómo usar la app.",
-        "Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos. Cada cambio requiere tu confirmación.",
-        "¿Qué contactos tengo registrados?",
-        "¿Qué correos están activos?",
-        "¿Cuáles son mis grupos activos?",
-        "¿Dónde veo mis tarjetas?",
-        "Puedes consultar y administrar tus registros. Los cambios requieren confirmación; las tarjetas, la conexión de Gmail y tu perfil se administran en sus secciones. No escribas contraseñas ni CVV.",
+        "Pregunta cómo funciona FinApp y cómo usar sus funciones.",
+        "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente solo ofrece información; no consulta tus datos ni realiza cambios.",
+        "¿Para qué sirven los bolsillos?",
+        "¿Cómo registro un gasto?",
+        "¿Cómo conecto Gmail?",
+        "¿Dónde administro mis tarjetas?",
+        "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No puede consultar tus datos ni hacer cambios.",
         "Tu pregunta",
         "Enviar",
       ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
@@ -317,7 +317,7 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       const dialogo = await abrirAsistente(user);
 
       // En estado vacío el componente muestra las sugerencias y el texto de aviso
-      expect(dialogo).toHaveTextContent("Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos");
+      expect(dialogo).toHaveTextContent("El asistente solo ofrece información; no consulta tus datos ni realiza cambios.");
       expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
       expect(within(dialogo).queryByRole("button", { name: /conversación/i })).not.toBeInTheDocument();
     });

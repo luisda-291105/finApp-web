@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import AsistenteAyuda from "../../../../components/domain/modales/AsistenteAyuda";
+import AsistenteAyuda from "../../../../features/asistenteia/components/modals/AsistenteAyudaModal";
 
 // Polyfill PointerEvent para jsdom (no lo tiene nativamente)
 if (typeof global.PointerEvent === "undefined") {
@@ -33,22 +33,22 @@ if (typeof global.PointerEvent === "undefined") {
 
 // Literales del componente actual (no de la spec 014, que quedó obsoleta)
 const TITULO = "Asistente de FinApp";
-const SUBTITULO = "Consulta tus datos o pregunta sobre cómo usar la app.";
+const SUBTITULO = "Pregunta cómo funciona FinApp y cómo usar sus funciones.";
 const ARIA_CERRAR = "Cerrar asistente de ayuda";
 const TEXTO_VACIO =
-  "Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos. Cada cambio requiere tu confirmación.";
+  "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente solo ofrece información; no consulta tus datos ni realiza cambios.";
 const ARIA_LOG = "Mensajes del asistente";
 const SUGERENCIAS = [
-  "¿Qué contactos tengo registrados?",
-  "¿Qué correos están activos?",
-  "¿Cuáles son mis grupos activos?",
-  "¿Dónde veo mis tarjetas?",
+  "¿Para qué sirven los bolsillos?",
+  "¿Cómo registro un gasto?",
+  "¿Cómo conecto Gmail?",
+  "¿Dónde administro mis tarjetas?",
 ];
 const LABEL_ENTRADA = "Tu pregunta";
 const PLACEHOLDER = "Escribe una pregunta con el contexto que necesites…";
 const BOTON_ENVIAR = "Enviar";
 const AVISO_PIE =
-  "Puedes consultar y administrar tus registros. Los cambios requieren confirmación; las tarjetas, la conexión de Gmail y tu perfil se administran en sus secciones. No escribas contraseñas ni CVV.";
+  "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No puede consultar tus datos ni hacer cambios.";
 
 const renderizar = (props = {}) =>
   render(<AsistenteAyuda abierto alCerrar={vi.fn()} {...props} />);

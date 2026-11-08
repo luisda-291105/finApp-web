@@ -11,7 +11,7 @@ import BottomNav from "../components/layout/BottomNav";
 import DashboardUserModal from "../components/layout/DashboardUserModal";
 import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
-import AsistenteAyuda from "../components/domain/modales/AsistenteAyuda";
+import { AsistenteAyudaModal } from "../features/asistenteia";
 import { useTema } from "../context/TemaContext";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
@@ -256,7 +256,7 @@ export default function DashboardLayout() {
         triggerRef={bottomNavMenuRef}
       />
 
-      <AsistenteAyuda
+      <AsistenteAyudaModal
         abierto={ayudaAbierta}
         estadoVisual="vacio"
         alCerrar={alCerrarAsistente}

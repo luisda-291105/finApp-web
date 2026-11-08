@@ -1,7 +1,7 @@
 /**
  * @uso        Asistente de chat del dashboard con respuestas basadas en fuentes
  * @funciones  AsistenteAyuda({ abierto, alCerrar, triggerRef })
- * @datos      Persiste mensajes en sessionStorage; consulta el backend para generar respuestas
+ * @datos      Mantiene mensajes temporales en memoria y consulta la guía informativa del backend
  * @eventos    Enviar pregunta o sugerencia, cancelar petición, limpiar historial y cerrar el diálogo
  * @estados    mensajes (persistidos), entrada, cargando, error, consultaFallida
  * @usadoPor   DashboardLayout
@@ -9,18 +9,18 @@
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
 import { BotMessageSquare } from "lucide-react";
-import { BotonCerrar } from "../../ui/BotonCerrar";
-import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
-import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
-import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
-import { useAsistenteHistorial } from "../../../hooks/useAsistenteHistorial";
-import { confirmarAccionAsistente as confirmarAccionEnBackend, conversarConAsistente } from "../../../services/asistenteServicio";
+import BotonCerrar from "../../../../components/ui/BotonCerrar";
+import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
+import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
+import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
+import { useAsistenteHistorial } from "../../hooks/useAsistenteHistorial";
+import { conversarConAsistente } from "../../services/asistenteServicio";
 
 const SUGERENCIAS = [
-  "¿Qué contactos tengo registrados?",
-  "¿Qué correos están activos?",
-  "¿Cuáles son mis grupos activos?",
-  "¿Dónde veo mis tarjetas?",
+  "¿Para qué sirven los bolsillos?",
+  "¿Cómo registro un gasto?",
+  "¿Cómo conecto Gmail?",
+  "¿Dónde administro mis tarjetas?",
 ];
 const MAX_CARACTERES_PREGUNTA = 2000;
 
@@ -33,7 +33,7 @@ function crearOpcionesTrampa(refPanel) {
   };
 }
 
-export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
+export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
   const logRef = useRef(null);
   const peticionRef = useRef(null);
@@ -52,8 +52,9 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
       peticionRef.current?.abort();
       peticionRef.current = null;
       setCargando(false);
+      limpiar();
     }
-  }, [abierto]);
+  }, [abierto, limpiar]);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -83,7 +84,6 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
         contenido: datos.respuesta,
         fuentes: datos.fuentes || [],
         aviso: datos.aviso || "",
-        accionPendiente: datos.accionPendiente || null,
       }]);
     } catch (fallo) {
       if (fallo.name !== "AbortError") {
@@ -103,33 +103,6 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
     void enviarMensaje(entrada);
   };
 
-  const confirmarOperacion = async (mensaje) => {
-    if (!mensaje?.accionPendiente?.token || cargando) return;
-    setCargando(true);
-    setError("");
-    const controlador = new AbortController();
-    peticionRef.current = controlador;
-    try {
-      const resultado = await confirmarAccionEnBackend(mensaje.accionPendiente.token, controlador.signal);
-      setMensajes((actuales) => [...actuales.map((item) => item === mensaje
-        ? { ...item, accionPendiente: null }
-        : item), { rol: "assistant", contenido: resultado.respuesta || "Operación completada." }]);
-    } catch (fallo) {
-      if (fallo.name !== "AbortError") setError(fallo.message || "No se pudo completar la operación.");
-    } finally {
-      if (peticionRef.current === controlador) {
-        peticionRef.current = null;
-        setCargando(false);
-      }
-    }
-  };
-
-  const cancelarOperacion = (mensaje) => {
-    setMensajes((actuales) => [...actuales.map((item) => item === mensaje
-      ? { ...item, accionPendiente: null }
-      : item), { rol: "assistant", contenido: "Operación cancelada; no realicé cambios." }]);
-  };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-bg-dark/70 p-4"
@@ -143,12 +116,12 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
           aria-labelledby="asistente-titulo"
           aria-describedby="asistente-aviso"
           tabIndex={-1}
-          className="glass-surface relative flex max-h-[85vh] w-[90vw] max-w-md flex-col overflow-hidden rounded-3xl border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none"
+          className="asistente-modal glass-surface relative flex max-h-[85vh] w-[90vw] max-w-md flex-col overflow-hidden rounded-3xl border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none"
         >
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-line/30 px-5 py-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <h2 id="asistente-titulo" className="font-display text-lg font-semibold">Asistente de FinApp</h2>
-              <p className="text-xs text-slate-text">Consulta tus datos o pregunta sobre cómo usar la app.</p>
+              <p className="text-xs text-slate-text">Pregunta cómo funciona FinApp y cómo usar sus funciones.</p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {mensajes.length > 0 && (
@@ -188,7 +161,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
             {mensajes.length === 0 ? (
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-slate-text">
-                  Consulta tus datos o pide crear, editar y eliminar contactos, grupos, fuentes, bolsillos y movimientos. Cada cambio requiere tu confirmación.
+                  Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente solo ofrece información; no consulta tus datos ni realiza cambios.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SUGERENCIAS.map((sugerencia) => (
@@ -210,7 +183,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                   <div key={`${mensaje.rol}-${indice}`} className={mensaje.rol === "user" ? "flex justify-end" : "flex justify-start"}>
                     <div className={mensaje.rol === "user"
                       ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream shadow-sm"
-                      : "max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/70 bg-white px-3.5 py-2.5 text-sm text-bg-dark shadow-sm"}>
+                      : "asistente-mensaje-ia max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/70 bg-white px-3.5 py-2.5 text-sm text-bg-dark shadow-sm"}>
                       {mensaje.rol !== "user" && (
                         <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-primary">
                           <BotMessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
@@ -218,26 +191,10 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
                         </p>
                       )}
                       <p className="whitespace-pre-line leading-relaxed">
-                        {mensaje.rol === "user" && <span className="sr-only">TÃº: </span>}
+                        {mensaje.rol === "user" && <span className="sr-only">Tú: </span>}
                         {mensaje.contenido}
                       </p>
                       {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
-                      {mensaje.accionPendiente && (
-                        <div className="mt-3 rounded-xl border border-border-line/60 bg-bg-dark/5 p-3">
-                          <p className="text-xs font-semibold">{mensaje.accionPendiente.descripcion}</p>
-                          <p className="mt-1 text-[11px] text-slate-text">Solo se aplicará a tus datos al confirmar.</p>
-                          <div className="mt-3 flex justify-end gap-2">
-                            <button type="button" onClick={() => cancelarOperacion(mensaje)} disabled={cargando}
-                              className="rounded-lg border border-border-line/60 px-3 py-1.5 text-xs hover:bg-bg-cream disabled:opacity-50">
-                              Cancelar
-                            </button>
-                            <button type="button" onClick={() => void confirmarOperacion(mensaje)} disabled={cargando}
-                              className="rounded-lg bg-emerald-primary px-3 py-1.5 text-xs font-semibold text-bg-cream hover:bg-emerald-hover disabled:opacity-50">
-                              {cargando ? "Procesando…" : "Confirmar"}
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -248,7 +205,7 @@ export default function AsistenteAyuda({ abierto, alCerrar, triggerRef }) {
 
           <footer className="flex shrink-0 flex-col gap-2 border-t border-border-line/30 px-5 py-4">
             <p id="asistente-aviso" className="text-xs text-slate-text">
-              Puedes consultar y administrar tus registros. Los cambios requieren confirmación; las tarjetas, la conexión de Gmail y tu perfil se administran en sus secciones. No escribas contraseñas ni CVV.
+              Asistente informativo: explica las funciones de FinApp y cómo usarlas. No puede consultar tus datos ni hacer cambios.
             </p>
             {error && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">

@@ -122,6 +122,32 @@ textarea::placeholder {
 :root[data-tema="oscuro"] :is(.border-red-200, .border-red-700\/30) { border-color: #71363d; }
 :root[data-tema="oscuro"] :is(.text-red-700, .text-red-900) { color: #fca5a5; }
 
+/* El asistente se abre también desde la landing (que conserva siempre su tema claro).
+   Dentro del dashboard aplica superficies y texto explícitos para mantener contraste. */
+:root[data-tema="oscuro"] .asistente-modal {
+  background-color: #171b23;
+  color: #f7f6f2;
+  border-color: #39414e;
+}
+:root[data-tema="oscuro"] .asistente-modal .asistente-mensaje-ia {
+  background-color: #252c37;
+  border-color: #39414e;
+  color: #f7f6f2;
+}
+:root[data-tema="oscuro"] .landing-theme .asistente-modal {
+  background-color: rgb(247 246 242 / 95%);
+  color: #0f1117;
+  border-color: rgb(224 221 216 / 30%);
+}
+:root[data-tema="oscuro"] .landing-theme .asistente-modal .text-bg-dark {
+  color: #0f1117;
+}
+:root[data-tema="oscuro"] .landing-theme .asistente-modal .asistente-mensaje-ia {
+  background-color: #ffffff;
+  border-color: rgb(224 221 216 / 70%);
+  color: #0f1117;
+}
+
 /* La landing conserva su paleta propia aunque el dashboard esté en tema oscuro. */
 .landing-theme {
   color-scheme: light;
