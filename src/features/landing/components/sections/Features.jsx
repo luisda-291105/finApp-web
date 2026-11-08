@@ -6,8 +6,8 @@
  * @estados    Usa useReveal para animación al hacer scroll
  * @usadoPor   LandingLayout
  */
-import { useReveal } from "../../../hooks/useReveal";
-import { Card } from "../../../components/ui/Card";
+import { useReveal } from "../../../../hooks/useReveal";
+import { Card } from "../../../../components/ui/Card";
 
 const FUNCIONALIDADES = [
   {

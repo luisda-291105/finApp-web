@@ -6,7 +6,7 @@
  * @estados    Usa useReveal para animación
  * @usadoPor   LandingLayout
  */
-import { useReveal } from "../../../hooks/useReveal";
+import { useReveal } from "../../../../hooks/useReveal";
 
 /**
  * CtaSection

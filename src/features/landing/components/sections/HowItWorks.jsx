@@ -6,7 +6,7 @@
  * @estados    Usa useReveal para animación slide-left
  * @usadoPor   LandingLayout
  */
-import { useReveal } from "../../../hooks/useReveal";
+import { useReveal } from "../../../../hooks/useReveal";
 
 const PASOS = [
   {

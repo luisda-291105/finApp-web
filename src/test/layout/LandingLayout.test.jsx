@@ -9,7 +9,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import LandingLayout from "../../layout/LandingLayout";
+import LandingLayout from "../../features/landing/components/layouts/LandingLayout";
 import { TemaProvider } from "../../context/TemaContext";
 
 function renderLayout(props = {}) {

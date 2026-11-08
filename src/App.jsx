@@ -10,8 +10,8 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute, PublicRoute } from "./components/auth";
-import PaginaInicio from "./pages/PaginaInicio";
-import PaginaError from "./pages/PaginaError";
+import { LandingPage } from "./features/landing";
+import { ErrorPage } from "./features/error";
 import LimiteDeError from "./components/ui/LimiteDeError";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
@@ -74,7 +74,7 @@ export default function App() {
         <GmailProvider>
           <LimiteDeError>
             <Routes>
-              <Route path="/" element={<PublicRoute><PaginaInicio /></PublicRoute>} />
+              <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
               <Route path="/inicio" element={<Navigate to="/" replace />} />
               <Route path="/login" element={<PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>} />
 
@@ -91,7 +91,7 @@ export default function App() {
                 <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
               </Route>
 
-              <Route path="*" element={<PaginaError />} />
+              <Route path="*" element={<ErrorPage />} />
             </Routes>
           </LimiteDeError>
         </GmailProvider>

@@ -13,7 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AuthModal from "../../../../features/auth/components/modals/AuthModal";
 import PaginaLogin from "../../../../features/auth/pages/LoginPage";
-import PaginaInicio from "../../../../pages/PaginaInicio";
+import PaginaInicio from "../../../../features/landing/pages/LandingPage";
 
 /**
  * Mock **local** de `config/app.config` para los casos nuevos de la spec 011 (Tarea 8). El cierre

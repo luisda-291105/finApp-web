@@ -1,6 +1,6 @@
 /**
  * @uso        Página landing pública de FinApp (ruta /)
- * @funciones  PaginaInicio()
+ * @funciones  LandingPage()
  * @datos      Sin datos externos; usa LandingLayout y provee AuthModal + asistente de ayuda como children
  * @eventos    manejarAbrirAuth(modo) desde LandingLayout (Header/Hero/CtaSection);
  *             manejarCerrarAuth desde AuthModal; manejarAbrirAyuda/manejarCerrarAyuda desde el
@@ -11,22 +11,22 @@
  */
 import { lazy, Suspense, useRef, useState } from "react";
 import { BotMessageSquare } from "lucide-react";
-import LandingLayout from "../layout/LandingLayout";
-import { useFocoEnVistaDestino } from "../hooks/useFocoEnVistaDestino";
+import LandingLayout from "../components/layouts/LandingLayout";
+import { useFocoEnVistaDestino } from "../../../hooks/useFocoEnVistaDestino";
 
 // Los modales no forman parte de la primera pintura: se descargan al abrirse por primera vez
 // y permanecen montados después para conservar el foco y los campos (AC-22).
-const AuthModal = lazy(() => import("../features/auth").then(({ AuthModal }) => ({ default: AuthModal })));
-const AsistenteAyuda = lazy(() => import("../components/domain/modales/AsistenteAyuda"));
+const AuthModal = lazy(() => import("../../auth").then(({ AuthModal }) => ({ default: AuthModal })));
+const AsistenteAyuda = lazy(() => import("../../../components/domain/modales/AsistenteAyuda"));
 
 /**
- * PaginaInicio
+ * LandingPage
  * Landing de la demo. Usa LandingLayout como organismo que compone Header, Hero,
  * StatsBar, Features, HowItWorks, CtaSection y Footer. Los literales hex heredados
  * (bg-[#0f1117], etc.) se conservan tal cual por decisión del usuario; su migración
  * a tokens es deuda técnica fuera del alcance de spec 005.
  */
-export default function PaginaInicio() {
+export default function LandingPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState("registro");
   const [ayudaAbierta, setAyudaAbierta] = useState(false);

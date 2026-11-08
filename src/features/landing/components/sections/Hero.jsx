@@ -6,7 +6,7 @@
  * @estados    Usa hook useReveal para animación de scroll
  * @usadoPor   LandingLayout
  */
-import { useReveal } from "../../../hooks/useReveal";
+import { useReveal } from "../../../../hooks/useReveal";
 
 /**
  * Hero

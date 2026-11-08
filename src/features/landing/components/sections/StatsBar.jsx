@@ -6,7 +6,7 @@
  * @estados    Usa useReveal para animación al entrar en pantalla
  * @usadoPor   LandingLayout
  */
-import { useReveal } from "../../../hooks/useReveal";
+import { useReveal } from "../../../../hooks/useReveal";
 
 const METRICAS = [
   { valor: "12 k+", etiqueta: "Usuarios activos" },

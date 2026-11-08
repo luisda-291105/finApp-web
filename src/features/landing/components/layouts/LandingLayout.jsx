@@ -4,15 +4,15 @@
  * @datos      Recibe callback alAbrirAuth para propagar a Header, Hero, CtaSection; children para contenido flotante (AuthModal, botón ayuda)
  * @eventos    Ninguno propio; delega eventos a componentes hijos
  * @estados    Ninguno
- * @usadoPor   PaginaInicio
+ * @usadoPor   LandingPage
  */
-import Header from "../components/layout/Header";
-import Hero from "../components/domain/landing/Hero";
-import StatsBar from "../components/domain/landing/StatsBar";
-import Features from "../components/domain/landing/Features";
-import HowItWorks from "../components/domain/landing/HowItWorks";
-import CtaSection from "../components/domain/landing/CtaSection";
-import Footer from "../components/layout/Footer";
+import Header from "../../../../components/layout/Header";
+import Hero from "../sections/Hero";
+import StatsBar from "../sections/StatsBar";
+import Features from "../sections/Features";
+import HowItWorks from "../sections/HowItWorks";
+import CtaSection from "../sections/CtaSection";
+import Footer from "../sections/Footer";
 
 /**
  * LandingLayout

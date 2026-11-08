@@ -85,7 +85,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
   };
 });
 
-// Literal heredado del disparador (src/pages/PaginaInicio.jsx): se copia verbatim para el aserto
+// Literal heredado del disparador (features/landing/pages/LandingPage.jsx): se copia verbatim para el aserto
 // literal de AC-01. Es un valor heredado, no un hexadecimal nuevo.
 const CLASSNAME_DISPARADOR =
   "fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-[#0f1117]/80 hover:bg-[#1a7a5e] text-white border border-white/20 backdrop-blur-md flex items-center justify-center text-sm font-bold shadow-xl transition-all cursor-pointer hover:scale-105";
@@ -102,7 +102,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import PaginaInicio from "../../pages/PaginaInicio";
+import PaginaInicio from "../../features/landing/pages/LandingPage";
 
 describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => {
   beforeEach(() => {

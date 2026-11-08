@@ -4,7 +4,7 @@
  * @datos      N/A
  * @eventos    click en enlaces de navegación
  * @estados    N/A
- * @usadoPor   PaginaInicio.jsx, LandingLayout.jsx
+ * @usadoPor   LandingLayout
  */
 
 import { Link } from "react-router-dom";
