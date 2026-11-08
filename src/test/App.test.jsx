@@ -55,7 +55,7 @@ vi.mock("../features/tarjetas/services/tarjetasService", () => ({
   eliminarTarjeta: () => Promise.resolve({ ok: true }),
 }));
 
-vi.mock("../services/muestraServicio", () => ({
+vi.mock("../features/inicio/services/muestrasService", () => ({
   listarMuestras: () => Promise.resolve([]),
   crearMuestra: () => Promise.resolve({ ok: true }),
   actualizarMuestra: () => Promise.resolve({ ok: true }),

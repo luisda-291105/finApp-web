@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, act, within } from "@testing-library/
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useNavigate } from "react-router-dom";
-import PaginaDashboardInicio from "../../pages/PaginaDashboardInicio";
+import { InicioPage as PaginaDashboardInicio } from "../../features/inicio";
 
 const muestraMocks = vi.hoisted(() => ({
   listarMuestras: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ usuario: { idUsuario: "usuario-prueba" } }),
 }));
 
-vi.mock("../../services/muestraServicio", () => muestraMocks);
+vi.mock("../../features/inicio/services/muestrasService", () => muestraMocks);
 
 /**
  * Mockeo de useNavigate para poder verificar los destinos de navegación al activar

@@ -1,4 +1,4 @@
-import { crear, obtener, actualizar, eliminar } from "./httpServicio";
+import { crear, obtener, actualizar, eliminar } from "../../../services/httpServicio";
 
 const ruta = "/api/muestras";
 const tipoAApi = { tarjeta: "TARJETA", grafica: "GRAFICA", metrica: "METRICA", mapa_calor: "MAPA_CALOR" };
