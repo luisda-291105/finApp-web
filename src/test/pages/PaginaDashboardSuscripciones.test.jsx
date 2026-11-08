@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
-import PaginaDashboardSuscripciones from "../../pages/PaginaDashboardSuscripciones";
+import { SuscripcionesPage as PaginaDashboardSuscripciones } from "../../features/suscripciones";
 
 afterEach(cleanup);
 
@@ -47,5 +47,21 @@ describe("PaginaDashboardSuscripciones", () => {
     expect(screen.getByRole("button", { name: "Activar Netflix" })).toBeInTheDocument();
     const tarjetaNetflix = screen.getByRole("heading", { name: "Netflix" }).closest("li");
     expect(within(tarjetaNetflix).getByText("Pausada")).toBeInTheDocument();
+  });
+
+  it("abre el detalle con la fuente y los pagos pasados de la suscripción", async () => {
+    const usuario = userEvent.setup();
+    render(<PaginaDashboardSuscripciones />);
+
+    await usuario.click(screen.getByRole("button", { name: "Ver detalle de Netflix" }));
+
+    const detalle = screen.getByRole("dialog", { name: "Detalle de Netflix" });
+    expect(within(detalle).getByText("Fuente de pago")).toBeInTheDocument();
+    expect(within(detalle).getByText("Tarjeta débito ···· 4821")).toBeInTheDocument();
+    expect(within(detalle).getByText("Último pago")).toBeInTheDocument();
+    expect(within(detalle).getByRole("heading", { name: "Pagos pasados" })).toBeInTheDocument();
+    expect(within(detalle).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(detalle).getByRole("button", { name: "Editar", exact: true })).toBeDisabled();
+    expect(within(detalle).getByRole("button", { name: "Eliminar", exact: true })).toBeDisabled();
   });
 });

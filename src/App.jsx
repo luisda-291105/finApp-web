@@ -26,7 +26,7 @@ const PaginaDashboardBolsillos = lazy(() => import("./features/grupo").then(({ G
 const PaginaDashboardContactos = lazy(() => import("./features/contactos").then(({ ContactosPage }) => ({ default: ContactosPage })));
 const PaginaDashboardCorreos = lazy(() => import("./features/correos").then(({ CorreosPage }) => ({ default: CorreosPage })));
 const PaginaDashboardContabilidad = lazy(() => import("./features/contabilidad").then(({ ContabilidadPage }) => ({ default: ContabilidadPage })));
-const PaginaDashboardSuscripciones = lazy(() => import("./pages/PaginaDashboardSuscripciones"));
+const PaginaDashboardSuscripciones = lazy(() => import("./features/suscripciones").then(({ SuscripcionesPage }) => ({ default: SuscripcionesPage })));
 
 /**
  * CargandoRuta
