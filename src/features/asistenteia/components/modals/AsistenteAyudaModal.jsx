@@ -8,13 +8,14 @@
  */
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { BotMessageSquare } from "lucide-react";
+import { BotMessageSquare, History, Plus } from "lucide-react";
 import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { useAsistenteHistorial } from "../../hooks/useAsistenteHistorial";
-import { conversarConAsistente } from "../../services/asistenteServicio";
+import { conversarConAsistente, conversarConAsistentePublico, confirmarAccionAsistente } from "../../services/asistenteServicio";
+import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 
 const SUGERENCIAS = [
   "¿Para qué sirven los bolsillos?",
@@ -34,10 +35,13 @@ function crearOpcionesTrampa(refPanel) {
 }
 
 export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
+  const { usuario } = useUsuarioActivo();
+  const esPersonal = Boolean(usuario?.idUsuario);
   const panelRef = useRef(null);
   const logRef = useRef(null);
   const peticionRef = useRef(null);
-  const { mensajes, setMensajes, limpiar } = useAsistenteHistorial();
+  const { mensajes, setMensajes, sesiones, nuevaSesion, abrirSesion } = useAsistenteHistorial(usuario?.idUsuario);
+  const [vista, setVista] = useState("conversacion");
   const [entrada, setEntrada] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
@@ -52,9 +56,8 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
       peticionRef.current?.abort();
       peticionRef.current = null;
       setCargando(false);
-      limpiar();
     }
-  }, [abierto, limpiar]);
+  }, [abierto]);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -78,12 +81,14 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
     const controlador = new AbortController();
     peticionRef.current = controlador;
     try {
-      const datos = await conversarConAsistente({ mensaje: pregunta, historial }, controlador.signal);
+      const consultar = esPersonal ? conversarConAsistente : conversarConAsistentePublico;
+      const datos = await consultar({ mensaje: pregunta, historial }, controlador.signal);
       setMensajes((actuales) => [...actuales, {
         rol: "assistant",
         contenido: datos.respuesta,
         fuentes: datos.fuentes || [],
         aviso: datos.aviso || "",
+        accionPendiente: datos.accionPendiente || null,
       }]);
     } catch (fallo) {
       if (fallo.name !== "AbortError") {
@@ -98,9 +103,43 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
     }
   };
 
+  const confirmarAccion = async (token, indice) => {
+    if (!esPersonal || cargando) return;
+    setCargando(true);
+    setError("");
+    try {
+      const resultado = await confirmarAccionAsistente(token);
+      setMensajes((actuales) => actuales.map((mensaje, i) => i === indice
+        ? { ...mensaje, contenido: resultado.respuesta || "Operación completada.", accionPendiente: null }
+        : mensaje));
+    } catch (fallo) {
+      const detalle = fallo.message || "No se pudo confirmar la operación.";
+      setMensajes((actuales) => actuales.map((mensaje, i) => i === indice
+        ? { ...mensaje, contenido: detalle, accionPendiente: null }
+        : mensaje));
+      setError("");
+    } finally {
+      setCargando(false);
+    }
+  };
+
   const enviarFormulario = (evento) => {
     evento.preventDefault();
     void enviarMensaje(entrada);
+  };
+
+  const iniciarNuevaSesion = () => {
+    if (cargando) return;
+    nuevaSesion();
+    setEntrada("");
+    setError("");
+    setConsultaFallida("");
+    setVista("conversacion");
+  };
+
+  const mostrarFechaSesion = (fecha) => {
+    const valor = new Date(fecha);
+    return Number.isNaN(valor.getTime()) ? "Fecha desconocida" : valor.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
   };
 
   return (
@@ -121,24 +160,19 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-line/30 px-5 py-4">
             <div className="flex min-w-0 flex-col gap-1.5">
               <h2 id="asistente-titulo" className="font-display text-lg font-semibold">Asistente de FinApp</h2>
-              <p className="text-xs text-slate-text">Pregunta cómo funciona FinApp y cómo usar sus funciones.</p>
+              <p className="text-xs text-slate-text">{esPersonal ? "Consulta tus datos y administra FinApp con tu sesión." : "Pregunta cómo funciona FinApp y cómo usar sus funciones."}</p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {mensajes.length > 0 && (
+              {mensajes.length > 0 && vista === "conversacion" && (
                 <button
                   type="button"
-                  onClick={limpiar}
+                  onClick={iniciarNuevaSesion}
                   disabled={cargando}
-                  aria-label="Limpiar conversación"
-                  title="Limpiar conversación"
+                  aria-label="Iniciar nueva conversación"
+                  title="Nueva conversación"
                   className="rounded-full p-2 text-slate-text outline-none hover:bg-red-100 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-40"
                 >
-                  <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                    <path d="M10 11v6M14 11v6" />
-                    <path d="M9 6V4h6v2" />
-                  </svg>
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
               <BotonCerrar
@@ -149,19 +183,34 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
             </div>
           </header>
 
+          {esPersonal && <nav aria-label="Vistas del asistente" className="flex shrink-0 gap-2 border-b border-border-line/30 px-5 py-2">
+            <button type="button" role="tab" aria-selected={vista === "conversacion"} onClick={() => setVista("conversacion")} className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${vista === "conversacion" ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10"}`}>Conversación</button>
+            <button type="button" role="tab" aria-selected={vista === "sesiones"} onClick={() => setVista("sesiones")} className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${vista === "sesiones" ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10"}`}><History className="h-3.5 w-3.5" aria-hidden="true" />Sesiones pasadas ({sesiones.length})</button>
+          </nav>}
+
           <div
             ref={logRef}
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions"
-            aria-atomic="false"
-            aria-label="Mensajes del asistente"
+            role={vista === "sesiones" ? "region" : "log"}
+            aria-live={vista === "sesiones" ? undefined : "polite"}
+            aria-relevant={vista === "sesiones" ? undefined : "additions"}
+            aria-atomic={vista === "sesiones" ? undefined : "false"}
+            aria-label={vista === "sesiones" ? "Sesiones anteriores del asistente" : "Mensajes del asistente"}
             className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
           >
+            {vista === "sesiones" && esPersonal ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3"><p className="text-sm text-slate-text">Tus conversaciones guardadas en este dispositivo.</p><button type="button" onClick={iniciarNuevaSesion} className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream"><Plus className="h-3.5 w-3.5" aria-hidden="true" />Nueva</button></div>
+                {sesiones.length ? <ul className="space-y-2">{sesiones.map((sesion) => <li key={sesion.id}><button type="button" onClick={() => { abrirSesion(sesion.id); setVista("conversacion"); setError(""); setConsultaFallida(""); }} className="w-full rounded-xl border border-border-line/60 bg-bg-cream/70 p-3 text-left hover:border-emerald-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"><span className="block truncate text-sm font-semibold text-bg-dark">{sesion.titulo || "Conversación"}</span><span className="mt-1 flex flex-wrap justify-between gap-2 text-[11px] text-slate-text"><time dateTime={sesion.actualizadaEn}>{mostrarFechaSesion(sesion.actualizadaEn)}</time><span>{sesion.mensajes?.length || 0} mensajes</span></span></button></li>)}</ul>
+                  : <p className="rounded-xl border border-border-line/50 p-4 text-sm text-slate-text">Todavía no tienes conversaciones guardadas.</p>}
+              </div>
+            ) : (
+            <>
             {mensajes.length === 0 ? (
               <div className="flex flex-col gap-4">
                 <p className="text-sm text-slate-text">
-                  Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente solo ofrece información; no consulta tus datos ni realiza cambios.
+                  {esPersonal
+                    ? "Consulta tus contactos, movimientos, bolsillos, grupos y fuentes. Puedes pedir cambios; el asistente te mostrará cada operación para que la confirmes."
+                    : "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios."}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SUGERENCIAS.map((sugerencia) => (
@@ -194,6 +243,13 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
                         {mensaje.rol === "user" && <span className="sr-only">Tú: </span>}
                         {mensaje.contenido}
                       </p>
+                      {mensaje.accionPendiente && esPersonal && (
+                        <div className="mt-3 rounded-xl border border-emerald-primary/30 bg-emerald-primary/5 p-3">
+                          <p className="text-xs font-semibold text-emerald-primary">Revisa antes de confirmar</p>
+                          <p className="mt-1 text-sm">{mensaje.accionPendiente.descripcion}</p>
+                          <button type="button" disabled={cargando} onClick={() => void confirmarAccion(mensaje.accionPendiente.token, indice)} className="mt-2 rounded-lg bg-emerald-primary px-3 py-2 text-sm font-semibold text-bg-cream disabled:opacity-50">Confirmar operación</button>
+                        </div>
+                      )}
                       {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
                     </div>
                   </div>
@@ -201,11 +257,15 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
                 {cargando && <p role="status" className="text-sm text-slate-text">Preparando respuesta…</p>}
               </div>
             )}
+            </>
+            )}
           </div>
 
           <footer className="flex shrink-0 flex-col gap-2 border-t border-border-line/30 px-5 py-4">
             <p id="asistente-aviso" className="text-xs text-slate-text">
-              Asistente informativo: explica las funciones de FinApp y cómo usarlas. No puede consultar tus datos ni hacer cambios.
+              {esPersonal
+                ? "Asistente personal: consulta y administra tus datos. Los cambios solo se aplican después de tu confirmación."
+                : "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No consulta datos personales ni realiza cambios."}
             </p>
             {error && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -221,7 +281,7 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
                 value={entrada}
                 maxLength={MAX_CARACTERES_PREGUNTA}
                 onChange={(evento) => setEntrada(evento.target.value)}
-                placeholder="Escribe una pregunta con el contexto que necesites…"
+                placeholder={esPersonal ? "Pregunta por tus datos o pide una operación…" : "Escribe una pregunta sobre FinApp…"}
                 disabled={cargando}
                 className="min-w-0 flex-1 rounded-xl border border-border-line/60 bg-bg-cream px-3 py-2 text-sm text-bg-dark placeholder:text-slate-text outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60"
               />

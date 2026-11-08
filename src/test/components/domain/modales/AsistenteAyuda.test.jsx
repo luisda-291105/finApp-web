@@ -36,7 +36,7 @@ const TITULO = "Asistente de FinApp";
 const SUBTITULO = "Pregunta cómo funciona FinApp y cómo usar sus funciones.";
 const ARIA_CERRAR = "Cerrar asistente de ayuda";
 const TEXTO_VACIO =
-  "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente solo ofrece información; no consulta tus datos ni realiza cambios.";
+  "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios.";
 const ARIA_LOG = "Mensajes del asistente";
 const SUGERENCIAS = [
   "¿Para qué sirven los bolsillos?",
@@ -45,10 +45,10 @@ const SUGERENCIAS = [
   "¿Dónde administro mis tarjetas?",
 ];
 const LABEL_ENTRADA = "Tu pregunta";
-const PLACEHOLDER = "Escribe una pregunta con el contexto que necesites…";
+const PLACEHOLDER = "Escribe una pregunta sobre FinApp…";
 const BOTON_ENVIAR = "Enviar";
 const AVISO_PIE =
-  "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No puede consultar tus datos ni hacer cambios.";
+  "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No consulta datos personales ni realiza cambios.";
 
 const renderizar = (props = {}) =>
   render(<AsistenteAyuda abierto alCerrar={vi.fn()} {...props} />);

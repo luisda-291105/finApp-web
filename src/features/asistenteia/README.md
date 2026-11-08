@@ -2,7 +2,7 @@
 
 ## Qué hace
 
-Ofrece el asistente informativo de FinApp en la landing y en el dashboard. Responde preguntas sobre las funciones documentadas de la app y no consulta datos personales ni ejecuta operaciones. El historial vive solo en memoria y desaparece al cerrar o recargar la página.
+Ofrece el asistente informativo público en la landing y el asistente personal en el dashboard. La landing solo explica funciones; dentro del dashboard autenticado, consulta datos propios y propone operaciones limitadas a la sesión, que requieren confirmación explícita. El historial del asistente personal se guarda en el almacenamiento local del navegador, separado por usuario, y permite reabrir hasta 30 sesiones recientes.
 
 ## Componentes
 
@@ -11,8 +11,8 @@ Ofrece el asistente informativo de FinApp en la landing y en el dashboard. Respo
 
 ## Lógica y servicios
 
-- `hooks/useAsistenteHistorial`: administra temporalmente los mensajes del chat en memoria.
-- `services/asistenteServicio`: envía preguntas informativas al backend.
+- `hooks/useAsistenteHistorial`: administra y persiste sesiones locales del asistente personal; excluye tokens temporales de confirmación.
+- `services/asistenteServicio`: envía preguntas al endpoint público o personal y confirma operaciones propuestas.
 
 ## Consumidores y dependencias
 
