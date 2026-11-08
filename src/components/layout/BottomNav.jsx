@@ -1,5 +1,5 @@
 /**
- * @uso        Barra de navegación inferior para móvil (4 controles en móvil estándar: 3 ítems + «Menú»; 5 controles entre 470px y 750px con el 4.º ítem del sidebar: Contactos)
+ * @uso        Barra de navegación inferior para móvil (4 controles estándar; 5 entre 470px y 750px con Contactos)
  * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef })
  * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu (callback menú)
  * @eventos    click en ítems de navegación → alNavegar(ruta), click en «Menú» → alAbrirMenu()
@@ -11,19 +11,19 @@ import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import {
   Home,
-  Receipt,
   CreditCard,
   Contact,
+  Wallet,
   MoreHorizontal,
 } from "lucide-react";
 
 const itemsBase = [
   { ruta: "/dashboard", etiqueta: "Inicio", icono: Home },
-  { ruta: "/dashboard/transacciones", etiqueta: "Transacciones", icono: Receipt },
+  { ruta: "/dashboard/contabilidad", etiqueta: "Contabilidad", icono: Wallet },
   { ruta: "/dashboard/tarjetas", etiqueta: "Tarjetas", icono: CreditCard },
 ];
 
-/** 4.º ítem proveniente del sidebar, mostrado en pantalla de 470px a 750px */
+/** Enlace de contabilidad mostrado como 4.º ítem entre 470px y 750px */
 const itemSidebarExtra = {
   ruta: "/dashboard/contactos",
   etiqueta: "Contactos",
@@ -39,13 +39,13 @@ function verificarRangoPantalla() {
  * BottomNav
  * Barra de navegación inferior fija para móvil.
  * Por defecto muestra 4 controles (3 ítems de navegación + botón «Menú»).
- * En el rango de pantalla entre 470px y 750px, muestra un 4.º ítem del sidebar («Contactos»)
+ * En el rango de pantalla entre 470px y 750px, muestra un 4.º ítem («Contactos»)
  * totalizando 5 controles equidistantes (4 navegación + «Menú»).
  * Incluye safe-area (safe-bottom), indicador activo en el item seleccionado,
  * y media query landscape que oculta las etiquetas.
  *
  * @param {Object} props
- * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/transacciones")
+ * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/contabilidad")
  * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en los ítems de navegación
  * @param {() => void} props.alAbrirMenu - Callback al hacer click en «Menú»
  * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón «Menú», usado para focus trap return

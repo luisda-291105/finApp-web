@@ -54,7 +54,7 @@ function crearOpcionesTrampa(refPanel) {
  *   lateral); nunca termina en `body`.
  * - Header con el nombre del usuario activo («Cuenta de Usuario Demo» si no existe) y el correo
  *   «No registrado» de solo lectura; botón Configuración (navega a /dashboard/configuracion) y
- *   botón Salir del demo (navega a / con replace).
+ *   botón Salir del demo (invalida la sesión en backend y navega a / con replace).
  * @param {Object} props
  * @param {boolean} props.abierto - Visibilidad del modal
  * @param {() => void} props.alCerrar - Callback de cierre
@@ -64,7 +64,8 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
   const navigate = useNavigate();
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
-  const { usuario } = useUsuarioActivo();
+  const { usuario, cerrarSesion } = useUsuarioActivo();
+  const correo = usuario?.correo;
 
   // Esc: mecanismo único compartido; la capa del modal es la del panel (60)
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });
@@ -86,7 +87,8 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
     alCerrar();
   };
 
-  const handleSalirDemo = () => {
+  const handleSalirDemo = async () => {
+    await cerrarSesion();
     navigate("/", { replace: true });
     alCerrar();
   };
@@ -131,7 +133,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         {/* Correo de solo lectura (se gestionará con el registro de fuentes) */}
         <div className="px-5 py-3 border-b border-border-line/30">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-text">Correo</p>
-          <p className="text-sm text-bg-dark">No registrado</p>
+          <p className="text-sm text-bg-dark">{correo || "No registrado"}</p>
         </div>
 
         {/* Profile: Configuración */}

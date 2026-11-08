@@ -64,7 +64,7 @@ describe("MiTarjetaVirtual", () => {
     expect(container.querySelector("[data-testid='acento-mint']")).toBeDefined();
   });
 
-  it("hace flip al hacer click y muestra el reverso con CVV", async () => {
+  it("hace flip al hacer click y muestra que el código de seguridad no se almacena", async () => {
     const user = userEvent.setup();
     render(<MiTarjetaVirtual {...propsDefault} />);
 
@@ -72,10 +72,9 @@ describe("MiTarjetaVirtual", () => {
     await user.click(tarjeta);
 
     // Debe mostrar reverso
-    expect(screen.getByText("CVV")).toBeDefined();
-    expect(screen.getByText("847")).toBeDefined();
-    expect(screen.getByText("CÓDIGO DE SEGURIDAD")).toBeDefined();
-    expect(screen.getByText(/tarjeta virtual emitida por finapp/i)).toBeDefined();
+    expect(screen.getByText("Código de seguridad no almacenado")).toBeDefined();
+    expect(screen.getByText(/el código de seguridad no se almacena/i)).toBeDefined();
+    expect(screen.queryByText("847")).toBeNull();
   });
 
   it("hace flip al presionar Enter o Espacio (teclado)", async () => {
@@ -85,8 +84,8 @@ describe("MiTarjetaVirtual", () => {
     const tarjeta = screen.getByRole("button", { name: /ver reverso/i });
     await user.keyboard("{Enter}");
 
-    expect(screen.getByText("CVV")).toBeDefined();
-    expect(screen.getByText("847")).toBeDefined();
+    expect(screen.getByText("Código de seguridad no almacenado")).toBeDefined();
+    expect(screen.queryByText("847")).toBeNull();
 
     // Volver al frente con Espacio
     await user.keyboard(" ");

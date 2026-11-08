@@ -7,16 +7,35 @@
  * @usadoPor   Vitest
  */
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
+import { obtenerUsuarioActivo } from "../../../features/auth/services";
 import SidebarNavContenido from "../../../components/layout/SidebarNavContenido";
 import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
+
+vi.mock("../../../features/auth/services", async (importOriginal) => ({
+  ...(await importOriginal()),
+  obtenerUsuarioActivo: vi.fn(),
+}));
+
+const USUARIO_SIDEBAR = { idUsuario: "12345678", nombre: "Ana María Ruiz" };
 
 afterEach(() => {
   cleanup();
   window.localStorage.getItem.mockReset();
   window.localStorage.setItem.mockClear();
+  window.sessionStorage.getItem.mockReset();
+  obtenerUsuarioActivo.mockReset();
+});
+
+beforeEach(() => {
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_SIDEBAR });
 });
 
 function RutaActual() {
@@ -39,29 +58,25 @@ const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) 
 
 describe("SidebarNavContenido", () => {
   describe("renderizado de enlaces de navegación", () => {
-    it("renderiza 6 NavLink con href e iconos correctos", () => {
+    it("renderiza 7 NavLink con href e iconos correctos", () => {
       renderSidebarNavContenido();
 
-      // Verificar los seis enlaces de la navegación lateral.
+      // Verificar los siete enlaces de la navegación lateral.
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(6);
+      expect(links).toHaveLength(7);
 
       // Verificar cada enlace con su ruta, icono y etiqueta
       const inicioLink = screen.getByRole("link", { name: /Inicio/i });
       expect(inicioLink.getAttribute("href")).toBe("/dashboard");
       expect(inicioLink.querySelector("svg.lucide-house")).toBeTruthy();
 
-      const transaccionesLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(transaccionesLink.getAttribute("href")).toBe("/dashboard/transacciones");
-      expect(transaccionesLink.querySelector("svg.lucide-receipt")).toBeTruthy();
-
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
 
-      const bolsillosLink = screen.getByRole("link", { name: /Bolsillos/i });
-      expect(bolsillosLink.getAttribute("href")).toBe("/dashboard/bolsillos");
-      expect(bolsillosLink.querySelector("svg.lucide-users")).toBeTruthy();
+      const gruposLink = screen.getByRole("link", { name: /Grupos/i });
+      expect(gruposLink.getAttribute("href")).toBe("/dashboard/grupos");
+      expect(gruposLink.querySelector("svg.lucide-users")).toBeTruthy();
 
       const contactosLink = screen.getByRole("link", { name: /Contactos/i });
       expect(contactosLink.getAttribute("href")).toBe("/dashboard/contactos");
@@ -70,6 +85,14 @@ describe("SidebarNavContenido", () => {
       const correosLink = screen.getByRole("link", { name: /Correos/i });
       expect(correosLink.getAttribute("href")).toBe("/dashboard/correos");
       expect(correosLink.querySelector("svg")).toBeTruthy();
+
+      const contabilidadLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(contabilidadLink.getAttribute("href")).toBe("/dashboard/contabilidad");
+      expect(contabilidadLink.querySelector("svg.lucide-wallet")).toBeTruthy();
+
+      const suscripcionesLink = screen.getByRole("link", { name: /Suscripciones/i });
+      expect(suscripcionesLink.getAttribute("href")).toBe("/dashboard/suscripciones");
+      expect(suscripcionesLink.querySelector("svg.lucide-repeat")).toBeTruthy();
     });
 
     it("iconos tienen flex-shrink-0 w-6 h-6", () => {
@@ -78,7 +101,7 @@ describe("SidebarNavContenido", () => {
       // Buscar todos los svg dentro de los links de navegación
       const nav = screen.getByRole("navigation");
       const svgs = nav.querySelectorAll("a svg");
-      expect(svgs.length).toBe(6);
+      expect(svgs.length).toBe(7);
       svgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -242,7 +265,7 @@ describe("SidebarNavContenido", () => {
     it("conserva nombres accesibles cuando la sidebar está colapsada", () => {
       renderSidebarNavContenido({ colapsada: true });
 
-      ["Inicio", "Transacciones", "Tarjetas", "Contactos", "Correos"].forEach((etiqueta) => {
+      ["Inicio", "Tarjetas", "Contactos", "Correos", "Contabilidad", "Suscripciones"].forEach((etiqueta) => {
         expect(screen.getByRole("link", { name: etiqueta })).toHaveAttribute(
           "aria-label",
           etiqueta
@@ -270,7 +293,7 @@ describe("SidebarNavContenido", () => {
     it("el correo del avatar usa texto con contraste adecuado sobre la sidebar oscura", () => {
       renderSidebarNavContenido();
 
-      expect(screen.getByText("No registrado")).toHaveClass("text-bg-cream/70");
+      expect(screen.getByText("correo No registrado")).toHaveClass("text-bg-cream/70");
     });
 
     it("separador tiene aria-hidden=true", () => {
@@ -284,9 +307,9 @@ describe("SidebarNavContenido", () => {
 
   describe("estilos y clases", () => {
     it("enlaces activos tienen clases de estado activo", () => {
-      renderSidebarNavContenido({}, ["/dashboard/transacciones"]);
+      renderSidebarNavContenido({}, ["/dashboard/contabilidad"]);
 
-      const activeLink = screen.getByRole("link", { name: /Transacciones/i });
+      const activeLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(activeLink.classList.contains("bg-emerald-primary/10")).toBe(true);
       expect(activeLink.classList.contains("text-mint-accent")).toBe(true);
       expect(activeLink.classList.contains("font-medium")).toBe(true);
@@ -295,8 +318,8 @@ describe("SidebarNavContenido", () => {
     it("enlaces inactivos tienen clases base y hover", () => {
       renderSidebarNavContenido({}, ["/dashboard"]);
 
-      const inactiveLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(inactiveLink.classList.contains("text-bg-cream/70")).toBe(true);
+      const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(inactiveLink.classList.contains("text-bg-cream")).toBe(true);
       expect(inactiveLink.classList.contains("hover:bg-emerald-primary/5")).toBe(true);
     });
 

@@ -1,64 +1,100 @@
 /**
- * @uso        Capa de rutas pura de FinApp: mapa de navegación de la app
- * @funciones  App()
- * @datos      Usa TRIAL_ACTIVO desde ./config/app.config para la guardia de /dashboard
+ * @uso        Capa de rutas de FinApp con carga diferida de las vistas no iniciales
+ * @funciones  App(), CargandoRuta(), envolver()
+ * @datos      Define rutas públicas y protegidas con guards de sesión; la landing se carga de
+ *             forma eager y el resto de vistas por chunks
  * @eventos    Navegación entre landing (/), /login y /dashboard/*
  * @estados    N/A
  * @usadoPor   main.jsx
  */
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { TRIAL_ACTIVO } from "./config/app.config";
-import PaginaInicio from "./pages/PaginaInicio";
-import PaginaLogin from "./pages/PaginaLogin";
-import DashboardLayout from "./layout/DashboardLayout";
-import PaginaDashboardInicio from "./pages/PaginaDashboardInicio";
-import PaginaDashboardTransacciones from "./pages/PaginaDashboardTransacciones";
-import PaginaDashboardTarjetas from "./pages/PaginaDashboardTarjetas";
-import PaginaDashboardConfiguracion from "./pages/PaginaDashboardConfiguracion";
-import PaginaDashboardBolsillos from "./pages/PaginaDashboardBolsillos";
-import PaginaDashboardContactos from "./pages/PaginaDashboardContactos";
-import PaginaDashboardCorreos from "./pages/PaginaDashboardCorreos";
+import { ProtectedRoute, PublicRoute } from "./components/auth";
+import { LandingPage } from "./features/landing";
+import { ErrorPage } from "./features/error";
+import { LimiteDeError } from "./components/ui";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
+import { GmailProvider } from "./context/GmailContext";
+
+const PaginaLogin = lazy(() => import("./features/auth").then(({ LoginPage }) => ({ default: LoginPage })));
+const DashboardLayout = lazy(() => import("./layout/DashboardLayout"));
+const PaginaDashboardInicio = lazy(() => import("./features/inicio").then(({ InicioPage }) => ({ default: InicioPage })));
+const PaginaDashboardTarjetas = lazy(() => import("./features/tarjetas").then(({ TarjetasPage }) => ({ default: TarjetasPage })));
+const PaginaDashboardConfiguracion = lazy(() => import("./features/configuracion").then(({ ConfiguracionPage }) => ({ default: ConfiguracionPage })));
+const PaginaDashboardBolsillos = lazy(() => import("./features/grupo").then(({ GruposPage }) => ({ default: GruposPage })));
+const PaginaDashboardContactos = lazy(() => import("./features/contactos").then(({ ContactosPage }) => ({ default: ContactosPage })));
+const PaginaDashboardCorreos = lazy(() => import("./features/correos").then(({ CorreosPage }) => ({ default: CorreosPage })));
+const PaginaDashboardContabilidad = lazy(() => import("./features/contabilidad").then(({ ContabilidadPage }) => ({ default: ContabilidadPage })));
+const PaginaDashboardSuscripciones = lazy(() => import("./features/suscripciones").then(({ SuscripcionesPage }) => ({ default: SuscripcionesPage })));
+
+/**
+ * CargandoRuta
+ * Indicador accesible mientras se descarga el chunk de una vista.
+ * @param {Object} props
+ * @param {boolean} [props.compacto=false] - Versión dentro del área de contenido del dashboard
+ */
+function CargandoRuta({ compacto = false }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={
+        compacto
+          ? "flex min-h-[40vh] items-center justify-center text-sm text-slate-text"
+          : "grid min-h-screen place-items-center bg-bg-cream text-sm text-slate-text"
+      }
+    >
+      Cargando…
+    </div>
+  );
+}
+
+/**
+ * envolver
+ * Envuelve el elemento de una ruta en su propio Suspense para que el layout del dashboard
+ * permanezca visible mientras se descarga la página.
+ * @param {React.ReactNode} elemento
+ * @param {boolean} [compacto=true]
+ * @returns {JSX.Element}
+ */
+function envolver(elemento, compacto = true) {
+  return <Suspense fallback={<CargandoRuta compacto={compacto} />}>{elemento}</Suspense>;
+}
 
 /**
  * App
- * Solo define el mapa de rutas; las vistas viven en src/pages/.
+ * Solo define el mapa de rutas; las vistas viven en src/pages/. La landing es la única
+ * vista eager para que la primera pintura no dependa de ningún chunk adicional.
  */
 export default function App() {
   return (
     <TemaProvider>
       <UsuarioActivoProvider>
-        <Routes>
-        <Route path="/" element={<PaginaInicio />} />
-        <Route path="/inicio" element={<Navigate to="/" replace />} />
-        <Route path="/login" element={<PaginaLogin />} />
-        <Route
-          path="/dashboard"
-          element={
-            TRIAL_ACTIVO ? <DashboardLayout /> : <Navigate to="/login" replace />
-          }
-        >
-          <Route index element={<PaginaDashboardInicio />} />
-          <Route
-            path="transacciones"
-            element={<PaginaDashboardTransacciones />}
-          />
-          <Route
-            path="tarjetas"
-            element={<PaginaDashboardTarjetas />}
-          />
-          <Route
-            path="configuracion"
-            element={<PaginaDashboardConfiguracion />}
-          />
-          <Route path="bolsillos" element={<PaginaDashboardBolsillos />} />
-          <Route path="contactos" element={<PaginaDashboardContactos />} />
-          <Route path="correos" element={<PaginaDashboardCorreos />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <GmailProvider>
+          <LimiteDeError>
+            <Routes>
+              <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+              <Route path="/inicio" element={<Navigate to="/" replace />} />
+              <Route path="/login" element={<PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>} />
+
+              <Route element={<ProtectedRoute>{envolver(<DashboardLayout />, false)}</ProtectedRoute>}>
+                <Route path="/dashboard" element={envolver(<PaginaDashboardInicio />)} />
+                <Route path="/dashboard/tarjetas" element={envolver(<PaginaDashboardTarjetas />)} />
+                <Route path="/dashboard/configuracion" element={envolver(<PaginaDashboardConfiguracion />)} />
+                <Route path="/dashboard/bolsillos" element={<Navigate to="/dashboard/grupos" replace />} />
+                <Route path="/dashboard/grupos" element={envolver(<PaginaDashboardBolsillos />)} />
+                <Route path="/dashboard/contactos" element={envolver(<PaginaDashboardContactos />)} />
+                <Route path="/dashboard/correos" element={envolver(<PaginaDashboardCorreos />)} />
+                <Route path="/dashboard/contabilidad" element={envolver(<PaginaDashboardContabilidad />)} />
+                <Route path="/dashboard/suscripciones" element={envolver(<PaginaDashboardSuscripciones />)} />
+                <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
+              </Route>
+
+              <Route path="*" element={<ErrorPage />} />
+            </Routes>
+          </LimiteDeError>
+        </GmailProvider>
       </UsuarioActivoProvider>
     </TemaProvider>
   );

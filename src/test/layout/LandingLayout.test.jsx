@@ -9,12 +9,15 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import LandingLayout from "../../layout/LandingLayout";
+import LandingLayout from "../../features/landing/components/layouts/LandingLayout";
+import { TemaProvider } from "../../context/TemaContext";
 
 function renderLayout(props = {}) {
   return render(
     <MemoryRouter initialEntries={["/"]}>
-      <LandingLayout alAbrirAuth={vi.fn()} {...props} />
+      <TemaProvider>
+        <LandingLayout alAbrirAuth={vi.fn()} {...props} />
+      </TemaProvider>
     </MemoryRouter>
   );
 }
@@ -76,6 +79,14 @@ describe("LandingLayout", () => {
 
     expect(screen.getByTestId("contenido-extra")).toBeDefined();
     expect(screen.getByText("Contenido extra")).toBeDefined();
+  });
+
+  it("mantiene su clase de tema propia, aislada del tema global del dashboard", () => {
+    window.localStorage.getItem.mockReturnValue("oscuro");
+    renderLayout();
+
+    expect(screen.getByTestId("landing-theme")).toHaveClass("landing-theme");
+    expect(document.documentElement).toHaveAttribute("data-tema", "oscuro");
   });
 
   it("propaga alAbrirAuth a Header, Hero y CtaSection", () => {

@@ -16,6 +16,10 @@ export const ENDPOINTS = {
     login: "/api/auth/login",
     registro: "/api/auth/registro",
   },
+  googleAuth: {
+    state: "/api/auth/google/state",
+    callback: "/api/auth/google/callback",
+  },
   usuario: {
     base: "/usuario",
     porId: "/usuario/id",
@@ -27,6 +31,13 @@ export const ENDPOINTS = {
     porUsuario: "/grupo/usuario",
     porNombre: "/grupo/nombre",
     porId: "/grupo/id",
+  },
+  bolsillo: {
+    base: "/bolsillo",
+  },
+  movimiento: {
+    base: "/movimiento",
+    resumen: "/movimiento/resumen",
   },
   tarjeta: {
     base: "/tarjeta",
@@ -44,10 +55,16 @@ export const ENDPOINTS = {
     porId: "/contacto/id",
     porNombre: "/contacto/nombre",
     porNota: "/contacto/nota",
-    porTelefono: "/contacto/contacto",
+    porTelefono: "/contacto/telefono",
   },
   asistente: {
     chat: "/asistente/chat",
+    publico: "/asistente/publico",
+  },
+  gmail: {
+    callback: "/api/gmail/callback",
+    conexion: "/api/gmail/conexion",
+    cuentas: "/api/gmail/cuentas",
   },
 };
 

@@ -8,7 +8,7 @@
  *             lista ordenada de RF-15 (`resolverControlDeVista`: control estable por versión de
  *             vista → otro control estable → primer control enfocable)
  * @estados    Ninguno propio de React: una ref interna con la clave de la entrada ya consumida
- * @usadoPor   DashboardLayout (destino /dashboard), PaginaInicio (destino /)
+ * @usadoPor   DashboardLayout (destino /dashboard), LandingPage (destino /)
  */
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";

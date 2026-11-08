@@ -4,7 +4,7 @@
  * @datos      tema ("claro" | "oscuro")
  * @eventos    Cambio de apariencia desde Configuración
  * @estados    tema
- * @usadoPor   App.jsx y PaginaDashboardConfiguracion.jsx
+ * @usadoPor   App.jsx y features/configuracion/ConfiguracionPage.jsx
  */
 import { createContext, useContext, useEffect, useState } from "react";
 

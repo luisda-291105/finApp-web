@@ -282,9 +282,10 @@ describe("013 — tokens, literales y tarjeta sólida", () => {
   });
 
   it(".glass-card es sólida: declara #ffffff y no usa backdrop-filter", () => {
-    const regla = css.match(/\.glass-card\s*\{([\s\S]*?)\}/)?.[1];
-    expect(regla).toBeDefined();
-    expect(regla).toContain("background: #ffffff;");
-    expect(regla).not.toContain("backdrop-filter");
-  });
+      // Match solo la regla base .glass-card (no la de dark mode :root[data-tema="oscuro"] .glass-card)
+      const reglaBase = css.match(/(^|\n)\.glass-card\s*\{([\s\S]*?)\}/)?.[2];
+      expect(reglaBase).toBeDefined();
+      expect(reglaBase).toContain("background: #ffffff;");
+      expect(reglaBase).not.toContain("backdrop-filter");
+    });
 });

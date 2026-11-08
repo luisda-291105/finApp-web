@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import Hero from "../../../../components/domain/landing/Hero";
+import Hero from "../../../../features/landing/components/sections/Hero";
 
 describe("Hero", () => {
   it("renderiza el titular y las 4 categorias del resumen", () => {

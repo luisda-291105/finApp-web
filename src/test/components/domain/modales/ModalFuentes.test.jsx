@@ -10,9 +10,15 @@ import { useRef, useState } from "react";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import ModalFuentes from "../../../../components/domain/modales/ModalFuentes";
+import ModalFuentes from "../../../../features/configuracion/components/modals/CrearFuenteModal";
 import { UsuarioActivoProvider } from "../../../../context/UsuarioActivoContext";
 import * as fuenteServicio from "../../../../services/fuenteServicio";
+import { obtenerUsuarioActivo } from "../../../../features/auth/services";
+
+vi.mock("../../../../features/auth/services", async (importOriginal) => ({
+  ...(await importOriginal()),
+  obtenerUsuarioActivo: vi.fn(),
+}));
 
 const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez" };
 
@@ -38,7 +44,7 @@ const fijarViewport = (ancho) => {
   });
 };
 
-function ArnésModalFuentes({ alGuardar }) {
+function ArnésModalFuentes({ alGuardar, modalProps = {} }) {
   const [abierto, setAbierto] = useState(false);
   const triggerRef = useRef(null);
 
@@ -52,6 +58,7 @@ function ArnésModalFuentes({ alGuardar }) {
         alCerrar={() => setAbierto(false)}
         triggerRef={triggerRef}
         alGuardar={alGuardar}
+        {...modalProps}
       />
     </UsuarioActivoProvider>
   );
@@ -66,6 +73,12 @@ afterEach(() => {
 beforeEach(() => {
   fijarViewport(1024);
   window.localStorage.getItem.mockReturnValue(JSON.stringify(USUARIO));
+  // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
+  window.sessionStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_pestana" ? "activa" : null
+  );
+  // Mock obtenerUsuarioActivo para que devuelva el usuario
+  obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO });
 });
 
 describe("ModalFuentes", () => {
@@ -101,6 +114,21 @@ describe("ModalFuentes", () => {
 
     expect(tipoSelect).toHaveValue("TELEFONO");
     expect(contenidoInput).toHaveValue("+52 55 1234 5678");
+  });
+
+  it("muestra el botón de Gmail con el patrón externo de Google fuera del formulario", async () => {
+    const usuario = userEvent.setup();
+    const alConectarGmail = vi.fn();
+    render(<ArnésModalFuentes modalProps={{ gmailConfigurado: true, gmailListo: true, alConectarGmail }} />);
+    await usuario.click(screen.getByRole("button", { name: "Abrir registro de fuentes" }));
+
+    const boton = screen.getByRole("button", { name: "Conectar Gmail con Google" });
+    expect(boton).toHaveClass("google-auth-button", "w-full", "rounded-xl", "px-4", "py-3");
+    expect(boton.closest("form")).toBeNull();
+    expect(boton.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+
+    await usuario.click(boton);
+    expect(alConectarGmail).toHaveBeenCalledTimes(1);
   });
 
   it("registra la fuente llamando a crearFuente con los campos esperados", async () => {

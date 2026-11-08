@@ -36,19 +36,19 @@ export default function MiTarjetaVirtual({ titular, numero, expiracion, cvv = ""
   return (
     <div className={className} style={{ perspective: "1000px" }} role="region" aria-label="Tarjeta virtual interactiva">
       <motion.div
-        role="button"
-        tabIndex={0}
-        aria-pressed={volteada}
-        aria-label={volteada ? "Ver frente de la tarjeta virtual" : "Ver reverso de la tarjeta virtual"}
-        onClick={alternarGiro}
-        onKeyDown={manejarTeclado}
-        className="group relative mx-auto aspect-[8/5] w-full max-w-xs cursor-pointer rounded-2xl border border-border-line bg-transparent shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
-        style={{ transformStyle: "preserve-3d" }}
-        animate={{ rotateY: volteada ? 180 : 0 }}
-        transition={transitionConfig}
-        whileHover={hoverConfig}
-        whileTap={reducirMovimiento ? undefined : { scale: 0.99 }}
-      >
+              role="button"
+              tabIndex={0}
+              aria-pressed={volteada}
+              aria-label={volteada ? "Ver frente de la tarjeta virtual" : "Ver reverso de la tarjeta virtual"}
+              onClick={alternarGiro}
+              onKeyDown={manejarTeclado}
+              className="glass-card group relative mx-auto aspect-[8/5] w-full max-w-xs cursor-pointer rounded-2xl border border-border-line bg-transparent shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+              style={{ transformStyle: "preserve-3d" }}
+              animate={{ rotateY: volteada ? 180 : 0 }}
+              transition={transitionConfig}
+              whileHover={hoverConfig}
+              whileTap={reducirMovimiento ? undefined : { scale: 0.99 }}
+            >
         {/* tarjeta virtual frente */}
         <div className="absolute inset-0 rounded-[inherit] overflow-hidden" style={{ backfaceVisibility: "hidden" }} aria-hidden={volteada} data-testid="tarjeta-frente">
           <div className="relative h-full min-h-[200px] bg-slate-100 text-bg-dark p-6 flex flex-col justify-between">
@@ -93,20 +93,14 @@ export default function MiTarjetaVirtual({ titular, numero, expiracion, cvv = ""
 
             <div className="flex-1 p-6 flex flex-col justify-end">
               <div className="flex items-end justify-between w-full">
-                <div className="bg-white rounded-lg p-3 min-w-[80px] border border-border-line">
-                  <p className="text-xs text-slate-text uppercase tracking-wider">CVV</p>
-                  <p className="font-mono text-lg font-semibold text-bg-dark tabular-nums" aria-label={`Código de seguridad ${cvv}`}>{cvv}</p>
-                </div>
-                <div className="text-right ml-4">
-                  <p className="text-xs text-slate-text uppercase tracking-wider">CÓDIGO DE SEGURIDAD</p>
-                  <p className="text-xs text-slate-text">Los 3 dígitos al reverso</p>
+                <div className="rounded-lg border border-border-line bg-white p-3 text-sm text-slate-text">
+                  Código de seguridad no almacenado
                 </div>
               </div>
 
               <div className="mt-6 pt-2 border-t border-border-line">
                 <p className="text-xs text-slate-text leading-relaxed">
-                  Tarjeta virtual emitida por {entidad}. Úsela para compras en línea seguras.
-                  No comparta el CVV. Contacto: soporte@finapp.com
+                  Tarjeta registrada en FinApp. El código de seguridad no se almacena.
                 </p>
               </div>
 

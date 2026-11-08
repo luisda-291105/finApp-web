@@ -24,6 +24,8 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/012-correcciones-menores/` — medición de `useBreakpoint`, clase muerta de `AuthModal`, fecha inválida en `LogMovimientos`. Cerrada (commit `8aa9f0f`).
 - `specs/013-calidad-css/spec.md` — visual/CSS (revelado, vidrio, radios, área segura, tokens y contraste). Cerrada (2026-10-18).
 - `specs/015-higiene-y-dobles/spec.md` — higiene de código, dobles de prueba y documentación. Cerrada (2026-10-18).
+- `specs/038-google-identity-services/` — migración de Gmail de popup a redirect (error COOP `window.closed`); `plan.md` y `tasks.md` escritos, pendiente de implementación.
+- `specs/039-migrarTrasacciones-contabilidad/` — página demo de Contabilidad implementada en `/dashboard/contabilidad`, con resumen, movimientos y acceso en navegación; T1–T4 completas. Build y pruebas focales pasan; suite completa 529/588, revisión visual y análisis de línea base pendientes.
 - `specs/014-asistente-de-ayuda/spec.md` — aprobada (2026-10-19); plan y tareas escritos (10 tareas): botón «?» de `PaginaInicio`, «Usuario» del Header del dashboard, hex de JSX → tokens.
 - `specs/016/` — aprobada y cerrada (2026-10-20); T1–T6 completas. Regresión final: 554/554 pruebas en 39 archivos, build correcto y revisión visual responsive; T6 corrigió contraste/nombres accesibles de la navegación lateral.
 - `specs/017-asistente-en-dashboard/` — implementada; 536 pruebas y build correctos; revisión visual realizada, área segura real pendiente.
@@ -66,3 +68,59 @@ antes de tocar código** y no revertir sus ediciones.
 ## Preguntas por resolver
 
 - **Spec 014 — aprobada (2026-10-19):** intención del botón «?» de `PaginaInicio`, propósito del «Usuario» del Header en modo dashboard, y si se migran los hex de JSX a tokens.
+
+## Estado implementación (spec 037 — contenido de inicio)
+
+- **T1 — Header de página y estado base:** `PaginaDashboardInicio.jsx` reescrito con header exclusivo (título "dashboard" + botón "crear muestra" a la derecha, clases de tokens sin hex nuevos), 3 cards fijas eliminadas, estado local `contenidosConfigurados` (`{}` vacío) y `modalAbierto` para que el botón funcione en T2/T3. Prueba nueva `src/test/pages/PaginaDashboardInicio.test.jsx` (4/4, `MemoryRouter`). `App.test.jsx` actualizado a las nuevas aserciones del spec (título "dashboard", sin las 3 cards). `npm run build` OK; `npm test` vuelve a la línea base de fallos preexistentes (0 fallos nuevos introducidos).
+- **T2 — Marco del modal de configuración:** añadido el contenedor del modal inline en `PaginaDashboardInicio.jsx` siguiendo el patrón de `DashboardUserModal`: portal a `document.body` con overlay (`z-50`, clic fuera cierra), `BotonCerrar` ("X") superior como único control de cierre, `useCierreConEsc` (capa 60), `useDeslizarParaCerrar` (deslizar abajo solo móvil), `FocusTrap` con opciones spec 010 (`allowOutsideClick: true`, `escapeDeactivates: false`, `initialFocus` en el panel, `returnFocusOnDeactivate: false`), y `useRetornoDeFoco` con `triggerRef` al botón "crear muestra". Pruebas T2: 20/20 (4 T1 + 16 T2) con `MemoryRouter`. `npm run build` OK. Sin fallos nuevos introducidos (fallos preexistentes en `AsistenteAyuda.test.jsx` ajenos).
+- **T3 — Formulario del modal («Crear muestra»):** retirado el modelo antiguo (`CONTENIDOS_CONFIGURABLES`, `FORMATOS`, `contenidosConfigurados`, `alCambiarFormato`, título «Configurar contenidos»). El modal queda con título «Crear muestra» (ids `modal-crear-muestra-panel` / `modal-crear-muestra-titulo`; `BotonCerrar` con aria-label «Cerrar creación de muestra»), input de título controlado, `<select>` de fuente con placeholder deshabilitado «Elegir fuente» + exactamente 5 opciones demo con destino de redirección asociado (`FUENTES_DEMO`: Bolsillos→`/dashboard/bolsillos`; Transacciones/Ingresos/Gastos→`/dashboard/transacciones`; Tarjetas→`/dashboard/tarjetas`; la redirección se usa en T8) y `<select>` de tipo con placeholder deshabilitado «Elegir tipo» + 4 tipos (`TIPOS_VISUALIZACION`; valores sin acentos: `tarjeta`, `grafica`, `metrica`, `mapa_calor` — etiquetas visibles con acento como el patrón antiguo). Botón «guardar muestra» presente sin ciclo (llega en T4); sin `<form>` ni submit para evitar recarga por Enter. Estado nuevo: `muestras` (inicialmente `[]`) y `borrador` (`{ titulo, fuente, tipo }` con `""` inicial, un solo objeto para que el reset de T4/T5 sea trivial). Zona de decisión menor: etiquetas de tipos capitalizadas («Tarjeta», «Gráfica», «Métrica», «Mapa de calor») siguiendo el patrón del `<select>` antiguo; las pruebas asertan los textos del DOM con ese formato. Marco T2 intacto con los nuevos textos accesibles. Suite focal 29/29 (4 T1 + 16 T2 con textos actualizados + 9 T3 nuevas; sustituidas las 6 pruebas obsoletas del describe antiguo, que eran 6 y no 7 según decía T3). `npm run build` OK. `npm test`: 53 fallos en 9 suites preexistentes y ajenos (`index.css.test.js`, `DashboardLayout`, `SidebarNavContenido`, `SidebarResponsive`, `AsistenteAyuda`, `cierreDeModales`, `AsistenteDashboard`, `MiTarjetaVirtual`, `PaginaInicio`); ninguna importa los archivos de T3 (verificado por grep), por lo que no hay regresión atribuible. La edición manual del usuario en `SidebarNavContenido.jsx` (teléfono en el avatar) sigue sin commitear y probablemente explica sus fallos de texto; no se tocó. Build correcto y commit `17d6d9c` (el diff de la página incluye el estado T1/T2 pendiente de estos archivos). Revisión visual en navegador: no realizada (sin navegador disponible en esta sesión).
+- **T4 — Ciclo de guardado (añadir, validar, cerrar y descartar):** implementado el handler
+  `alGuardarMuestra` del botón «guardar muestra» con helpers de módulo en el propio archivo:
+  `BORRADOR_VACIO` (también `useState` inicial), `normalizarTitulo` (`trim()`),
+  `esBorradorCompleto` (título con contenido tras `trim()` y fuente/tipo fuera del placeholder `""`)
+  y `esMuestraDuplicada` (triple título normalizado + fuente + tipo con `some`, RF-10). Ciclo
+  completo (RF-07): añade `{ titulo, fuente, tipo }` AL FINAL de `muestras` (orden de creación, sin
+  reemplazar), cierra el modal y restablece el borrador a `BORRADOR_VACIO` (placeholders en la
+  próxima apertura). RF-09 (incompleto) y RF-10 (duplicado): retorno temprano SIN cerrar ni resetear
+  ni añadir, sin mensajes; el borrador se conserva para reintentar. RF-11: `alCerrarModal` (única vía
+  de cierre, usada por X/Esc/clic fuera/deslizar) ahora resetea el borrador, de modo que el descarte
+  ocurre al cerrar y la próxima apertura está vacía (decisión aprobada: el borrador NO se conserva).
+  Sin persistencia ni endpoints (llega en T5). Suite focal 42/42: 29 previas intactas + 13 nuevas
+  (3 guardado válido AC-8/AC-11 + 4 incompleto AC-16 + 1 duplicado/reintento AC-17 + 5 descarte
+  AC-18). Cobertura de «añade al final / anteriores intactas» antes de T6 (sin render aún): se
+  verifica por mecánica de duplicados (un guardado posterior del mismo triple rechaza ⇒ la muestra
+  sigue en la lista). TDD: fase roja 9/13 (las 4 de incompleto pasaban trivialmente sin handler).
+  `npm test`: mismos 53 fallos preexistentes en las 9 suites ajenas de la línea base (verificado por
+  grep: ninguna importa `PaginaDashboardInicio`); `npm run build` OK. Revisión visual en navegador:
+  no aplicable a esta tarea (solo lógica, sin cambios visuales).
+- **T5 — Persistencia simulada en localStorage (RF-15, AC-27/28/29/30):** añadidos en
+  `PaginaDashboardInicio.jsx` la constante `CLAVE_ALMACEN` (`finapp_muestras_dashboard`) y los
+  helpers de módulo `leerMuestrasPersistidas` (JSON + validación `Array.isArray` + `try/catch`
+  con `console.error`, patrón de `UsuarioActivoContext`; JSON inválido/no-array → `null` =
+  lista vacía sin crash) y `persistirMuestras` (escritura de la lista COMPLETA tras cada
+  guardado válido, no delta). `alGuardarMuestra` ahora añade al final, persiste la lista
+  completa y cierra; el `useEffect` de montar restaura en el orden guardado. Fallback: solo
+  el acceso a localStorage va dentro del try/catch — si el almacén falta o falla, la página
+  funciona en memoria y al «recargar» no hay persistencia; sin endpoints (AC-30). Suite focal
+  54/54: 42 previas + 12 nuevas (escritura completa/normalizada y acumulada AC-27; restauración
+  por estado y orden vía duplicados + escritura posterior AC-28; JSON inválido/no-array;
+  setItem/getItem lanzando y localStorage ausente ac-29, incluida la verificación de
+  «al recargar no persiste»; RF-11 sin escribir al cerrar/duplicado; AC-30 sin fetch). TDD:
+  fase roja 9/12 (3 guardes triviales de «no escribir» y AC-30 pasaban sin implementar).
+  `npm test`: mismos 53 fallos en las 9 suites ajenas de la línea base; `npm run build` OK;
+  `git diff --check` limpio. Nota de entorno: `vitest.setup.js` reemplaza `window.localStorage`
+  por un mock global con métodos `vi.fn()` (`getItem` devuelve `undefined` y `setItem` no
+  persiste), por lo que las pruebas siembran con `getItem.mockReturnValue(...)` y verifican la
+  escritura con `vi.spyOn(window.localStorage, "setItem")` (patrón ya usado por
+  `PaginaDashboardConfiguracion`/`ModalPerfil`); decisión: un intento de escritura fallida NO
+  corrompe el guardado (se añade en memoria), y una lectura fallida sustituye el dato previo
+  por lista vacía en la siguiente escritura. Revisión visual no aplicable (solo lógica).
+  Commit `dc3776e`.
+
+- **Tarea suelta (placeholders ModalDetalleGrupo):** `placeholder="Nombre del grupo"` en el
+  `<input>` Nombre y `placeholder="Descripción del grupo"` en el `<textarea>` Descripción del
+  formulario "Datos del grupo" (`src/components/domain/modales/ModalDetalleGrupo.jsx`, línea 228).
+  Sin tocar `<select>` ni otros archivos. Validación: suite de modales en verde (no existe
+  `ModalDetalleGrupo.test.jsx` específica); `npm test`: 575/579 — 4 fallos preexistentes y ajenos
+  en `AsistenteAyuda`/`AsistenteDashboard` (textos estáticos del asistente, no importan el
+  archivo modificado); `npm run build` OK. Sin fallos nuevos introducidos.

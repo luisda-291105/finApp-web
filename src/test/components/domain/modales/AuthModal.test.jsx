@@ -7,13 +7,13 @@
  * @estados    viewport explícito (innerWidth + matchMedia) y estado de apertura en los re-render
  * @usadoPor   Vitest
  */
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import AuthModal from "../../../../components/domain/modales/AuthModal";
-import PaginaLogin from "../../../../pages/PaginaLogin";
-import PaginaInicio from "../../../../pages/PaginaInicio";
+import AuthModal from "../../../../features/auth/components/modals/AuthModal";
+import PaginaLogin from "../../../../features/auth/pages/LoginPage";
+import PaginaInicio from "../../../../features/landing/pages/LandingPage";
 
 /**
  * Mock **local** de `config/app.config` para los casos nuevos de la spec 011 (Tarea 8). El cierre
@@ -28,6 +28,9 @@ vi.mock("../../../../config/app.config", async (importOriginal) => {
   const real = await importOriginal();
   return {
     ...real,
+    get TRIAL_MODE() {
+      return estadoTrial.activo ?? real.TRIAL_MODE;
+    },
     get TRIAL_ACTIVO() {
       return estadoTrial.activo ?? real.TRIAL_ACTIVO;
     },
@@ -114,6 +117,21 @@ describe("AuthModal", () => {
       expect(dialogo.getAttribute("aria-modal")).toBe("true");
     });
 
+    it("muestra solo placeholders del login y conserva el botón de Google visible y distinguible", () => {
+      renderModal();
+
+      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const contrasena = screen.getByLabelText("Contraseña");
+      const botonGoogle = screen.getByRole("button", { name: "Iniciar sesión con Google" });
+
+      expect(screen.queryByText("Nombre, identificación, correo o teléfono")).not.toBeInTheDocument();
+      expect(screen.queryByText("Contraseña")).not.toBeInTheDocument();
+      expect(identificacion).toHaveAttribute("placeholder", "Nombre, identificación, correo o teléfono");
+      expect(contrasena).toHaveAttribute("placeholder", "Ingresa tu contraseña");
+      expect(botonGoogle).toHaveClass("google-auth-button");
+      expect(botonGoogle.querySelector("svg")).toBeInTheDocument();
+    });
+
     it("la «X» está dentro del panel y tiene nombre accesible específico (ya no «Cerrar modal»)", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
@@ -172,7 +190,7 @@ describe("AuthModal", () => {
       const usuario = userEvent.setup();
       renderModal({ alCerrar });
 
-      const identificacion = screen.getByPlaceholderText("1234567890");
+      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
       await usuario.click(identificacion);
       expect(document.activeElement).toBe(identificacion);
 
@@ -202,6 +220,20 @@ describe("AuthModal", () => {
         expect(dialogo.contains(document.activeElement)).toBe(true);
       });
       document.body.removeChild(externo);
+    });
+
+    it("no cierra si la selección de texto empieza en un input y termina en el fondo", () => {
+      const alCerrar = vi.fn();
+      renderModal({ alCerrar });
+      const entrada = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const overlay = obtenerOverlay();
+
+      fireEvent.pointerDown(entrada);
+      fireEvent.pointerUp(overlay);
+      fireEvent.click(overlay);
+
+      expect(alCerrar).not.toHaveBeenCalled();
+      expect(obtenerDialogo()).toBeInTheDocument();
     });
 
     it("clic dentro del panel NO cierra el modal", async () => {
@@ -248,7 +280,7 @@ describe("AuthModal", () => {
       renderModal({ alCerrar });
       await esperarFocoEnContenedor(obtenerDialogo());
 
-      const identificacion = screen.getByPlaceholderText("1234567890");
+      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
       dispararPuntero(identificacion, "pointerdown", { clientY: 0 });
       dispararPuntero(identificacion, "pointermove", { clientY: 200 });
       dispararPuntero(identificacion, "pointerup", { clientY: 200 });
@@ -273,16 +305,17 @@ describe("AuthModal", () => {
 
   describe("AC-22: cerrar NO borra lo escrito", () => {
     const escribirCampos = async (usuario) => {
-      await usuario.type(screen.getByPlaceholderText("1234567890"), "12345678");
-      await usuario.type(screen.getByPlaceholderText("Juan Pérez"), "Ana Pérez");
-      await usuario.type(screen.getByPlaceholderText("••••••••"), "secreta123");
-    };
+          const idInput = screen.getByLabelText("Cédula o identificación");
+          await usuario.type(idInput, "12345678");
+          await usuario.type(screen.getByLabelText("Nombre completo"), "Ana Pérez");
+          await usuario.type(screen.getByLabelText("Contraseña"), "secreta123");
+        };
 
-    const comprobarCamposConservados = () => {
-      expect(screen.getByPlaceholderText("1234567890").value).toBe("12345678");
-      expect(screen.getByPlaceholderText("Juan Pérez").value).toBe("Ana Pérez");
-      expect(screen.getByPlaceholderText("••••••••").value).toBe("secreta123");
-    };
+        const comprobarCamposConservados = () => {
+          expect(screen.getByLabelText("Cédula o identificación").value).toBe("12345678");
+          expect(screen.getByLabelText("Nombre completo").value).toBe("Ana Pérez");
+          expect(screen.getByLabelText("Contraseña").value).toBe("secreta123");
+        };
 
     it("conserva identificación, nombre y contraseña al cerrar con la «X» y reabrir", async () => {
       const usuario = userEvent.setup();

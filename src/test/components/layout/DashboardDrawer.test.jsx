@@ -286,7 +286,7 @@ describe("DashboardDrawer", () => {
       document.body.removeChild(externo);
     });
 
-    it("elementos enfocables: la «X» + 5 enlaces + el avatar del menú (7), en orden", () => {
+    it("elementos enfocables: la «X» + 7 enlaces + el avatar del menú (9), en orden", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -295,19 +295,20 @@ describe("DashboardDrawer", () => {
       );
 
       // Orden de tabulación: el cromo superior (la «X») precede al contenido del menú.
-      expect(focusables.length).toBe(8);
+      expect(focusables.length).toBe(9);
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar menú");
       expect(focusables[1].tagName).toBe("A"); // Inicio
-      expect(focusables[2].tagName).toBe("A"); // Transacciones
-      expect(focusables[3].tagName).toBe("A"); // Tarjetas
-      expect(focusables[4].getAttribute("href")).toBe("/dashboard/bolsillos");
-      expect(focusables[5].getAttribute("href")).toBe("/dashboard/contactos");
-      expect(focusables[6].getAttribute("href")).toBe("/dashboard/correos");
-      expect(focusables[7].tagName).toBe("BUTTON"); // Avatar
-      expect(focusables[7].getAttribute("aria-label")).toContain("Cuenta de");
+      expect(focusables[2].tagName).toBe("A"); // Tarjetas
+      expect(focusables[3].getAttribute("href")).toBe("/dashboard/grupos");
+      expect(focusables[4].getAttribute("href")).toBe("/dashboard/contactos");
+      expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
+      expect(focusables[6].getAttribute("href")).toBe("/dashboard/contabilidad");
+      expect(focusables[7].getAttribute("href")).toBe("/dashboard/suscripciones");
+      expect(focusables[8].tagName).toBe("BUTTON"); // Avatar
+      expect(focusables[8].getAttribute("aria-label")).toContain("Cuenta de");
     });
 
-    it("mantiene el avatar después de los cinco enlaces y dentro del flujo del menú", () => {
+    it("mantiene el avatar después de los siete enlaces y dentro del flujo del menú", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -315,7 +316,7 @@ describe("DashboardDrawer", () => {
       const links = [...nav.querySelectorAll("a[href]")];
       const avatar = nav.querySelector("button[aria-label^='Cuenta de']");
 
-      expect(links).toHaveLength(6);
+      expect(links).toHaveLength(7);
       expect(nav.lastElementChild).toBe(avatar);
       expect(avatar).toBeTruthy();
       expect(avatar.className).not.toMatch(/\b(?:fixed|sticky|absolute|bottom-0|mt-auto)\b/);
@@ -428,7 +429,7 @@ describe("DashboardDrawer", () => {
 
       // Verificar los enlaces (NavLink renderiza <a> con href).
       const links = panel.querySelectorAll("a[href]");
-      expect(links.length).toBe(6);
+      expect(links.length).toBe(7);
 
       // Verificar avatar button
       const avatarButton = panel.querySelector("button[aria-label*='Cuenta de']");

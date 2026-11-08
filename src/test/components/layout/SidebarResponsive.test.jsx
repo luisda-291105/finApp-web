@@ -7,12 +7,20 @@
  * @usadoPor   Vitest
  */
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { TemaProvider } from "../../../context/TemaContext.jsx";
 import SidebarResponsive from "../../../components/layout/SidebarResponsive";
 
 afterEach(cleanup);
+
+beforeEach(() => {
+  // Mock localStorage para tema oscuro
+  window.localStorage.getItem.mockImplementation((key) =>
+    key === "finapp_tema" ? "oscuro" : null
+  );
+});
 
 const renderSidebarResponsive = (props = {}, initialEntries = ["/dashboard"]) => {
   const defaultProps = {
@@ -23,9 +31,11 @@ const renderSidebarResponsive = (props = {}, initialEntries = ["/dashboard"]) =>
   };
 
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <SidebarResponsive {...defaultProps} />
-    </MemoryRouter>
+    <TemaProvider>
+      <MemoryRouter initialEntries={initialEntries}>
+        <SidebarResponsive {...defaultProps} />
+      </MemoryRouter>
+    </TemaProvider>
   );
 };
 
@@ -87,7 +97,7 @@ describe("SidebarResponsive", () => {
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
       expect(navegacion).toBeTruthy();
       expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
-      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(6);
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(7);
       expect(navegacion.querySelector("button")).toBeNull();
       expect(pieAvatar).toBeTruthy();
       expect(pieAvatar).toHaveClass("shrink-0");
@@ -135,24 +145,24 @@ describe("SidebarResponsive", () => {
       expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
-    it("renderiza 6 enlaces de navegación con iconos y etiquetas", () => {
+    it("renderiza 7 enlaces de navegación con iconos y etiquetas", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(6);
+      expect(links).toHaveLength(7);
 
       // Usar getByRole con nombre más específico para el link de navegación "Inicio"
       const inicioLink = screen.getByRole("link", { name: /^Inicio$/i });
       expect(inicioLink.getAttribute("href")).toBe("/dashboard");
       expect(inicioLink.querySelector("svg.lucide-house")).toBeTruthy();
 
-      const transaccionesLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(transaccionesLink.getAttribute("href")).toBe("/dashboard/transacciones");
-      expect(transaccionesLink.querySelector("svg.lucide-receipt")).toBeTruthy();
-
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
+
+      const contabilidadLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(contabilidadLink.getAttribute("href")).toBe("/dashboard/contabilidad");
+      expect(contabilidadLink.querySelector("svg.lucide-wallet")).toBeTruthy();
     });
 
     it("iconos de navegación tienen flex-shrink-0 w-6 h-6", () => {
@@ -160,7 +170,7 @@ describe("SidebarResponsive", () => {
 
       const aside = getSidebarAside();
       const navSvgs = aside.querySelectorAll("a[href^='/dashboard'] svg");
-      expect(navSvgs.length).toBe(6);
+      expect(navSvgs.length).toBe(7);
       navSvgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -200,7 +210,7 @@ describe("SidebarResponsive", () => {
       expect(aside).toHaveClass("flex", "flex-col");
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
       expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
-      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(6);
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(7);
       expect(navegacion.querySelector("button")).toBeNull();
       expect(pieAvatar).toHaveClass("shrink-0");
       expect(pieAvatar.querySelector("hr[role='separator']")).toBeTruthy();
@@ -343,21 +353,21 @@ describe("SidebarResponsive", () => {
     });
 
     it("enlaces activos tienen clases de estado activo", () => {
-      renderSidebarResponsive({ colapsada: false }, ["/dashboard/transacciones"]);
+      renderSidebarResponsive({ colapsada: false }, ["/dashboard/contabilidad"]);
 
-      const activeLink = screen.getByRole("link", { name: /Transacciones/i });
+      const activeLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(activeLink).toHaveClass("bg-emerald-primary/10");
       expect(activeLink).toHaveClass("text-mint-accent");
       expect(activeLink).toHaveClass("font-medium");
     });
 
     it("enlaces inactivos tienen clases base y hover", () => {
-      renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
+          renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
 
-      const inactiveLink = screen.getByRole("link", { name: /Transacciones/i });
-      expect(inactiveLink).toHaveClass("text-bg-cream/70");
-      expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
-    });
+          const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
+          expect(inactiveLink).toHaveClass("text-bg-cream");
+          expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
+        });
   });
 
   describe("estados de foco visible", () => {
@@ -376,37 +386,41 @@ describe("SidebarResponsive", () => {
   });
 
   describe("cambio de estado controlado (props)", () => {
-    it("re-renderiza correctamente al cambiar prop colapsada de false a true", () => {
-      const { rerender } = renderSidebarResponsive({ colapsada: false });
+      it("re-renderiza correctamente al cambiar prop colapsada de false a true", () => {
+        const { rerender } = renderSidebarResponsive({ colapsada: false });
 
-      const aside = getSidebarAside();
-      expect(aside).toHaveClass("w-64");
+        const aside = getSidebarAside();
+        expect(aside).toHaveClass("w-64");
 
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <SidebarResponsive colapsada={true} alToggleColapso={vi.fn()} alAbrirUserModal={vi.fn()} />
-        </MemoryRouter>
-      );
+        rerender(
+          <TemaProvider temaInicial="oscuro">
+            <MemoryRouter initialEntries={["/dashboard"]}>
+              <SidebarResponsive colapsada={true} alToggleColapso={vi.fn()} alAbrirUserModal={vi.fn()} />
+            </MemoryRouter>
+          </TemaProvider>
+        );
 
-      const newAside = getSidebarAside();
-      expect(newAside).toHaveClass("w-[72px]");
+        const newAside = getSidebarAside();
+        expect(newAside).toHaveClass("w-[72px]");
+      });
+
+      it("mantiene callback alToggleColapso referencialmente estable entre renders", () => {
+        const alToggleColapso = vi.fn();
+        const { rerender } = renderSidebarResponsive({ colapsada: false, alToggleColapso });
+
+        const button1 = screen.getByRole("button", { name: /Colapsar navegación/i });
+
+        rerender(
+          <TemaProvider temaInicial="oscuro">
+            <MemoryRouter initialEntries={["/dashboard"]}>
+              <SidebarResponsive colapsada={false} alToggleColapso={alToggleColapso} alAbrirUserModal={vi.fn()} />
+            </MemoryRouter>
+          </TemaProvider>
+        );
+
+        const button2 = screen.getByRole("button", { name: /Colapsar navegación/i });
+        // El botón se re-renderiza pero la función callback es la misma
+        expect(button2).toBeTruthy();
+      });
     });
-
-    it("mantiene callback alToggleColapso referencialmente estable entre renders", () => {
-      const alToggleColapso = vi.fn();
-      const { rerender } = renderSidebarResponsive({ colapsada: false, alToggleColapso });
-
-      const button1 = screen.getByRole("button", { name: /Colapsar navegación/i });
-
-      rerender(
-        <MemoryRouter initialEntries={["/dashboard"]}>
-          <SidebarResponsive colapsada={false} alToggleColapso={alToggleColapso} alAbrirUserModal={vi.fn()} />
-        </MemoryRouter>
-      );
-
-      const button2 = screen.getByRole("button", { name: /Colapsar navegación/i });
-      // El botón se re-renderiza pero la función callback es la misma
-      expect(button2).toBeTruthy();
-    });
-  });
 });

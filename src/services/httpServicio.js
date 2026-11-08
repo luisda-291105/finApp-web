@@ -45,14 +45,28 @@ async function obtenerJson(respuesta) {
 async function leerRespuesta(respuesta, url, metodo) {
   if (respuesta.ok) return obtenerJson(respuesta);
 
+  const ruta = new URL(url, window.location.origin).pathname;
+  const rutaNormalizada = ruta.replace(/\/$/, "");
+  const solicitudAutenticacion = rutaNormalizada.endsWith("/usuario/login")
+    || (metodo === "POST" && rutaNormalizada.endsWith("/usuario"))
+    || rutaNormalizada.includes("/api/auth/");
+  const consultaSesionSinSesion = respuesta.status === 401 && ruta === "/usuario/activo";
+  if (respuesta.status === 401 && !url.includes("/usuario/login") && !url.includes("/api/gmail/")) {
+    window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+  }
+
   const datos = await obtenerJson(respuesta);
-  console.error("[HTTP][ERROR]", {
-    url,
-    metodo,
-    status: respuesta.status,
-    statusText: respuesta.statusText,
-    datos,
-  });
+  // La consulta de sesión responde 401 cuando la pestaña ya no tiene sesión;
+  // ese resultado es parte del flujo normal de inicio, no un error de aplicación.
+  if (!consultaSesionSinSesion && !solicitudAutenticacion) {
+    console.error("[HTTP][ERROR]", {
+      url,
+      metodo,
+      status: respuesta.status,
+      statusText: respuesta.statusText,
+      datos,
+    });
+  }
 
   const mensaje =
     datos && typeof datos === "object"
@@ -73,6 +87,7 @@ export async function obtener(rutaRelativa, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "GET",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),
@@ -94,6 +109,7 @@ export async function crear(rutaRelativa, cuerpo, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),
@@ -116,6 +132,7 @@ export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "PUT",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),
@@ -137,6 +154,7 @@ export async function eliminar(rutaRelativa, opciones = {}) {
   const url = construirUrl(rutaRelativa);
   const respuesta = await fetch(url, {
     method: "DELETE",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(opciones.headers || {}),

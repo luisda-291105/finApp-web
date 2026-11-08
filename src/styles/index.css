@@ -12,13 +12,19 @@
   --font-display: "Fraunces", serif;
   --font-body: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
 
+  /* Escala de texto compacta elevada para mejorar la legibilidad en pantalla. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+
   --color-bg-dark: #0f1117;
 
   --color-bg-cream: #f7f6f2;
   --color-emerald-primary: #1a7a5e;
   --color-emerald-hover: #15634c;
   --color-mint-accent: #6ee7c0;
-  --color-slate-text: #5a6475;
+  --color-slate-text: #4b5563;
   --color-border-line: #e0ddd8;
 
   --color-cat-income: #60a5fa;
@@ -54,10 +60,47 @@
   font-family: var(--font-body);
 }
 
+/* Los controles respetan el ancho disponible dentro de layouts flex/grid y modales. */
+input,
+textarea,
+select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Legibilidad base: texto corrido, formularios y placeholders.
+   Los inputs usan 16px para evitar el zoom automático de iOS y mantener el texto cómodo. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  line-height: 1.6;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+input,
+select,
+textarea {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-slate-text);
+  opacity: 1;
+}
+
 :root[data-tema="oscuro"] {
   color-scheme: dark;
   --color-bg-cream: #171b23;
-  --color-slate-text: #b4bdca;
+  --color-slate-text: #c3ccd8;
   --color-border-line: #39414e;
 }
 
@@ -78,6 +121,69 @@
 :root[data-tema="oscuro"] :is(.bg-red-50, .bg-red-100) { background-color: #3a2024; }
 :root[data-tema="oscuro"] :is(.border-red-200, .border-red-700\/30) { border-color: #71363d; }
 :root[data-tema="oscuro"] :is(.text-red-700, .text-red-900) { color: #fca5a5; }
+
+/* El asistente se abre también desde la landing (que conserva siempre su tema claro).
+   Dentro del dashboard aplica superficies y texto explícitos para mantener contraste. */
+:root[data-tema="oscuro"] .asistente-modal {
+  background-color: #171b23;
+  color: #f7f6f2;
+  border-color: #39414e;
+}
+:root[data-tema="oscuro"] .asistente-modal .asistente-mensaje-ia {
+  background-color: #252c37;
+  border-color: #39414e;
+  color: #f7f6f2;
+}
+:root[data-tema="oscuro"] .landing-theme .asistente-modal {
+  background-color: rgb(247 246 242 / 95%);
+  color: #0f1117;
+  border-color: rgb(224 221 216 / 30%);
+}
+:root[data-tema="oscuro"] .landing-theme .asistente-modal .text-bg-dark {
+  color: #0f1117;
+}
+:root[data-tema="oscuro"] .landing-theme .asistente-modal .asistente-mensaje-ia {
+  background-color: #ffffff;
+  border-color: rgb(224 221 216 / 70%);
+  color: #0f1117;
+}
+
+/* La landing conserva su paleta propia aunque el dashboard esté en tema oscuro. */
+.landing-theme {
+  color-scheme: light;
+  --color-bg-cream: #f7f6f2;
+  --color-slate-text: #5a6475;
+  --color-border-line: #e0ddd8;
+}
+
+:root[data-tema="oscuro"] .landing-theme .glass-card {
+  background: #ffffff;
+  color: #0f1117;
+  border-color: color-mix(in srgb, #e0ddd8 80%, transparent);
+}
+
+:root[data-tema="oscuro"] .landing-theme .bg-white {
+  background-color: #ffffff;
+}
+
+.google-auth-button {
+  border-color: #dadce0;
+  background-color: #ffffff;
+  color: #3c4043;
+  box-shadow: 0 1px 2px rgb(60 64 67 / 20%);
+}
+
+.google-auth-button:hover:not(:disabled) {
+  border-color: #c6c9ce;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 5px rgb(60 64 67 / 25%);
+}
+
+.google-auth-button:disabled {
+  background-color: #ffffff;
+  color: #5f6368;
+  opacity: 0.85;
+}
 
 /* Grilla técnica del Hero */
 .hero-grid {

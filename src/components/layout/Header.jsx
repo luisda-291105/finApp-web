@@ -4,7 +4,7 @@
  * @datos      Recibe alAbrirAuth y modo como props
  * @eventos    scroll en window, click en botones de login/registro
  * @estados    desplazado (boolean)
- * @usadoPor   PaginaInicio.jsx, LandingLayout.jsx, DashboardLayout.jsx
+ * @usadoPor   features/landing y DashboardLayout.jsx
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
