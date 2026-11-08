@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import ModalFuentes from "../../../../components/domain/modales/ModalFuentes";
+import ModalFuentes from "../../../../features/configuracion/components/modals/CrearFuenteModal";
 import { UsuarioActivoProvider } from "../../../../context/UsuarioActivoContext";
 import * as fuenteServicio from "../../../../services/fuenteServicio";
 import { obtenerUsuarioActivo } from "../../../../services/usuarioServicio";

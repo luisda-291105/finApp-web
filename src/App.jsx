@@ -21,7 +21,7 @@ const PaginaLogin = lazy(() => import("./pages/PaginaLogin"));
 const DashboardLayout = lazy(() => import("./layout/DashboardLayout"));
 const PaginaDashboardInicio = lazy(() => import("./features/inicio").then(({ InicioPage }) => ({ default: InicioPage })));
 const PaginaDashboardTarjetas = lazy(() => import("./features/tarjetas").then(({ TarjetasPage }) => ({ default: TarjetasPage })));
-const PaginaDashboardConfiguracion = lazy(() => import("./pages/PaginaDashboardConfiguracion"));
+const PaginaDashboardConfiguracion = lazy(() => import("./features/configuracion").then(({ ConfiguracionPage }) => ({ default: ConfiguracionPage })));
 const PaginaDashboardBolsillos = lazy(() => import("./features/grupo").then(({ GruposPage }) => ({ default: GruposPage })));
 const PaginaDashboardContactos = lazy(() => import("./features/contactos").then(({ ContactosPage }) => ({ default: ContactosPage })));
 const PaginaDashboardCorreos = lazy(() => import("./features/correos").then(({ CorreosPage }) => ({ default: CorreosPage })));

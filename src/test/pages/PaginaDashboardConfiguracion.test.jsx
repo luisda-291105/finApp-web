@@ -78,7 +78,7 @@ vi.mock("../../context/GmailContext", () => ({
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import PaginaDashboardConfiguracion from "../../pages/PaginaDashboardConfiguracion";
+import { ConfiguracionPage as PaginaDashboardConfiguracion } from "../../features/configuracion";
 import * as fuenteServicio from "../../services/fuenteServicio";
 
 const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez" };
@@ -114,6 +114,8 @@ describe("PaginaDashboardConfiguracion", () => {
     await usuario.click(disparador);
 
     const dialogo = screen.getByRole("dialog", { name: "Registro de fuentes" });
+    expect(within(dialogo).getByRole("button", { name: /Configura Gmail/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /Agregar cuenta Gmail/ })).not.toBeInTheDocument();
     const contenido = within(dialogo).getByRole("textbox", { name: "Contenido de la fuente" });
 
     await usuario.type(contenido, "persona@ejemplo.test");
@@ -141,12 +143,13 @@ describe("PaginaDashboardConfiguracion", () => {
     const actualizarFuente = vi.spyOn(fuenteServicio, "actualizarFuente").mockImplementation(async (idFuente, fuente) => ({ idFuente, ...fuente }));
     render(<PaginaDashboardConfiguracion />);
 
-    await usuario.click(await screen.findByRole("button", { name: "Editar fuente ana@ejemplo.test" }));
-    await usuario.selectOptions(screen.getByLabelText("Tipo de ana@ejemplo.test"), "TELEFONO");
-    await usuario.clear(screen.getByLabelText("Contenido de la fuente"));
-    await usuario.type(screen.getByLabelText("Contenido de la fuente"), "+573001234567");
+    await usuario.click(await screen.findByRole("button", { name: "Ver fuente ana@ejemplo.test" }));
+    await usuario.click(screen.getByRole("button", { name: "Editar", exact: true }));
+    await usuario.selectOptions(screen.getByLabelText("Tipo"), "TELEFONO");
+    await usuario.clear(screen.getByLabelText("Contenido"));
+    await usuario.type(screen.getByLabelText("Contenido"), "+573001234567");
     await usuario.selectOptions(screen.getByLabelText("Estado"), "false");
-    await usuario.click(screen.getByRole("button", { name: "Guardar" }));
+    await usuario.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     await waitFor(() => expect(actualizarFuente).toHaveBeenCalledWith("fuente-1", expect.objectContaining({
       tipo: "TELEFONO",
@@ -166,9 +169,10 @@ describe("PaginaDashboardConfiguracion", () => {
     const eliminarFuente = vi.spyOn(fuenteServicio, "eliminarFuente").mockResolvedValue(true);
     render(<PaginaDashboardConfiguracion />);
 
-    await usuario.click(await screen.findByRole("button", { name: "Eliminar fuente Cuenta antigua" }));
+    await usuario.click(await screen.findByRole("button", { name: "Ver fuente Cuenta antigua" }));
+    await usuario.click(screen.getByRole("button", { name: "Eliminar", exact: true }));
     expect(eliminarFuente).not.toHaveBeenCalled();
-    await usuario.click(screen.getByRole("button", { name: "Confirmar" }));
+    await usuario.click(screen.getByRole("button", { name: "Confirmar eliminación" }));
 
     await waitFor(() => expect(eliminarFuente).toHaveBeenCalledWith("fuente-2", USUARIO.idUsuario));
     expect(screen.queryByText("Cuenta antigua")).not.toBeInTheDocument();
@@ -179,12 +183,16 @@ describe("PaginaDashboardConfiguracion", () => {
       idFuente: "fuente-movil", tipo: "CORREO", contenido: "correo-muy-largo@ejemplo.test", estado: false, fechaCreacion: "2026-10-20",
     }]);
     render(<PaginaDashboardConfiguracion />);
-    expect(await screen.findAllByText("correo-muy-largo@ejemplo.test")).toHaveLength(2);
+    expect(await screen.findAllByText("correo-muy-largo@ejemplo.test")).toHaveLength(1);
     expect(screen.getAllByText("CORREO").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Inactiva").length).toBeGreaterThan(0);
-    expect(screen.getByText("Fecha: 2026-10-20")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Editar fuente correo-muy-largo@ejemplo.test en móvil" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Eliminar fuente correo-muy-largo@ejemplo.test en móvil" })).toBeInTheDocument();
+    expect(screen.queryByText("Cuenta Gmail conectada")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver fuente correo-muy-largo@ejemplo.test" })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Ver fuente correo-muy-largo@ejemplo.test" }));
+    expect(screen.getByRole("dialog", { name: "Detalle de fuente" })).toBeInTheDocument();
+    expect(screen.getByText("2026-10-20")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar", exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Eliminar", exact: true })).toBeInTheDocument();
   });
 
 });

@@ -1,19 +1,20 @@
 /**
  * @uso        Modal para registrar fuentes de datos (correos, teléfonos, etc.) según spec 025
- * @funciones  ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar })
+ * @funciones  CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuardar })
  * @datos      tipo, contenido, estado (true por defecto), fechaCreacion (YYYY-MM-DD local), idFuente (UUID generado), idUsuario (del usuario activo)
  * @eventos    Submit del formulario para crearFuente(), selección de tipo, input de contenido, cierre con «X», Escape y clic exterior
  * @estados    tipo, contenido, idUsuarioInput, cargando, error
- * @usadoPor   PaginaDashboardConfiguracion
+ * @usadoPor   ConfiguracionPage
  */
 
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { BotonCerrar } from "../../ui/BotonCerrar";
-import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
-import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
-import { crearFuente } from "../../../services/fuenteServicio";
-import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
+import { Mail } from "lucide-react";
+import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
+import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
+import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
+import { crearFuente } from "../../../../services/fuenteServicio";
+import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 
 const TITULO = "Registro de fuentes";
 const DESCRIPCION =
@@ -57,7 +58,7 @@ function crearOpcionesTrampa(refPanel) {
 }
 
 /**
- * ModalFuentes
+ * CrearFuenteModal
  * Componente modal accesible para crear y registrar nuevas fuentes financieras (spec 025).
  *
  * @param {Object} props
@@ -66,7 +67,7 @@ function crearOpcionesTrampa(refPanel) {
  * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Elemento al cual devolver el foco.
  * @param {(fuente: Object) => void} [props.alGuardar] - Callback invocado tras crear exitosamente la fuente.
  */
-export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar, fuentesExistentes = [], tipoInicial = "CORREO", tiposPermitidos = TIPOS_FUENTE.map((opcion) => opcion.valor), estadoInicial = true }) {
+export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuardar, fuentesExistentes = [], tipoInicial = "CORREO", tiposPermitidos = TIPOS_FUENTE.map((opcion) => opcion.valor), estadoInicial = true, alConectarGmail, gmailConfigurado, gmailListo, conexionGmailCargando, gmailConectado }) {
   const panelRef = useRef(null);
   const { usuario } = useUsuarioActivo();
   const [tipo, setTipo] = useState(tipoInicial);
@@ -261,16 +262,28 @@ export default function ModalFuentes({ abierto, alCerrar, triggerRef, alGuardar,
             </p>
 
             {/* Botón de acción */}
-            <button
-              type="submit"
-              disabled={cargando}
-              className="mt-2 self-start rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2 disabled:opacity-50 cursor-pointer"
-            >
-              {cargando ? "Registrando..." : "Registrar fuente"}
-            </button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="submit"
+                disabled={cargando}
+                className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2 disabled:opacity-50 cursor-pointer"
+              >
+                {cargando ? "Registrando..." : "Registrar fuente"}
+              </button>
+              <button
+                type="button"
+                onClick={alConectarGmail}
+                disabled={!gmailConfigurado || !gmailListo || conexionGmailCargando || gmailConectado}
+                className="google-auth-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed"
+              >
+                <Mail size={17} aria-hidden="true" />
+                {!gmailConfigurado ? "Configura Gmail" : conexionGmailCargando ? "Conectando Gmail…" : gmailConectado ? "Gmail conectado" : !gmailListo ? "Preparando Gmail…" : "Conectar Gmail"}
+              </button>
+            </div>
           </form>
         </section>
       </FocusTrap>
     </div>
   );
 }
+

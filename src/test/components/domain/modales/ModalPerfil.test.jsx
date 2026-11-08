@@ -11,7 +11,7 @@ import { useRef, useState } from "react";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import ModalPerfilUsuario from "../../../../components/domain/modales/ModalPerfilUsuario";
+import ModalPerfilUsuario from "../../../../features/configuracion/components/modals/PerfilUsuarioModal";
 import {
   UsuarioActivoProvider,
   useUsuarioActivo,

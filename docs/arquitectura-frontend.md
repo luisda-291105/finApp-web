@@ -45,8 +45,8 @@ En el estado actual del repositorio, los componentes compartidos siguen en `src/
 
 ## Migración
 
-1. `grupo`, `tarjetas`, `contactos`, `correos`, `contabilidad`, `suscripciones` e `inicio` ya están agrupados en `src/features/`, con páginas, componentes específicos y README.
-2. Después se migra configuración.
-3. Finalmente se agrupan autenticación, layouts y rutas; se revisan dependencias entre features.
+1. `grupo`, `tarjetas`, `contactos`, `correos`, `contabilidad`, `suscripciones`, `inicio` y `configuracion` están agrupados en `src/features/`, con página, componentes específicos y README.
+2. Después se migran autenticación, layouts y rutas.
+3. Finalmente se revisan dependencias entre features y se retiran los puentes restantes.
 
 Cada etapa conserva las rutas y el comportamiento de usuario. Se valida de forma focal y con build antes de integrar el siguiente dominio.

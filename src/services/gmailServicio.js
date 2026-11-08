@@ -4,7 +4,7 @@
  * @datos      Token activo en memoria del navegador; backend conserva la conexión cifrada por usuario
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
- * @usadoPor   GmailContext, PaginaDashboardConfiguracion y features/correos
+ * @usadoPor   GmailContext y features/configuracion, features/correos
  */
 import { getEndpoint } from "../config/api.config";
 

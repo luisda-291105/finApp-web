@@ -1,17 +1,17 @@
 /**
  * @uso        Modal de perfil: muestra y permite modificar la información básica del usuario activo (spec 024)
- * @funciones  ModalPerfilUsuario({ abierto, alCerrar, triggerRef })
+ * @funciones  PerfilUsuarioModal({ abierto, alCerrar, triggerRef })
  * @datos      Usuario activo de UsuarioActivoContext: idUsuario, nombre, contrasena editable; correo y
  *             teléfono fijos «No registrado». Envía PUT /usuario/{idUsuario} vía usuarioServicio.actualizarUsuario
  * @eventos    submit del formulario, botón «Modificar», cierre con X/Escape/clic fuera
  * @estados    idUsuario, nombre, contrasena, modoEdicion, cargando, error
- * @usadoPor   PaginaDashboardConfiguracion
+ * @usadoPor   ConfiguracionPage
  */
 import { useEffect, useRef, useState } from "react";
-import ModalDetalleRegistro from "./ModalDetalleRegistro";
+import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { Fingerprint, Mail, Phone, ShieldCheck, UserRound } from "lucide-react";
-import { actualizarUsuario } from "../../../services/usuarioServicio";
-import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
+import { actualizarUsuario } from "../../../../services/usuarioServicio";
+import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 
 /** Fecha local en formato YYYY-MM-DD sin desfase UTC. */
 function fechaLocalISO() {
@@ -34,7 +34,7 @@ function inicialesUsuario(nombre) {
   return String(nombre || "U").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join("").toUpperCase() || "U";
 }
 
-export default function ModalPerfilUsuario({ abierto, alCerrar, triggerRef }) {
+export default function PerfilUsuarioModal({ abierto, alCerrar, triggerRef }) {
   const { usuario, guardarUsuario } = useUsuarioActivo();
   const [idUsuario, setIdUsuario] = useState("");
   const [nombre, setNombre] = useState("");
@@ -263,3 +263,4 @@ export default function ModalPerfilUsuario({ abierto, alCerrar, triggerRef }) {
     </ModalDetalleRegistro>
   );
 }
+
