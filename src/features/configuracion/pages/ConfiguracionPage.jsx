@@ -7,7 +7,7 @@
  * @usadoPor   App.jsx (ruta /dashboard/configuracion)
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "../../../components/ui";
 import FuentesRegistradas from "../components/cards/FuentesRegistradas";
 import AparienciaCard from "../components/cards/AparienciaCard";
@@ -23,18 +23,31 @@ import { GMAIL_CONFIGURADO } from "../../../services/gmailServicio";
 export default function ConfiguracionPage() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);
   const [usuarioAbierto, setUsuarioAbierto] = useState(false);
+  const [avisoGmail, setAvisoGmail] = useState("");
 
   const disparadorFuentesRef = useRef(null);
   const triggerUsuarioRef = useRef(null);
+  const avisoGmailTimerRef = useRef(null);
   const { usuario } = useUsuarioActivo();
   const { tema, alternarTema } = useTema();
   const { tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo, conexionCargando, errorGmail, conectarGmail, desconectarGmail, seleccionarCuentaGmail } = useGmail();
 
   const { fuentes, setFuentes, cargandoFuentes, errorFuentes, setErrorFuentes, operacionFuente, confirmarFuenteGuardada: alGuardarFuente, guardarEdicionFuente, confirmarEliminacionFuente } = useFuentesConfiguracion(usuario?.idUsuario);
 
+  useEffect(() => () => window.clearTimeout(avisoGmailTimerRef.current), []);
+
+  const mostrarAvisoGmail = (mensaje) => {
+    window.clearTimeout(avisoGmailTimerRef.current);
+    setAvisoGmail(mensaje);
+    avisoGmailTimerRef.current = window.setTimeout(() => {
+      setAvisoGmail("");
+      avisoGmailTimerRef.current = null;
+    }, 5000);
+  };
+
   const conectarFuentesGmail = async () => {
     try {
-      await conectarGmail();
+      const conexion = await conectarGmail();
       const pendientes = fuentes.filter((fuente) => fuente.tipo?.toUpperCase() === "CORREO" && fuente.estado === false);
       const resultados = await Promise.allSettled(pendientes.map((fuente) => actualizarFuente(
         fuente.idFuente,
@@ -43,13 +56,12 @@ export default function ConfiguracionPage() {
       )));
       const activadas = new Set();
       resultados.forEach((resultado, indice) => { if (resultado.status === "fulfilled") activadas.add(pendientes[indice].idFuente); });
-      if (activadas.size > 0) {
-        const respuesta = await obtenerFuentesPorUsuario(usuario.idUsuario);
-        const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
-        setFuentes(Array.isArray(lista) ? lista : []);
-      }
+      const respuesta = await obtenerFuentesPorUsuario(usuario.idUsuario);
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      setFuentes(Array.isArray(lista) ? lista : []);
       if (activadas.size < pendientes.length) setErrorFuentes("Gmail quedó conectado, pero algunas fuentes no se pudieron activar.");
       else setErrorFuentes("");
+      mostrarAvisoGmail(`Gmail conectado como ${conexion.email}.`);
     } catch { /* El mensaje detallado se muestra desde GmailContext. */ }
   };
 
@@ -80,6 +92,7 @@ export default function ConfiguracionPage() {
         gisListo={gisListo}
         conexionCargando={conexionCargando}
         errorGmail={errorGmail}
+        avisoGmail={avisoGmail}
         tokenGmail={tokenGmail}
         cuentaGmail={cuentaGmail}
         cuentasGmail={cuentasGmail}

@@ -15,7 +15,9 @@ export async function consultarCorreosDeFuente(token, fuente) {
   return respuesta.filter((correo) => coincideDestino(correo, fuente.contenido));
 }
 
-/** Consulta fuentes por separado y devuelve pares [idFuente, mensajes]. */
+/** Consulta una vez y reparte los mensajes encontrados entre sus fuentes. */
 export async function consultarCorreosDeFuentes(token, fuentes) {
-  return Promise.all(fuentes.map(async (fuente) => [fuente.idFuente, await consultarCorreosDeFuente(token, fuente)]));
+  if (!fuentes?.length) return [];
+  const correos = await obtenerCorreosGmail(token, fuentes);
+  return fuentes.map((fuente) => [fuente.idFuente, correos.filter((correo) => coincideDestino(correo, fuente.contenido))]);
 }

@@ -1,6 +1,6 @@
 /**
  * @uso        Acceso a movimientos contables asociados a bolsillos
- * @funciones  listarMovimientos, crearMovimiento, obtenerResumenesBolsillos
+ * @funciones  listarMovimientos, listarCorreosImportados, crearMovimiento, obtenerResumenesBolsillos
  * @datos      Envía filtros y solicitudes de registro al backend y consulta totales por bolsillo
  * @eventos    Ninguno
  * @estados    Ninguno
@@ -22,6 +22,14 @@ export function listarMovimientos(idBolsillo, tipo = "TODOS") {
 /** Registra un movimiento financiero en un bolsillo propio. */
 export function crearMovimiento(movimiento) {
   return crear(rutaBase, movimiento);
+}
+
+/** Consulta cuáles referencias Gmail ya se registraron para el usuario activo. */
+export function listarCorreosImportados(ids) {
+  if (!ids?.length) return Promise.resolve([]);
+  const parametros = new URLSearchParams();
+  ids.forEach((id) => parametros.append("ids", id));
+  return obtener(`${rutaBase}/correos?${parametros.toString()}`);
 }
 
 /** Actualiza un movimiento propio del usuario activo. */

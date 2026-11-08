@@ -58,9 +58,9 @@ export function useCorreos() {
     } finally { setCargandoMensajes(false); }
   }, [tokenGmail, desconectarGmail]);
 
-  const consultarFuentesRegistradas = useCallback(async () => {
+  const consultarFuentesRegistradas = useCallback(async (fuentesParaConsultar = []) => {
     if (!tokenGmail) return;
-    const activas = fuentes.filter((fuente) => fuente.estado !== false);
+    const activas = fuentesParaConsultar.filter((fuente) => fuente.estado !== false);
     const cuentaActual = cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaSeleccionadaId));
     const destinosPorDireccion = new Map(activas.map((fuente) => [normalizarDireccion(fuente.contenido), fuente]));
     if (cuentaActual) {
@@ -73,34 +73,43 @@ export function useCorreos() {
       setCargandoMensajes(true); setError("");
       const nuevosMensajes = Object.fromEntries(await consultarCorreosDeFuentes(tokenGmail, destinos));
       setMensajesPorFuente((actuales) => ({ ...actuales, ...nuevosMensajes }));
-      if (fuenteSeleccionada && nuevosMensajes[fuenteSeleccionada.idFuente]) setMensajesFuente(nuevosMensajes[fuenteSeleccionada.idFuente]);
       setUltimaConsulta(new Date());
     } catch (fallo) {
       setError(fallo?.message || "No se pudieron actualizar las fuentes de correo.");
       if (/autorización de Gmail venció/i.test(fallo?.message || "")) desconectarGmail(false);
     } finally { setCargandoMensajes(false); }
-  }, [tokenGmail, fuentes, cuentasGmail, cuentaSeleccionadaId, fuenteSeleccionada, desconectarGmail]);
+  }, [tokenGmail, cuentasGmail, cuentaSeleccionadaId, desconectarGmail]);
 
   const seleccionarFuente = useCallback(async (fuente) => {
-    setFuenteSeleccionada(fuente); setCategoria("TODOS"); setMensajesFuente([]); setError("");
+    setFuenteSeleccionada(fuente); setCategoria("TODOS"); setError("");
+    const mensajesEnCache = mensajesPorFuente[fuente.idFuente];
+    setMensajesFuente(mensajesEnCache || []);
     if (fuente.cuentaGmailId && String(fuente.cuentaGmailId) !== String(cuentaSeleccionadaId)) {
       seleccionarCuentaGmail(fuente.cuentaGmailId);
       return;
     }
-    if (tokenGmail && fuente.estado !== false) await cargarMensajesFuente(fuente, tokenGmail);
-  }, [cuentaSeleccionadaId, seleccionarCuentaGmail, tokenGmail, cargarMensajesFuente]);
+    if (!mensajesEnCache && tokenGmail && fuente.estado !== false) await cargarMensajesFuente(fuente, tokenGmail);
+  }, [mensajesPorFuente, cuentaSeleccionadaId, seleccionarCuentaGmail, tokenGmail, cargarMensajesFuente]);
 
   const cerrarBandeja = useCallback(() => { setFuenteSeleccionada(null); setMensajesFuente([]); }, []);
-  useEffect(() => { cargarFuentes(); }, [cargarFuentes]);
   useEffect(() => {
-    if (fuenteSeleccionada && tokenGmail && fuenteSeleccionada.estado !== false) cargarMensajesFuente(fuenteSeleccionada, tokenGmail);
-  }, [tokenGmail]);
+    if (!fuenteSeleccionada) return;
+    const mensajesActualizados = mensajesPorFuente[fuenteSeleccionada.idFuente];
+    if (mensajesActualizados) setMensajesFuente(mensajesActualizados);
+  }, [fuenteSeleccionada?.idFuente, mensajesPorFuente]);
   useEffect(() => {
-    if (!tokenGmail || !usuario?.idUsuario || (fuentes.length === 0 && cuentasGmail.length === 0)) return undefined;
-    consultarFuentesRegistradas();
-    const temporizador = window.setInterval(() => { cargarFuentes(); consultarFuentesRegistradas(); }, INTERVALO_CONSULTA_MS);
-    return () => window.clearInterval(temporizador);
-  }, [tokenGmail, usuario?.idUsuario, fuentes, cuentasGmail, cargarFuentes, consultarFuentesRegistradas]);
+    let vigente = true;
+    if (!usuario?.idUsuario) { cargarFuentes(); return () => { vigente = false; }; }
+    const sincronizar = async () => {
+      const fuentesActuales = await cargarFuentes();
+      if (!vigente || !tokenGmail || (fuentesActuales.length === 0 && cuentasGmail.length === 0)) return;
+      await consultarFuentesRegistradas(fuentesActuales);
+    };
+    sincronizar();
+    if (!tokenGmail) return () => { vigente = false; };
+    const temporizador = window.setInterval(sincronizar, INTERVALO_CONSULTA_MS);
+    return () => { vigente = false; window.clearInterval(temporizador); };
+  }, [tokenGmail, usuario?.idUsuario, cuentasGmail, cargarFuentes, consultarFuentesRegistradas]);
 
   return { usuario, tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, conexionCargando, fuentes, tarjetasCorreo, categoria, setCategoria, fuenteSeleccionada, mensajesFuente, mensajesPorFuente, ultimaConsulta, cargandoFuentes, cargandoMensajes, error, noHayFuentes, seleccionarFuente, consultarFuentesRegistradas, cerrarBandeja };
 }

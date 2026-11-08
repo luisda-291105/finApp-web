@@ -277,10 +277,11 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
               </div>
               <BotonServicioExterno
                 onClick={alConectarGmail}
-                disabled={!gmailConfigurado || !gmailListo || conexionGmailCargando || gmailConectado}
+                disabled={!gmailConfigurado || !gmailListo || conexionGmailCargando}
               >
-                {!gmailConfigurado ? "Configura Gmail" : conexionGmailCargando ? "Conectando con Google…" : gmailConectado ? "Gmail conectado" : !gmailListo ? "Preparando Google…" : "Conectar Gmail con Google"}
+                {!gmailConfigurado ? "Configura Gmail" : conexionGmailCargando ? "Conectando con Google…" : !gmailListo ? "Preparando Google…" : gmailConectado ? "Conectar otra cuenta de Gmail" : "Conectar Gmail con Google"}
               </BotonServicioExterno>
+              {gmailConectado && <p className="text-center text-xs text-slate-text">Puedes agregar otra cuenta sin desconectar la actual.</p>}
               {gmailConfigurado === false && <p role="status" className="text-center text-xs text-slate-text">Google no está configurado para este entorno.</p>}
             </div>
           )}

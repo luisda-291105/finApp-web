@@ -15,8 +15,14 @@ const ID_CLIENTE_GOOGLE = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GMAIL_CONFIGURADO = Boolean(ID_CLIENTE_GOOGLE);
 const MENSAJE_ACCESO_DENEGADO =
   "Google denegó el acceso (403 access_denied). Si la app está en modo de prueba, agrega tu cuenta a Usuarios de prueba en Google Cloud Console y vuelve a intentar.";
+const MAX_CORREOS_POR_CONSULTA = 10;
+const CACHE_CONSULTA_MS = 45 * 1000;
+const CACHE_CONTENIDO_MS = 5 * 60 * 1000;
 
 let cargaBiblioteca;
+const consultasEnCurso = new Map();
+const cacheEtiquetas = new Map();
+const cacheContenido = new Map();
 
 function cargarBibliotecaGoogle() {
   if (window.google?.accounts?.oauth2) return Promise.resolve();
@@ -171,7 +177,11 @@ async function llamarGmail(token, recurso, parametros = {}) {
   const datos = await respuesta.json().catch(() => ({}));
   if (!respuesta.ok) {
     if (respuesta.status === 401) throw new Error("La autorización de Gmail venció. Conecta Gmail de nuevo.");
-    throw new Error(datos.error?.message || `Gmail respondió con error ${respuesta.status}.`);
+    const mensaje = datos.error?.message || `Gmail respondió con error ${respuesta.status}.`;
+    if (respuesta.status === 429 || /quota exceeded|user.?rate.?limit|rate limit/i.test(mensaje)) {
+      throw new Error("Gmail alcanzó el límite temporal de consultas. Espera unos minutos antes de actualizar de nuevo.");
+    }
+    throw new Error(mensaje);
   }
   return datos;
 }
@@ -180,7 +190,7 @@ function encabezado(mensaje, nombre) {
   return mensaje.payload?.headers?.find((item) => item.name?.toLowerCase() === nombre.toLowerCase())?.value || "";
 }
 
-/** Recupera los 20 mensajes más recientes dirigidos o entregados a las fuentes registradas. */
+/** Recupera hasta 10 mensajes recientes dirigidos o entregados a las fuentes registradas. */
 export async function obtenerCorreosGmail(token, fuentes) {
   const direcciones = [...new Set((fuentes || []).map((fuente) => validarDireccion(fuente.contenido)).filter(Boolean))];
   if (direcciones.length === 0) return [];
@@ -192,33 +202,156 @@ export async function obtenerCorreosGmail(token, fuentes) {
   ]).join(" ");
   // Sin `in:inbox`: Gmail puede archivar automáticamente mensajes que siguen siendo relevantes.
   const consulta = `{${destino}}`;
-  // Gmail ya devuelve primero los mensajes recientes; no se reordena localmente.
-  const listado = await llamarGmail(token, "messages", { q: consulta, maxResults: "20" });
-  const ids = listado.messages || [];
-  const mensajes = [];
-  for (let inicio = 0; inicio < ids.length; inicio += 8) {
-    const bloque = await Promise.all(ids.slice(inicio, inicio + 8).map(async ({ id }) => {
+  const claveConsulta = `${token}:${consulta}`;
+  const consultaPrev = consultasEnCurso.get(claveConsulta);
+  if (consultaPrev && (!consultaPrev.terminadaEn || Date.now() - consultaPrev.terminadaEn < CACHE_CONSULTA_MS)) return consultaPrev.promesa;
+
+  const promesa = (async () => {
+    // Limitar el lote y reutilizar etiquetas evita agotar la cuota de Gmail con lecturas repetidas.
+    const listado = await llamarGmail(token, "messages", { q: consulta, maxResults: String(MAX_CORREOS_POR_CONSULTA) });
+    const ids = listado.messages || [];
+    let nombresEtiquetas = cacheEtiquetas.get(token);
+    if (!nombresEtiquetas) {
+      const respuestaEtiquetas = await llamarGmail(token, "labels");
+      nombresEtiquetas = new Map((respuestaEtiquetas.labels || []).map((etiqueta) => [etiqueta.id, etiqueta.name]));
+      cacheEtiquetas.set(token, nombresEtiquetas);
+    }
+    const mensajes = [];
+    // Leer en serie reduce los picos de consultas por usuario que generan errores 429.
+    for (const { id } of ids) {
       const mensaje = await llamarGmail(token, `messages/${encodeURIComponent(id)}`, {
         format: "metadata",
         metadataHeaders: ["From", "To", "Cc", "Delivered-To", "X-Original-To", "Subject", "Date"],
       });
-      return {
+      mensajes.push({
         id: mensaje.id,
         remitente: encabezado(mensaje, "From"),
         destinatario: ["To", "Cc", "Delivered-To", "X-Original-To"]
-          .map((nombre) => encabezado(mensaje, nombre))
-          .filter(Boolean)
-          .join(", "),
+          .map((nombre) => encabezado(mensaje, nombre)).filter(Boolean).join(", "),
         asunto: encabezado(mensaje, "Subject") || "(Sin asunto)",
         fecha: encabezado(mensaje, "Date"),
         fragmento: mensaje.snippet || "",
         etiquetas: mensaje.labelIds || [],
-      };
-    }));
-    mensajes.push(...bloque);
+        nombresEtiquetas: (mensaje.labelIds || []).map((idEtiqueta) => nombresEtiquetas.get(idEtiqueta)).filter(Boolean),
+      });
+    }
+    return mensajes.map(clasificarCorreo);
+  })();
+  const registroConsulta = { promesa, terminadaEn: null };
+  consultasEnCurso.set(claveConsulta, registroConsulta);
+  try {
+    const resultado = await promesa;
+    registroConsulta.terminadaEn = Date.now();
+    window.setTimeout(() => {
+      if (consultasEnCurso.get(claveConsulta)?.promesa === promesa) consultasEnCurso.delete(claveConsulta);
+    }, CACHE_CONSULTA_MS);
+    return resultado;
+  } catch (error) {
+    if (consultasEnCurso.get(claveConsulta)?.promesa === promesa) consultasEnCurso.delete(claveConsulta);
+    throw error;
   }
+}
 
-  return mensajes.map(clasificarCorreo);
+function decodificarBase64Url(valor) {
+  if (!valor) return "";
+  try {
+    const binario = atob(valor.replace(/-/g, "+").replace(/_/g, "/"));
+    const bytes = Uint8Array.from(binario, (caracter) => caracter.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch { return ""; }
+}
+
+function extraerTextoMensaje(payload) {
+  const normalizarTexto = (texto) => texto
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    // Gmail HTML suele producir varios saltos por cada bloque anidado.
+    // Conservamos la separación de párrafos, pero evitamos grandes huecos en móvil.
+    .replace(/\n{2,}/g, "\n")
+    .trim()
+    .slice(0, 12000);
+  const html = [];
+  const tiposImagen = [];
+  const recorrerImagenes = (parte) => {
+    if (parte?.mimeType?.startsWith("image/")) tiposImagen.push(parte.mimeType);
+    (parte?.parts || []).forEach(recorrerImagenes);
+  };
+  recorrerImagenes(payload);
+  const recorrerHtml = (parte) => {
+    if (parte?.mimeType === "text/html" && parte.body?.data) html.push(decodificarBase64Url(parte.body.data));
+    (parte?.parts || []).forEach(recorrerHtml);
+  };
+  recorrerHtml(payload);
+  if (html.length) return normalizarTexto(html.join(" ")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, " ")
+    .replace(/<img\b[^>]*>/gi, () => {
+      const tipo = tiposImagen.shift() || "image/*";
+      return `\n[Imagen ${tipo}: no se puede renderizar en FinApp.]\n`;
+    })
+    .replace(/<a\b[^>]*href\s*=\s*([\"'])(.*?)\1[^>]*>([\s\S]*?)<\/a\s*>/gi, (_match, _quote, href, textoEnlace) => {
+      const destino = String(href).replace(/&amp;/gi, "&").trim();
+      const etiqueta = String(textoEnlace).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || destino;
+      try {
+        const url = new URL(destino);
+        if (!["http:", "https:", "mailto:"].includes(url.protocol)) return etiqueta;
+        return `[[[MAIL_LINK:${encodeURIComponent(etiqueta)}|${encodeURIComponent(destino)}]]]`;
+      } catch { return etiqueta; }
+    })
+    .replace(/<\/(?:p|div|li|h[1-6]|tr)>/gi, "\n")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;/gi, "'"));
+  const partes = [];
+  const recorrer = (parte) => {
+    if (parte?.mimeType === "text/plain" && parte.body?.data) partes.push(decodificarBase64Url(parte.body.data));
+    (parte?.parts || []).forEach(recorrer);
+  };
+  recorrer(payload);
+  const texto = partes.join("\n\n");
+  const avisoImagenes = tiposImagen.length
+    ? `\n${tiposImagen.map((tipo) => `[Imagen ${tipo}: no se puede renderizar en FinApp.]`).join("\n")}`
+    : "";
+  return normalizarTexto(`${texto}${avisoImagenes}`);
+}
+
+async function obtenerContenidoCompleto(token, messageId) {
+  const clave = `${token}:${messageId}`;
+  const almacenado = cacheContenido.get(clave);
+  if (almacenado && Date.now() - almacenado.fecha < CACHE_CONTENIDO_MS) return almacenado.promesa;
+
+  const promesa = llamarGmail(token, `messages/${encodeURIComponent(messageId)}`, { format: "full" })
+    .then((mensaje) => extraerTextoMensaje(mensaje.payload));
+  cacheContenido.set(clave, { fecha: Date.now(), promesa });
+  window.setTimeout(() => {
+    if (cacheContenido.get(clave)?.promesa === promesa) cacheContenido.delete(clave);
+  }, CACHE_CONTENIDO_MS);
+  try {
+    return await promesa;
+  } catch (error) {
+    if (cacheContenido.get(clave)?.promesa === promesa) cacheContenido.delete(clave);
+    throw error;
+  }
+}
+
+/** Recupera el contenido completo de un correo al abrir su vista de detalle. */
+export async function obtenerContenidoCorreoGmail(token, messageId) {
+  return obtenerContenidoCompleto(token, messageId);
+}
+
+/** Lee en serie el cuerpo solo de los mensajes financieros candidatos. */
+export async function obtenerContenidoCorreosFinancierosGmail(token, correosCandidatos) {
+  const resultados = [];
+  for (const correo of (correosCandidatos || []).slice(0, 5)) {
+    resultados.push({ ...correo, contenido: await obtenerContenidoCompleto(token, correo.id) });
+  }
+  return resultados;
 }
 
 /** Indica qué cuenta de Google autorizó la consulta. */
@@ -230,7 +363,8 @@ export async function obtenerPerfilGmail(token) {
 function clasificarCorreo(correo) {
   const texto = `${correo.remitente} ${correo.asunto} ${correo.fragmento}`.toLocaleLowerCase("es");
   const esContable = /factura|recibo|extracto|estado de cuenta|pago|transacci[oó]n|compra|saldo|cobro|invoice|receipt|statement|payment|transaction/.test(texto);
+  const esEstudios = /estudio|estudios|universidad|colegio|escuela|academia|curso|curs[oó]s|capacitaci[oó]n|formaci[oó]n|lecci[oó]n|clase|educaci[oó]n|educativo|learning|education|course|class|lesson|training|school|university|academy|coursera|udemy|edx|platzi|codecademy/.test(texto);
   const esEntretenimiento = /netflix|spotify|youtube|disney|prime video|hbo|cine|concierto|juego|gaming|entretenimiento|streaming|music|movie/.test(texto);
   const esImportante = correo.etiquetas.includes("IMPORTANT") || /urgente|importante|acci[oó]n requerida|vencimiento|alerta de seguridad|verifica tu cuenta/.test(texto);
-  return { ...correo, esContable, esEntretenimiento, esImportante };
+  return { ...correo, esContable, esEstudios, esEntretenimiento, esImportante };
 }

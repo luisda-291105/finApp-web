@@ -28,6 +28,14 @@ export function GmailProvider({ children }) {
   const [errorGmail, setErrorGmail] = useState("");
 
   useEffect(() => {
+    if (!errorGmail) return undefined;
+    const temporizador = window.setTimeout(() => {
+      setErrorGmail((actual) => actual === errorGmail ? "" : actual);
+    }, 5000);
+    return () => window.clearTimeout(temporizador);
+  }, [errorGmail]);
+
+  useEffect(() => {
     let vigente = true;
     if (!GMAIL_CONFIGURADO) return undefined;
     prepararGoogleIdentityServices()
@@ -82,6 +90,7 @@ export function GmailProvider({ children }) {
 
   const conectarGmail = async () => {
     setErrorGmail("");
+    setConexionCargando(true);
     try {
       const code = await iniciarCodigoAutorizacionGmail();
       const conexion = await canjearCodigoGmail(code);
@@ -95,6 +104,8 @@ export function GmailProvider({ children }) {
       const mensaje = error?.message || "No se pudo iniciar la conexión con Gmail.";
       setErrorGmail(mensaje);
       throw error;
+    } finally {
+      setConexionCargando(false);
     }
   };
 

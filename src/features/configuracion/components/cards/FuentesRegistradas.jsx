@@ -4,7 +4,7 @@ import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";
 
-export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
+export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);
   const fuenteTriggerRef = useRef(null);
   const gmailConectado = Boolean(tokenGmail && !errorGmail && !conexionCargando);
@@ -32,7 +32,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
         </div>
 
         {errorGmail && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorGmail}</p>}
-        {tokenGmail && !errorGmail && <p className="text-sm text-emerald-primary">Gmail conectado como {cuentaGmail}. La conexión se guarda para restaurarse al volver a entrar y las fuentes nuevas se registran activas.</p>}
+        {avisoGmail && <p role="status" className="text-sm text-emerald-primary">{avisoGmail}</p>}
 
         <div className="space-y-3 pt-2" aria-label="Fuentes registradas">
           {cargandoFuentes && <p role="status" className="text-sm text-slate-text">Cargando fuentes...</p>}
