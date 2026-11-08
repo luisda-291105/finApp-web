@@ -75,7 +75,7 @@ describe("PaginaDashboardCorreos", () => {
     await user.click(screen.getByRole("button", { name: `Ver correos de ${FUENTE.contenido}` }));
     expect(await screen.findByText("Factura de servicio")).toBeInTheDocument();
     expect(screen.getByText("Tu factura está disponible.")).toBeInTheDocument();
-    expect(consultarCorreosDeFuente).toHaveBeenCalledWith("token-prueba", expect.objectContaining(FUENTE));
+    expect(consultarCorreosDeFuentes).toHaveBeenCalledWith("token-prueba", expect.arrayContaining([expect.objectContaining(FUENTE)]));
     const dialog = screen.getByRole("dialog", { name: `Correos de ${FUENTE.contenido}` });
     await user.click(within(dialog).getByRole("button", { name: /Contables/ }));
     expect(within(dialog).getByText("Factura de servicio")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("PaginaDashboardCorreos", () => {
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
-  it("consulta cada fuente seleccionada por separado y descarta mensajes de otras direcciones", async () => {
+  it("consulta las fuentes en lote y muestra los mensajes de la dirección seleccionada", async () => {
     const otraFuente = { idFuente: "fuente-2", tipo: "CORREO", contenido: "personal@ejemplo.test", estado: true };
     const correoPersonal = { ...CORREO, id: "mensaje-personal", asunto: "Plan de entretenimiento", destinatario: "personal@ejemplo.test", esContable: false, esEntretenimiento: true };
     obtenerFuentesPorUsuario.mockResolvedValue([FUENTE, otraFuente]);
@@ -99,7 +99,7 @@ describe("PaginaDashboardCorreos", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: `Ver correos de ${otraFuente.contenido}` }));
 
-    expect(consultarCorreosDeFuente).toHaveBeenCalledWith("token-prueba", expect.objectContaining(otraFuente));
+    expect(consultarCorreosDeFuentes).toHaveBeenCalledWith("token-prueba", expect.arrayContaining([expect.objectContaining(otraFuente)]));
     const dialog = screen.getByRole("dialog", { name: `Correos de ${otraFuente.contenido}` });
     expect(await within(dialog).findByText("Plan de entretenimiento")).toBeInTheDocument();
     expect(within(dialog).queryByText("Factura de servicio")).not.toBeInTheDocument();

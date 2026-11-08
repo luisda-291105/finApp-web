@@ -33,7 +33,7 @@ describe("PaginaDashboardContactos", () => {
     render(<ContactosPage />);
 
     expect(await screen.findByRole("heading", { name: "Laura Gómez" })).toBeInTheDocument();
-    expect(screen.getByText("3001234567")).toBeInTheDocument();
+    expect(screen.getByText("+57 300 123 4567")).toBeInTheDocument();
     expect(screen.getByText("Contacto de prueba")).toBeInTheDocument();
     expect(obtenerContactosPorUsuario).toHaveBeenCalledWith("usuario-prueba");
     expect(screen.getByRole("list", { name: "Contactos registrados" })).toBeInTheDocument();

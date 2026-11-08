@@ -23,10 +23,11 @@ describe("correosService", () => {
     expect(obtenerCorreosGmail).toHaveBeenCalledWith("token", [FUENTE_A]);
   });
 
-  it("consulta y filtra cada fuente por separado", async () => {
+  it("consulta una vez y reparte los mensajes entre todas las fuentes", async () => {
     await expect(consultarCorreosDeFuentes("token", [FUENTE_A, FUENTE_B])).resolves.toEqual([
       ["a", [MENSAJES[0]]], ["b", [MENSAJES[1]]],
     ]);
-    expect(obtenerCorreosGmail).toHaveBeenCalledTimes(2);
+    expect(obtenerCorreosGmail).toHaveBeenCalledTimes(1);
+    expect(obtenerCorreosGmail).toHaveBeenCalledWith("token", [FUENTE_A, FUENTE_B]);
   });
 });
