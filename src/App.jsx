@@ -17,7 +17,7 @@ import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
 import { GmailProvider } from "./context/GmailContext";
 
-const PaginaLogin = lazy(() => import("./pages/PaginaLogin"));
+const PaginaLogin = lazy(() => import("./features/auth").then(({ LoginPage }) => ({ default: LoginPage })));
 const DashboardLayout = lazy(() => import("./layout/DashboardLayout"));
 const PaginaDashboardInicio = lazy(() => import("./features/inicio").then(({ InicioPage }) => ({ default: InicioPage })));
 const PaginaDashboardTarjetas = lazy(() => import("./features/tarjetas").then(({ TarjetasPage }) => ({ default: TarjetasPage })));

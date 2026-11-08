@@ -1,0 +1,1 @@
+export const CLASE_ENTRADA = "min-h-11 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/70 focus:border-emerald-primary focus-visible:ring-2 focus-visible:ring-mint-accent/60";

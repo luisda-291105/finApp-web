@@ -1,7 +1,7 @@
 /**
  * @uso        Centraliza interruptores de comportamiento de la aplicación
  * @estados    TRIAL_MODE controla el modo demo de la aplicación
- * @usadoPor   App.jsx, PaginaLogin.jsx, componentes de header/usuario
+ * @usadoPor   App.jsx, features/auth/pages/LoginPage.jsx, componentes de header/usuario
  */
 
 // Se configura con VITE_TRIAL_MODE=true para permitir el modo demo

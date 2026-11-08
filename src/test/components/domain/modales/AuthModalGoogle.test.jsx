@@ -9,7 +9,7 @@ vi.mock("../../../../services/authGoogleServicio", () => ({
   iniciarLoginGoogle: mocks.iniciarLoginGoogle,
 }));
 
-import AuthModal from "../../../../components/domain/modales/AuthModal";
+import AuthModal from "../../../../features/auth/components/modals/AuthModal";
 
 describe("AuthModal — acceso con Google", () => {
   it("muestra el botón y comienza el flujo redirect al activarlo", async () => {

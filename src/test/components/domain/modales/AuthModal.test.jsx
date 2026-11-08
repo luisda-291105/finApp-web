@@ -11,8 +11,8 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import AuthModal from "../../../../components/domain/modales/AuthModal";
-import PaginaLogin from "../../../../pages/PaginaLogin";
+import AuthModal from "../../../../features/auth/components/modals/AuthModal";
+import PaginaLogin from "../../../../features/auth/pages/LoginPage";
 import PaginaInicio from "../../../../pages/PaginaInicio";
 
 /**

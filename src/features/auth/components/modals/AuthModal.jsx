@@ -10,19 +10,20 @@
  *             común (useRetornoDeFoco: captura + devolución)
  * @estados    modo ('login' | 'registro'), formulario (objeto), cargando (boolean), mensaje (string);
  *             la captura y la devolución del foco no usan estado de React (viven en useRetornoDeFoco)
- * @usadoPor   PaginaInicio, PaginaLogin
+ * @usadoPor   PaginaInicio y LoginPage
  */
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FocusTrap from "focus-trap-react";
-import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
-import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
-import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
-import { crearUsuario, iniciarSesion } from "../../../services/usuarioServicio";
-import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle } from "../../../services/authGoogleServicio";
-import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
+import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
+import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
+import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
+import { crearUsuario, iniciarSesion } from "../../../../services/usuarioServicio";
+import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle } from "../../../../services/authGoogleServicio";
+import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
+import LoginForm from "../forms/LoginForm";
+import RegistroForm from "../forms/RegistroForm";
 
-const CLASE_ENTRADA = "min-h-11 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/70 focus:border-emerald-primary focus-visible:ring-2 focus-visible:ring-mint-accent/60";
 
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
@@ -266,120 +267,33 @@ try {
             </button>
           </div>
 
-          {/* Formulario */}
-          <form onSubmit={manejarEnvio} className="space-y-5">
-            {modo === "registro" && (
-              <>
-                <div>
-                  <input
-                    id="auth-registro-identificacion"
-                    type="text"
-                    required
-                    autoComplete="username"
-                    aria-label="Cédula o identificación"
-                    value={idUsuario}
-                    onChange={(e) => setIdUsuario(e.target.value)}
-                    placeholder="Identificación"
-                    className={CLASE_ENTRADA}
-                  />
-                </div>
-                <div>
-                  <input
-                    id="auth-registro-nombre"
-                    type="text"
-                    required
-                    autoComplete="name"
-                    aria-label="Nombre completo"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Nombre completo"
-                    className={CLASE_ENTRADA}
-                  />
-                </div>
-                <div>
-                  <input
-                    id="auth-registro-correo"
-                    type="email"
-                    autoComplete="email"
-                    aria-label="Correo electrónico"
-                    value={correo}
-                    onChange={(e) => setCorreo(e.target.value)}
-                    placeholder="Correo electrónico"
-                    className={CLASE_ENTRADA}
-                  />
-                </div>
-                <div>
-                  <input
-                    id="auth-registro-telefono"
-                    type="tel"
-                    autoComplete="tel"
-                    aria-label="Teléfono"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    placeholder="Teléfono"
-                    className={CLASE_ENTRADA}
-                  />
-                </div>
-                <p className="-mt-3 text-xs text-white/70">Correo y teléfono son opcionales; puedes agregarlos más adelante desde tu perfil.</p>
-              </>
-            )}
-
-            {modo === "login" && (
-              <div>
-                <input
-                  id="auth-login-identificacion"
-                  type="text"
-                  required
-                  autoComplete="username"
-                  aria-label="Nombre, identificación, correo o teléfono"
-                  value={idUsuario}
-                  onChange={(e) => setIdUsuario(e.target.value)}
-                  placeholder="Nombre, identificación, correo o teléfono"
-                  className={CLASE_ENTRADA}
-                />
-              </div>
-            )}
-
-            <div>
-              <input
-                id="auth-contrasena"
-                type="password"
-                required
-                autoComplete={modo === "registro" ? "new-password" : "current-password"}
-                aria-label="Contraseña"
-                aria-describedby={modo === "registro" ? "auth-contrasena-ayuda" : undefined}
-                value={contrasena}
-                onChange={(e) => setContrasena(e.target.value)}
-                placeholder="Ingresa tu contraseña"
-                minLength={8}
-                className={CLASE_ENTRADA}
-              />
-              {modo === "registro" && (
-                <p id="auth-contrasena-ayuda" className="mt-2 text-xs text-white/70">Mínimo 8 caracteres</p>
-              )}
-            </div>
-
-            {mensaje && (
-              <div
-                role="alert"
-                className="p-3 bg-[#1a7a5e]/20 border border-[#1a7a5e]/50 rounded-xl text-xs text-[#6ee7c0]"
-              >
-                {mensaje}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={cargando}
-              className="w-full mt-4 bg-[#1a7a5e] hover:bg-[#15634c] text-white font-medium py-3 rounded-xl transition-all cursor-pointer shadow-lg disabled:opacity-50"
-            >
-              {cargando
-                ? "Procesando..."
-                : modo === "login"
-                ? "Entrar a mi cuenta"
-                : "Crear cuenta"}
-            </button>
-          </form>
+          {modo === "login" ? (
+            <LoginForm
+              idUsuario={idUsuario}
+              contrasena={contrasena}
+              alCambiarIdUsuario={setIdUsuario}
+              alCambiarContrasena={setContrasena}
+              alEnviar={manejarEnvio}
+              cargando={cargando}
+              mensaje={mensaje}
+            />
+          ) : (
+            <RegistroForm
+              idUsuario={idUsuario}
+              nombre={nombre}
+              correo={correo}
+              telefono={telefono}
+              contrasena={contrasena}
+              alCambiarIdUsuario={setIdUsuario}
+              alCambiarNombre={setNombre}
+              alCambiarCorreo={setCorreo}
+              alCambiarTelefono={setTelefono}
+              alCambiarContrasena={setContrasena}
+              alEnviar={manejarEnvio}
+              cargando={cargando}
+              mensaje={mensaje}
+            />
+          )}
 
           <div className="my-5 flex items-center gap-3 text-xs text-white/60" aria-hidden="true">
             <span className="h-px flex-1 bg-white/10" />

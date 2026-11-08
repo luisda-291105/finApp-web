@@ -11,11 +11,11 @@ vi.mock("../../services/usuarioServicio", () => ({ obtenerUsuarioActivo: mocks.o
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ guardarUsuario: mocks.guardarUsuario }),
 }));
-vi.mock("../../components/domain/modales/AuthModal", () => ({
+vi.mock("../../features/auth/components/modals/AuthModal", () => ({
   default: ({ mensajeExterno }) => mensajeExterno ? <div role="alert">{mensajeExterno}</div> : null,
 }));
 
-import PaginaLogin from "../../pages/PaginaLogin";
+import PaginaLogin from "../../features/auth/pages/LoginPage";
 
 function renderLogin(path) {
   return render(

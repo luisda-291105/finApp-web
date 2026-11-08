@@ -10,10 +10,10 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { TRIAL_MODE } from "../config/app.config";
-import AuthModal from "../components/domain/modales/AuthModal";
-import { useUsuarioActivo } from "../context/UsuarioActivoContext";
-import { obtenerUsuarioActivo } from "../services/usuarioServicio";
+import { TRIAL_MODE } from "../../../config/app.config";
+import { AuthModal } from "../components/modals";
+import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
+import { obtenerUsuarioActivo } from "../../../services/usuarioServicio";
 
 /**
  * PaginaLogin
