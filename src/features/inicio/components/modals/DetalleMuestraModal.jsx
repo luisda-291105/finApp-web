@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import FocusTrap from "focus-trap-react";
-import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
+import { BotonCerrar } from "../../../../components/ui";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import MuestraVisual from "../cards/MuestraVisual";

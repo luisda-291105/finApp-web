@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Card } from "../../../components/ui/Card";
+import { Card } from "../../../components/ui";
 
 describe("Card", () => {
   it("renderiza children correctamente", () => {

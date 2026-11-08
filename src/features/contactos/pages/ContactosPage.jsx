@@ -8,7 +8,7 @@
  */
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import { Card } from "../../../components/ui/Card";
+import { Card } from "../../../components/ui";
 import { useContactos } from "../hooks/useContactos";
 import ContactoCard from "../components/cards/ContactoCard";
 import CrearContactoModal from "../components/modals/CrearContactoModal";

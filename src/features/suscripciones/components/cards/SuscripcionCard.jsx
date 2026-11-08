@@ -1,5 +1,5 @@
 import { CirclePause, Play } from "lucide-react";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 import { formatoMoneda } from "../../utils/suscripcionesData";
 
 /** Tarjeta individual de suscripción demo y control de su estado. */

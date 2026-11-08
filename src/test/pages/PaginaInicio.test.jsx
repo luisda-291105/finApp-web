@@ -62,17 +62,17 @@ vi.mock("../../context/GmailContext", () => ({
 }));
 
 // Mock servicios
-vi.mock("../../services/usuarioServicio", () => ({
+vi.mock("../../features/auth/services/usuarioServicio", () => ({
   crearUsuario: () => Promise.resolve({ ok: true }),
   iniciarSesion: () => Promise.resolve({ ok: true }),
 }));
 
-vi.mock("../../services/authGoogleServicio", () => ({
+vi.mock("../../features/auth/services/authGoogleServicio", () => ({
   GOOGLE_AUTH_CONFIGURADO: false,
   iniciarLoginGoogle: () => Promise.resolve(),
 }));
 
-vi.mock("../../services/asistenteServicio", () => ({
+vi.mock("../../features/asistenteia/services/asistenteServicio", () => ({
   conversarConAsistente: () => Promise.resolve({ respuesta: "Respuesta de prueba" }),
 }));
 

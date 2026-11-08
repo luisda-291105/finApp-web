@@ -8,8 +8,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
-import RespuestaModal from "../../../../components/ui/RespuestaModal";
+import { BotonCerrar } from "../../../../components/ui";
+import RespuestaMovimiento from "../feedback/RespuestaMovimiento";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
@@ -156,7 +156,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
                 </label>}
               </div>}
             </div>
-            <RespuestaModal respuesta={respuesta} />
+            <RespuestaMovimiento respuesta={respuesta} />
             <div className="flex justify-end gap-2">
               <button type="button" disabled={ocupado} onClick={cerrar} className="min-h-11 rounded-xl border border-border-line px-4 text-sm font-medium hover:bg-white disabled:opacity-50">Cancelar</button>
               <button type="submit" disabled={ocupado || !tipoSeleccionado || (requiereOrigen && (!valores.origenTipo || (origenRequiereDetalle && !valores.origenId))) || !bolsillos.some((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo && (bolsillo.estado !== false || movimiento?.idBolsillo === bolsillo.idBolsillo))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>

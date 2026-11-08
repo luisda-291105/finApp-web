@@ -1,5 +1,5 @@
-import { getEndpoint } from "../config/api.config";
-import { obtener } from "./httpServicio";
+import { getEndpoint } from "../../../config/api.config";
+import { obtener } from "../../../services/httpServicio";
 
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";

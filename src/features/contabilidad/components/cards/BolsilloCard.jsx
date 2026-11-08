@@ -1,5 +1,5 @@
 import { Pencil, Trash2, Wallet } from "lucide-react";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 import { formatearPesos } from "../../../../utils/formatoPesos";
 import { formatoMoneda } from "../../utils/contabilidadHelpers";
 

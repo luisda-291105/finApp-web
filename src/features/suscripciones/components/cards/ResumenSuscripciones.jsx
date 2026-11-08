@@ -1,5 +1,5 @@
 import { CalendarDays, Repeat, Wallet } from "lucide-react";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 import { formatoMoneda } from "../../utils/suscripcionesData";
 
 /** Tarjetas con gasto mensual, cantidad activa y próximo cobro. */

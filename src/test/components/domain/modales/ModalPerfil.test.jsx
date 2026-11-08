@@ -16,9 +16,10 @@ import {
   UsuarioActivoProvider,
   useUsuarioActivo,
 } from "../../../../context/UsuarioActivoContext";
-import { actualizarUsuario, crearUsuario, obtenerUsuarioActivo } from "../../../../services/usuarioServicio";
+import { actualizarUsuario, crearUsuario, obtenerUsuarioActivo } from "../../../../features/auth/services";
 
-vi.mock("../../../../services/usuarioServicio", () => ({
+vi.mock("../../../../features/auth/services", async (importOriginal) => ({
+  ...(await importOriginal()),
   actualizarUsuario: vi.fn(),
   crearUsuario: vi.fn(),
   obtenerUsuarioActivo: vi.fn(),

@@ -8,7 +8,7 @@
  */
 
 import { useRef, useState } from "react";
-import { Card } from "../../../components/ui/Card";
+import { Card } from "../../../components/ui";
 import FuentesRegistradas from "../components/cards/FuentesRegistradas";
 import AparienciaCard from "../components/cards/AparienciaCard";
 import PerfilCard from "../components/cards/PerfilCard";

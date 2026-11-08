@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   guardarUsuario: vi.fn(),
 }));
 
-vi.mock("../../services/usuarioServicio", () => ({ obtenerUsuarioActivo: mocks.obtenerUsuarioActivo }));
+vi.mock("../../features/auth/services/usuarioServicio", () => ({ obtenerUsuarioActivo: mocks.obtenerUsuarioActivo }));
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ guardarUsuario: mocks.guardarUsuario }),
 }));

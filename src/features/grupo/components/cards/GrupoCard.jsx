@@ -7,7 +7,7 @@
  * @usadoPor   GruposPage
  */
 import { MessageCircle, WalletCards } from "lucide-react";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 
 /** Presenta un resumen del grupo y delega su apertura a la página. */
 export default function GrupoCard({ grupo, alAbrir }) {

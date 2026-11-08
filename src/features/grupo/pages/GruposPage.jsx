@@ -8,7 +8,7 @@
  */
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import { Card } from "../../../components/ui/Card";
+import { Card } from "../../../components/ui";
 import { useGrupos } from "../hooks/useGrupos";
 import GrupoCard from "../components/cards/GrupoCard";
 import CrearGrupoModal from "../components/modals/CrearGrupoModal";

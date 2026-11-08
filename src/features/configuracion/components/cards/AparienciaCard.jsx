@@ -1,4 +1,4 @@
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 import { Moon, Sun } from "lucide-react";
 
 export default function AparienciaCard({ tema, alternarTema }) {

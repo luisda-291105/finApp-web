@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
 const mocks = vi.hoisted(() => ({ iniciarLoginGoogle: vi.fn() }));
-vi.mock("../../../../services/authGoogleServicio", () => ({
+vi.mock("../../../../features/auth/services/authGoogleServicio", () => ({
   GOOGLE_AUTH_CONFIGURADO: true,
   iniciarLoginGoogle: mocks.iniciarLoginGoogle,
 }));

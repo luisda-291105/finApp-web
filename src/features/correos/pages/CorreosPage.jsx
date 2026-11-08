@@ -9,7 +9,7 @@
 import { useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Card } from "../../../components/ui/Card";
+import { Card } from "../../../components/ui";
 import { useCorreos } from "../hooks/useCorreos";
 import CorreoCuentaCard from "../components/cards/CorreoCuentaCard";
 import BandejaCorreosModal from "../components/modals/BandejaCorreosModal";

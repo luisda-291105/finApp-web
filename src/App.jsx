@@ -12,7 +12,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute, PublicRoute } from "./components/auth";
 import { LandingPage } from "./features/landing";
 import { ErrorPage } from "./features/error";
-import LimiteDeError from "./components/ui/LimiteDeError";
+import { LimiteDeError } from "./components/ui";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
 import { GmailProvider } from "./context/GmailContext";

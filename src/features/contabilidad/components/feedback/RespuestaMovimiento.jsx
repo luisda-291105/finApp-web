@@ -1,7 +1,7 @@
 import clsx from "clsx";
 
-/** Región accesible de mensajes con el contrato común de respuestas. */
-export default function RespuestaModal({ respuesta, className = "" }) {
+/** Región accesible para mensajes del flujo de movimientos contables. */
+export default function RespuestaMovimiento({ respuesta, className = "" }) {
   if (!respuesta?.mensaje) return null;
   const esError = respuesta.tipo === "error";
   return (

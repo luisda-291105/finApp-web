@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
 import { BotMessageSquare } from "lucide-react";
-import BotonCerrar from "../../../../components/ui/BotonCerrar";
+import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";

@@ -7,8 +7,8 @@
  * @usadoPor   App.jsx (ruta /dashboard/contabilidad)
  */
 import { Plus, Wallet } from "lucide-react";
-import { Card } from "../../../components/ui/Card";
-import RespuestaModal from "../../../components/ui/RespuestaModal";
+import { Card } from "../../../components/ui";
+import RespuestaMovimiento from "../components/feedback/RespuestaMovimiento";
 import ModalCrearMovimientoContable from "../components/modals/ModalCrearMovimientoContable";
 import ModalBolsillo from "../components/modals/ModalBolsillo";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
@@ -91,7 +91,7 @@ export default function PaginaDashboardContabilidad() {
         </ul> : <p className="px-5 py-10 text-center text-slate-text">Sin movimientos registrados en este filtro.</p>)}
       </Card>
 
-      <RespuestaModal respuesta={respuesta} className="fixed right-4 top-20 z-40 w-[min(calc(100vw-2rem),24rem)] border-emerald-700 bg-emerald-700 px-5 py-4 text-base font-semibold text-white shadow-xl" />
+      <RespuestaMovimiento respuesta={respuesta} className="fixed right-4 top-20 z-40 w-[min(calc(100vw-2rem),24rem)] border-emerald-700 bg-emerald-700 px-5 py-4 text-base font-semibold text-white shadow-xl" />
 
       <ModalBolsillo abierto={modalBolsillo.abierto} modo={modalBolsillo.modo} bolsillo={modalBolsillo.bolsillo} bolsillos={bolsillos} triggerRef={disparadorBolsilloRef} alCerrar={() => setModalBolsillo({ abierto: false, modo: "crear", bolsillo: null })} alGuardar={guardarBolsillo} alEliminar={borrarBolsillo} />
       <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} bolsillos={bolsillosMovimiento} tarjetas={tarjetas} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); }} alGuardar={guardarMovimiento} />

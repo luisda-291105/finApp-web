@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { Fingerprint, Mail, Phone, ShieldCheck, UserRound } from "lucide-react";
-import { actualizarUsuario } from "../../../../services/usuarioServicio";
+import { actualizarUsuario } from "../../../auth/services";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 
 /** Fecha local en formato YYYY-MM-DD sin desfase UTC. */

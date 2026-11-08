@@ -1,5 +1,5 @@
 import { Repeat } from "lucide-react";
-import { Card } from "../../../components/ui/Card";
+import { Card } from "../../../components/ui";
 import useSuscripciones from "../hooks/useSuscripciones";
 import ResumenSuscripciones from "../components/cards/ResumenSuscripciones";
 import SuscripcionCard from "../components/cards/SuscripcionCard";

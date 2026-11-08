@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
+import { BotonCerrar } from "../../../../components/ui";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";

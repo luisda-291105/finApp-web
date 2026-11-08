@@ -10,7 +10,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { obtenerUsuarioActivo } from "../../services/usuarioServicio";
+import { obtenerUsuarioActivo } from "../../features/auth/services";
 import DashboardLayout from "../../layout/DashboardLayout";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { UsuarioActivoProvider } from "../../context/UsuarioActivoContext";
@@ -21,7 +21,8 @@ vi.mock("../../hooks/useBreakpoint", () => ({
   useBreakpoint: vi.fn(),
 }));
 
-vi.mock("../../services/usuarioServicio", () => ({
+vi.mock("../../features/auth/services", async (importOriginal) => ({
+  ...(await importOriginal()),
   obtenerUsuarioActivo: vi.fn(),
 }));
 

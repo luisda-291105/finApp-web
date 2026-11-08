@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { CATEGORIAS_CORREO, coincideCategoria, fechaLegible } from "../../utils/correoHelpers";
 

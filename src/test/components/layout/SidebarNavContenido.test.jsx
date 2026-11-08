@@ -10,11 +10,12 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import { obtenerUsuarioActivo } from "../../../services/usuarioServicio";
+import { obtenerUsuarioActivo } from "../../../features/auth/services";
 import SidebarNavContenido from "../../../components/layout/SidebarNavContenido";
 import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
 
-vi.mock("../../../services/usuarioServicio", () => ({
+vi.mock("../../../features/auth/services", async (importOriginal) => ({
+  ...(await importOriginal()),
   obtenerUsuarioActivo: vi.fn(),
 }));
 

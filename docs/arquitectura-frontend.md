@@ -21,6 +21,7 @@ src/
       index.js
       README.md
     usuarios/
+    asistenteia/
     tarjetas/
     contabilidad/
     contactos/
@@ -34,6 +35,8 @@ src/
 
 En el estado actual del repositorio, los componentes compartidos siguen en `src/components`, los hooks comunes en `src/hooks`, los servicios HTTP en `src/services` y el mapa de rutas en `src/App.jsx`. La migración los puede trasladar gradualmente a `shared/`, `layouts/` y `routes/` cuando cada import quede actualizado.
 
+`src/components/ui` conserva el catálogo compartido de interfaz y publica sus componentes desde `index.js`. Los componentes que terminan siendo exclusivos de un feature se trasladan a ese feature; por ejemplo, los mensajes de movimientos están en `features/contabilidad/components/feedback`.
+
 ## Límites
 
 - Un componente por archivo, con nombre de dominio y responsabilidad visibles.
@@ -45,7 +48,7 @@ En el estado actual del repositorio, los componentes compartidos siguen en `src/
 
 ## Migración
 
-1. `grupo`, `tarjetas`, `contactos`, `correos`, `contabilidad`, `suscripciones`, `inicio`, `configuracion`, `auth`, `landing` y `error` están agrupados en `src/features/`, con página, componentes específicos y README.
+1. `grupo`, `tarjetas`, `contactos`, `correos`, `contabilidad`, `suscripciones`, `inicio`, `configuracion`, `auth`, `landing`, `error` y `asistenteia` están agrupados en `src/features/`, con página, componentes específicos y README.
 2. Después se migran layouts y rutas.
 3. Finalmente se revisan dependencias entre features y se retiran los puentes restantes.
 

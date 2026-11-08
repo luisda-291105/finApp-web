@@ -7,7 +7,7 @@
  * @usadoPor   LandingLayout
  */
 import { useReveal } from "../../../../hooks/useReveal";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 
 const FUNCIONALIDADES = [
   {

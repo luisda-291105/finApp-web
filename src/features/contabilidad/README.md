@@ -13,6 +13,7 @@ Administra los bolsillos del usuario, sus resúmenes y los movimientos financier
 - `utils/contabilidadHelpers`: tipos base, etiquetas, filtros y saldos presentados por la vista.
 - `components/modals/ModalBolsillo`: crea, edita y elimina bolsillos.
 - `components/modals/ModalCrearMovimientoContable`: registra o edita movimientos.
+- `components/feedback/RespuestaMovimiento`: muestra resultados accesibles de las acciones contables.
 - `services/bolsillosService` y `services/movimientosService`: llamadas API del feature.
 - `index.js`: API pública usada por el mapa de rutas.
 

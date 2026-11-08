@@ -7,7 +7,7 @@
  * @estados    viewport explícito (innerWidth + matchMedia) y estado de apertura en los re-render
  * @usadoPor   Vitest
  */
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -220,6 +220,20 @@ describe("AuthModal", () => {
         expect(dialogo.contains(document.activeElement)).toBe(true);
       });
       document.body.removeChild(externo);
+    });
+
+    it("no cierra si la selección de texto empieza en un input y termina en el fondo", () => {
+      const alCerrar = vi.fn();
+      renderModal({ alCerrar });
+      const entrada = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const overlay = obtenerOverlay();
+
+      fireEvent.pointerDown(entrada);
+      fireEvent.pointerUp(overlay);
+      fireEvent.click(overlay);
+
+      expect(alCerrar).not.toHaveBeenCalled();
+      expect(obtenerDialogo()).toBeInTheDocument();
     });
 
     it("clic dentro del panel NO cierra el modal", async () => {

@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({ obtener: vi.fn(), requestCode: vi.fn(), initCo
 vi.mock("../../services/httpServicio", () => ({ obtener: mocks.obtener }));
 
 import { getEndpoint } from "../../config/api.config";
-import { iniciarLoginGoogle } from "../../services/authGoogleServicio";
+import { iniciarLoginGoogle } from "../../features/auth/services/authGoogleServicio";
 
 describe("authGoogleServicio", () => {
   beforeEach(() => {

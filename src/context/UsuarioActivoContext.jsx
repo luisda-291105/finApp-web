@@ -8,7 +8,7 @@
  */
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { cerrarSesionServidor, obtenerUsuarioActivo } from "../services/usuarioServicio";
+import { cerrarSesionServidor, obtenerUsuarioActivo } from "../features/auth/services";
 
 /** Valor seguro cuando un componente se monta sin `UsuarioActivoProvider` (pruebas/aislados). */
 const contextoPorDefecto = {

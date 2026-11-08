@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Card } from "../../../../components/ui/Card";
+import { Card } from "../../../../components/ui";
 import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";

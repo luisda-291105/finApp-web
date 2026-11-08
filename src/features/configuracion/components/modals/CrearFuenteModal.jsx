@@ -9,8 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { Mail } from "lucide-react";
-import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
+import { BotonCerrar, BotonServicioExterno } from "../../../../components/ui";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { crearFuente } from "../../../../services/fuenteServicio";
@@ -261,26 +260,30 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
                 : "La fuente se registrará activa con la fecha actual vinculada al usuario."}
             </p>
 
-            {/* Botón de acción */}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="submit"
-                disabled={cargando}
-                className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2 disabled:opacity-50 cursor-pointer"
-              >
-                {cargando ? "Registrando..." : "Registrar fuente"}
-              </button>
-              <button
-                type="button"
+            <button
+              type="submit"
+              disabled={cargando}
+              className="mt-2 min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2 disabled:opacity-50 cursor-pointer"
+            >
+              {cargando ? "Registrando..." : "Registrar fuente"}
+            </button>
+          </form>
+          {tipo === "CORREO" && (
+            <div className="flex flex-col gap-2 px-5 pb-5">
+              <div className="flex items-center gap-3 text-xs text-slate-text" aria-hidden="true">
+                <span className="h-px flex-1 bg-border-line" />
+                <span>o conecta con</span>
+                <span className="h-px flex-1 bg-border-line" />
+              </div>
+              <BotonServicioExterno
                 onClick={alConectarGmail}
                 disabled={!gmailConfigurado || !gmailListo || conexionGmailCargando || gmailConectado}
-                className="google-auth-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed"
               >
-                <Mail size={17} aria-hidden="true" />
-                {!gmailConfigurado ? "Configura Gmail" : conexionGmailCargando ? "Conectando Gmail…" : gmailConectado ? "Gmail conectado" : !gmailListo ? "Preparando Gmail…" : "Conectar Gmail"}
-              </button>
+                {!gmailConfigurado ? "Configura Gmail" : conexionGmailCargando ? "Conectando con Google…" : gmailConectado ? "Gmail conectado" : !gmailListo ? "Preparando Google…" : "Conectar Gmail con Google"}
+              </BotonServicioExterno>
+              {gmailConfigurado === false && <p role="status" className="text-center text-xs text-slate-text">Google no está configurado para este entorno.</p>}
             </div>
-          </form>
+          )}
         </section>
       </FocusTrap>
     </div>
