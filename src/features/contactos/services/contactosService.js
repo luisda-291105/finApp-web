@@ -12,6 +12,8 @@ const rutaBase = getEndpoint("contacto.base");
 
 /** @param {object} contacto */
 export function crearContacto(contacto) { return crear(rutaBase, contacto); }
+/** Importa en lote los contactos de Google; el backend evita duplicados por resourceName. */
+export function importarContactosGoogle(contactos) { return crear(`${rutaBase}/importar-google`, contactos); }
 /** @param {string|number} idUsuario */
 export function obtenerContactosPorUsuario(idUsuario) { return obtener(`${rutaBase}/usuario/${encodeURIComponent(idUsuario)}`); }
 /** @param {string|number} idContacto */

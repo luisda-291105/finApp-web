@@ -9,10 +9,10 @@
 import { getEndpoint } from "../../../config/api.config";
 
 /** Llama al endpoint del asistente sin exponer credenciales de proveedores en el navegador. */
-export async function conversarConAsistente(peticion, signal) {
+async function enviarPeticion(ruta, peticion, signal) {
   let respuesta;
   try {
-    respuesta = await fetch(getEndpoint("asistente.publico"), {
+    respuesta = await fetch(getEndpoint(ruta), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -38,5 +38,19 @@ export async function conversarConAsistente(peticion, signal) {
     throw new Error(detalle);
   }
   return datos;
+}
+
+/** Usa el contexto del usuario autenticado en el dashboard. */
+export function conversarConAsistente(peticion, signal) {
+  return enviarPeticion("asistente.chat", peticion, signal);
+}
+
+/** Consulta informativa sin sesión, usada únicamente por la landing. */
+export function conversarConAsistentePublico(peticion, signal) {
+  return enviarPeticion("asistente.publico", peticion, signal);
+}
+
+export function confirmarAccionAsistente(token, signal) {
+  return enviarPeticion("asistente.confirmar", { token }, signal);
 }
 

@@ -60,6 +60,7 @@ export const ENDPOINTS = {
   asistente: {
     chat: "/asistente/chat",
     publico: "/asistente/publico",
+    confirmar: "/asistente/confirmar",
   },
   gmail: {
     callback: "/api/gmail/callback",

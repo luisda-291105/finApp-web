@@ -11,6 +11,8 @@ import { getEndpoint } from "../config/api.config";
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const URL_API_GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me";
 const ALCANCE_GMAIL_LECTURA = "https://www.googleapis.com/auth/gmail.readonly";
+const ALCANCE_CONTACTOS_LECTURA = "https://www.googleapis.com/auth/contacts.readonly";
+const URL_API_PERSONAS = "https://people.googleapis.com/v1/people/me/connections";
 const ID_CLIENTE_GOOGLE = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GMAIL_CONFIGURADO = Boolean(ID_CLIENTE_GOOGLE);
 const MENSAJE_ACCESO_DENEGADO =
@@ -57,7 +59,7 @@ export async function prepararGoogleIdentityServices() {
 }
 
 /** Solicita un código OAuth con popup GIS y lo devuelve mediante la respuesta JavaScript. */
-export async function iniciarCodigoAutorizacionGmail() {
+export async function iniciarCodigoAutorizacionGmail({ incluirContactos = false, cuentaEsperada = "" } = {}) {
   if (!ID_CLIENTE_GOOGLE) {
     throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.");
   }
@@ -66,10 +68,12 @@ export async function iniciarCodigoAutorizacionGmail() {
   return new Promise((resolver, rechazar) => {
     const cliente = window.google.accounts.oauth2.initCodeClient({
       client_id: ID_CLIENTE_GOOGLE,
-      scope: ALCANCE_GMAIL_LECTURA,
+      scope: incluirContactos ? `${ALCANCE_GMAIL_LECTURA} ${ALCANCE_CONTACTOS_LECTURA}` : ALCANCE_GMAIL_LECTURA,
+      include_granted_scopes: true,
       ux_mode: "popup",
-      prompt: "consent",
-      select_account: true,
+      ...(!incluirContactos ? { prompt: "consent" } : {}),
+      select_account: !cuentaEsperada,
+      ...(cuentaEsperada ? { login_hint: cuentaEsperada } : {}),
       callback: (respuesta) => {
         if (respuesta.error || !respuesta.code) {
           rechazar(new Error(
@@ -77,6 +81,11 @@ export async function iniciarCodigoAutorizacionGmail() {
               ? MENSAJE_ACCESO_DENEGADO
               : respuesta.error_description || "Google no autorizó la lectura de Gmail."
           ));
+          return;
+        }
+        if (incluirContactos && respuesta.scope
+          && !respuesta.scope.split(/\s+/).includes(ALCANCE_CONTACTOS_LECTURA)) {
+          rechazar(new Error("Google no concedió el permiso de lectura de Contactos. Vuelve a autorizarlo desde el detalle de la fuente Gmail."));
           return;
         }
         resolver(respuesta.code);
@@ -98,8 +107,64 @@ export async function iniciarCodigoAutorizacionGmail() {
   });
 }
 
+/** Lee los contactos asociados a la cuenta Google autorizada. */
+export async function obtenerContactosGoogle(token) {
+  if (!token) throw new Error("Conecta la cuenta de Google para consultar sus contactos.");
+  const contactos = [];
+  let pageToken = "";
+  do {
+    const url = new URL(URL_API_PERSONAS);
+    url.searchParams.set("personFields", "names,emailAddresses,phoneNumbers,biographies,organizations");
+    url.searchParams.set("pageSize", "1000");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+    const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const datos = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok) {
+      const mensajeGoogle = datos.error?.message || "";
+      const motivos = (datos.error?.details || []).map((detalle) => detalle.reason || "").join(" ");
+      if (respuesta.status === 403 && /SERVICE_DISABLED|has not been used|disabled/i.test(`${motivos} ${mensajeGoogle}`)) {
+        throw new Error("People API está desactivada en Google Cloud para esta aplicación. Actívala y vuelve a actualizar los contactos.");
+      }
+      if (respuesta.status === 403 && /ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient authentication scopes/i.test(`${motivos} ${mensajeGoogle}`)) {
+        throw new Error("La cuenta Gmail aún no concedió contacts.readonly. Autoriza el acceso desde el detalle de su fuente y vuelve a actualizar.");
+      }
+      if (respuesta.status === 403) throw new Error(`Google denegó la consulta de contactos${mensajeGoogle ? `: ${mensajeGoogle}` : ". Verifica el permiso contacts.readonly y que People API esté activada."}`);
+      if (respuesta.status === 401) throw new Error("La autorización de Google venció. Vuelve a autorizar los contactos desde el detalle de la fuente Gmail.");
+      if (respuesta.status === 429) throw new Error("Google limitó temporalmente las consultas de contactos. Espera un momento y vuelve a actualizar.");
+      throw new Error(datos.error?.message || "No se pudieron consultar los contactos de Google.");
+    }
+    contactos.push(...(datos.connections || []).map((persona) => {
+      const organizacion = persona.organizations?.find((item) => item.current) || persona.organizations?.[0] || {};
+      return {
+        googleResourceName: persona.resourceName || "",
+        nombre: persona.names?.find((item) => item.displayName)?.displayName || persona.emailAddresses?.[0]?.value || "Contacto de Google",
+        correo: persona.emailAddresses?.[0]?.value || "",
+        telefono: persona.phoneNumbers?.[0]?.canonicalForm || persona.phoneNumbers?.[0]?.value || "",
+        notas: persona.biographies?.[0]?.value || "",
+        cargo: organizacion.title || "",
+        empresa: organizacion.name || "",
+      };
+    }));
+    pageToken = datos.nextPageToken || "";
+  } while (pageToken);
+  return contactos;
+}
+
+/** Comprueba el permiso de lectura de Contactos con una consulta mínima. */
+export async function verificarPermisoContactosGoogle(token) {
+  if (!token) return false;
+  const url = new URL(URL_API_PERSONAS);
+  url.searchParams.set("personFields", "names");
+  url.searchParams.set("pageSize", "1");
+  const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (respuesta.ok) return true;
+  const datos = await respuesta.json().catch(() => ({}));
+  if (respuesta.status === 403) return false;
+  throw new Error(datos.error?.message || "No se pudo verificar el permiso de Contactos de Google.");
+}
+
 /** Canjea el código recibido por redirección usando el endpoint del backend. */
-export async function canjearCodigoGmail(code) {
+export async function canjearCodigoGmail(code, cuentaEsperadaId = "") {
   if (!code) throw new Error("Google no devolvió un código de autorización.");
   const respuesta = await fetch(getEndpoint("gmail.callback"), {
     method: "POST",
@@ -108,7 +173,7 @@ export async function canjearCodigoGmail(code) {
       "Content-Type": "application/json",
       "X-Requested-With": "XmlHttpRequest",
     },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, expected_account_id: cuentaEsperadaId || undefined }),
   });
   const datos = await respuesta.json().catch(() => ({}));
   if (!respuesta.ok) {

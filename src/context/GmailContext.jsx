@@ -88,17 +88,29 @@ export function GmailProvider({ children }) {
     return () => { vigente = false; };
   }, [usuario?.idUsuario, cuentasGmail, cuentaSeleccionadaId]);
 
-  const conectarGmail = async () => {
+  const conectarGmail = async ({ incluirContactos = false, cuentaEsperadaId = cuentaSeleccionadaId } = {}) => {
     setErrorGmail("");
     setConexionCargando(true);
     try {
-      const code = await iniciarCodigoAutorizacionGmail();
-      const conexion = await canjearCodigoGmail(code);
-      const cuentas = await listarCuentasGmail();
-      setCuentasGmail(cuentas);
-      setCuentaSeleccionadaId(conexion.accountId);
-      setTokenGmail(conexion.token);
-      setCuentaGmail(conexion.email);
+      const cuentaEsperada = incluirContactos ? cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaEsperadaId)) : null;
+      if (incluirContactos && !cuentaEsperada) throw new Error("Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar Google Contacts.");
+      const code = await iniciarCodigoAutorizacionGmail({ incluirContactos, cuentaEsperada: cuentaEsperada?.email || "" });
+      const conexion = await canjearCodigoGmail(code, incluirContactos ? cuentaEsperadaId : "");
+      if (incluirContactos) {
+        // La autorización de un permiso adicional no debe reiniciar la cuenta Gmail activa.
+        // El backend actualiza la conexión de la fuente indicada; solo sustituimos el token
+        // en memoria cuando esa misma fuente está seleccionada.
+        if (String(cuentaSeleccionadaId) === String(conexion.accountId)) {
+          setTokenGmail(conexion.token);
+          setCuentaGmail(conexion.email);
+        }
+      } else {
+        const cuentas = await listarCuentasGmail();
+        setCuentasGmail(cuentas);
+        setCuentaSeleccionadaId(conexion.accountId);
+        setTokenGmail(conexion.token);
+        setCuentaGmail(conexion.email);
+      }
       return conexion;
     } catch (error) {
       const mensaje = error?.message || "No se pudo iniciar la conexión con Gmail.";
