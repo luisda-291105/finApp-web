@@ -65,6 +65,13 @@ export default function ConfiguracionPage() {
     } catch { /* El mensaje detallado se muestra desde GmailContext. */ }
   };
 
+  const autorizarContactosGmail = async (idCuenta) => {
+    try {
+      const conexion = await conectarGmail({ incluirContactos: true, cuentaEsperadaId: idCuenta });
+      mostrarAvisoGmail(`Contactos de Google autorizados para ${conexion.email}.`);
+    } catch { /* El error temporal se muestra junto a las fuentes registradas. */ }
+  };
+
 
 
   return (
@@ -88,6 +95,7 @@ export default function ConfiguracionPage() {
         disparadorFuentesRef={disparadorFuentesRef}
         abrirModalFuentes={() => setModalFuentesAbierto(true)}
         alReconectarGmail={conectarFuentesGmail}
+        alAutorizarContactosGmail={autorizarContactosGmail}
         gmailConfigurado={GMAIL_CONFIGURADO}
         gisListo={gisListo}
         conexionCargando={conexionCargando}

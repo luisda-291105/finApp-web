@@ -23,10 +23,10 @@ function opcionesTrampa(refPanel) {
 export default function CrearContactoModal({ abierto, alCerrar, triggerRef, alGuardar }) {
   const panelRef = useRef(null);
   const { usuario } = useUsuarioActivo();
-  const [valores, setValores] = useState({ nombre: "", telefono: "", notas: "" });
+  const [valores, setValores] = useState({ nombre: "", telefono: "", correo: "", cargo: "", empresa: "", notas: "" });
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
-  useEffect(() => { if (abierto) { setValores({ nombre: "", telefono: "", notas: "" }); setError(""); } }, [abierto]);
+  useEffect(() => { if (abierto) { setValores({ nombre: "", telefono: "", correo: "", cargo: "", empresa: "", notas: "" }); setError(""); } }, [abierto]);
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar: () => !cargando && alCerrar() });
   useRetornoDeFoco({ activo: abierto, triggerRef });
   if (!abierto) return null;

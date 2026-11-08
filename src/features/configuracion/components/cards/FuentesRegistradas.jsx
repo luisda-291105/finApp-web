@@ -4,13 +4,13 @@ import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";
 
-export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
+export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, alAutorizarContactosGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);
   const fuenteTriggerRef = useRef(null);
   const gmailConectado = Boolean(tokenGmail && !errorGmail && !conexionCargando);
   const fuenteSeleccionada = fuentes.find((fuente) => fuente.idFuente === fuenteSeleccionadaId) || null;
   const cuentaVinculada = (fuente) => fuente.tipo?.toUpperCase() === "CORREO"
-    ? cuentasGmail.find((cuenta) => cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase())
+    ? cuentasGmail.find((cuenta) => cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase()) || null
     : null;
   const cuentasSinFuente = cuentasGmail.filter((cuenta) => !fuentes.some((fuente) => fuente.tipo?.toUpperCase() === "CORREO" && cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase()));
 
@@ -43,7 +43,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
               key={fuente.idFuente}
               fuente={fuente}
               gmailConectado={gmailConectado}
-              cuentaVinculada={Boolean(cuentaVinculada(fuente))}
+              cuentaVinculada={cuentaVinculada(fuente)}
               alAbrir={(evento) => abrirDetalle(fuente, evento.currentTarget)}
             />
           ))}
@@ -67,6 +67,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
         conexionCargando={conexionCargando}
         errorGmail={errorGmail}
         alReconectarGmail={alReconectarGmail}
+        alAutorizarContactos={alAutorizarContactosGmail}
         cuentaSeleccionadaId={cuentaSeleccionadaId}
         seleccionarCuentaGmail={seleccionarCuentaGmail}
         desconectarGmail={desconectarGmail}
