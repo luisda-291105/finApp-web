@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import ModalCrearMovimientoContable from "../../../../components/domain/modales/ModalCrearMovimientoContable";
+import ModalCrearMovimientoContable from "../../../../features/contabilidad/components/modals/ModalCrearMovimientoContable";
 
 afterEach(cleanup);
 

@@ -2,17 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import PaginaDashboardContabilidad from "../../pages/PaginaDashboardContabilidad";
-import { listarBolsillos } from "../../services/bolsilloServicio";
-import { listarMovimientos, obtenerResumenesBolsillos } from "../../services/movimientoContableServicio";
+import { ContabilidadPage as PaginaDashboardContabilidad } from "../../features/contabilidad";
+import { listarBolsillos } from "../../features/contabilidad/services/bolsillosService";
+import { listarMovimientos, obtenerResumenesBolsillos } from "../../features/contabilidad/services/movimientosService";
 
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ usuario: { idUsuario: "usuario-prueba", nombre: "Ana Pérez" } }),
 }));
-vi.mock("../../services/bolsilloServicio", () => ({
+vi.mock("../../features/contabilidad/services/bolsillosService", () => ({
   listarBolsillos: vi.fn(), crearBolsillo: vi.fn(), actualizarBolsillo: vi.fn(), eliminarBolsillo: vi.fn(),
 }));
-vi.mock("../../services/movimientoContableServicio", () => ({
+vi.mock("../../features/contabilidad/services/movimientosService", () => ({
   listarMovimientos: vi.fn(), crearMovimiento: vi.fn(), actualizarMovimiento: vi.fn(),
   eliminarMovimiento: vi.fn(), obtenerResumenesBolsillos: vi.fn(),
 }));

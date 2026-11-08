@@ -8,12 +8,12 @@
  */
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { BotonCerrar } from "../../ui/BotonCerrar";
-import RespuestaModal from "../../ui/RespuestaModal";
-import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
-import { useDeslizarParaCerrar } from "../../../hooks/useDeslizarParaCerrar";
-import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
-import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../utils/formatoPesos";
+import { BotonCerrar } from "../../../../components/ui/BotonCerrar";
+import RespuestaModal from "../../../../components/ui/RespuestaModal";
+import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
+import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
+import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
+import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../../utils/formatoPesos";
 
 function fechaLocal() {
   const hoy = new Date();

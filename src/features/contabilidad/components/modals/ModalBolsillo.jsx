@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import ModalDetalleRegistro from "./ModalDetalleRegistro";
-import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../utils/formatoPesos";
+import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
+import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../../utils/formatoPesos";
 
 const TIPO_NUEVO = "__TIPO_NUEVO__";
 const TIPOS_BASE = ["INGRESO", "GASTO", "AHORRO"];

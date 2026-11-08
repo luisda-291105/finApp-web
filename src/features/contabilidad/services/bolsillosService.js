@@ -1,5 +1,5 @@
-import { getEndpoint } from "../config/api.config";
-import { crear, obtener, actualizar, eliminar } from "./httpServicio";
+import { getEndpoint } from "../../../config/api.config";
+import { crear, obtener, actualizar, eliminar } from "../../../services/httpServicio";
 
 const rutaBase = getEndpoint("bolsillo.base");
 
