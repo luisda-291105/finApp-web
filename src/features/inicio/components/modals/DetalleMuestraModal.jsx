@@ -6,7 +6,7 @@ import { BotonCerrar } from "../../../../components/ui";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import MuestraVisual from "../cards/MuestraVisual";
-import { FUENTES_DEMO, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION, TEXTO_SIN_DATOS, normalizarFuente, obtenerValorMuestra, formatearMonto } from "../../utils/inicioHelpers";
+import { FUENTES_MUESTRAS, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION, normalizarFuente } from "../../utils/inicioHelpers";
 
 const opcionesTrampa = (panelRef) => ({
   allowOutsideClick: true,
@@ -26,15 +26,13 @@ export default function DetalleMuestraModal({
   useRetornoDeFoco({ activo: abierto, triggerRef });
   if (!muestra) return null;
 
-  const fuenteDemo = FUENTES_DEMO.find((fuente) => fuente.valor === normalizarFuente(muestra.fuente));
-  const etiquetaFuente = fuenteDemo?.etiqueta || muestra.fuente;
+  const fuente = FUENTES_MUESTRAS.find((opcion) => opcion.valor === normalizarFuente(muestra.fuente));
+  const etiquetaFuente = fuente?.etiqueta || muestra.fuente;
   const segmento = SEGMENTOS_CONTABLES.find((opcion) => opcion.valor === (muestra.segmentoContable || "todos"));
   const tipoDemo = TIPOS_VISUALIZACION.find((opcion) => opcion.valor === muestra.tipo);
   const etiquetaTipo = tipoDemo?.etiqueta || muestra.tipo;
-  const valor = obtenerValorMuestra(muestra);
-  const tipoValido = TIPOS_VISUALIZACION.some((opcion) => opcion.valor === muestra.tipo);
-  const valorFormateado = valor && tipoValido ? formatearMonto(valor) : TEXTO_SIN_DATOS;
-  const nombreFuente = `${etiquetaFuente}${segmento ? ` · ${segmento.etiqueta}` : ""}`;
+  const cuentaCorreo = normalizarFuente(muestra.fuente) === "correo" ? (muestra.cuentaCorreoEtiqueta || "") : "";
+  const nombreFuente = `${etiquetaFuente}${segmento ? ` · ${segmento.etiqueta}` : ""}${cuentaCorreo ? ` · ${cuentaCorreo}` : ""}`;
   const focoTrap = { ...opcionesTrampa(panelRef), initialFocus: () => panelRef.current };
   const cerrarDesdeFondo = (evento) => { if (evento.target === evento.currentTarget) alCerrar(); };
 
@@ -68,18 +66,11 @@ export default function DetalleMuestraModal({
                   <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-slate-text">{etiquetaTipo}</span>
                 </div>
                 <div className="flex min-h-28 flex-col justify-center gap-2 px-4 py-4"><MuestraVisual muestra={muestra} temaOscuro={temaOscuro} /></div>
-                <div className="grid grid-cols-2 gap-3 border-t border-border-line/20 px-4 py-3">
-                  <div><p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p><p className="text-sm text-bg-dark">{nombreFuente}</p></div>
-                  <div><p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Valor</p><p className="text-sm text-bg-dark">{valorFormateado}</p></div>
+                <div className="border-t border-border-line/20 px-4 py-3">
+                  <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p>
+                  <p className="break-words text-sm text-bg-dark">{nombreFuente}</p>
                 </div>
               </section>
-
-              <dl className="mb-6 grid grid-cols-2 gap-x-5 gap-y-4">
-                <div><dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Título</dt><dd className="mt-0.5 break-words text-sm text-bg-dark">{muestra.titulo}</dd></div>
-                <div><dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</dt><dd className="mt-0.5 text-sm text-bg-dark">{nombreFuente}</dd></div>
-                <div><dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Tipo</dt><dd className="mt-0.5 text-sm text-bg-dark">{etiquetaTipo}</dd></div>
-                <div><dt className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Valor</dt><dd className="mt-0.5 text-sm text-bg-dark">{valorFormateado}</dd></div>
-              </dl>
 
               <section aria-label="Ir a la fuente de la muestra" className={`mb-5 rounded-xl border border-border-line/40 p-4 ${temaOscuro ? "bg-bg-dark/60" : "bg-bg-cream/60"}`}>
                 <p className="mb-2 text-sm text-slate-text">Continuar en {etiquetaFuente}</p>
@@ -88,7 +79,6 @@ export default function DetalleMuestraModal({
 
               {confirmandoEliminacion && <div role="alert" className="mb-4 rounded-xl border border-red-300/50 bg-red-50/60 p-3 text-sm text-bg-dark">¿Eliminar esta muestra? Esta acción no se puede deshacer.</div>}
               <div className="grid grid-cols-2 gap-2 border-t border-border-line/20 pt-4">
-                <button type="button" onClick={alCrear} className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">Nueva muestra</button>
                 <button type="button" onClick={alEditar} className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">Editar</button>
                 <button type="button" onClick={alEliminar} disabled={eliminando} className="rounded-xl border border-red-300/60 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">{eliminando ? "Eliminando…" : confirmandoEliminacion ? "Confirmar eliminación" : "Eliminar"}</button>
                 {confirmandoEliminacion && <button type="button" onClick={alCancelarEliminacion} className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">Cancelar</button>}

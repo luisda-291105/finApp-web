@@ -3,32 +3,16 @@ import { crear, obtener, actualizar, eliminar } from "../../../services/httpServ
 const ruta = "/api/muestras";
 const tipoAApi = { tarjeta: "TARJETA", grafica: "GRAFICA", metrica: "METRICA", mapa_calor: "MAPA_CALOR" };
 const tipoAUi = Object.fromEntries(Object.entries(tipoAApi).map(([ui, api]) => [api, ui]));
-const valoresDemo = { bolsillos: 2300, ingresos: 3800000, gastos: 277000, otros: 450000, todos: 3473000, tarjetas: 890.4 };
-const serieDemo = [
-  { etiqueta: "L", altura: 35 }, { etiqueta: "M", altura: 60 }, { etiqueta: "X", altura: 45 },
-  { etiqueta: "J", altura: 85 }, { etiqueta: "V", altura: 55 },
-];
-const intensidadesDemo = [
-  [1, 2, 0, 3, 4], [0, 1, 2, 2, 1], [3, 0, 1, 4, 2], [2, 2, 1, 0, 3],
-  [1, 3, 2, 4, 0], [4, 1, 0, 2, 2], [0, 2, 3, 1, 4],
-];
 
 function prepararPayload(muestra) {
   const tipo = tipoAApi[muestra.tipo] || muestra.tipo;
-  const fuente = muestra.fuente === "transacciones" ? "contabilidad" : muestra.fuente;
+  const fuente = muestra.fuente;
   const segmentoContable = fuente === "contabilidad" ? (muestra.segmentoContable || "todos") : null;
-  const valor = fuente === "contabilidad" ? valoresDemo[segmentoContable] : valoresDemo[fuente];
+  const cuentaCorreo = fuente === "correo" ? (muestra.cuentaCorreo || "todas") : null;
   return {
     tipo,
     titulo: muestra.titulo.trim(),
-    datos: JSON.stringify({
-      fuente,
-      segmentoContable,
-      valor: valor ?? null,
-      variacion: "+12.4 %",
-      serie: serieDemo,
-      intensidades: intensidadesDemo,
-    }),
+    datos: JSON.stringify({ fuente, segmentoContable, cuentaCorreo }),
   };
 }
 
@@ -42,6 +26,7 @@ function normalizarRespuesta(muestra) {
     tipo: tipoAUi[String(muestra.tipo).toUpperCase()] || "tarjeta",
     fuente: datos.fuente === "transacciones" || !datos.fuente ? "contabilidad" : datos.fuente,
     segmentoContable: datos.segmentoContable || "todos",
+    cuentaCorreo: datos.cuentaCorreo || "todas",
     valor: datos.valor,
     variacion: datos.variacion,
     serie: Array.isArray(datos.serie) ? datos.serie : undefined,

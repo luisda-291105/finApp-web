@@ -49,7 +49,9 @@ describe("PaginaDashboardSuscripciones", () => {
 
     expect(await screen.findByRole("heading", { name: "Suscripciones" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Netflix" })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("1 suscripciones detectadas en 1 cuenta.");
+    expect(screen.getAllByRole("status").some((estado) =>
+      estado.textContent.includes("1 de 1 suscripciones detectadas en 1 cuenta.")
+    )).toBe(true);
     expect(within(screen.getByRole("list", { name: "Suscripciones de Gmail" })).getAllByRole("listitem")).toHaveLength(1);
     expect(listarSuscripcionesGmail).toHaveBeenCalledOnce();
   });

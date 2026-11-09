@@ -1,17 +1,18 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTema } from "../../../context/TemaContext";
 import useMuestras from "../hooks/useMuestras";
 import MuestraCard from "../components/cards/MuestraCard";
 import CrearMuestraModal from "../components/modals/CrearMuestraModal";
 import DetalleMuestraModal from "../components/modals/DetalleMuestraModal";
-import { BORRADOR_VACIO, normalizarFuente } from "../utils/inicioHelpers";
+import { BORRADOR_VACIO, normalizarFuente, obtenerFuente } from "../utils/inicioHelpers";
+import { listarCuentasGmail } from "../../../services/gmailServicio";
 
 /** Compone Inicio y coordina los modales con el hook de muestras. */
 export default function InicioPage() {
   const { tema } = useTema();
   const temaOscuro = tema === "oscuro";
   const {
-    usuario, navigate, muestras, cargandoMuestras, guardandoMuestra, eliminandoMuestra,
+    usuario, navigate, muestras, datosMuestras, cargandoMuestras, guardandoMuestra, eliminandoMuestra,
     errorPersistencia, setErrorPersistencia, guardarMuestra, eliminarMuestraPersistida,
   } = useMuestras();
   const [borrador, setBorrador] = useState(BORRADOR_VACIO);
@@ -19,8 +20,28 @@ export default function InicioPage() {
   const [muestraDetalle, setMuestraDetalle] = useState(null);
   const [indiceMuestraEditando, setIndiceMuestraEditando] = useState(null);
   const [confirmarEliminacion, setConfirmarEliminacion] = useState(false);
+  const [cuentasCorreo, setCuentasCorreo] = useState([]);
+  const [cargandoCuentasCorreo, setCargandoCuentasCorreo] = useState(false);
+  const [errorCuentasCorreo, setErrorCuentasCorreo] = useState("");
   const triggerRef = useRef(null);
   const detalleTriggerRef = useRef(null);
+
+  useEffect(() => {
+    let vigente = true;
+    if (!modalAbierto || normalizarFuente(borrador.fuente) !== "correo" || !usuario?.idUsuario) {
+      setCargandoCuentasCorreo(false);
+      setErrorCuentasCorreo("");
+      return () => { vigente = false; };
+    }
+
+    setCargandoCuentasCorreo(true);
+    setErrorCuentasCorreo("");
+    listarCuentasGmail()
+      .then((cuentas) => { if (vigente) setCuentasCorreo(cuentas); })
+      .catch((error) => { if (vigente) setErrorCuentasCorreo(error?.message || "No se pudieron cargar las cuentas de correo."); })
+      .finally(() => { if (vigente) setCargandoCuentasCorreo(false); });
+    return () => { vigente = false; };
+  }, [modalAbierto, borrador.fuente, usuario?.idUsuario]);
 
   const exigirUsuario = () => {
     if (usuario?.idUsuario) return true;
@@ -69,7 +90,7 @@ export default function InicioPage() {
   const alEditarMuestra = () => {
     if (!exigirUsuario()) return;
     setErrorPersistencia("");
-    const indice = muestras.indexOf(muestraDetalle);
+    const indice = muestras.findIndex((muestra) => String(muestra.id) === String(muestraDetalle.id));
     if (indice < 0) return;
     setIndiceMuestraEditando(indice);
     setBorrador({
@@ -77,6 +98,7 @@ export default function InicioPage() {
       fuente: normalizarFuente(muestraDetalle.fuente),
       tipo: muestraDetalle.tipo,
       segmentoContable: muestraDetalle.segmentoContable || "todos",
+      cuentaCorreo: muestraDetalle.cuentaCorreo || "todas",
     });
     setConfirmarEliminacion(false);
     setMuestraDetalle(null);
@@ -96,15 +118,8 @@ export default function InicioPage() {
   };
 
   const alActivarMuestra = (fuente) => {
-    const origen = normalizarFuente(fuente);
-    const destino = {
-      bolsillos: "/dashboard/grupos",
-      contabilidad: "/dashboard/contabilidad",
-      ingresos: "/dashboard/contabilidad",
-      gastos: "/dashboard/contabilidad",
-      tarjetas: "/dashboard/tarjetas",
-    }[origen];
-    if (destino) navigate(destino);
+    const origen = obtenerFuente(normalizarFuente(fuente));
+    if (origen?.destino) navigate(origen.destino);
   };
 
   return (
@@ -121,8 +136,17 @@ export default function InicioPage() {
 
         {errorPersistencia && !modalAbierto && !muestraDetalle && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{errorPersistencia}</p>}
         {cargandoMuestras && <p role="status" className="text-sm text-slate-text">Cargando tus muestras guardadas…</p>}
-        <ul data-testid="lista-muestras" id="lista-muestras" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {muestras.map((muestra, indice) => <MuestraCard key={muestra.id || indice} muestra={muestra} indice={indice} temaOscuro={temaOscuro} alAbrir={alAbrirDetalle} />)}
+        <ul data-testid="lista-muestras" id="lista-muestras" className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {muestras.map((muestra, indice) => {
+            const clave = `${normalizarFuente(muestra.fuente)}:${muestra.segmentoContable || "todos"}:${muestra.cuentaCorreo || "todas"}`;
+            const datos = datosMuestras[clave];
+            const muestraActualizada = {
+              ...muestra,
+              ...(datos || {}),
+              cargando: datos ? datos.cargando === true : true,
+            };
+            return <MuestraCard key={muestra.id || indice} muestra={muestraActualizada} indice={indice} temaOscuro={temaOscuro} alAbrir={alAbrirDetalle} />;
+          })}
         </ul>
       </section>
 
@@ -132,6 +156,9 @@ export default function InicioPage() {
         indiceEditando={indiceMuestraEditando}
         guardando={guardandoMuestra}
         error={errorPersistencia}
+        cuentasCorreo={cuentasCorreo}
+        cargandoCuentasCorreo={cargandoCuentasCorreo}
+        errorCuentasCorreo={errorCuentasCorreo}
         triggerRef={triggerRef}
         alCambiar={alCambiarBorrador}
         alGuardar={alGuardarMuestra}

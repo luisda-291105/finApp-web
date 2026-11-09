@@ -18,6 +18,7 @@ const opcionesTrampa = (panelRef) => ({
 /** Marco modal accesible para el formulario de creación/edición de muestras. */
 export default function CrearMuestraModal({
   abierto, borrador, indiceEditando, guardando, error, triggerRef,
+  cuentasCorreo, cargandoCuentasCorreo, errorCuentasCorreo,
   alCambiar, alGuardar, alCerrar,
 }) {
   const panelRef = useRef(null);
@@ -55,7 +56,7 @@ export default function CrearMuestraModal({
               <BotonCerrar ariaLabel={indiceEditando === null ? "Cerrar creación de muestra" : "Cerrar edición de muestra"} alCerrar={alCerrar} className="text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark focus-visible:ring-emerald-primary" />
             </header>
 
-            <CrearMuestraForm borrador={borrador} indiceEditando={indiceEditando} guardando={guardando} error={error} alCambiar={alCambiar} alGuardar={alGuardar} />
+            <CrearMuestraForm borrador={borrador} indiceEditando={indiceEditando} guardando={guardando} error={error} cuentasCorreo={cuentasCorreo} cargandoCuentasCorreo={cargandoCuentasCorreo} errorCuentasCorreo={errorCuentasCorreo} alCambiar={alCambiar} alGuardar={alGuardar} />
           </motion.div>
         </FocusTrap>
       </AnimatePresence>
