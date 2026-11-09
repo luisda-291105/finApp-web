@@ -47,7 +47,7 @@ vi.mock("../../context/TemaContext", () => ({
 vi.mock("../../context/GmailContext", () => ({
   GmailProvider: ({ children }) => children,
   useGmail: () => ({
-    tokenGmail: "",
+    gmailConectado: false,
     cuentaGmail: "",
     cuentasGmail: [],
     cuentaSeleccionadaId: null,

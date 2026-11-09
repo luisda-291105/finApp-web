@@ -78,6 +78,20 @@ describe("httpServicio", () => {
     );
   });
 
+  it("notifica que la sesión expiró cuando Gmail responde 401", async () => {
+    const notificarSesion = vi.spyOn(window, "dispatchEvent");
+    fetch.mockResolvedValue(
+      crearRespuesta({ status: 401, cuerpo: { message: "No hay una sesión activa." } }),
+    );
+
+    await expect(obtener("/api/gmail/suscripciones")).rejects.toThrow("No hay una sesión activa.");
+
+    expect(notificarSesion).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "finapp:sesion-requerida" }),
+    );
+    notificarSesion.mockRestore();
+  });
+
   it("eliminar lanza el texto del backend cuando el cuerpo no es JSON", async () => {
     fetch.mockResolvedValue(
       crearRespuesta({ status: 400, cuerpo: "Solicitud inválida" }),

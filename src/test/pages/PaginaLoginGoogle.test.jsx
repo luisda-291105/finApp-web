@@ -32,7 +32,7 @@ describe("PaginaLogin — callback de Google", () => {
   beforeEach(() => {
     mocks.obtenerUsuarioActivo.mockReset();
     mocks.guardarUsuario.mockReset();
-    sessionStorage.clear();
+    localStorage.clear();
   });
 
   it("verifica la sesión y abre el dashboard después del callback exitoso", async () => {

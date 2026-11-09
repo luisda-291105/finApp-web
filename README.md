@@ -2,10 +2,21 @@ He recopilado la idea que fuimos definiendo y la separé del estado técnico act
 
  # FinApp
 
-## Conectar Gmail
+ ## Autenticación
+
+ El backend emite un JWT de 8 horas en la cookie `FINAPP_AUTH` (`HttpOnly`, `SameSite=Lax`);
+ las rutas protegidas validan esa cookie. El frontend la envía con `credentials: include` y
+ solo guarda un indicador local de sesión, nunca el token. Genera una clave segura con
+ `openssl rand -base64 32` y configúrala como `FINAPP_JWT_SECRET` en el entorno del backend.
+ En producción configura también `FINAPP_JWT_COOKIE_SECURE=true` para requerir HTTPS. Después
+ de esta migración, inicia sesión de nuevo para recibir la cookie JWT; las antiguas sesiones
+ HTTP ya no autentican las rutas.
+
+ ## Conectar Gmail
 
 La página **Correos** consulta los mensajes recibidos en las direcciones activas de tipo
-`CORREO`. Para habilitar Gmail:
+`CORREO`. El navegador solo inicia OAuth y envía el código al backend; el backend conserva
+las credenciales y consulta Gmail. Para habilitar Gmail:
 
 1. En un proyecto de Google Cloud, habilita Gmail API y configura la pantalla de
    consentimiento OAuth.
@@ -14,13 +25,46 @@ La página **Correos** consulta los mensajes recibidos en las direcciones activa
 3. Copia `.env.example` a `.env` y completa `VITE_GOOGLE_CLIENT_ID`.
 4. Autoriza Gmail desde la página Correos.
 
-FinApp solicita el alcance restringido de solo lectura `gmail.readonly`, que permite leer
-la bandeja completa. La consulta de FinApp se limita a los mensajes recientes de la bandeja
-de entrada que coincidan con las direcciones registradas como fuentes. El token vive solo en
-memoria del navegador y los mensajes no se guardan ni se envían al backend. Las categorías de contabilidad y entretenimiento
-se infieren desde el remitente, asunto y fragmento; la categoría importante también usa la
-etiqueta de importancia de Gmail. Una aplicación pública que solicite este alcance debe
-completar la verificación OAuth de Google.
+FinApp solicita el alcance de solo lectura `gmail.readonly`. El frontend lee mensajes y
+suscripciones guardados en la base de datos mediante DTOs del backend; no consulta Gmail.
+El backend sincroniza el historial cada cinco minutos y también procesa eventos de Google
+Cloud Pub/Sub cuando están configurados. Los cuerpos completos se cifran antes de guardarse
+y se purgan después de 90 días. Los contactos siguen consultándose bajo demanda.
+En bases existentes, ejecuta las migraciones
+`finApp-backend/sql/063_ampliar_contenido_cifrado_gmail.sql`,
+`finApp-backend/sql/065_crear_modelo_suscripciones_gmail.sql` y
+`finApp-backend/sql/066_movimientos_automaticos_gmail.sql` para ampliar la columna
+cifrada, crear la tabla de suscripciones y habilitar movimientos automáticos desde Gmail.
+La sincronización pagina Gmail en lotes de hasta
+500 y recorre todas las páginas de los últimos 90 días, sin un límite global de mensajes;
+la retención de cuerpos sigue siendo de 90 días. Las suscripciones se guardan en su propia
+tabla y se conservan hasta desconectar la cuenta.
+Las categorías de contabilidad y entretenimiento se infieren desde el remitente, asunto y
+fragmento; la categoría importante también usa las etiquetas de Gmail. Una aplicación pública
+que solicite este alcance debe completar la verificación OAuth de Google.
+
+### Configurar Gmail Push
+
+1. Habilita Gmail API y Pub/Sub API en el mismo proyecto de Google Cloud.
+2. Crea un tópico Pub/Sub en el mismo proyecto y concede `Pub/Sub Publisher` a
+   `gmail-api-push@system.gserviceaccount.com` sobre ese tópico.
+3. Crea una suscripción push dirigida a `https://<dominio-backend>/api/gmail/webhook/pubsub`.
+   Configura autenticación OIDC de Pub/Sub con una cuenta de servicio y usa la audiencia OIDC
+   configurada en el backend. Asegúrate de que el agente de servicio de Pub/Sub pueda emitir
+   tokens para la cuenta de servicio elegida.
+4. Configura en el entorno del backend:
+   - `GOOGLE_PUBSUB_TOPIC`: nombre completo, por ejemplo
+     `projects/<proyecto>/topics/<topico>`.
+   - `GOOGLE_PUBSUB_AUDIENCE`: audiencia exacta usada por la suscripción push.
+   - `GOOGLE_PUBSUB_SERVICE_ACCOUNT`: correo de la cuenta de servicio que firma el token OIDC.
+5. Reinicia el backend. Las cuentas Gmail conectadas se registran en el tópico; el backend
+   revisa diariamente y renueva `watch` cuando queda menos de un día (Google limita cada
+   `watch` a siete días).
+
+El endpoint valida la firma OIDC, la audiencia y la cuenta de servicio antes de aceptar
+notificaciones. Requiere un backend alcanzable desde Pub/Sub por HTTPS; `localhost` no es
+accesible desde Google Cloud. Gmail Push entrega cambios del buzón, no notificaciones de
+Google Contacts.
 
  ## Visión
 

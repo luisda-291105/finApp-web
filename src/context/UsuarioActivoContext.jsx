@@ -1,5 +1,5 @@
 /**
- * @uso        Contexto de usuario activo respaldado por la sesión del servidor
+ * @uso        Contexto de usuario activo respaldado por un JWT HttpOnly del servidor
  * @funciones  UsuarioActivoProvider, useUsuarioActivo
  * @datos      usuario, estadoSesion, guardarUsuario, limpiarUsuario y cerrarSesion
  * @eventos    Comprueba sesión al iniciar; recargar dashboard la conserva y salir del dashboard la cierra
@@ -22,7 +22,7 @@ const contextoPorDefecto = {
 const UsuarioActivoContext = createContext(contextoPorDefecto);
 
 const CLAVE_ALMACEN = "finapp_usuario_activo";
-const CLAVE_SESION_PESTANA = "finapp_sesion_pestana";
+const CLAVE_SESION_AUTENTICADA = "finapp_sesion_autenticada";
 
 export function UsuarioActivoProvider({ children }) {
   // El proveedor también se monta en vistas/pruebas aisladas fuera de un Router.
@@ -36,10 +36,10 @@ export function UsuarioActivoProvider({ children }) {
   useEffect(() => {
     let activo = true;
     const revisionInicial = revisionSesion.current;
-    let sesionDeEstaPestana = false;
-    try { sesionDeEstaPestana = sessionStorage.getItem(CLAVE_SESION_PESTANA) === "activa"; }
-    catch { sesionDeEstaPestana = false; }
-    if (!sesionDeEstaPestana) {
+    let sesionMarcada = false;
+    try { sesionMarcada = localStorage.getItem(CLAVE_SESION_AUTENTICADA) === "activa"; }
+    catch { sesionMarcada = false; }
+    if (!sesionMarcada) {
       setUsuario(null);
       setEstadoSesion("sin-sesion");
       try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
@@ -60,7 +60,7 @@ export function UsuarioActivoProvider({ children }) {
       if (!activo || revisionSesion.current !== revisionInicial) return;
       setUsuario(null);
       setEstadoSesion("sin-sesion");
-      try { sessionStorage.removeItem(CLAVE_SESION_PESTANA); } catch { /* Almacenamiento opcional. */ }
+      try { localStorage.removeItem(CLAVE_SESION_AUTENTICADA); } catch { /* Almacenamiento opcional. */ }
       try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
     });
     return () => { activo = false; };
@@ -75,7 +75,7 @@ export function UsuarioActivoProvider({ children }) {
       revisionSesion.current += 1;
       setUsuario(null);
       setEstadoSesion("sin-sesion");
-      try { sessionStorage.removeItem(CLAVE_SESION_PESTANA); } catch { /* Almacenamiento opcional. */ }
+      try { localStorage.removeItem(CLAVE_SESION_AUTENTICADA); } catch { /* Almacenamiento opcional. */ }
       try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
     }
   }, [location.pathname]);
@@ -93,9 +93,9 @@ export function UsuarioActivoProvider({ children }) {
     setUsuario(normalizado);
     setEstadoSesion("autenticado");
     try {
-      sessionStorage.setItem(CLAVE_SESION_PESTANA, "activa");
+      localStorage.setItem(CLAVE_SESION_AUTENTICADA, "activa");
       localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(normalizado));
-    } catch { /* El almacenamiento puede estar bloqueado por el navegador. */ }
+    } catch { /* El JWT HttpOnly sigue validándose en el servidor. */ }
   };
 
   const limpiarUsuario = () => {
@@ -103,8 +103,8 @@ export function UsuarioActivoProvider({ children }) {
     setUsuario(null);
     setEstadoSesion("sin-sesion");
     try {
-      sessionStorage.removeItem(CLAVE_SESION_PESTANA);
-    } catch { /* El almacenamiento de sesión es opcional. */ }
+      localStorage.removeItem(CLAVE_SESION_AUTENTICADA);
+    } catch { /* El almacenamiento local es opcional. */ }
     try { localStorage.removeItem(CLAVE_ALMACEN); }
     catch { /* El almacenamiento local es opcional. */ }
   };

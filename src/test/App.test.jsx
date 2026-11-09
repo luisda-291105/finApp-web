@@ -81,10 +81,10 @@ vi.mock("../services/gmailServicio", () => ({
   prepararGoogleIdentityServices: () => Promise.resolve(),
 }));
 
-// Mock del contexto de usuario activo - respeta sessionStorage
+// Mock del contexto de usuario activo - respeta el indicador local de autenticación
 vi.mock("../context/UsuarioActivoContext", () => {
   const useUsuarioActivo = () => {
-    const haySesion = sessionStorage.getItem("finapp_sesion_pestana") === "activa";
+    const haySesion = localStorage.getItem("finapp_sesion_autenticada") === "activa";
     return {
       usuario: haySesion ? { idUsuario: "usuario-prueba", nombre: "Ana Prueba", fechaCreacion: "2026-01-01" } : null,
       estadoSesion: haySesion ? "autenticado" : "sin-sesion",
@@ -103,7 +103,7 @@ vi.mock("../context/UsuarioActivoContext", () => {
 vi.mock("../context/GmailContext", () => ({
   GmailProvider: ({ children }) => children,
   useGmail: () => ({
-    tokenGmail: "",
+    gmailConectado: false,
     cuentaGmail: "",
     cuentasGmail: [],
     cuentaSeleccionadaId: null,
@@ -127,14 +127,14 @@ import App from "../App";
 const ESPERA_CARGA = { timeout: 5000 };
 
 beforeEach(() => {
-  vi.spyOn(sessionStorage, "getItem").mockImplementation((key) =>
-    key === "finapp_sesion_pestana" ? "activa" : null
+  vi.spyOn(localStorage, "getItem").mockImplementation((key) =>
+    key === "finapp_sesion_autenticada" ? "activa" : null
   );
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  sessionStorage.removeItem("finapp_sesion_pestana");
+  localStorage.removeItem("finapp_sesion_autenticada");
 });
 
 function renderRuta(ruta) {
@@ -153,7 +153,7 @@ describe("rutas de la aplicación", () => {
   });
 
   it("muestra la landing cuando no hay sesión activa", () => {
-    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
+    vi.spyOn(localStorage, "getItem").mockImplementation(() => null);
     renderRuta("/");
 
     expect(
@@ -163,7 +163,7 @@ describe("rutas de la aplicación", () => {
   });
 
   it("redirige /inicio a la landing (/)", () => {
-    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
+    vi.spyOn(localStorage, "getItem").mockImplementation(() => null);
     renderRuta("/inicio");
 
     expect(
@@ -172,7 +172,7 @@ describe("rutas de la aplicación", () => {
   });
 
   it("muestra el login en su ruta directa si no hay sesión", async () => {
-    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
+    vi.spyOn(localStorage, "getItem").mockImplementation(() => null);
     renderRuta("/login");
 
     expect(await screen.findByRole("dialog", {}, ESPERA_CARGA)).toBeDefined();
@@ -188,8 +188,8 @@ describe("rutas de la aplicación", () => {
 
   it("redirige al inicio si no hay una sesión activa", async () => {
       // Sobrescribe el spy para este test: sin sesión activa
-      vi.spyOn(sessionStorage, "getItem").mockImplementation((key) =>
-        key === "finapp_sesion_pestana" ? null : null
+      vi.spyOn(localStorage, "getItem").mockImplementation((key) =>
+        key === "finapp_sesion_autenticada" ? null : null
       );
       renderRuta("/dashboard");
       expect(await screen.findByRole("heading", { name: /Controla tu dinero/ })).toBeInTheDocument();
@@ -276,7 +276,7 @@ describe("cierre que navega: foco en la vista de destino (RF-15, spec 011)", () 
   });
 
   const renderLogin = () => {
-    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => null);
+    vi.spyOn(localStorage, "getItem").mockImplementation(() => null);
     return render(
       <MemoryRouter initialEntries={["/login"]}>
         <App />
