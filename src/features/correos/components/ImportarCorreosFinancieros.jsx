@@ -1,5 +1,5 @@
 /**
- * @uso        Propone ingresos y gastos encontrados en Gmail para revisión contable
+ * @uso        Muestra alertas automáticas y ofrece revisión contable de sugerencias Gmail
  * @funciones  ImportarCorreosFinancieros()
  * @datos      Lee correo con OAuth y registra movimientos confirmados con su ID de origen
  * @eventos    Sincroniza, confirma una importación o descarta una sugerencia
@@ -11,12 +11,16 @@ import { Card } from "../../../components/ui";
 import { useGmail } from "../../../context/GmailContext";
 import { crearMovimiento, listarCorreosImportados } from "../../contabilidad/services/movimientosService";
 import { listarBolsillos as obtenerBolsillos } from "../../contabilidad/services/bolsillosService";
-import { obtenerContenidoCorreosFinancierosGmail } from "../../../services/gmailServicio";
+import {
+  confirmarNotificacionesMovimientosGmail,
+  listarNotificacionesMovimientosGmail,
+  obtenerContenidoCorreosFinancierosGmail,
+} from "../../../services/gmailServicio";
 import { esCandidatoFinanciero, extraerMovimientoSugerido } from "../utils/correoFinancieroHelpers";
 
-/** Sincroniza automáticamente al conectar Gmail y espera confirmación antes de guardar. */
+/** Consulta alertas automáticas y permite confirmar manualmente solo sugerencias pendientes. */
 export default function ImportarCorreosFinancieros({ mensajes = [] }) {
-  const { tokenGmail, cuentaGmail, cuentaSeleccionadaId } = useGmail();
+  const { gmailConectado, cuentaGmail, cuentaSeleccionadaId } = useGmail();
   const [sugerencias, setSugerencias] = useState([]);
   const [bolsillos, setBolsillos] = useState([]);
   const [selecciones, setSelecciones] = useState({});
@@ -25,16 +29,37 @@ export default function ImportarCorreosFinancieros({ mensajes = [] }) {
   const [ocupado, setOcupado] = useState("");
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
+  const [alertas, setAlertas] = useState([]);
+  const [errorAlertas, setErrorAlertas] = useState("");
   const visibles = useMemo(() => sugerencias.filter((sugerencia) => !omitidos.includes(sugerencia.idCorreo)), [sugerencias, omitidos]);
 
   useEffect(() => {
-    if (!tokenGmail) { setSugerencias([]); return undefined; }
+    if (!gmailConectado) { setAlertas([]); return undefined; }
+    let vigente = true;
+    const consultarAlertas = async () => {
+      try {
+        const respuesta = await listarNotificacionesMovimientosGmail();
+        if (vigente) {
+          setAlertas(Array.isArray(respuesta) ? respuesta : []);
+          setErrorAlertas("");
+        }
+      } catch (fallo) {
+        if (vigente) setErrorAlertas(fallo?.message || "No se pudieron consultar las alertas de movimientos Gmail.");
+      }
+    };
+    consultarAlertas();
+    const temporizador = window.setInterval(consultarAlertas, 30_000);
+    return () => { vigente = false; window.clearInterval(temporizador); };
+  }, [gmailConectado]);
+
+  useEffect(() => {
+    if (!gmailConectado || !cuentaSeleccionadaId) { setSugerencias([]); return undefined; }
     let vigente = true;
     const sincronizar = async () => {
       setCargando(true); setError("");
       try {
         const [respuestaCorreos, respuestaBolsillos] = await Promise.all([
-          obtenerContenidoCorreosFinancierosGmail(tokenGmail, mensajes
+          obtenerContenidoCorreosFinancierosGmail(cuentaSeleccionadaId, mensajes
             .filter(esCandidatoFinanciero)
             .slice(0, 5)
             .map((correo) => ({ ...correo, cuentaGmailId: cuentaSeleccionadaId }))),
@@ -52,7 +77,7 @@ export default function ImportarCorreosFinancieros({ mensajes = [] }) {
     };
     sincronizar();
     return () => { vigente = false; };
-  }, [tokenGmail, cuentaGmail, cuentaSeleccionadaId, mensajes]);
+  }, [gmailConectado, cuentaGmail, cuentaSeleccionadaId, mensajes]);
 
   const importar = async (sugerencia) => {
     const idBolsillo = selecciones[sugerencia.idCorreo];
@@ -72,20 +97,35 @@ export default function ImportarCorreosFinancieros({ mensajes = [] }) {
     } finally { setOcupado(""); }
   };
 
-  if (!tokenGmail) return null;
+  const confirmarAlertas = async () => {
+    try {
+      await confirmarNotificacionesMovimientosGmail(alertas.map((alerta) => alerta.id));
+      setAlertas([]);
+    } catch (fallo) {
+      setErrorAlertas(fallo?.message || "No se pudieron marcar las alertas como vistas.");
+    }
+  };
+
+  if (!gmailConectado) return null;
   return <Card className="space-y-4 p-5">
-    <div><h2 className="font-display text-base font-semibold text-bg-dark">Movimientos sugeridos desde Gmail</h2><p className="mt-1 text-sm text-slate-text">Detectamos compras, pagos, suscripciones e ingresos en {cuentaGmail || "tu cuenta"}. Revisa cada sugerencia y confirma para registrarla.</p></div>
+    <div><h2 className="font-display text-base font-semibold text-bg-dark">Movimientos de Gmail</h2><p className="mt-1 text-sm text-slate-text">El backend revisa automáticamente el contenido de los correos de Bancolombia y registra los movimientos cuando encuentra un bolsillo activo único del tipo correspondiente. Las alertas te avisan de cada registro.</p></div>
+    {alertas.length > 0 && <div role="alert" className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+      <p className="font-semibold">{alertas.length === 1 ? "Se registró automáticamente un movimiento desde Gmail." : `Se registraron automáticamente ${alertas.length} movimientos desde Gmail.`}</p>
+      <ul className="list-inside list-disc">{alertas.map((alerta) => <li key={alerta.id}>{alerta.asunto || "Movimiento Bancolombia"}</li>)}</ul>
+      <button type="button" onClick={confirmarAlertas} className="text-sm font-medium underline">Marcar como visto</button>
+    </div>}
+    {errorAlertas && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{errorAlertas}</p>}
     {cargando && <p role="status" className="text-sm text-slate-text">Analizando correos financieros…</p>}
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     {aviso && <p role="status" className="text-sm font-medium text-emerald-primary">{aviso}</p>}
-    {!cargando && visibles.length === 0 && <p className="text-sm text-slate-text">No hay nuevos movimientos para revisar. Se consultan hasta 10 correos recientes y se analizan con más detalle hasta 5 mensajes financieros. Los mensajes importados se bloquean como duplicados.</p>}
-    {visibles.length > 0 && <ul className="divide-y divide-border-line/30">{visibles.map((item) => {
+    {!cargando && visibles.length === 0 && <p className="text-sm text-slate-text">No hay sugerencias adicionales pendientes de revisión. Los movimientos automáticos se notifican aquí y las referencias importadas se bloquean como duplicados.</p>}
+    {visibles.length > 0 && <><h3 className="text-sm font-semibold text-bg-dark">Sugerencias que requieren revisión</h3><ul className="divide-y divide-border-line/30">{visibles.map((item) => {
       const opciones = bolsillos.filter((bolsillo) => bolsillo.estado !== false && String(bolsillo.tipo).toUpperCase() === item.tipo);
       return <li key={item.idCorreo} className="space-y-3 py-4 first:pt-0 last:pb-0">
         <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="truncate font-medium text-bg-dark">{item.concepto}</p><p className="truncate text-xs text-slate-text">{item.tipo === "INGRESO" ? "Ingreso" : "Gasto"} · {item.categoria} · {item.remitente} · {item.fecha} · {item.etiquetas.join(", ") || "Sin etiqueta"}</p></div><span className="shrink-0 font-semibold text-bg-dark">{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 2 }).format(item.monto)}</span></div>
         <div className="flex flex-wrap items-center gap-2"><label className="sr-only" htmlFor={`bolsillo-correo-${item.idCorreo}`}>Bolsillo para {item.concepto}</label><select id={`bolsillo-correo-${item.idCorreo}`} value={selecciones[item.idCorreo] || ""} onChange={(evento) => setSelecciones((actuales) => ({ ...actuales, [item.idCorreo]: evento.target.value }))} className="min-h-10 min-w-48 flex-1 rounded-lg border border-border-line bg-white px-3 text-sm"><option value="">Selecciona un bolsillo de {item.tipo === "INGRESO" ? "ingresos" : "gastos"}</option>{opciones.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre}</option>)}</select><button type="button" disabled={!selecciones[item.idCorreo] || ocupado === item.idCorreo} onClick={() => importar(item)} className="min-h-10 rounded-lg bg-emerald-primary px-4 text-sm font-medium text-bg-cream disabled:opacity-50">{ocupado === item.idCorreo ? "Guardando…" : "Confirmar importación"}</button><button type="button" onClick={() => setOmitidos((actuales) => [...actuales, item.idCorreo])} className="min-h-10 px-2 text-sm text-slate-text underline">Descartar</button><a href={`https://mail.google.com/mail/u/?authuser=${encodeURIComponent(cuentaGmail)}#all/${encodeURIComponent(item.idCorreo)}`} target="_blank" rel="noreferrer" className="text-sm text-emerald-primary underline">Ver correo</a></div>
         {opciones.length === 0 && <p className="text-xs text-amber-800">Crea y activa un bolsillo de tipo {item.tipo} para poder importar este movimiento.</p>}
       </li>;
-    })}</ul>}
+    })}</ul></>}
   </Card>;
 }

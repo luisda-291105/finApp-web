@@ -11,6 +11,7 @@ import { crear, obtener, actualizar, eliminar } from "../../../services/httpServ
 
 const rutaBase = getEndpoint("movimiento.base");
 const rutaResumen = getEndpoint("movimiento.resumen");
+const rutaRecurrentes = getEndpoint("movimiento.recurrentes");
 
 /** Consulta todos los movimientos o los de un bolsillo opcional y aplica el filtro de tipo. */
 export function listarMovimientos(idBolsillo, tipo = "TODOS") {
@@ -45,4 +46,9 @@ export function eliminarMovimiento(idMovimiento) {
 /** Consulta cantidad y totales por cada bolsillo del usuario activo. */
 export function obtenerResumenesBolsillos() {
   return obtener(rutaResumen);
+}
+
+/** Detecta servicios de cobro periódico a partir de gastos reales confirmados. */
+export function listarSuscripcionesRecurrentes() {
+  return obtener(rutaRecurrentes);
 }

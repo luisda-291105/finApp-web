@@ -40,7 +40,7 @@ function inicialesRemitente(remitente) {
 }
 
 /** Filtra y muestra cada correo en una tarjeta independiente con sus datos clave. */
-export default function BandejaCorreosModal({ fuente, tokenGmail, cuentaGmail, mensajesFuente, cargandoMensajes, triggerRef, alCerrar }) {
+export default function BandejaCorreosModal({ fuente, gmailConectado, cuentaId, cuentaGmail, mensajesFuente, cargandoMensajes, triggerRef, alCerrar }) {
   const [categoria, setCategoria] = useState("TODOS");
   const [correoDetalle, setCorreoDetalle] = useState(null);
   const detalleTriggerRef = useRef(null);
@@ -50,9 +50,9 @@ export default function BandejaCorreosModal({ fuente, tokenGmail, cuentaGmail, m
 
   return <>
     <ModalDetalleRegistro abierto={Boolean(fuente)} titulo={fuente ? `Correos de ${fuente.contenido}` : "Correos"} alCerrar={alCerrar} triggerRef={triggerRef}>
-    {fuente && !tokenGmail && <div className="mb-4 space-y-3"><p className="text-sm text-slate-text">{fuente.estado === false ? "Esta fuente está inactiva hasta que conectes Gmail." : "Conecta Gmail para consultar los mensajes recibidos por esta dirección."}</p><Link to="/dashboard/configuracion" className="inline-flex min-h-10 items-center rounded-lg bg-emerald-primary px-4 text-sm font-medium text-bg-cream">Ir a Configuración</Link></div>}
-    {tokenGmail && fuente?.estado === false && <div className="mb-4 space-y-3"><p className="text-sm text-slate-text">Esta dirección está registrada, pero inactiva. Revisa su estado en Configuración → Fuentes registradas.</p><Link to="/dashboard/configuracion" className="inline-flex min-h-10 items-center rounded-lg border border-emerald-primary px-4 text-sm font-medium text-emerald-primary">Abrir Configuración</Link></div>}
-    {tokenGmail && fuente && fuente.estado !== false && <Card className="min-w-0 max-w-full overflow-hidden p-0">
+    {fuente && !gmailConectado && <div className="mb-4 space-y-3"><p className="text-sm text-slate-text">{fuente.estado === false ? "Esta fuente está inactiva hasta que conectes Gmail." : "Conecta Gmail para consultar los mensajes recibidos por esta dirección."}</p><Link to="/dashboard/configuracion" className="inline-flex min-h-10 items-center rounded-lg bg-emerald-primary px-4 text-sm font-medium text-bg-cream">Ir a Configuración</Link></div>}
+    {gmailConectado && fuente?.estado === false && <div className="mb-4 space-y-3"><p className="text-sm text-slate-text">Esta dirección está registrada, pero inactiva. Revisa su estado en Configuración → Fuentes registradas.</p><Link to="/dashboard/configuracion" className="inline-flex min-h-10 items-center rounded-lg border border-emerald-primary px-4 text-sm font-medium text-emerald-primary">Abrir Configuración</Link></div>}
+    {gmailConectado && fuente && fuente.estado !== false && <Card className="min-w-0 max-w-full overflow-hidden p-0">
       <div className="flex flex-wrap gap-2 bg-transparent px-4 pb-2 pt-4" role="group" aria-label="Filtrar correos por categoría">
         {CATEGORIAS_CORREO.map((item) => {
           const seleccionada = categoria === item.id;
@@ -93,6 +93,6 @@ export default function BandejaCorreosModal({ fuente, tokenGmail, cuentaGmail, m
       {!cargandoMensajes && mensajesFuente.length > 0 && <p className="border-t border-border-line/20 px-5 py-3 text-xs text-slate-text">Se muestran hasta 10 mensajes recientes para esta dirección. Las categorías se calculan en esta vista a partir del asunto, remitente, fragmento y etiquetas de Gmail.</p>}
     </Card>}
     </ModalDetalleRegistro>
-    <DetalleCorreoModal abierto={Boolean(fuente && correoDetalle)} correo={correoDetalle} fuente={fuente} tokenGmail={tokenGmail} triggerRef={detalleTriggerRef} alCerrar={() => setCorreoDetalle(null)} />
+    <DetalleCorreoModal abierto={Boolean(fuente && correoDetalle)} correo={correoDetalle} fuente={fuente} cuentaId={cuentaId} triggerRef={detalleTriggerRef} alCerrar={() => setCorreoDetalle(null)} />
   </>;
 }

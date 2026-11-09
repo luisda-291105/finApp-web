@@ -38,6 +38,7 @@ export const ENDPOINTS = {
   movimiento: {
     base: "/movimiento",
     resumen: "/movimiento/resumen",
+    recurrentes: "/movimiento/recurrentes",
   },
   tarjeta: {
     base: "/tarjeta",
@@ -66,6 +67,8 @@ export const ENDPOINTS = {
     callback: "/api/gmail/callback",
     conexion: "/api/gmail/conexion",
     cuentas: "/api/gmail/cuentas",
+    suscripciones: "/api/gmail/suscripciones",
+    movimientosNotificaciones: "/api/gmail/movimientos/notificaciones",
   },
 };
 

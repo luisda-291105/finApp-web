@@ -1,19 +1,19 @@
 /**
  * @uso        Tarjeta de fuente de correo o cuenta Gmail seleccionable
- * @funciones  CorreoCuentaCard({ fuente, tokenGmail, ... })
+ * @funciones  CorreoCuentaCard({ fuente, gmailConectado, ... })
  * @datos      Presenta estado y cantidad de mensajes consultados
  * @eventos    Click para abrir la bandeja de esa dirección
  * @estados    Ninguno
  * @usadoPor   CorreosPage
  */
 /** Presenta una dirección y su estado de conexión. */
-export default function CorreoCuentaCard({ fuente, tokenGmail, cuentaSeleccionadaId, conexionCargando, seleccionada, cantidadMensajes, alAbrir }) {
+export default function CorreoCuentaCard({ fuente, gmailConectado, cuentaSeleccionadaId, conexionCargando, seleccionada, cantidadMensajes, alAbrir }) {
   const esCuenta = fuente.tipoTarjeta === "CUENTA_GMAIL";
   const cuentaSeleccionada = fuente.cuentaGmailId && String(fuente.cuentaGmailId) === String(cuentaSeleccionadaId);
-  const inactiva = fuente.estado === false || (!tokenGmail && !conexionCargando) || (Boolean(fuente.cuentaGmailId) && !cuentaSeleccionada);
+  const inactiva = fuente.estado === false || (!gmailConectado && !conexionCargando) || (Boolean(fuente.cuentaGmailId) && !cuentaSeleccionada);
   const estado = esCuenta
-    ? conexionCargando && cuentaSeleccionada ? "Conectando" : cuentaSeleccionada && tokenGmail ? "Activa" : "Conectada · abrir para consultar"
-    : fuente.estado === false ? "Inactiva · deshabilitada" : fuente.cuentaGmailId && !cuentaSeleccionada ? "Conectada · abrir para consultar" : !tokenGmail ? "Inactiva · conecta Gmail" : "Activa · consulta automática";
+    ? conexionCargando && cuentaSeleccionada ? "Conectando" : cuentaSeleccionada && gmailConectado ? "Activa" : "Conectada · abrir para consultar"
+    : fuente.estado === false ? "Inactiva · deshabilitada" : fuente.cuentaGmailId && !cuentaSeleccionada ? "Conectada · abrir para consultar" : !gmailConectado ? "Inactiva · conecta Gmail" : "Activa · consulta automática";
   return <button type="button" disabled={conexionCargando && Boolean(fuente.cuentaGmailId)} onClick={alAbrir} aria-label={`Ver correos de ${fuente.contenido}`} className={`rounded-2xl border p-4 text-left transition-colors hover:border-emerald-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-60 ${seleccionada ? "border-emerald-primary bg-emerald-primary/10" : "border-border-line/40 bg-bg-cream/60"}`}>
     <span className="block text-xs uppercase tracking-wide text-slate-text">{esCuenta ? "Cuenta Gmail" : "Fuente registrada"}</span>
     <span className="mt-1 block break-all font-medium text-bg-dark">{fuente.contenido}</span>

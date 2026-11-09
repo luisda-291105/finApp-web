@@ -30,7 +30,7 @@ export default function ConfiguracionPage() {
   const avisoGmailTimerRef = useRef(null);
   const { usuario } = useUsuarioActivo();
   const { tema, alternarTema } = useTema();
-  const { tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo, conexionCargando, errorGmail, conectarGmail, desconectarGmail, seleccionarCuentaGmail } = useGmail();
+  const { gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo, conexionCargando, errorGmail, conectarGmail, desconectarGmail, seleccionarCuentaGmail } = useGmail();
 
   const { fuentes, setFuentes, cargandoFuentes, errorFuentes, setErrorFuentes, operacionFuente, confirmarFuenteGuardada: alGuardarFuente, guardarEdicionFuente, confirmarEliminacionFuente } = useFuentesConfiguracion(usuario?.idUsuario);
 
@@ -101,7 +101,7 @@ export default function ConfiguracionPage() {
         conexionCargando={conexionCargando}
         errorGmail={errorGmail}
         avisoGmail={avisoGmail}
-        tokenGmail={tokenGmail}
+        gmailConectado={gmailConectado}
         cuentaGmail={cuentaGmail}
         cuentasGmail={cuentasGmail}
         cuentaSeleccionadaId={cuentaSeleccionadaId}
@@ -128,14 +128,13 @@ export default function ConfiguracionPage() {
         triggerRef={disparadorFuentesRef}
         alGuardar={alGuardarFuente}
         fuentesExistentes={fuentes}
-        estadoInicial={Boolean(tokenGmail)}
+        estadoInicial={gmailConectado}
         alConectarGmail={conectarFuentesGmail}
         gmailConfigurado={GMAIL_CONFIGURADO}
         gmailListo={gisListo}
         conexionGmailCargando={conexionCargando}
-        gmailConectado={Boolean(tokenGmail && !errorGmail)}
+        gmailConectado={Boolean(gmailConectado && !errorGmail)}
       />
     </section>
   );
 }
-

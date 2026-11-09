@@ -101,9 +101,8 @@ export default function ImportarContactosGoogle({ abierto, contactosLocales, tri
       const cuentasFallidas = [];
       for (const cuenta of cuentas) {
         try {
-          const conexion = await obtenerConexionCuentaGmail(cuenta.id);
-          const contactosCuenta = await obtenerContactosGoogle(conexion.access_token || "");
-          const emailCuenta = conexion.email || cuenta.email;
+          const contactosCuenta = await obtenerContactosGoogle(cuenta.id);
+          const emailCuenta = cuenta.email;
           resultado.push(...contactosCuenta.map((contacto) => ({ ...contacto, googleAccountId: cuenta.id, googleAccountEmail: emailCuenta })));
           cuentasConsultadas.push(emailCuenta);
         } catch (falloCuenta) {

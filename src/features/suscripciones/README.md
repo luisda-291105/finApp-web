@@ -2,16 +2,18 @@
 
 ## Qué hace
 
-Presenta una demostración local de suscripciones, permite filtrarlas y pausar o activar cada ejemplo. Los cambios se mantienen en memoria y se reinician al recargar.
+Presenta cobros recurrentes inferidos desde gastos reales y remitentes suscritos detectados desde Gmail.
 
 ## Estructura
 
 - `pages/SuscripcionesPage`: compone el resumen, los filtros y la lista.
-- `components/cards/ResumenSuscripciones`: tarjetas de gasto mensual, suscripciones activas y próximo cobro.
-- `components/cards/SuscripcionCard`: el cuerpo de la tarjeta abre el detalle; pausa/activación sigue como acción separada.
-- `components/modals/DetalleSuscripcionModal`: fuente de pago, último pago, pagos pasados y controles CRUD visibles (edición/eliminación aún deshabilitadas).
-- `hooks/useSuscripciones`: estado local y coordinación de filtros/acciones.
-- `utils/suscripcionesData`: ejemplos, etiquetas, formato monetario y cálculos derivados.
+- `components/cards/CobrosRecurrentesReales`: métricas y tarjetas de recurrencias inferidas desde gastos confirmados.
+- `hooks/useSuscripcionesRecurrentes`: consulta el DTO de cobros recurrentes del backend.
+- `hooks/useSuscripcionesGmail`: carga desde backend las suscripciones detectadas en las cuentas Gmail autorizadas.
+- `components/cards/SuscripcionGmailCard`: resumen del remitente de correo.
+- `components/modals/BuscarSuscripcionesModal`: búsqueda de remitentes detectados.
+- `components/modals/FiltrarSuscripcionesModal`: filtros por cuenta, categoría y opción de baja.
+- `components/modals/DetalleSuscripcionModal`: detalle del remitente, confirmación de baja con un clic y enlaces para terminar la gestión en Gmail.
 - `index.js`: API pública usada por el mapa de rutas.
 
-No hay servicio en `services/` porque esta pantalla todavía no consulta ni modifica datos del backend.
+Las recurrencias se infieren en el backend desde gastos reales confirmados con intervalos regulares. Las suscripciones de correo también se consultan desde el backend usando la autorización Gmail existente y DTOs. La detección es estimada y requiere confirmación del usuario; Gmail sigue siendo el lugar para administrar las bajas.

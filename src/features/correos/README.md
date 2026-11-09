@@ -2,9 +2,9 @@
 
 ## Qué hace
 
-Lista fuentes de correo y cuentas Gmail conectadas, consulta los mensajes destinados a cada dirección y permite filtrarlos por categoría. La renovación automática ocurre cada cinco minutos mientras la vista está abierta.
+Lista fuentes de correo y cuentas Gmail conectadas, muestra desde la base de datos los mensajes destinados a cada dirección y permite filtrarlos por categoría. El backend sincroniza Gmail en segundo plano cada cinco minutos y procesa eventos Push cuando están configurados; abrir o actualizar la vista solo lee los datos persistidos.
 
-En Correos, Gmail también se analiza para sugerir ingresos, compras, pagos y suscripciones. Se leen hasta 10 mensajes recientes en una consulta conjunta para las fuentes de la cuenta; solo se descargan en serie los cuerpos de hasta 5 mensajes con señales financieras, guardándolos temporalmente en memoria para no volver a pedirlos al refrescar. El contenido se analiza temporalmente en el navegador y solo se registra un movimiento cuando la persona confirma y selecciona un bolsillo compatible. Los movimientos Gmail reutilizan `origen_tipo`, `origen_id` y `origen_nombre`; el ID de mensaje queda dentro de `origen_id` para detectar importaciones repetidas. `finApp-backend/sql/058_origen_correo_movimientos.sql` amplía esa columna para admitir la referencia compuesta.
+El backend analiza el cuerpo de los mensajes guardados de los últimos 90 días y registra automáticamente compras e ingresos cuando el contenido menciona Bancolombia, una operación inequívoca y un monto etiquetado. No basta con que el remitente o el asunto contengan esas señales. Solo registra si existe exactamente un bolsillo activo del tipo correspondiente; con cero o varios, no modifica la contabilidad. Las alertas pendientes se muestran en Correos y se pueden marcar como vistas. Los movimientos Gmail reutilizan `origen_tipo`, `origen_id` y `origen_nombre` para evitar duplicados. En bases existentes, aplica también `finApp-backend/sql/066_movimientos_automaticos_gmail.sql`.
 
 Cada cuenta Gmail conectada se representa como una fila `CORREO` en `fuente`; sus tokens OAuth cifrados se guardan en esa misma fila. La migración `finApp-backend/sql/059_consolidar_gmail_en_fuente.sql` copia las conexiones antiguas antes de eliminar las tablas duplicadas `cuenta_gmail` y `gmail_conexion`.
 
@@ -17,9 +17,9 @@ Cada cuenta Gmail conectada se representa como una fila `CORREO` en `fuente`; su
 ## Hook, servicio y utilidades
 
 - `hooks/useCorreos`: carga fuentes, sincroniza Gmail, gestiona selección y estados de consulta.
-- `services/correosService`: consulta mensajes por fuente usando la integración compartida de Gmail.
+- `services/correosService`: solicita al backend los mensajes por fuente conectada.
 - `utils/correoHelpers`: normalización, deduplicación, combinación de direcciones, fechas y filtros puros.
 
 ## API pública
 
-`index.js` expone `CorreosPage` y `CorreoCuentaCard`. Las operaciones OAuth y la conexión Gmail siguen en `src/services/gmailServicio.js`, compartidas con el contexto de Gmail.
+`index.js` expone `CorreosPage` y `CorreoCuentaCard`. Google Identity Services se usa en el navegador únicamente para autorizar y enviar el código OAuth; Gmail se sincroniza y persiste desde el backend, que expone DTOs de lectura. La consulta de Contactos y la renovación de tokens también se realizan desde el backend.

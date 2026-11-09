@@ -10,13 +10,13 @@ import RemitenteCorreo from "./detalle/RemitenteCorreo";
 import TituloCorreo from "./detalle/TituloCorreo";
 
 /** Muestra los datos del mensaje y carga su contenido completo al abrir el diálogo. */
-export default function DetalleCorreoModal({ abierto, correo, fuente, tokenGmail, triggerRef, alCerrar }) {
+export default function DetalleCorreoModal({ abierto, correo, fuente, cuentaId, triggerRef, alCerrar }) {
   const [contenido, setContenido] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!abierto || !correo?.id || !tokenGmail) {
+    if (!abierto || !correo?.id || !cuentaId) {
       setContenido("");
       setError("");
       return undefined;
@@ -25,12 +25,12 @@ export default function DetalleCorreoModal({ abierto, correo, fuente, tokenGmail
     setContenido("");
     setError("");
     setCargando(true);
-    obtenerContenidoCorreoGmail(tokenGmail, correo.id)
+    obtenerContenidoCorreoGmail(cuentaId, correo.id)
       .then((texto) => { if (vigente) setContenido(texto); })
       .catch((fallo) => { if (vigente) setError(fallo?.message || "No se pudo cargar el contenido completo del mensaje."); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
-  }, [abierto, correo?.id, tokenGmail]);
+  }, [abierto, correo?.id, cuentaId]);
 
   if (!correo) return null;
   const etiquetas = correo.nombresEtiquetas?.length ? correo.nombresEtiquetas : correo.etiquetas || [];

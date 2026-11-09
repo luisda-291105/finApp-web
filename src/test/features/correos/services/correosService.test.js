@@ -19,15 +19,15 @@ beforeEach(() => {
 
 describe("correosService", () => {
   it("mantiene solo los mensajes recibidos por la dirección de la fuente", async () => {
-    await expect(consultarCorreosDeFuente("token", FUENTE_A)).resolves.toEqual([MENSAJES[0]]);
-    expect(obtenerCorreosGmail).toHaveBeenCalledWith("token", [FUENTE_A]);
+    await expect(consultarCorreosDeFuente("cuenta", FUENTE_A)).resolves.toEqual([MENSAJES[0]]);
+    expect(obtenerCorreosGmail).toHaveBeenCalledWith("cuenta", [FUENTE_A]);
   });
 
   it("consulta una vez y reparte los mensajes entre todas las fuentes", async () => {
-    await expect(consultarCorreosDeFuentes("token", [FUENTE_A, FUENTE_B])).resolves.toEqual([
+    await expect(consultarCorreosDeFuentes("cuenta", [FUENTE_A, FUENTE_B])).resolves.toEqual([
       ["a", [MENSAJES[0]]], ["b", [MENSAJES[1]]],
     ]);
     expect(obtenerCorreosGmail).toHaveBeenCalledTimes(1);
-    expect(obtenerCorreosGmail).toHaveBeenCalledWith("token", [FUENTE_A, FUENTE_B]);
+    expect(obtenerCorreosGmail).toHaveBeenCalledWith("cuenta", [FUENTE_A, FUENTE_B]);
   });
 });

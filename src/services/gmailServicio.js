@@ -1,29 +1,25 @@
 /**
- * @uso        Autoriza y consulta mensajes de Gmail directamente desde el navegador
+ * @uso        Autoriza Google y consulta Gmail/Contacts por medio del backend
  * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail
- * @datos      Token activo en memoria del navegador; backend conserva la conexión cifrada por usuario
+ * @datos      El backend conserva y usa las credenciales; el navegador solo recibe datos de consulta
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
- * @usadoPor   GmailContext y features/configuracion, features/correos
+ * @usadoPor   GmailContext y features/configuracion, features/contactos, features/correos
  */
 import { getEndpoint } from "../config/api.config";
 
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
-const URL_API_GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me";
 const ALCANCE_GMAIL_LECTURA = "https://www.googleapis.com/auth/gmail.readonly";
 const ALCANCE_CONTACTOS_LECTURA = "https://www.googleapis.com/auth/contacts.readonly";
-const URL_API_PERSONAS = "https://people.googleapis.com/v1/people/me/connections";
 const ID_CLIENTE_GOOGLE = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GMAIL_CONFIGURADO = Boolean(ID_CLIENTE_GOOGLE);
 const MENSAJE_ACCESO_DENEGADO =
   "Google denegó el acceso (403 access_denied). Si la app está en modo de prueba, agrega tu cuenta a Usuarios de prueba en Google Cloud Console y vuelve a intentar.";
-const MAX_CORREOS_POR_CONSULTA = 10;
 const CACHE_CONSULTA_MS = 45 * 1000;
 const CACHE_CONTENIDO_MS = 5 * 60 * 1000;
 
 let cargaBiblioteca;
-const consultasEnCurso = new Map();
-const cacheEtiquetas = new Map();
+const cacheConsultas = new Map();
 const cacheContenido = new Map();
 
 function cargarBibliotecaGoogle() {
@@ -58,7 +54,7 @@ export async function prepararGoogleIdentityServices() {
   await cargarBibliotecaGoogle();
 }
 
-/** Solicita un código OAuth con popup GIS y lo devuelve mediante la respuesta JavaScript. */
+/** Solicita un código OAuth con popup GIS; las llamadas a las APIs se hacen en el backend. */
 export async function iniciarCodigoAutorizacionGmail({ incluirContactos = false, cuentaEsperada = "" } = {}) {
   if (!ID_CLIENTE_GOOGLE) {
     throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.");
@@ -107,322 +103,128 @@ export async function iniciarCodigoAutorizacionGmail({ incluirContactos = false,
   });
 }
 
-/** Lee los contactos asociados a la cuenta Google autorizada. */
-export async function obtenerContactosGoogle(token) {
-  if (!token) throw new Error("Conecta la cuenta de Google para consultar sus contactos.");
-  const contactos = [];
-  let pageToken = "";
-  do {
-    const url = new URL(URL_API_PERSONAS);
-    url.searchParams.set("personFields", "names,emailAddresses,phoneNumbers,biographies,organizations");
-    url.searchParams.set("pageSize", "1000");
-    if (pageToken) url.searchParams.set("pageToken", pageToken);
-    const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    const datos = await respuesta.json().catch(() => ({}));
-    if (!respuesta.ok) {
-      const mensajeGoogle = datos.error?.message || "";
-      const motivos = (datos.error?.details || []).map((detalle) => detalle.reason || "").join(" ");
-      if (respuesta.status === 403 && /SERVICE_DISABLED|has not been used|disabled/i.test(`${motivos} ${mensajeGoogle}`)) {
-        throw new Error("People API está desactivada en Google Cloud para esta aplicación. Actívala y vuelve a actualizar los contactos.");
-      }
-      if (respuesta.status === 403 && /ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient authentication scopes/i.test(`${motivos} ${mensajeGoogle}`)) {
-        throw new Error("La cuenta Gmail aún no concedió contacts.readonly. Autoriza el acceso desde el detalle de su fuente y vuelve a actualizar.");
-      }
-      if (respuesta.status === 403) throw new Error(`Google denegó la consulta de contactos${mensajeGoogle ? `: ${mensajeGoogle}` : ". Verifica el permiso contacts.readonly y que People API esté activada."}`);
-      if (respuesta.status === 401) throw new Error("La autorización de Google venció. Vuelve a autorizar los contactos desde el detalle de la fuente Gmail.");
-      if (respuesta.status === 429) throw new Error("Google limitó temporalmente las consultas de contactos. Espera un momento y vuelve a actualizar.");
-      throw new Error(datos.error?.message || "No se pudieron consultar los contactos de Google.");
-    }
-    contactos.push(...(datos.connections || []).map((persona) => {
-      const organizacion = persona.organizations?.find((item) => item.current) || persona.organizations?.[0] || {};
-      return {
-        googleResourceName: persona.resourceName || "",
-        nombre: persona.names?.find((item) => item.displayName)?.displayName || persona.emailAddresses?.[0]?.value || "Contacto de Google",
-        correo: persona.emailAddresses?.[0]?.value || "",
-        telefono: persona.phoneNumbers?.[0]?.canonicalForm || persona.phoneNumbers?.[0]?.value || "",
-        notas: persona.biographies?.[0]?.value || "",
-        cargo: organizacion.title || "",
-        empresa: organizacion.name || "",
-      };
-    }));
-    pageToken = datos.nextPageToken || "";
-  } while (pageToken);
-  return contactos;
-}
-
-/** Comprueba el permiso de lectura de Contactos con una consulta mínima. */
-export async function verificarPermisoContactosGoogle(token) {
-  if (!token) return false;
-  const url = new URL(URL_API_PERSONAS);
-  url.searchParams.set("personFields", "names");
-  url.searchParams.set("pageSize", "1");
-  const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (respuesta.ok) return true;
+async function solicitarBackend(url, opciones = {}) {
+  const respuesta = await fetch(url, { credentials: "include", ...opciones });
   const datos = await respuesta.json().catch(() => ({}));
-  if (respuesta.status === 403) return false;
-  throw new Error(datos.error?.message || "No se pudo verificar el permiso de Contactos de Google.");
+  if (respuesta.status === 401) {
+    cacheConsultas.clear();
+    cacheContenido.clear();
+    window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+  }
+  if (!respuesta.ok) throw new Error(datos.message || "No se pudo completar la consulta de Google.");
+  return datos;
 }
 
-/** Canjea el código recibido por redirección usando el endpoint del backend. */
+function consultarConCache(cache, clave, duracionMs, consultar) {
+  const ahora = Date.now();
+  for (const [key, registro] of cache) {
+    if (ahora - registro.creadoEn >= duracionMs) cache.delete(key);
+  }
+  const actual = cache.get(clave);
+  if (actual) return actual.promesa;
+  const registro = { creadoEn: ahora, promesa: Promise.resolve().then(consultar) };
+  cache.set(clave, registro);
+  if (cache.size > 100) cache.delete(cache.keys().next().value);
+  registro.promesa.catch(() => {
+    if (cache.get(clave) === registro) cache.delete(clave);
+  });
+  return registro.promesa;
+}
+
+/** Canjea el código OAuth en el backend; no recibe ni expone tokens de Google. */
 export async function canjearCodigoGmail(code, cuentaEsperadaId = "") {
   if (!code) throw new Error("Google no devolvió un código de autorización.");
-  const respuesta = await fetch(getEndpoint("gmail.callback"), {
+  const datos = await solicitarBackend(getEndpoint("gmail.callback"), {
     method: "POST",
-    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       "X-Requested-With": "XmlHttpRequest",
     },
     body: JSON.stringify({ code, expected_account_id: cuentaEsperadaId || undefined }),
   });
-  const datos = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    throw new Error(datos.message || datos.error || "El servidor no pudo completar la conexión con Gmail.");
-  }
-  const token = datos.access_token || datos.accessToken || datos.token;
-  if (!token || !datos.account_id) {
-    throw new Error("El servidor respondió sin un token de acceso de Gmail.");
-  }
-  return { token, email: datos.email || "Cuenta de Gmail", accountId: datos.account_id };
+  if (!datos.account_id) throw new Error("El servidor respondió sin identificar la cuenta Gmail.");
+  return {
+    email: datos.email || "Cuenta de Gmail",
+    accountId: datos.account_id,
+    pushWarning: datos.push_warning || "",
+  };
 }
 
 export async function listarCuentasGmail() {
-  const respuesta = await fetch(getEndpoint("gmail.cuentas"), { credentials: "include" });
-  const datos = await respuesta.json().catch(() => []);
-  if (!respuesta.ok) throw new Error(datos.message || "No se pudieron cargar las cuentas Gmail.");
+  const datos = await solicitarBackend(getEndpoint("gmail.cuentas"));
   return Array.isArray(datos) ? datos : [];
 }
 
+/** Obtiene del backend los remitentes suscritos ya agrupados y filtrados por usuario. */
+export async function listarSuscripcionesGmail() {
+  return solicitarBackend(getEndpoint("gmail.suscripciones"));
+}
+
+export async function listarNotificacionesMovimientosGmail() {
+  return solicitarBackend(getEndpoint("gmail.movimientosNotificaciones"));
+}
+
+export async function confirmarNotificacionesMovimientosGmail(ids) {
+  if (!ids?.length) return;
+  await solicitarBackend(`${getEndpoint("gmail.movimientosNotificaciones")}/confirmar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+}
+
 export async function obtenerConexionCuentaGmail(accountId) {
-  const ruta = `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/conexion`;
-  const respuesta = await fetch(ruta, { credentials: "include" });
-  const datos = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) throw new Error(datos.message || "No se pudo restaurar esta cuenta Gmail.");
-  return datos;
+  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/conexion`);
 }
 
 export async function eliminarCuentaGmail(accountId) {
-  const ruta = `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}`;
-  const respuesta = await fetch(ruta, { method: "DELETE", credentials: "include" });
-  if (!respuesta.ok) {
-    const datos = await respuesta.json().catch(() => ({}));
-    throw new Error(datos.message || "No se pudo desconectar esta cuenta Gmail.");
-  }
+  await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}`, { method: "DELETE" });
 }
 
-/** Recupera del backend la conexión cifrada asociada a la sesión de FinApp. */
-export async function obtenerConexionGmail() {
-  const respuesta = await fetch(getEndpoint("gmail.conexion"), { credentials: "include" });
-  const datos = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) throw new Error(datos.message || "No se pudo restaurar la conexión con Gmail.");
-  return datos;
+/** Consulta los contactos de una cuenta Google vinculada por medio del backend. */
+export async function obtenerContactosGoogle(accountId) {
+  if (!accountId) throw new Error("Selecciona una cuenta Gmail para consultar sus contactos.");
+  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/contactos`);
 }
 
-/** Elimina del backend la conexión persistida al desconectar Gmail. */
-export async function eliminarConexionGmail() {
-  const respuesta = await fetch(getEndpoint("gmail.conexion"), { method: "DELETE", credentials: "include" });
-  if (!respuesta.ok) {
-    const datos = await respuesta.json().catch(() => ({}));
-    throw new Error(datos.message || "No se pudo eliminar la conexión guardada de Gmail.");
-  }
+export async function verificarPermisoContactosGoogle(accountId) {
+  if (!accountId) return false;
+  const datos = await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/contactos/permiso`);
+  return datos.autorizado === true;
 }
 
-function validarDireccion(valor) {
-  const direccion = String(valor || "").trim();
-  return /^[^\s@{}]+@[^\s@{}]+\.[^\s@{}]+$/.test(direccion) ? direccion : null;
-}
-
-async function llamarGmail(token, recurso, parametros = {}) {
-  const url = new URL(`${URL_API_GMAIL}/${recurso}`);
-  Object.entries(parametros).forEach(([clave, valor]) => {
-    if (Array.isArray(valor)) valor.forEach((item) => url.searchParams.append(clave, item));
-    else url.searchParams.set(clave, valor);
+/** Recupera los mensajes destinados a fuentes propias, sin exponer el token al navegador. */
+export async function obtenerCorreosGmail(accountId, fuentes) {
+  if (!accountId) throw new Error("Selecciona una cuenta Gmail para consultar los mensajes.");
+  const fuentesIds = [...new Set((fuentes || []).map((fuente) => fuente.idFuente)
+    .filter((id) => id && !String(id).startsWith("gmail-")))];
+  const clave = `${accountId}:${fuentesIds.slice().sort().join(",")}`;
+  return consultarConCache(cacheConsultas, clave, CACHE_CONSULTA_MS, async () => {
+    const mensajes = await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/mensajes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fuentes_ids: fuentesIds }),
+    });
+    return (Array.isArray(mensajes) ? mensajes : []).map(clasificarCorreo);
   });
-  const respuesta = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  const datos = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    if (respuesta.status === 401) throw new Error("La autorización de Gmail venció. Conecta Gmail de nuevo.");
-    const mensaje = datos.error?.message || `Gmail respondió con error ${respuesta.status}.`;
-    if (respuesta.status === 429 || /quota exceeded|user.?rate.?limit|rate limit/i.test(mensaje)) {
-      throw new Error("Gmail alcanzó el límite temporal de consultas. Espera unos minutos antes de actualizar de nuevo.");
-    }
-    throw new Error(mensaje);
-  }
-  return datos;
 }
 
-function encabezado(mensaje, nombre) {
-  return mensaje.payload?.headers?.find((item) => item.name?.toLowerCase() === nombre.toLowerCase())?.value || "";
-}
-
-/** Recupera hasta 10 mensajes recientes dirigidos o entregados a las fuentes registradas. */
-export async function obtenerCorreosGmail(token, fuentes) {
-  const direcciones = [...new Set((fuentes || []).map((fuente) => validarDireccion(fuente.contenido)).filter(Boolean))];
-  if (direcciones.length === 0) return [];
-
-  const destino = direcciones.flatMap((direccion) => [
-    `to:${direccion}`,
-    `cc:${direccion}`,
-    `deliveredto:${direccion}`,
-  ]).join(" ");
-  // Sin `in:inbox`: Gmail puede archivar automáticamente mensajes que siguen siendo relevantes.
-  const consulta = `{${destino}}`;
-  const claveConsulta = `${token}:${consulta}`;
-  const consultaPrev = consultasEnCurso.get(claveConsulta);
-  if (consultaPrev && (!consultaPrev.terminadaEn || Date.now() - consultaPrev.terminadaEn < CACHE_CONSULTA_MS)) return consultaPrev.promesa;
-
-  const promesa = (async () => {
-    // Limitar el lote y reutilizar etiquetas evita agotar la cuota de Gmail con lecturas repetidas.
-    const listado = await llamarGmail(token, "messages", { q: consulta, maxResults: String(MAX_CORREOS_POR_CONSULTA) });
-    const ids = listado.messages || [];
-    let nombresEtiquetas = cacheEtiquetas.get(token);
-    if (!nombresEtiquetas) {
-      const respuestaEtiquetas = await llamarGmail(token, "labels");
-      nombresEtiquetas = new Map((respuestaEtiquetas.labels || []).map((etiqueta) => [etiqueta.id, etiqueta.name]));
-      cacheEtiquetas.set(token, nombresEtiquetas);
-    }
-    const mensajes = [];
-    // Leer en serie reduce los picos de consultas por usuario que generan errores 429.
-    for (const { id } of ids) {
-      const mensaje = await llamarGmail(token, `messages/${encodeURIComponent(id)}`, {
-        format: "metadata",
-        metadataHeaders: ["From", "To", "Cc", "Delivered-To", "X-Original-To", "Subject", "Date"],
-      });
-      mensajes.push({
-        id: mensaje.id,
-        remitente: encabezado(mensaje, "From"),
-        destinatario: ["To", "Cc", "Delivered-To", "X-Original-To"]
-          .map((nombre) => encabezado(mensaje, nombre)).filter(Boolean).join(", "),
-        asunto: encabezado(mensaje, "Subject") || "(Sin asunto)",
-        fecha: encabezado(mensaje, "Date"),
-        fragmento: mensaje.snippet || "",
-        etiquetas: mensaje.labelIds || [],
-        nombresEtiquetas: (mensaje.labelIds || []).map((idEtiqueta) => nombresEtiquetas.get(idEtiqueta)).filter(Boolean),
-      });
-    }
-    return mensajes.map(clasificarCorreo);
-  })();
-  const registroConsulta = { promesa, terminadaEn: null };
-  consultasEnCurso.set(claveConsulta, registroConsulta);
-  try {
-    const resultado = await promesa;
-    registroConsulta.terminadaEn = Date.now();
-    window.setTimeout(() => {
-      if (consultasEnCurso.get(claveConsulta)?.promesa === promesa) consultasEnCurso.delete(claveConsulta);
-    }, CACHE_CONSULTA_MS);
-    return resultado;
-  } catch (error) {
-    if (consultasEnCurso.get(claveConsulta)?.promesa === promesa) consultasEnCurso.delete(claveConsulta);
-    throw error;
-  }
-}
-
-function decodificarBase64Url(valor) {
-  if (!valor) return "";
-  try {
-    const binario = atob(valor.replace(/-/g, "+").replace(/_/g, "/"));
-    const bytes = Uint8Array.from(binario, (caracter) => caracter.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
-  } catch { return ""; }
-}
-
-function extraerTextoMensaje(payload) {
-  const normalizarTexto = (texto) => texto
-    .replace(/\r/g, "")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n[ \t]+/g, "\n")
-    // Gmail HTML suele producir varios saltos por cada bloque anidado.
-    // Conservamos la separación de párrafos, pero evitamos grandes huecos en móvil.
-    .replace(/\n{2,}/g, "\n")
-    .trim()
-    .slice(0, 12000);
-  const html = [];
-  const tiposImagen = [];
-  const recorrerImagenes = (parte) => {
-    if (parte?.mimeType?.startsWith("image/")) tiposImagen.push(parte.mimeType);
-    (parte?.parts || []).forEach(recorrerImagenes);
-  };
-  recorrerImagenes(payload);
-  const recorrerHtml = (parte) => {
-    if (parte?.mimeType === "text/html" && parte.body?.data) html.push(decodificarBase64Url(parte.body.data));
-    (parte?.parts || []).forEach(recorrerHtml);
-  };
-  recorrerHtml(payload);
-  if (html.length) return normalizarTexto(html.join(" ")
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, " ")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, " ")
-    .replace(/<img\b[^>]*>/gi, () => {
-      const tipo = tiposImagen.shift() || "image/*";
-      return `\n[Imagen ${tipo}: no se puede renderizar en FinApp.]\n`;
-    })
-    .replace(/<a\b[^>]*href\s*=\s*([\"'])(.*?)\1[^>]*>([\s\S]*?)<\/a\s*>/gi, (_match, _quote, href, textoEnlace) => {
-      const destino = String(href).replace(/&amp;/gi, "&").trim();
-      const etiqueta = String(textoEnlace).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() || destino;
-      try {
-        const url = new URL(destino);
-        if (!["http:", "https:", "mailto:"].includes(url.protocol)) return etiqueta;
-        return `[[[MAIL_LINK:${encodeURIComponent(etiqueta)}|${encodeURIComponent(destino)}]]]`;
-      } catch { return etiqueta; }
-    })
-    .replace(/<\/(?:p|div|li|h[1-6]|tr)>/gi, "\n")
-    .replace(/<br\s*\/?\s*>/gi, "\n")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;/gi, "'"));
-  const partes = [];
-  const recorrer = (parte) => {
-    if (parte?.mimeType === "text/plain" && parte.body?.data) partes.push(decodificarBase64Url(parte.body.data));
-    (parte?.parts || []).forEach(recorrer);
-  };
-  recorrer(payload);
-  const texto = partes.join("\n\n");
-  const avisoImagenes = tiposImagen.length
-    ? `\n${tiposImagen.map((tipo) => `[Imagen ${tipo}: no se puede renderizar en FinApp.]`).join("\n")}`
-    : "";
-  return normalizarTexto(`${texto}${avisoImagenes}`);
-}
-
-async function obtenerContenidoCompleto(token, messageId) {
-  const clave = `${token}:${messageId}`;
-  const almacenado = cacheContenido.get(clave);
-  if (almacenado && Date.now() - almacenado.fecha < CACHE_CONTENIDO_MS) return almacenado.promesa;
-
-  const promesa = llamarGmail(token, `messages/${encodeURIComponent(messageId)}`, { format: "full" })
-    .then((mensaje) => extraerTextoMensaje(mensaje.payload));
-  cacheContenido.set(clave, { fecha: Date.now(), promesa });
-  window.setTimeout(() => {
-    if (cacheContenido.get(clave)?.promesa === promesa) cacheContenido.delete(clave);
-  }, CACHE_CONTENIDO_MS);
-  try {
-    return await promesa;
-  } catch (error) {
-    if (cacheContenido.get(clave)?.promesa === promesa) cacheContenido.delete(clave);
-    throw error;
-  }
-}
-
-/** Recupera el contenido completo de un correo al abrir su vista de detalle. */
-export async function obtenerContenidoCorreoGmail(token, messageId) {
-  return obtenerContenidoCompleto(token, messageId);
+/** Recupera del backend el cuerpo de un correo de la cuenta seleccionada. */
+export async function obtenerContenidoCorreoGmail(accountId, messageId) {
+  const clave = `${accountId}:${messageId}`;
+  return consultarConCache(cacheContenido, clave, CACHE_CONTENIDO_MS, async () => {
+    const datos = await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/mensajes/${encodeURIComponent(messageId)}/contenido`);
+    return datos.content || "";
+  });
 }
 
 /** Lee en serie el cuerpo solo de los mensajes financieros candidatos. */
-export async function obtenerContenidoCorreosFinancierosGmail(token, correosCandidatos) {
+export async function obtenerContenidoCorreosFinancierosGmail(accountId, correosCandidatos) {
   const resultados = [];
   for (const correo of (correosCandidatos || []).slice(0, 5)) {
-    resultados.push({ ...correo, contenido: await obtenerContenidoCompleto(token, correo.id) });
+    resultados.push({ ...correo, contenido: await obtenerContenidoCorreoGmail(accountId, correo.id) });
   }
   return resultados;
-}
-
-/** Indica qué cuenta de Google autorizó la consulta. */
-export async function obtenerPerfilGmail(token) {
-  const perfil = await llamarGmail(token, "profile");
-  return perfil.emailAddress || "Cuenta de Gmail";
 }
 
 function clasificarCorreo(correo) {
@@ -430,6 +232,7 @@ function clasificarCorreo(correo) {
   const esContable = /factura|recibo|extracto|estado de cuenta|pago|transacci[oó]n|compra|saldo|cobro|invoice|receipt|statement|payment|transaction/.test(texto);
   const esEstudios = /estudio|estudios|universidad|colegio|escuela|academia|curso|curs[oó]s|capacitaci[oó]n|formaci[oó]n|lecci[oó]n|clase|educaci[oó]n|educativo|learning|education|course|class|lesson|training|school|university|academy|coursera|udemy|edx|platzi|codecademy/.test(texto);
   const esEntretenimiento = /netflix|spotify|youtube|disney|prime video|hbo|cine|concierto|juego|gaming|entretenimiento|streaming|music|movie/.test(texto);
-  const esImportante = correo.etiquetas.includes("IMPORTANT") || /urgente|importante|acci[oó]n requerida|vencimiento|alerta de seguridad|verifica tu cuenta/.test(texto);
+  const etiquetas = Array.isArray(correo.etiquetas) ? correo.etiquetas : [];
+  const esImportante = etiquetas.includes("IMPORTANT") || /urgente|importante|acci[oó]n requerida|vencimiento|alerta de seguridad|verifica tu cuenta/.test(texto);
   return { ...correo, esContable, esEstudios, esEntretenimiento, esImportante };
 }

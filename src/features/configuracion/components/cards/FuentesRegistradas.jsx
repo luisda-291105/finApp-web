@@ -4,10 +4,10 @@ import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";
 
-export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, alAutorizarContactosGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
+export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, alAutorizarContactosGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);
   const fuenteTriggerRef = useRef(null);
-  const gmailConectado = Boolean(tokenGmail && !errorGmail && !conexionCargando);
+  const cuentaGmailConectada = Boolean(gmailConectado && !errorGmail && !conexionCargando);
   const fuenteSeleccionada = fuentes.find((fuente) => fuente.idFuente === fuenteSeleccionadaId) || null;
   const cuentaVinculada = (fuente) => fuente.tipo?.toUpperCase() === "CORREO"
     ? cuentasGmail.find((cuenta) => cuenta.email?.trim().toLowerCase() === fuente.contenido?.trim().toLowerCase()) || null
@@ -42,7 +42,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
             <FuenteItem
               key={fuente.idFuente}
               fuente={fuente}
-              gmailConectado={gmailConectado}
+              gmailConectado={cuentaGmailConectada}
               cuentaVinculada={cuentaVinculada(fuente)}
               alAbrir={(evento) => abrirDetalle(fuente, evento.currentTarget)}
             />
@@ -50,7 +50,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
           {!cargandoFuentes && !errorFuentes && cuentasSinFuente.map((cuenta) => (
             <div key={`gmail-${cuenta.id}`} className="flex min-h-16 min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/60 p-4">
               <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-emerald-primary">Cuenta Gmail</p><p className="mt-1 break-all text-sm font-medium text-bg-dark">{cuenta.email}</p></div>
-              <div className="flex flex-wrap items-center gap-2"><EstadoFuente activo={gmailConectado} /><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuenta.id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></div>
+              <div className="flex flex-wrap items-center gap-2"><EstadoFuente activo={cuentaGmailConectada} /><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuenta.id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></div>
             </div>
           ))}
         </div>
@@ -61,7 +61,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
         fuente={fuenteSeleccionada}
         triggerRef={fuenteTriggerRef}
         cuenta={fuenteSeleccionada ? cuentaVinculada(fuenteSeleccionada) : null}
-        gmailConectado={gmailConectado}
+        gmailConectado={cuentaGmailConectada}
         gmailConfigurado={gmailConfigurado}
         gisListo={gisListo}
         conexionCargando={conexionCargando}

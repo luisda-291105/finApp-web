@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BotonServicioExterno } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
-import { obtenerConexionCuentaGmail, verificarPermisoContactosGoogle } from "../../../../services/gmailServicio";
+import { verificarPermisoContactosGoogle } from "../../../../services/gmailServicio";
 import EstadoFuente from "../cards/EstadoFuente";
 
 const claseCampo = "min-h-11 w-full min-w-0 rounded-xl border border-border-line bg-bg-cream px-3 text-sm text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary";
@@ -40,9 +40,8 @@ export default function FuenteDetalleModal({ abierto, fuente, triggerRef, cuenta
     setPermisoContactosCuentaId(String(cuenta.id));
     setErrorPermisos("");
     setVerificandoPermiso(true);
-    obtenerConexionCuentaGmail(cuenta.id)
-      .then(async (conexion) => {
-        const autorizado = await verificarPermisoContactosGoogle(conexion.access_token || "");
+    verificarPermisoContactosGoogle(cuenta.id)
+      .then((autorizado) => {
         if (vigente) setPermisoContactos(autorizado);
       })
       .catch((fallo) => {
@@ -73,8 +72,7 @@ export default function FuenteDetalleModal({ abierto, fuente, triggerRef, cuenta
     setVerificandoPermiso(true);
     try {
       await alAutorizarContactos(cuenta.id);
-      const conexion = await obtenerConexionCuentaGmail(cuenta.id);
-      const autorizado = await verificarPermisoContactosGoogle(conexion.access_token || "");
+      const autorizado = await verificarPermisoContactosGoogle(cuenta.id);
       setPermisoContactos(autorizado);
       if (!autorizado) setErrorPermisos("Google no confirmó el permiso. Revisa la autorización e inténtalo de nuevo.");
     } catch (fallo) {
@@ -130,6 +128,10 @@ export default function FuenteDetalleModal({ abierto, fuente, triggerRef, cuenta
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
               <div><p className="text-sm font-semibold text-bg-dark">Correos de Gmail</p><p className="mt-0.5 text-xs text-slate-text">Consultar y clasificar mensajes.</p></div>
               <span className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary">Conectado</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
+              <div><p className="text-sm font-semibold text-bg-dark">Suscripciones de Gmail</p><p className="mt-0.5 text-xs text-slate-text">Detectar boletines usando la lectura de correos ya autorizada.</p></div>
+              <span className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary">Incluido</span>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
               <div><p className="text-sm font-semibold text-bg-dark">Contactos de Google</p><p className="mt-0.5 text-xs text-slate-text">Consultar contactos para importarlos a FinApp.</p></div>

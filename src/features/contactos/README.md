@@ -3,7 +3,7 @@
 ## Qué hace
 
 Consulta y organiza los contactos financieros del usuario, con alta, edición y eliminación.
-También permite consultar Google Contacts con una cuenta Gmail ya registrada y seleccionar contactos para importarlos a FinApp. Google solicita el permiso `contacts.readonly` al autorizar la integración; el identificador estable de cada contacto queda en el campo `origen` de la tabla existente para evitar duplicados.
+También permite consultar Google Contacts con una cuenta Gmail ya registrada y seleccionar contactos para importarlos a FinApp. Google solicita el permiso `contacts.readonly` al autorizar la integración; el backend realiza la consulta sin exponer el token al navegador. El identificador estable de cada contacto queda en el campo `origen` de la tabla existente para evitar duplicados.
 
 ## Componentes
 

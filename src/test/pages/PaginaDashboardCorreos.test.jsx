@@ -7,7 +7,7 @@ import { obtenerFuentesPorUsuario } from "../../services/fuenteServicio";
 import { consultarCorreosDeFuente, consultarCorreosDeFuentes } from "../../features/correos/services/correosService";
 
 const gmailMock = vi.hoisted(() => ({
-  tokenGmail: "token-prueba",
+  gmailConectado: true,
   cuentaGmail: "cuenta@ejemplo.test",
   cuentasGmail: [{ id: 12, email: "cuenta@ejemplo.test" }],
   cuentaSeleccionadaId: 12,
@@ -43,14 +43,14 @@ const CORREO = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  gmailMock.tokenGmail = "token-prueba";
+  gmailMock.gmailConectado = true;
   gmailMock.cuentaGmail = "cuenta@ejemplo.test";
   gmailMock.cuentasGmail = [{ id: 12, email: "cuenta@ejemplo.test" }, { id: 15, email: "personal@ejemplo.test" }];
   gmailMock.cuentaSeleccionadaId = 12;
   gmailMock.conexionCargando = false;
   obtenerFuentesPorUsuario.mockResolvedValue([FUENTE]);
   consultarCorreosDeFuente.mockResolvedValue([CORREO]);
-  consultarCorreosDeFuentes.mockImplementation(async (_token, fuentes) => fuentes.map((fuente) => [fuente.idFuente, [CORREO]]));
+  consultarCorreosDeFuentes.mockImplementation(async (_cuentaId, fuentes) => fuentes.map((fuente) => [fuente.idFuente, [CORREO]]));
 });
 
 afterEach(() => {
@@ -75,7 +75,7 @@ describe("PaginaDashboardCorreos", () => {
     await user.click(screen.getByRole("button", { name: `Ver correos de ${FUENTE.contenido}` }));
     expect(await screen.findByText("Factura de servicio")).toBeInTheDocument();
     expect(screen.getByText("Tu factura está disponible.")).toBeInTheDocument();
-    expect(consultarCorreosDeFuentes).toHaveBeenCalledWith("token-prueba", expect.arrayContaining([expect.objectContaining(FUENTE)]));
+    expect(consultarCorreosDeFuentes).toHaveBeenCalledWith(12, expect.arrayContaining([expect.objectContaining(FUENTE)]));
     const dialog = screen.getByRole("dialog", { name: `Correos de ${FUENTE.contenido}` });
     await user.click(within(dialog).getByRole("button", { name: /Contables/ }));
     expect(within(dialog).getByText("Factura de servicio")).toBeInTheDocument();
@@ -94,12 +94,12 @@ describe("PaginaDashboardCorreos", () => {
     obtenerFuentesPorUsuario.mockResolvedValue([FUENTE, otraFuente]);
     gmailMock.cuentasGmail = [{ id: 12, email: "cuenta@ejemplo.test" }];
     consultarCorreosDeFuente.mockResolvedValue([correoPersonal]);
-    consultarCorreosDeFuentes.mockImplementation(async (_token, fuentes) => fuentes.map((fuente) => [fuente.idFuente, fuente.idFuente === otraFuente.idFuente ? [correoPersonal] : [CORREO]]));
+    consultarCorreosDeFuentes.mockImplementation(async (_cuentaId, fuentes) => fuentes.map((fuente) => [fuente.idFuente, fuente.idFuente === otraFuente.idFuente ? [correoPersonal] : [CORREO]]));
     renderPagina();
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: `Ver correos de ${otraFuente.contenido}` }));
 
-    expect(consultarCorreosDeFuentes).toHaveBeenCalledWith("token-prueba", expect.arrayContaining([expect.objectContaining(otraFuente)]));
+    expect(consultarCorreosDeFuentes).toHaveBeenCalledWith(12, expect.arrayContaining([expect.objectContaining(otraFuente)]));
     const dialog = screen.getByRole("dialog", { name: `Correos de ${otraFuente.contenido}` });
     expect(await within(dialog).findByText("Plan de entretenimiento")).toBeInTheDocument();
     expect(within(dialog).queryByText("Factura de servicio")).not.toBeInTheDocument();
