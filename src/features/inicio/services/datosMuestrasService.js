@@ -38,6 +38,7 @@ function construirDatosTemporales(registros, obtenerValor) {
   );
   const valoresPorMes = new Map(meses.map((mes) => [`${mes.getFullYear()}-${mes.getMonth()}`, 0]));
   const valoresHeatmap = new Map();
+  const valoresPorDia = new Map();
   const lunesEstaSemana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ((ahora.getDay() + 6) % 7));
   const inicioHeatmap = new Date(lunesEstaSemana.getFullYear(), lunesEstaSemana.getMonth(), lunesEstaSemana.getDate() - 28);
   const fechaClave = (fecha) => `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
@@ -54,9 +55,10 @@ function construirDatosTemporales(registros, obtenerValor) {
     if (valoresPorMes.has(claveMes)) valoresPorMes.set(claveMes, valoresPorMes.get(claveMes) + valor);
 
     const fechaDia = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+    const claveDia = fechaClave(fechaDia);
+    valoresPorDia.set(claveDia, (valoresPorDia.get(claveDia) || 0) + valor);
     const diferenciaDias = Math.floor((fechaDia.getTime() - inicioHeatmap.getTime()) / 86400000);
     if (diferenciaDias < 0 || diferenciaDias >= 35) return;
-    const claveDia = fechaClave(fechaDia);
     valoresHeatmap.set(claveDia, (valoresHeatmap.get(claveDia) || 0) + valor);
   });
 
@@ -78,6 +80,35 @@ function construirDatosTemporales(registros, obtenerValor) {
     const dia = new Date(inicioHeatmap.getFullYear(), inicioHeatmap.getMonth(), inicioHeatmap.getDate() + indice);
     return { fecha: fechaClave(dia), valor: valoresHeatmap.get(fechaClave(dia)) || 0 };
   });
+  const hoyClave = fechaClave(new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()));
+  const ultimoDiaMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0).getDate();
+  const inicioRangoMensual = new Date(
+    ahora.getFullYear(),
+    ahora.getMonth() - 1,
+    Math.min(ahora.getDate(), ultimoDiaMesAnterior),
+  );
+  const diasHastaHoy = [];
+  for (const dia = new Date(inicioRangoMensual); fechaClave(dia) <= hoyClave; dia.setDate(dia.getDate() + 1)) {
+    const fecha = fechaClave(dia);
+    diasHastaHoy.push({ fecha, valor: valoresPorDia.get(fecha) || 0 });
+  }
+  const formatoDia = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short" });
+  const semanas = new Map();
+  diasHastaHoy.forEach((dia) => {
+    const fechaDia = new Date(`${dia.fecha}T00:00:00`);
+    const lunes = new Date(fechaDia);
+    lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+    const semanaClave = fechaClave(lunes);
+    const actual = semanas.get(semanaClave) || { fecha: dia.fecha, fechaFin: dia.fecha, valor: 0 };
+    actual.fechaFin = dia.fecha;
+    actual.valor += dia.valor;
+    semanas.set(semanaClave, actual);
+  });
+  const serieSemanal = [...semanas.values()].map((semana) => {
+    const inicio = new Date(`${semana.fecha}T00:00:00`);
+    const fin = new Date(`${semana.fechaFin}T00:00:00`);
+    return { ...semana, etiqueta: `${formatoDia.format(inicio)}–${formatoDia.format(fin)}` };
+  });
   const maximoHeatmap = Math.max(...dias.map((dia) => dia.valor), 0);
   const diasHeatmap = cantidadConFecha > 0
     ? Array.from({ length: 5 }, (_, fila) => dias.slice(fila * 7, fila * 7 + 7).map((dia) => ({
@@ -87,7 +118,7 @@ function construirDatosTemporales(registros, obtenerValor) {
     : undefined;
   const intensidades = diasHeatmap?.map((fila) => fila.map((dia) => dia.intensidad));
 
-  return { valor: registros.length ? total : null, serie: normalizada, variacion, intensidades, diasHeatmap };
+  return { valor: registros.length ? total : null, serie: normalizada, serieSemanal, variacion, intensidades, diasHeatmap };
 }
 
 function datosContabilidad(movimientos, segmento) {
@@ -132,6 +163,7 @@ function datosSuscripciones(respuesta) {
     ],
     intensidades: actividad.intensidades,
     diasHeatmap: actividad.diasHeatmap,
+    serieSemanal: actividad.serieSemanal,
     unidad: "cantidad",
   };
 }
@@ -185,7 +217,7 @@ async function datosCorreo(cuentaSeleccionada = "todas", cuentasSeleccionadas = 
   const mensajes = resultados.flatMap((resultado) => resultado.mensajes);
   const temporal = mensajes.length
     ? construirDatosTemporales(mensajes, () => 1)
-    : { serie: [], intensidades: undefined, diasHeatmap: undefined };
+    : { serie: [], serieSemanal: [], intensidades: undefined, diasHeatmap: undefined };
   const ultimoMensaje = mensajes
     .map((mensaje) => fechaValida(mensaje.fecha || mensaje.fechaInterna || mensaje.fecha_interna))
     .filter(Boolean)
@@ -195,6 +227,7 @@ async function datosCorreo(cuentaSeleccionada = "todas", cuentasSeleccionadas = 
     serie: construirSeriePorCategorias(serie),
     intensidades: temporal.intensidades,
     diasHeatmap: temporal.diasHeatmap,
+    serieSemanal: temporal.serieSemanal,
     cuentaCorreoEtiqueta: todasSeleccionadas
       ? "Todas las cuentas"
       : cuentasFiltradas.map((cuenta) => cuenta.email || "Cuenta de correo").join(", "),
