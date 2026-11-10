@@ -352,3 +352,20 @@ textarea::placeholder {
 /* Ocultar scrollbar sin afectar funcionalidad */
 .sidebar-scroll::-webkit-scrollbar { display: none; }
 .sidebar-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* El dashboard usa el ancho real que deja el sidebar, no el ancho total del viewport. */
+.dashboard-content-container { container: dashboard / inline-size; }
+.dashboard-card-grid { grid-template-columns: minmax(0, 1fr); }
+@container dashboard (min-width: 48rem) {
+  .dashboard-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container dashboard (min-width: 80rem) {
+  .dashboard-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Cada agrupación mantiene dos columnas cuando las tarjetas caben sin comprimirse. */
+.dashboard-group-container { container: dashboard-group / inline-size; }
+.dashboard-group-grid { grid-template-columns: minmax(0, 1fr); }
+@container dashboard-group (min-width: 42rem) {
+  .dashboard-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

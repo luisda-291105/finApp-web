@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, act, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, act, fireEvent, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ const muestraMocks = vi.hoisted(() => ({
   listarMuestras: vi.fn(),
   crearMuestra: vi.fn(),
   actualizarMuestra: vi.fn(),
+  actualizarOrdenMuestras: vi.fn(),
   eliminarMuestra: vi.fn(),
   obtenerDatosMuestra: vi.fn(),
   listarCuentasGmail: vi.fn(),
@@ -70,12 +71,13 @@ beforeEach(() => {
     id: `muestra-${muestra.titulo}`,
   }));
   muestraMocks.actualizarMuestra.mockReset().mockImplementation(async (id, muestra) => ({ ...muestra, id }));
+  muestraMocks.actualizarOrdenMuestras.mockReset().mockResolvedValue(undefined);
   muestraMocks.eliminarMuestra.mockReset().mockResolvedValue(undefined);
   muestraMocks.listarCuentasGmail.mockReset().mockResolvedValue([
     { id: "cuenta-1", email: "personal@example.test" },
     { id: "cuenta-2", email: "trabajo@example.test" },
   ]);
-  muestraMocks.obtenerDatosMuestra.mockReset().mockImplementation(async (fuente, _usuario, _segmento, cuentaCorreo = "todas") => {
+  muestraMocks.obtenerDatosMuestra.mockReset().mockImplementation(async (fuente, _usuario, _segmento, cuentaCorreo = "todas", fuentes = [], cuentasCorreo = null) => {
     const datosPorFuente = {
       suscripciones: { valor: 3, serie: [{ etiqueta: "Netflix", valor: 2, altura: 100 }], unidad: "cantidad" },
       contabilidad: { valor: 3473000, variacion: "+12.4 %", serie: [{ etiqueta: "oct", valor: 3473000, altura: 100 }], intensidades: [[1]], unidad: "moneda" },
@@ -87,10 +89,18 @@ beforeEach(() => {
         unidad: "cantidad",
       },
     };
-    return {
-      ...datosPorFuente[fuente],
-      ...(fuente === "correo" ? { cuentaCorreoEtiqueta: cuentaCorreo === "todas" ? "Todas las cuentas" : cuentaCorreo === "cuenta-1" ? "personal@example.test" : "trabajo@example.test" } : {}),
-    };
+    const crearDatosFuente = (fuenteItem) => ({
+      fuente: fuenteItem,
+      etiqueta: etiquetasFuentes[fuenteItem],
+      ...datosPorFuente[fuenteItem],
+      ...(fuenteItem === "correo" ? { cuentaCorreoEtiqueta: cuentasCorreo?.length > 1 ? "personal@example.test, trabajo@example.test" : cuentaCorreo === "todas" ? "Todas las cuentas" : cuentaCorreo === "cuenta-1" ? "personal@example.test" : "trabajo@example.test" } : {}),
+    });
+    return fuentes.length > 1
+      ? {
+        fuentesDatos: fuentes.map(crearDatosFuente),
+        cuentaCorreoEtiqueta: fuentes.includes("correo") ? (cuentasCorreo?.length > 1 ? "personal@example.test, trabajo@example.test" : cuentaCorreo === "todas" ? "Todas las cuentas" : "personal@example.test") : undefined,
+      }
+      : crearDatosFuente(fuente);
   });
 });
 afterEach(() => {
@@ -104,6 +114,18 @@ const renderPagina = () =>
       <PaginaDashboardInicio />
     </MemoryRouter>
   );
+
+const etiquetasFuentes = {
+  suscripciones: "Suscripciones",
+  contabilidad: "Contabilidad",
+  correo: "Correo",
+  contactos: "Contactos",
+};
+
+const seleccionarFuente = async (fuente) => {
+  const opcion = screen.getByRole("checkbox", { name: etiquetasFuentes[fuente] });
+  if (!opcion.checked) await userEvent.click(opcion);
+};
 
 const obtenerOverlay = () =>
   document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
@@ -352,7 +374,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
       await abrirModal();
       const campoTitulo = screen.getByLabelText("Título de la muestra");
       expect(campoTitulo.getAttribute("type")).toBe("text");
-      expect(screen.getByLabelText("Fuente")).toBeInTheDocument();
+      expect(screen.getByRole("group", { name: "Fuentes de la muestra" })).toBeInTheDocument();
       expect(screen.getByLabelText("Tipo de visualización")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "guardar muestra" })).toBeInTheDocument();
     });
@@ -367,61 +389,60 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
       expect(campoTitulo).toHaveValue("Ahorros del mes");
     });
 
-    it("la fuente arranca en placeholder deshabilitado «Elegir fuente» (AC-6)", async () => {
+    it("las fuentes empiezan sin seleccionar", async () => {
       await abrirModal();
-      const selectFuente = screen.getByLabelText("Fuente");
-      expect(selectFuente).toHaveValue("");
+      Object.values(etiquetasFuentes).forEach((etiqueta) => {
+        expect(screen.getByRole("checkbox", { name: etiqueta })).not.toBeChecked();
+      });
+    });
 
-      const placeholder = [...selectFuente.querySelectorAll("option")].find(
-        (opcion) => opcion.value === ""
+    it("ofrece los módulos disponibles como selección múltiple", async () => {
+      await abrirModal();
+      expect(screen.getByRole("group", { name: "Fuentes de la muestra" })).toHaveTextContent(
+        "SuscripcionesContabilidadCorreoContactos"
       );
-      expect(placeholder).toBeTruthy();
-      expect(placeholder.textContent).toBe("Elegir fuente");
-      expect(placeholder.disabled).toBe(true);
     });
 
-    it("la fuente ofrece los módulos de datos disponibles en el dashboard", async () => {
+    it("permite elegir el ancho de la tarjeta en la cuadrícula", async () => {
       await abrirModal();
-      const selectFuente = screen.getByLabelText("Fuente");
-      const etiquetas = [...selectFuente.querySelectorAll("option")].map(
-        (opcion) => opcion.textContent
-      );
-      expect(etiquetas).toEqual([
-        "Elegir fuente",
-        "Suscripciones",
-        "Contabilidad",
-        "Correo",
-        "Contactos",
+
+      const ancho = screen.getByLabelText("Ancho de la tarjeta en el dashboard");
+      expect([...ancho.options].map((opcion) => opcion.textContent)).toEqual([
+        "1 espacio (normal)",
+        "2 espacios laterales",
+        "3 espacios (ancho completo)",
       ]);
+      await userEvent.selectOptions(ancho, "2");
+      expect(ancho).toHaveValue("2");
     });
 
-    it("seleccionar una fuente actualiza el control del borrador", async () => {
+    it("permite seleccionar varias fuentes simultáneamente", async () => {
       await abrirModal();
-      const selectFuente = screen.getByLabelText("Fuente");
+      await seleccionarFuente("contactos");
+      await seleccionarFuente("correo");
 
-      await userEvent.selectOptions(selectFuente, "contactos");
-
-      expect(selectFuente).toHaveValue("contactos");
-
-      await userEvent.selectOptions(selectFuente, "correo");
-
-      expect(selectFuente).toHaveValue("correo");
+      expect(screen.getByRole("checkbox", { name: "Contactos" })).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Correo" })).toBeChecked();
     });
 
-    it("permite elegir todas las cuentas o una cuenta de correo al crear una muestra", async () => {
+    it("permite elegir todas las cuentas o varias cuentas específicas", async () => {
       await abrirModal();
-      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "correo");
+      await seleccionarFuente("correo");
 
-      const selectorCuenta = await screen.findByLabelText("Cuenta de correo");
-      expect(selectorCuenta).toHaveValue("todas");
-      expect([...selectorCuenta.options].map((opcion) => opcion.textContent)).toEqual([
-        "Todos los correos",
-        "personal@example.test",
-        "trabajo@example.test",
-      ]);
+      const todas = await screen.findByRole("checkbox", { name: "Todos los correos" });
+      const personal = screen.getByRole("checkbox", { name: "personal@example.test" });
+      const trabajo = screen.getByRole("checkbox", { name: "trabajo@example.test" });
+      expect(todas).toBeChecked();
+      expect(personal).toBeChecked();
+      expect(trabajo).toBeChecked();
 
-      await userEvent.selectOptions(selectorCuenta, "cuenta-2");
-      expect(selectorCuenta).toHaveValue("cuenta-2");
+      await userEvent.click(trabajo);
+      expect(todas).not.toBeChecked();
+      expect(personal).toBeChecked();
+      expect(trabajo).not.toBeChecked();
+      await userEvent.click(trabajo);
+      expect(personal).toBeChecked();
+      expect(trabajo).toBeChecked();
     });
 
     it("el tipo arranca en placeholder deshabilitado «Elegir tipo» con sus 4 opciones (AC-7)", async () => {
@@ -461,7 +482,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
 
       await abrirModal();
       await userEvent.type(screen.getByLabelText("Título de la muestra"), "Demo");
-      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "correo");
+      await seleccionarFuente("correo");
       await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "metrica");
 
       expect(fetchDoble).not.toHaveBeenCalled();
@@ -518,9 +539,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
       if (titulo !== undefined) {
         await userEvent.type(screen.getByLabelText("Título de la muestra"), titulo);
       }
-      if (fuente !== undefined) {
-        await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
-      }
+      if (fuente !== undefined) await seleccionarFuente(fuente);
       if (tipo !== undefined) {
         await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
       }
@@ -542,7 +561,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
         // La próxima apertura muestra el formulario vacío (AC-11).
         await reabrirModal();
         expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
-        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByRole("checkbox", { name: "Contactos" })).not.toBeChecked();
         expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
       });
 
@@ -591,7 +610,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
         expect(panel.textContent.toLowerCase()).not.toContain("error");
         expect(panel.textContent.toLowerCase()).not.toContain("incompleto");
         // El borrador se conserva para permitir corregir y reintentar.
-        expect(screen.getByLabelText("Fuente")).toHaveValue("contactos");
+        expect(screen.getByRole("checkbox", { name: "Contactos" })).toBeChecked();
         expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("tarjeta");
       });
 
@@ -610,7 +629,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
         await userEvent.click(obtenerBotonGuardar());
 
         expect(obtenerPanel()).not.toBeNull();
-        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByRole("checkbox", { name: "Contabilidad" })).not.toBeChecked();
       });
 
       it("guardar con el tipo en su placeholder no añade y mantiene el modal abierto", async () => {
@@ -656,7 +675,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
 
         await reabrirModal();
         expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
-        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByRole("checkbox", { name: "Contabilidad" })).not.toBeChecked();
         expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
       });
 
@@ -668,7 +687,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
 
         await reabrirModal();
         expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
-        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByRole("checkbox", { name: "Contabilidad" })).not.toBeChecked();
         expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
       });
 
@@ -680,7 +699,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
 
         await reabrirModal();
         expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
-        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByRole("checkbox", { name: "Correo" })).not.toBeChecked();
         expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
       });
 
@@ -697,7 +716,7 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
 
         await reabrirModal();
         expect(screen.getByLabelText("Título de la muestra")).toHaveValue("");
-        expect(screen.getByLabelText("Fuente")).toHaveValue("");
+        expect(screen.getByRole("checkbox", { name: "Contabilidad" })).not.toBeChecked();
         expect(screen.getByLabelText("Tipo de visualización")).toHaveValue("");
       });
 
@@ -741,18 +760,46 @@ describe("PaginaDashboardInicio (T5 — persistencia en backend)", () => {
     expect(muestraMocks.listarMuestras).toHaveBeenCalledTimes(1);
   });
 
+  it("restaura el ancho guardado al editar una muestra", async () => {
+    muestraMocks.listarMuestras.mockResolvedValue([
+      { id: "muestra-ancha", titulo: "Fuentes anchas", fuente: "contactos", tipo: "tarjeta", columnasDashboard: 2 },
+    ]);
+    renderPagina();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Fuentes anchas/ }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Editar" }));
+
+    expect(await screen.findByLabelText("Ancho de la tarjeta en el dashboard")).toHaveValue("2");
+  });
+
   it("persiste una muestra nueva mediante el servicio del backend", async () => {
     renderPagina();
     await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
     await userEvent.type(screen.getByLabelText("Título de la muestra"), "Ingresos nuevos");
-    await userEvent.selectOptions(screen.getByLabelText("Fuente"), "contabilidad");
+    await seleccionarFuente("contabilidad");
     await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
     await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
 
     expect(await screen.findByRole("heading", { name: "Ingresos nuevos" })).toBeInTheDocument();
     expect(muestraMocks.crearMuestra).toHaveBeenCalledWith({
-      titulo: "Ingresos nuevos", fuente: "contabilidad", tipo: "tarjeta", segmentoContable: "todos",
+      titulo: "Ingresos nuevos", fuente: "contabilidad", tipo: "tarjeta", segmentoContable: "todos", fuentes: ["contabilidad"],
+      columnasDashboard: "1", ordenDashboard: 0,
     });
+  });
+
+  it("guarda una muestra de dos columnas y la expande lateralmente en el dashboard", async () => {
+    renderPagina();
+    await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
+    await userEvent.type(screen.getByLabelText("Título de la muestra"), "Fuentes anchas");
+    await seleccionarFuente("contabilidad");
+    await seleccionarFuente("contactos");
+    await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
+    await userEvent.selectOptions(screen.getByLabelText("Ancho de la tarjeta en el dashboard"), "2");
+    await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
+
+    const tarjeta = await screen.findByRole("button", { name: /Fuentes anchas/ });
+    expect(muestraMocks.crearMuestra).toHaveBeenCalledWith(expect.objectContaining({ columnasDashboard: "2" }));
+    expect(tarjeta.parentElement).toHaveClass("sm:col-span-2", "lg:col-span-2");
   });
 
   it("no envía al backend una muestra incompleta", async () => {
@@ -769,7 +816,7 @@ describe("PaginaDashboardInicio (T5 — persistencia en backend)", () => {
     renderPagina();
     await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
     await userEvent.type(screen.getByLabelText("Título de la muestra"), "Pendiente");
-    await userEvent.selectOptions(screen.getByLabelText("Fuente"), "contactos");
+    await seleccionarFuente("contactos");
     await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
     await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
 
@@ -788,10 +835,10 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
   });
 
   /** Crea una muestra desde el flujo normal de la UI y espera el cierre del modal. */
-  const crearMuestra = async ({ titulo, fuente, tipo }) => {
+  const crearMuestra = async ({ titulo, fuente, fuentes, tipo }) => {
     await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
     await userEvent.type(screen.getByLabelText("Título de la muestra"), titulo);
-    await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
+    for (const seleccionada of (fuentes || [fuente])) await seleccionarFuente(seleccionada);
     await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
     await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
     await waitFor(() => expect(obtenerPanel()).toBeNull());
@@ -827,6 +874,42 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
         expect(within(tarjeta).getAllByText(valor)).toHaveLength(1);
       }
     });
+
+    it("muestra cada fuente por separado en todos los tipos de visualización", async () => {
+      renderPagina();
+      const tipos = ["tarjeta", "grafica", "metrica", "mapa_calor"];
+      for (const tipo of tipos) {
+        const titulo = `Muestra conjunta ${tipo}`;
+        await crearMuestra({
+          titulo,
+          fuentes: ["contabilidad", "contactos"],
+          tipo,
+        });
+
+        const tarjeta = screen.getByRole("button", { name: new RegExp(titulo) });
+        expect(within(tarjeta).getByRole("heading", { name: "Contabilidad" })).toBeInTheDocument();
+        expect(within(tarjeta).getByRole("heading", { name: "Contactos" })).toBeInTheDocument();
+        if (tipo === "tarjeta") {
+          expect(within(tarjeta).getByText("$3.473.000")).toBeInTheDocument();
+          expect(within(tarjeta).getByText("4")).toBeInTheDocument();
+        }
+        if (tipo === "grafica") {
+          expect(within(tarjeta).getByRole("img", { name: /Gráfica de Contabilidad/ })).toBeInTheDocument();
+          expect(within(tarjeta).getByRole("img", { name: /Gráfica de Contactos/ })).toBeInTheDocument();
+        }
+        if (tipo === "metrica") {
+          expect(within(tarjeta).getByText("$3.473.000")).toBeInTheDocument();
+          expect(within(tarjeta).getByText("4")).toBeInTheDocument();
+        }
+        if (tipo === "mapa_calor") {
+          expect(within(tarjeta).getByRole("img", { name: "Mapa de actividad de los últimos 35 días" })).toBeInTheDocument();
+          expect(within(tarjeta).getByText("Esta fuente no incluye fechas para construir un mapa de actividad.")).toBeInTheDocument();
+        }
+      }
+      expect(muestraMocks.obtenerDatosMuestra).toHaveBeenCalledWith(
+        "contabilidad", "usuario-prueba", "todos", "todas", ["contabilidad", "contactos"]
+      );
+    });
   });
 
   describe("gráfica (AC-13)", () => {
@@ -845,8 +928,8 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       renderPagina();
       await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
       await userEvent.type(screen.getByLabelText("Título de la muestra"), "Correo personal");
-      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "correo");
-      await userEvent.selectOptions(await screen.findByLabelText("Cuenta de correo"), "cuenta-1");
+      await seleccionarFuente("correo");
+      await userEvent.click(screen.getByRole("checkbox", { name: "trabajo@example.test" }));
       await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
       await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
 
@@ -854,8 +937,9 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
         expect(muestraMocks.crearMuestra).toHaveBeenCalledWith(expect.objectContaining({
           fuente: "correo",
           cuentaCorreo: "cuenta-1",
+          cuentasCorreo: ["cuenta-1"],
         }));
-        expect(muestraMocks.obtenerDatosMuestra).toHaveBeenCalledWith("correo", "usuario-prueba", "todos", "cuenta-1");
+        expect(muestraMocks.obtenerDatosMuestra).toHaveBeenCalledWith("correo", "usuario-prueba", "todos", "cuenta-1", [], ["cuenta-1"]);
       });
       const tarjeta = screen.getByRole("button", { name: /Correo personal/ });
       expect(within(tarjeta).getByText(/personal@example\.test/)).toBeInTheDocument();
@@ -959,7 +1043,7 @@ describe("PaginaDashboardInicio (T7 — superficie mixta y rejilla responsiva)",
     for (let i = 1; i <= cantidad; i++) {
       await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
       await userEvent.type(screen.getByLabelText("Título de la muestra"), `Muestra ${i}`);
-      await userEvent.selectOptions(screen.getByLabelText("Fuente"), "contactos");
+      await seleccionarFuente("contactos");
       await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), "tarjeta");
       await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
       await waitFor(() => expect(obtenerPanel()).toBeNull());
@@ -991,9 +1075,56 @@ describe("PaginaDashboardInicio (T7 — superficie mixta y rejilla responsiva)",
 
     const lista = screen.getByTestId("lista-muestras");
     expect(lista.classList.contains("grid")).toBe(true);
+    expect(lista.classList.contains("auto-rows-auto")).toBe(true);
     expect(lista.classList.contains("gap-4")).toBe(true);
+    expect(lista.classList.contains("sm:auto-rows-fr")).toBe(true);
     expect(lista.classList.contains("sm:grid-cols-2")).toBe(true);
     expect(lista.classList.contains("lg:grid-cols-3")).toBe(true);
+  });
+
+  it("permite mover tarjetas con controles accesibles y guarda el orden", async () => {
+    muestraMocks.listarMuestras.mockResolvedValue([
+      { id: "1", titulo: "Primera", fuente: "contactos", tipo: "tarjeta" },
+      { id: "2", titulo: "Segunda", fuente: "contactos", tipo: "tarjeta" },
+    ]);
+    renderPagina();
+
+    const grupoReordenamiento = await screen.findByRole("group", { name: "Cambiar posición de Segunda" });
+    await userEvent.click(within(grupoReordenamiento).getByRole("button", { name: "Mover antes" }));
+
+    await waitFor(() => expect(muestraMocks.actualizarOrdenMuestras).toHaveBeenCalledWith([2, 1]));
+    const titulos = [...screen.getByTestId("lista-muestras").querySelectorAll("li h2")].map((titulo) => titulo.textContent);
+    expect(titulos).toEqual(["Segunda", "Primera"]);
+  });
+
+  it("permite arrastrar una tarjeta a otra posición de la cuadrícula", async () => {
+    muestraMocks.listarMuestras.mockResolvedValue([
+      { id: "1", titulo: "Primera", fuente: "contactos", tipo: "tarjeta" },
+      { id: "2", titulo: "Segunda", fuente: "contactos", tipo: "tarjeta" },
+    ]);
+    renderPagina();
+    const lista = screen.getByTestId("lista-muestras");
+    const origen = await screen.findByText("Primera");
+    const handle = origen.closest("li").querySelector('[draggable="true"]');
+    const destino = lista.querySelector('[data-muestra-id="2"]');
+    const dataTransfer = {
+      effectAllowed: "",
+      setData: vi.fn(),
+      getData: vi.fn(() => "1"),
+    };
+    vi.spyOn(destino, "getBoundingClientRect").mockReturnValue({ top: 0, height: 100 });
+
+    fireEvent.dragStart(handle, { dataTransfer });
+    const dropEvent = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperties(dropEvent, {
+      dataTransfer: { value: dataTransfer },
+      clientY: { value: 100 },
+    });
+    fireEvent(destino, dropEvent);
+
+    await waitFor(() => expect(muestraMocks.actualizarOrdenMuestras).toHaveBeenCalledWith([2, 1]));
+    const titulos = [...lista.querySelectorAll("li h2")].map((titulo) => titulo.textContent);
+    expect(titulos).toEqual(["Segunda", "Primera"]);
   });
 });
 
@@ -1033,7 +1164,7 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
   const crearMuestra = async ({ titulo, fuente, tipo }) => {
     await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
     await userEvent.type(screen.getByLabelText("Título de la muestra"), titulo);
-    await userEvent.selectOptions(screen.getByLabelText("Fuente"), fuente);
+    await seleccionarFuente(fuente);
     await userEvent.selectOptions(screen.getByLabelText("Tipo de visualización"), tipo);
     await userEvent.click(screen.getByRole("button", { name: "guardar muestra" }));
     await waitFor(() => expect(obtenerPanel()).toBeNull());

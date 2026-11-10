@@ -16,14 +16,14 @@ export default function MuestraVisual({ muestra, temaOscuro = false }) {
   const valor = obtenerValorMuestra(muestra);
   const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(muestra.tipo);
   const detalles = Array.isArray(muestra.detalles) ? muestra.detalles : [];
+  if (muestra.cargando) return <p role="status" className={`text-sm ${etiqueta}`}>Cargando datos de {fuente?.etiqueta || "la fuente"}…</p>;
+  if (muestra.error) return <p role="alert" className="text-sm text-red-700">{muestra.error}</p>;
   const detallesMarkup = detalles.length > 0 && <dl aria-label="Detalles de la muestra" className={`grid w-full grid-cols-1 gap-2 border-t border-border-line/20 pt-3 sm:grid-cols-2 ${etiqueta}`}>
     {detalles.map((detalle) => <div key={detalle.etiqueta} className="min-w-0">
       <dt className="text-xs">{detalle.etiqueta}</dt>
       <dd className={`break-words text-sm font-medium ${texto}`}>{detalle.valor}</dd>
     </div>)}
   </dl>;
-  if (muestra.cargando) return <p role="status" className={`text-sm ${etiqueta}`}>Cargando datos de {fuente?.etiqueta || "la fuente"}…</p>;
-  if (muestra.error) return <p role="alert" className="text-sm text-red-700">{muestra.error}</p>;
   if (!tieneValorMuestra(valor) || !fuente || !tipoValido) return <><p className={`text-sm ${etiqueta}`}>{TEXTO_SIN_DATOS}</p>{detallesMarkup}</>;
 
   const valorFormateado = muestra.unidad === "moneda" ? formatearMonto(valor) : formatearCantidad(valor);

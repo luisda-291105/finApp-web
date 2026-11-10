@@ -32,7 +32,8 @@ export default function DetalleMuestraModal({
   const tipoDemo = TIPOS_VISUALIZACION.find((opcion) => opcion.valor === muestra.tipo);
   const etiquetaTipo = tipoDemo?.etiqueta || muestra.tipo;
   const cuentaCorreo = normalizarFuente(muestra.fuente) === "correo" ? (muestra.cuentaCorreoEtiqueta || "") : "";
-  const nombreFuente = `${etiquetaFuente}${segmento ? ` · ${segmento.etiqueta}` : ""}${cuentaCorreo ? ` · ${cuentaCorreo}` : ""}`;
+  const segmentoContable = normalizarFuente(muestra.fuente) === "contabilidad" ? segmento : null;
+  const nombreFuente = `${etiquetaFuente}${segmentoContable ? ` · ${segmentoContable.etiqueta}` : ""}${cuentaCorreo ? ` · ${cuentaCorreo}` : ""}`;
   const focoTrap = { ...opcionesTrampa(panelRef), initialFocus: () => panelRef.current };
   const cerrarDesdeFondo = (evento) => { if (evento.target === evento.currentTarget) alCerrar(); };
 

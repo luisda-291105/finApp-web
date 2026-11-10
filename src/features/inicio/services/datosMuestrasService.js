@@ -156,12 +156,17 @@ function datosContactos(contactos) {
   };
 }
 
-async function datosCorreo(cuentaSeleccionada = "todas") {
+async function datosCorreo(cuentaSeleccionada = "todas", cuentasSeleccionadas = null) {
   const cuentas = extraerLista(await listarCuentasGmail());
-  const cuentasFiltradas = cuentaSeleccionada === "todas"
+  const seleccionadas = cuentasSeleccionadas === null ? [cuentaSeleccionada] : cuentasSeleccionadas;
+  const todasSeleccionadas = seleccionadas.includes("todas");
+  const cuentasFiltradas = todasSeleccionadas
     ? cuentas
-    : cuentas.filter((cuenta) => String(cuenta.id) === String(cuentaSeleccionada));
-  if (cuentaSeleccionada !== "todas" && cuentasFiltradas.length === 0) {
+    : cuentas.filter((cuenta) => seleccionadas.includes(String(cuenta.id)));
+  if (!todasSeleccionadas && seleccionadas.length === 0) {
+    throw new Error("Selecciona al menos una cuenta de correo para consultar sus mensajes.");
+  }
+  if (!todasSeleccionadas && seleccionadas.some((id) => !cuentas.some((cuenta) => String(cuenta.id) === String(id)))) {
     throw new Error("La cuenta de correo seleccionada ya no está disponible.");
   }
   const resultados = await Promise.all(cuentasFiltradas.map(async (cuenta) => ({
@@ -186,9 +191,9 @@ async function datosCorreo(cuentaSeleccionada = "todas") {
     serie: construirSeriePorCategorias(serie),
     intensidades: temporal.intensidades,
     diasHeatmap: temporal.diasHeatmap,
-    cuentaCorreoEtiqueta: cuentaSeleccionada === "todas"
+    cuentaCorreoEtiqueta: todasSeleccionadas
       ? "Todas las cuentas"
-      : (cuentasFiltradas[0]?.email || "Cuenta de correo"),
+      : cuentasFiltradas.map((cuenta) => cuenta.email || "Cuenta de correo").join(", "),
     detalles: [
       { etiqueta: "Cuentas incluidas", valor: String(cuentasFiltradas.length) },
       ...(ultimoMensaje ? [{
@@ -200,14 +205,14 @@ async function datosCorreo(cuentaSeleccionada = "todas") {
   };
 }
 
-export async function obtenerDatosMuestra(fuente, idUsuario, segmento = "todos", cuentaCorreo = "todas") {
+export async function obtenerDatosMuestra(fuente, idUsuario, segmento = "todos", cuentaCorreo = "todas", cuentasCorreoSeleccionadas = null) {
   switch (fuente) {
     case "suscripciones":
       return datosSuscripciones(await listarSuscripcionesGmail());
     case "contabilidad":
       return datosContabilidad(extraerLista(await listarMovimientos(null)), segmento);
     case "correo":
-      return datosCorreo(cuentaCorreo);
+      return datosCorreo(cuentaCorreo, cuentasCorreoSeleccionadas);
     case "contactos":
       return datosContactos(extraerLista(await obtenerContactosPorUsuario(idUsuario)));
     default:
