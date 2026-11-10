@@ -70,6 +70,9 @@ export const ENDPOINTS = {
     suscripciones: "/api/gmail/suscripciones",
     movimientosNotificaciones: "/api/gmail/movimientos/notificaciones",
   },
+  telegram: {
+    base: "/api/telegram",
+  },
 };
 
 /**

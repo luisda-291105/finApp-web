@@ -60,22 +60,23 @@ export default function DetalleMuestraModal({
               <BotonCerrar ariaLabel="Cerrar detalle de muestra" alCerrar={alCerrar} className="text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark focus-visible:ring-emerald-primary" />
             </header>
 
-            <div className="px-5 py-4">
-              <section aria-label="Vista previa de la muestra" className="mb-5 overflow-hidden rounded-2xl border border-border-line/30 bg-bg-cream/75 shadow-sm">
-                <div className="flex items-center justify-between gap-3 border-b border-border-line/20 px-4 py-3">
-                  <h3 className="font-display font-semibold text-bg-dark">{muestra.titulo}</h3>
-                  <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-slate-text">{etiquetaTipo}</span>
-                </div>
-                <div className="flex min-h-28 flex-col justify-center gap-2 px-4 py-4"><MuestraVisual muestra={muestra} temaOscuro={temaOscuro} /></div>
-                <div className="border-t border-border-line/20 px-4 py-3">
-                  <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p>
-                  <p className="break-words text-sm text-bg-dark">{nombreFuente}</p>
-                </div>
+            <div className="space-y-4 px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="min-w-0 flex-1 break-words font-display text-xl font-semibold text-bg-dark">{muestra.titulo}</h3>
+                <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-slate-text">{etiquetaTipo}</span>
+              </div>
+
+              <section aria-label="Datos actuales de la muestra" className={`rounded-2xl border p-4 ${temaOscuro ? "border-border-line/50 bg-bg-dark/70" : "border-border-line/40 bg-bg-cream/60"}`}>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-text">Datos actuales</p>
+                <div className="min-w-0"><MuestraVisual muestra={muestra} temaOscuro={temaOscuro} /></div>
               </section>
 
-              <section aria-label="Ir a la fuente de la muestra" className={`mb-5 rounded-xl border border-border-line/40 p-4 ${temaOscuro ? "bg-bg-dark/60" : "bg-bg-cream/60"}`}>
-                <p className="mb-2 text-sm text-slate-text">Continuar en {etiquetaFuente}</p>
-                <button type="button" onClick={() => alIrAFuente(muestra.fuente)} className="w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent">Ir a la fuente</button>
+              <section aria-label="Fuente de la muestra" className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 ${temaOscuro ? "border-border-line/50 bg-bg-dark/50" : "border-border-line/40 bg-bg-cream/40"}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p>
+                  <p className="break-words text-sm font-medium text-bg-dark">{nombreFuente}</p>
+                </div>
+                <button type="button" onClick={() => alIrAFuente(muestra.fuente)} className="min-h-10 shrink-0 rounded-lg bg-emerald-primary px-4 py-2 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent">Ir a {etiquetaFuente}</button>
               </section>
 
               {confirmandoEliminacion && <div role="alert" className="mb-4 rounded-xl border border-red-300/50 bg-red-50/60 p-3 text-sm text-bg-dark">¿Eliminar esta muestra? Esta acción no se puede deshacer.</div>}

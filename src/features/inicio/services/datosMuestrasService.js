@@ -1,5 +1,6 @@
 import { listarMovimientos } from "../../contabilidad/services/movimientosService";
 import { obtenerContactosPorUsuario } from "../../contactos/services/contactosService";
+import { obtenerOrigenContacto } from "../../contactos/utils/origenContacto";
 import { listarCuentasGmail, listarSuscripcionesGmail, obtenerCorreosGmail } from "../../../services/gmailServicio";
 
 const extraerLista = (respuesta) => {
@@ -138,7 +139,10 @@ function datosSuscripciones(respuesta) {
 function datosContactos(contactos) {
   const grupos = new Map();
   contactos.forEach((contacto) => {
-    const etiqueta = contacto.empresa || contacto.origen || contacto.cargo || "Contactos";
+    const origen = obtenerOrigenContacto(contacto) === "Google Contacts" ? "Contactos de Google" : "Contactos de FinApp";
+    const empresa = String(contacto.empresa || "").trim();
+    const cargo = String(contacto.cargo || "").trim();
+    const etiqueta = empresa || cargo || origen;
     grupos.set(etiqueta, (grupos.get(etiqueta) || 0) + 1);
   });
   const serie = construirSeriePorCategorias([...grupos].map(([etiqueta, valor]) => ({ etiqueta, valor })));

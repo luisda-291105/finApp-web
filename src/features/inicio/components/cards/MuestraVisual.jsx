@@ -78,7 +78,18 @@ export default function MuestraVisual({ muestra, temaOscuro = false }) {
     : Array.isArray(muestra.intensidades) ? muestra.intensidades.map((fila) => fila.map((intensidad) => ({ intensidad, valor: 0 }))) : null;
   return (
     <>
-      {muestra.tipo === "tarjeta" && <p className={`text-2xl font-bold ${texto}`}>{valorFormateado}</p>}
+      {muestra.tipo === "tarjeta" && <section aria-label={`Resumen de ${fuente.etiqueta}`} className={`w-full rounded-xl border p-4 ${temaOscuro ? "border-border-line/40 bg-bg-dark/50" : "border-border-line/40 bg-white/70"}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-xs font-medium uppercase tracking-wide ${etiqueta}`}>Resumen actual</p>
+            <p className={`mt-1 break-words text-3xl font-bold leading-tight ${texto}`}>{valorFormateado}</p>
+          </div>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${temaOscuro ? "bg-mint-accent/15 text-mint-accent" : "bg-emerald-primary/10 text-emerald-primary"}`}>
+            {muestra.unidad === "moneda" ? "COP" : "registros"}
+          </span>
+        </div>
+        {muestra.variacion && <p className="mt-3 text-sm font-medium text-emerald-primary">{muestra.variacion} <span className={`font-normal ${etiqueta}`}>frente al periodo anterior</span></p>}
+      </section>}
       {muestra.tipo === "grafica" && (serie.length
         ? <div role="img" aria-label={`Gráfica de ${fuente.etiqueta} basada en datos guardados`} className="flex h-24 items-end gap-1">
           {serie.map((barra, indice) => <div key={`${barra.etiqueta}-${indice}`} data-testid="barra-grafica" className="flex min-w-0 flex-1 flex-col items-center justify-end" title={`${barra.etiqueta}: ${muestra.unidad === "moneda" ? formatearMonto(barra.valor) : formatearCantidad(barra.valor)}`}>
