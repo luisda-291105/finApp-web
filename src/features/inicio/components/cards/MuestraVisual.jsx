@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   CLASES_INTENSIDAD,
   TEXTO_SIN_DATOS,
@@ -7,6 +8,49 @@ import {
   obtenerValorMuestra,
   tieneValorMuestra,
 } from "../../utils/inicioHelpers";
+
+function LineaMetrica({ serie, fuente, unidad, texto, etiqueta }) {
+  const [indiceActivo, setIndiceActivo] = useState(Math.max(0, serie.length - 1));
+  const puntos = serie.map((dato, indice) => {
+    const x = serie.length === 1 ? 160 : 18 + (indice * 284) / (serie.length - 1);
+    const intensidad = Number.isFinite(Number(dato.altura)) ? Math.min(100, Math.max(8, Number(dato.altura))) : 50;
+    const y = 88 - intensidad * 0.58;
+    return { ...dato, x, y, left: `${(x / 320) * 100}%`, top: `${(y / 120) * 100}%` };
+  });
+  const puntoActivo = puntos[indiceActivo];
+  const linea = puntos.map((punto) => `${punto.x},${punto.y}`).join(" ");
+  const formatear = (valor) => unidad === "moneda" ? formatearMonto(valor) : formatearCantidad(valor);
+
+  return <section aria-label={`Métrica de ${fuente?.etiqueta || "la fuente"}`} className="min-w-0 space-y-1">
+    <div className="flex items-center justify-between gap-2">
+      <p className={`truncate text-xs font-medium ${etiqueta}`}>Tendencia · {fuente?.etiqueta || "Fuente"}</p>
+      <span className="shrink-0 text-xs text-emerald-primary">{serie.length} puntos</span>
+    </div>
+    <div className="relative h-28 w-full overflow-hidden" aria-label={`Línea interactiva de ${fuente?.etiqueta || "la fuente"}`}>
+      <svg viewBox="0 0 320 120" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden="true">
+        <line x1="12" y1="88" x2="308" y2="88" stroke="currentColor" strokeOpacity="0.15" strokeWidth="1" />
+        {puntos.length > 1 && <polyline points={linea} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-primary" />}
+        {puntos.map((punto, indice) => <circle key={`${punto.etiqueta}-${indice}`} cx={punto.x} cy={punto.y} r={indice === indiceActivo ? 5 : 3.5} fill="currentColor" className={indice === indiceActivo ? "text-emerald-primary" : "text-emerald-primary/60"} />)}
+      </svg>
+      {puntos.map((punto, indice) => <button
+        key={`${punto.etiqueta}-selector-${indice}`}
+        type="button"
+        onClick={() => setIndiceActivo(indice)}
+        onMouseEnter={() => setIndiceActivo(indice)}
+        onFocus={() => setIndiceActivo(indice)}
+        aria-label={`${fuente?.etiqueta || "Fuente"}, ${punto.etiqueta}: ${formatear(punto.valor)}`}
+        aria-pressed={indice === indiceActivo}
+        title={`${punto.etiqueta}: ${formatear(punto.valor)}`}
+        className="absolute z-10 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full outline-none after:absolute after:left-1/2 after:top-1/2 after:h-2.5 after:w-2.5 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full after:bg-emerald-primary focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2"
+        style={{ left: punto.left, top: punto.top }}
+      />)}
+    </div>
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <p className={`min-w-0 truncate text-xs ${etiqueta}`}>{puntoActivo?.etiqueta || "Sin puntos"}</p>
+      {puntoActivo && <p className={`shrink-0 text-sm font-semibold ${texto}`} aria-live="polite">{formatear(puntoActivo.valor)}</p>}
+    </div>
+  </section>;
+}
 
 /** Representa una muestra con los datos actuales obtenidos de su fuente. */
 export default function MuestraVisual({ muestra, temaOscuro = false }) {
@@ -43,7 +87,10 @@ export default function MuestraVisual({ muestra, temaOscuro = false }) {
           </div>)}
         </div>
         : <p className={`text-sm ${etiqueta}`}>No hay datos suficientes para crear esta gráfica.</p>)}
-      {muestra.tipo === "metrica" && <div className="flex items-baseline gap-2"><span className={`text-3xl font-bold ${texto}`}>{valorFormateado}</span>{muestra.variacion && <span className="text-sm font-medium text-emerald-primary">{muestra.variacion}</span>}</div>}
+      {muestra.tipo === "metrica" && <div className="w-full space-y-3">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1"><span className={`text-3xl font-bold ${texto}`}>{valorFormateado}</span>{muestra.variacion && <span className="text-sm font-medium text-emerald-primary">{muestra.variacion}</span>}</div>
+        {serie.length > 0 ? <LineaMetrica serie={serie} fuente={fuente} unidad={muestra.unidad} texto={texto} etiqueta={etiqueta} /> : <p className={`text-sm ${etiqueta}`}>Esta fuente todavía no tiene puntos de tendencia.</p>}
+      </div>}
       {muestra.tipo === "mapa_calor" && (filasHeatmap
         ? <div className="space-y-1.5" data-testid="mapa-calor">
           <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium text-slate-text" aria-hidden="true">{["L", "M", "M", "J", "V", "S", "D"].map((dia, indice) => <span key={`${dia}-${indice}`}>{dia}</span>)}</div>
