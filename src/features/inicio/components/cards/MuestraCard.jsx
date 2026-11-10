@@ -16,7 +16,7 @@ export default function MuestraCard({ muestra, idItemDashboard = muestra.id, ind
   const translucida = indice < 3;
   const superficie = temaOscuro
     ? translucida ? "glass-surface border border-border-line/50 bg-bg-dark/90" : "border border-border-line/50 bg-bg-dark"
-    : translucida ? "glass-surface border border-border-line/30 bg-bg-cream/95" : "border border-border-line/20 bg-bg-cream/90";
+    : "border border-slate-300 bg-slate-100 shadow-md";
   const badge = temaOscuro ? "bg-mint-accent/15 text-bg-cream" : "bg-emerald-primary/10 text-slate-text";
 
   return (

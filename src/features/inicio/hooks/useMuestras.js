@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
-import { actualizarMuestra, actualizarOrdenMuestras, crearMuestra, eliminarMuestra, listarMuestras } from "../services/muestrasService";
+import { actualizarAgrupacionMuestras, actualizarMuestra, actualizarOrdenMuestras, crearMuestra, eliminarMuestra, listarMuestras } from "../services/muestrasService";
 import { obtenerDatosMuestra } from "../services/datosMuestrasService";
 import { esBorradorCompleto, esMuestraDuplicada, normalizarFuente, normalizarTitulo } from "../utils/inicioHelpers";
 
@@ -160,24 +160,30 @@ export default function useMuestras() {
 
   const actualizarMembresiaAgrupacion = async (idAgrupacion, nombreAgrupacion, idsMuestra, agrupar = true) => {
     if (!usuario?.idUsuario || guardandoMuestra) return false;
-    const seleccionadas = muestras.filter((muestra) => idsMuestra.includes(String(muestra.id)));
-    if (!idAgrupacion || seleccionadas.length !== idsMuestra.length) return false;
+    const idsObjetivo = new Set(idsMuestra.map(String));
+    const afectadas = muestras.filter((muestra) =>
+      String(muestra.agrupacionId || "") === String(idAgrupacion) || idsObjetivo.has(String(muestra.id))
+    );
+    const seleccionadas = afectadas.filter((muestra) => idsObjetivo.has(String(muestra.id)));
+    if (!idAgrupacion || seleccionadas.length !== idsObjetivo.size || (agrupar && (seleccionadas.length < 2 || seleccionadas.length > 4))) return false;
     setErrorPersistencia("");
     setGuardandoMuestra(true);
-    const original = seleccionadas;
+    const original = afectadas;
     const actualizadas = [];
     try {
-      for (const muestra of seleccionadas) {
-        const cambios = agrupar
+      for (const muestra of afectadas) {
+        const pertenecer = agrupar && idsObjetivo.has(String(muestra.id));
+        const cambios = pertenecer
           ? { agrupacionId: idAgrupacion, agrupacionNombre: nombreAgrupacion }
           : { agrupacionId: undefined, agrupacionNombre: undefined };
         actualizadas.push(await actualizarMuestra(muestra.id, { ...muestra, ...cambios }));
       }
       setMuestras((actuales) => actuales.map((muestra) => {
         const actualizada = actualizadas.find((item) => String(item.id) === String(muestra.id));
-        return actualizada ? { ...muestra, ...actualizada, ...(
-          agrupar ? { agrupacionId: idAgrupacion, agrupacionNombre: nombreAgrupacion } : { agrupacionId: undefined, agrupacionNombre: undefined }
-        ) } : muestra;
+        if (!actualizada) return muestra;
+        return { ...muestra, ...actualizada, ...(agrupar && idsObjetivo.has(String(muestra.id))
+          ? { agrupacionId: idAgrupacion, agrupacionNombre }
+          : { agrupacionId: undefined, agrupacionNombre: undefined }) };
       }));
       return true;
     } catch (error) {
@@ -208,7 +214,47 @@ export default function useMuestras() {
       return false;
     }
     const idAgrupacion = globalThis.crypto?.randomUUID?.() || `agrupacion-${Date.now()}`;
-    return actualizarMembresiaAgrupacion(idAgrupacion, nombreLimpio, idsUnicos);
+    return guardarAgrupacion(idAgrupacion, nombreLimpio, idsUnicos);
+  };
+
+  const editarAgrupacion = async (idAgrupacion, nombre, ids) => {
+    const nombreLimpio = String(nombre || "").trim();
+    const idsUnicos = [...new Set(ids.map(String))];
+    if (nombreLimpio.length < 2 || nombreLimpio.length > 100) {
+      setErrorPersistencia("El nombre debe tener entre 2 y 100 caracteres.");
+      return false;
+    }
+    if (idsUnicos.length < 2 || idsUnicos.length > 4) {
+      setErrorPersistencia("Una agrupación debe incluir entre 2 y 4 muestras.");
+      return false;
+    }
+    if (idsUnicos.some((id) => {
+      const muestra = muestras.find((item) => String(item.id) === id);
+      return muestra?.agrupacionId && String(muestra.agrupacionId) !== String(idAgrupacion);
+    })) {
+      setErrorPersistencia("Una muestra seleccionada ya pertenece a otra agrupación.");
+      return false;
+    }
+    return guardarAgrupacion(idAgrupacion, nombreLimpio, idsUnicos);
+  };
+
+  const guardarAgrupacion = async (idAgrupacion, nombre, ids) => {
+    if (!usuario?.idUsuario || guardandoMuestra) return false;
+    setErrorPersistencia("");
+    setGuardandoMuestra(true);
+    try {
+      const actualizadas = await actualizarAgrupacionMuestras(idAgrupacion, nombre, ids);
+      const porId = new Map(actualizadas.map((muestra) => [String(muestra.id), muestra]));
+      setMuestras((actuales) => actuales.map((muestra) => porId.has(String(muestra.id))
+        ? { ...muestra, ...porId.get(String(muestra.id)) }
+        : muestra));
+      return true;
+    } catch (error) {
+      setErrorPersistencia(error?.message || "No se pudo guardar la agrupación. Intenta de nuevo.");
+      return false;
+    } finally {
+      setGuardandoMuestra(false);
+    }
   };
 
   const separarAgrupacion = async (idAgrupacion) => {
@@ -219,6 +265,6 @@ export default function useMuestras() {
   return {
     usuario, navigate, muestras, cargandoMuestras, guardandoMuestra, eliminandoMuestra, reordenandoMuestras,
     datosMuestras, cargandoDatosMuestras: Object.values(datosMuestras).some((datos) => datos?.cargando),
-    errorPersistencia, setErrorPersistencia, guardarMuestra, reordenarMuestras, eliminarMuestraPersistida, crearAgrupacion, separarAgrupacion,
+    errorPersistencia, setErrorPersistencia, guardarMuestra, reordenarMuestras, eliminarMuestraPersistida, crearAgrupacion, editarAgrupacion, separarAgrupacion,
   };
 }

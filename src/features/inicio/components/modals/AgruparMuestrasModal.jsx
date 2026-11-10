@@ -10,15 +10,15 @@ import { useEffect, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 
 /** Permite elegir entre dos y cuatro muestras para una agrupación. */
-export default function AgruparMuestrasModal({ abierto, muestras = [], guardando = false, error = "", triggerRef, alCerrar, alGuardar }) {
+export default function AgruparMuestrasModal({ abierto, muestras = [], agrupacion = null, guardando = false, error = "", triggerRef, alCerrar, alGuardar }) {
   const [nombre, setNombre] = useState("");
   const [idsSeleccionados, setIdsSeleccionados] = useState([]);
 
   useEffect(() => {
     if (!abierto) return;
-    setNombre("");
-    setIdsSeleccionados([]);
-  }, [abierto]);
+    setNombre(agrupacion?.nombre || "");
+    setIdsSeleccionados(agrupacion?.muestras?.map((muestra) => String(muestra.id)) || []);
+  }, [abierto, agrupacion?.idAgrupacion]);
 
   const cambiarSeleccion = (id, seleccionado) => {
     const idTexto = String(id);
@@ -30,10 +30,11 @@ export default function AgruparMuestrasModal({ abierto, muestras = [], guardando
   const enviar = async (evento) => {
     evento.preventDefault();
     if (nombre.trim().length < 2 || idsSeleccionados.length < 2 || idsSeleccionados.length > 4 || guardando) return;
-    if (await alGuardar(nombre.trim(), idsSeleccionados)) alCerrar();
+    if (await alGuardar(nombre.trim(), idsSeleccionados, agrupacion?.idAgrupacion)) alCerrar();
   };
 
-  return <ModalDetalleRegistro abierto={abierto} titulo="Crear agrupación" etiquetaCerrar="Cerrar creación de agrupación" triggerRef={triggerRef} alCerrar={alCerrar}>
+  const editando = Boolean(agrupacion);
+  return <ModalDetalleRegistro abierto={abierto} titulo={editando ? "Editar agrupación" : "Crear agrupación"} etiquetaCerrar={editando ? "Cerrar edición de agrupación" : "Cerrar creación de agrupación"} triggerRef={triggerRef} alCerrar={alCerrar}>
     <form onSubmit={enviar} className="space-y-4">
       <label htmlFor="agrupacion-nombre" className="flex flex-col gap-1.5 text-sm font-medium text-bg-dark">Nombre de la agrupación
         <input id="agrupacion-nombre" value={nombre} onChange={(evento) => setNombre(evento.target.value)} minLength={2} maxLength={100} required placeholder="Ej. Resumen mensual" className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
@@ -51,7 +52,7 @@ export default function AgruparMuestrasModal({ abierto, muestras = [], guardando
         })}</div> : <p className="rounded-xl border border-border-line/40 p-3 text-sm text-slate-text">No hay muestras sin agrupar disponibles.</p>}
       </fieldset>
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
-      <button type="submit" disabled={guardando || nombre.trim().length < 2 || idsSeleccionados.length < 2 || idsSeleccionados.length > 4} className="min-h-11 w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">{guardando ? "Creando…" : "Crear agrupación"}</button>
+      <button type="submit" disabled={guardando || nombre.trim().length < 2 || idsSeleccionados.length < 2 || idsSeleccionados.length > 4} className="min-h-11 w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">{guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear agrupación"}</button>
     </form>
   </ModalDetalleRegistro>;
 }

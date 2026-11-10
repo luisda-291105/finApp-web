@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTema } from "../../../context/TemaContext";
-import { FolderPlus } from "lucide-react";
+import { ChevronDown, ChevronRight, FolderPlus, Pencil } from "lucide-react";
 import useMuestras from "../hooks/useMuestras";
 import MuestraCard from "../components/cards/MuestraCard";
 import CrearMuestraModal from "../components/modals/CrearMuestraModal";
@@ -15,11 +15,14 @@ export default function InicioPage() {
   const temaOscuro = tema === "oscuro";
   const {
     usuario, navigate, muestras, datosMuestras, cargandoMuestras, guardandoMuestra, eliminandoMuestra,
-    errorPersistencia, setErrorPersistencia, guardarMuestra, reordenarMuestras, reordenandoMuestras, eliminarMuestraPersistida, crearAgrupacion, separarAgrupacion,
+    errorPersistencia, setErrorPersistencia, guardarMuestra, reordenarMuestras, reordenandoMuestras, eliminarMuestraPersistida, crearAgrupacion, editarAgrupacion, separarAgrupacion,
   } = useMuestras();
   const [borrador, setBorrador] = useState(BORRADOR_VACIO);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modalAgrupacionAbierto, setModalAgrupacionAbierto] = useState(false);
+  const [agrupacionEditando, setAgrupacionEditando] = useState(null);
+  const [agrupacionesContraidas, setAgrupacionesContraidas] = useState({});
+  const [preferenciasAgrupacionCargadas, setPreferenciasAgrupacionCargadas] = useState("");
   const [muestraDetalle, setMuestraDetalle] = useState(null);
   const [indiceMuestraEditando, setIndiceMuestraEditando] = useState(null);
   const [confirmarEliminacion, setConfirmarEliminacion] = useState(false);
@@ -33,6 +36,23 @@ export default function InicioPage() {
   const triggerAgrupacionRef = useRef(null);
   const detalleTriggerRef = useRef(null);
   const fuentesCorreoBorrador = borrador.fuente === "correo";
+  const clavePreferenciasAgrupacion = usuario?.idUsuario ? `finapp:dashboard:agrupaciones-contraidas:${usuario.idUsuario}` : "";
+
+  useEffect(() => {
+    if (!clavePreferenciasAgrupacion) return;
+    try {
+      setAgrupacionesContraidas(JSON.parse(localStorage.getItem(clavePreferenciasAgrupacion) || "{}"));
+    } catch {
+      setAgrupacionesContraidas({});
+    }
+    setPreferenciasAgrupacionCargadas(clavePreferenciasAgrupacion);
+  }, [clavePreferenciasAgrupacion]);
+
+  useEffect(() => {
+    if (clavePreferenciasAgrupacion && preferenciasAgrupacionCargadas === clavePreferenciasAgrupacion) {
+      try { localStorage.setItem(clavePreferenciasAgrupacion, JSON.stringify(agrupacionesContraidas)); } catch { /* Mantiene el estado de la sesión aunque el almacenamiento esté bloqueado. */ }
+    }
+  }, [agrupacionesContraidas, clavePreferenciasAgrupacion, preferenciasAgrupacionCargadas]);
 
   useEffect(() => {
     let vigente = true;
@@ -131,9 +151,15 @@ export default function InicioPage() {
     }
   };
 
-  const alCrearAgrupacion = (nombre, ids) => {
+  const alGuardarAgrupacion = (nombre, ids, idExistente) => {
     if (!exigirUsuario()) return false;
-    return crearAgrupacion(nombre, ids);
+    return idExistente ? editarAgrupacion(idExistente, nombre, ids) : crearAgrupacion(nombre, ids);
+  };
+
+  const alEditarAgrupacion = (item) => {
+    setErrorPersistencia("");
+    setAgrupacionEditando(item);
+    setModalAgrupacionAbierto(true);
   };
 
   const alActivarMuestra = (fuente) => {
@@ -207,6 +233,7 @@ export default function InicioPage() {
       tipo: "agrupacion",
       nombre: muestra.agrupacionNombre || "Agrupación",
       idAgrupacion,
+      contraida: Boolean(agrupacionesContraidas[idAgrupacion]),
       muestras: miembros,
     });
   });
@@ -268,7 +295,7 @@ export default function InicioPage() {
             return <li
               key={item.clave}
               data-dashboard-item={item.clave}
-              className={`dashboard-group-container col-span-full min-w-0 rounded-2xl border p-3 shadow-sm ${temaOscuro ? "border-border-line/50 bg-bg-dark/70" : "border-border-line/30 bg-bg-cream/70"} ${item.clave === idMuestraArrastrada ? "opacity-50" : ""} ${item.clave === idMuestraDestino && item.clave !== idMuestraArrastrada ? "ring-2 ring-dashed ring-emerald-primary" : ""}`}
+              className={`dashboard-group-container col-span-full min-w-0 rounded-2xl border p-3 shadow-sm ${temaOscuro ? "border-border-line/50 bg-bg-dark/70" : "border-slate-300 bg-slate-200/60"} ${item.clave === idMuestraArrastrada ? "opacity-50" : ""} ${item.clave === idMuestraDestino && item.clave !== idMuestraArrastrada ? "ring-2 ring-dashed ring-emerald-primary" : ""}`}
             >
               <header className={`mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm ${temaOscuro ? "border-border-line/70 bg-bg-dark text-bg-cream" : "border-border-line/50 bg-bg-cream text-bg-dark"}`}>
                 <span draggable={itemsDashboard.length > 1 && !reordenandoMuestras} onDragStart={(evento) => alIniciarArrastre(evento, item.clave)} onDragEnd={alFinalizarArrastre} className={`cursor-grab select-none active:cursor-grabbing ${temaOscuro ? "text-bg-cream/70" : "text-slate-text"}`}>⠿ Arrastra la agrupación</span>
@@ -276,10 +303,15 @@ export default function InicioPage() {
                 <div className="flex items-center gap-1" role="group" aria-label={`Cambiar posición de ${item.nombre}`}>
                   <button type="button" disabled={indice === 0 || reordenandoMuestras} onClick={() => alMoverItemDashboard(item.clave, -1)} aria-label="Mover agrupación antes" className="rounded px-2 py-1 text-current hover:bg-emerald-primary/10 disabled:opacity-40">↑</button>
                   <button type="button" disabled={indice >= itemsDashboard.length - 1 || reordenandoMuestras} onClick={() => alMoverItemDashboard(item.clave, 1)} aria-label="Mover agrupación después" className="rounded px-2 py-1 text-current hover:bg-emerald-primary/10 disabled:opacity-40">↓</button>
+                  <button type="button" onClick={() => setAgrupacionesContraidas((actuales) => ({ ...actuales, [item.idAgrupacion]: !actuales[item.idAgrupacion] }))} aria-expanded={!item.contraida} aria-label={`${item.contraida ? "Mostrar muestras de" : "Ocultar muestras de"} ${item.nombre}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-primary/40 bg-emerald-primary/10 px-2.5 text-xs font-semibold text-emerald-primary hover:bg-emerald-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+                    {item.contraida ? <ChevronRight className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
+                    <span>{item.contraida ? "Mostrar muestras" : "Ocultar muestras"}</span>
+                  </button>
+                  <button type="button" disabled={guardandoMuestra} onClick={() => alEditarAgrupacion(item)} aria-label={`Editar agrupación ${item.nombre}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-border-line/70 px-2 text-current hover:bg-emerald-primary/10 disabled:opacity-50"><Pencil className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Editar</span></button>
                   <button type="button" disabled={guardandoMuestra} onClick={() => separarAgrupacion(item.idAgrupacion)} className={`ml-1 min-h-8 rounded-lg border px-2 text-xs disabled:opacity-50 ${temaOscuro ? "border-border-line text-bg-cream hover:bg-emerald-primary/20" : "border-border-line/70 text-bg-dark hover:bg-emerald-primary/10"}`}>Separar</button>
                 </div>
               </header>
-              <ul className="dashboard-group-grid grid gap-3">
+              {!item.contraida && <ul className="dashboard-group-grid grid gap-3">
                 {item.muestras.map((miembro, indiceMiembro) => <MuestraCard
                   key={miembro.id}
                   muestra={miembro}
@@ -294,7 +326,7 @@ export default function InicioPage() {
                   reordenable={false}
                   mostrarBarraOrden={false}
                 />)}
-              </ul>
+              </ul>}
             </li>;
           })}
         </ul>
@@ -317,12 +349,15 @@ export default function InicioPage() {
       />
       <AgruparMuestrasModal
         abierto={modalAgrupacionAbierto}
-        muestras={muestrasDisponiblesParaAgrupar}
+        muestras={agrupacionEditando
+          ? muestrasConDatos.filter((muestra) => !muestra.agrupacionId || String(muestra.agrupacionId) === String(agrupacionEditando.idAgrupacion))
+          : muestrasDisponiblesParaAgrupar}
+        agrupacion={agrupacionEditando}
         guardando={guardandoMuestra}
         error={errorPersistencia}
         triggerRef={triggerAgrupacionRef}
-        alCerrar={() => setModalAgrupacionAbierto(false)}
-        alGuardar={alCrearAgrupacion}
+        alCerrar={() => { setModalAgrupacionAbierto(false); setAgrupacionEditando(null); }}
+        alGuardar={alGuardarAgrupacion}
       />
       <DetalleMuestraModal
         muestra={muestraDetalle ? muestrasConDatos.find((item) => String(item.id) === String(muestraDetalle.id)) || muestraDetalle : null}

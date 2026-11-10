@@ -69,6 +69,16 @@ export async function actualizarOrdenMuestras(ids) {
   return actualizar(`${ruta}/orden`, { ids });
 }
 
+export async function actualizarAgrupacionMuestras(idAgrupacion, nombre, ids) {
+  const respuesta = await actualizar(`${ruta}/agrupacion`, {
+    idAgrupacion,
+    nombre,
+    ids: ids.map((id) => Number(id)),
+  });
+  const datos = respuesta?.datos || [];
+  return Array.isArray(datos) ? datos.map(normalizarRespuesta) : [];
+}
+
 export async function eliminarMuestra(id) {
   return eliminar(`${ruta}/${id}`);
 }
