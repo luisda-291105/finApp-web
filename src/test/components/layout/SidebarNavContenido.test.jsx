@@ -31,8 +31,8 @@ afterEach(() => {
 
 beforeEach(() => {
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
-  window.sessionStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_pestana" ? "activa" : null
+  window.localStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_autenticada" ? "activa" : null
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_SIDEBAR });
@@ -155,10 +155,6 @@ describe("SidebarNavContenido", () => {
     });
 
     it("muestra el usuario activo del contexto con iniciales derivadas del nombre", async () => {
-      window.localStorage.getItem.mockReturnValue(
-        JSON.stringify({ idUsuario: "123", nombre: "Ana María Ruiz" })
-      );
-
       render(
         <MemoryRouter initialEntries={["/dashboard"]}>
           <UsuarioActivoProvider>

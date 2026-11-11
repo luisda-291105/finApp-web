@@ -1,34 +1,45 @@
-import {
-  CLASES_INTENSIDAD,
-  INTENSIDADES_MAPA_DEMO,
-  SERIE_GRAFICA_DEMO,
-  TEXTO_SIN_DATOS,
-  VARIACION_METRICA_DEMO,
-  formatearMonto,
-  obtenerFuente,
-  obtenerValorMuestra,
-} from "../../utils/inicioHelpers";
+/**
+ * @uso        Coordina la presentación visual según el tipo de muestra
+ * @funciones  MuestraVisual({ muestra, temaOscuro })
+ * @datos      Valida los datos comunes y delega a la carpeta del tipo correspondiente
+ * @eventos    Delegados al componente específico de cada muestra
+ * @estados    Ninguno
+ * @usadoPor   MuestraCard y DetalleMuestraModal
+ */
+import { formatearCantidad, formatearMonto, obtenerFuente, obtenerValorMuestra, tieneValorMuestra, TEXTO_SIN_DATOS } from "../../utils/inicioHelpers";
+import TarjetaMuestra from "../muestras/tarjeta/TarjetaMuestra";
+import GraficaMuestra from "../muestras/grafica/GraficaMuestra";
+import MetricaMuestra from "../muestras/metrica/MetricaMuestra";
+import MapaCalorMuestra from "../muestras/mapa-calor/MapaCalorMuestra";
 
-/** Representa el contenido de una muestra con tarjeta, gráfica, métrica o mapa de calor. */
+/** Presenta una muestra delegando el diseño al componente de su tipo. */
 export default function MuestraVisual({ muestra, temaOscuro = false }) {
   const texto = temaOscuro ? "text-bg-cream" : "text-bg-dark";
   const etiqueta = temaOscuro ? "text-bg-cream/70" : "text-slate-text";
   const fuente = obtenerFuente(muestra.fuente);
   const valor = obtenerValorMuestra(muestra);
-  const tipoValido = ["tarjeta", "grafica", "metrica", "mapa_calor"].includes(muestra.tipo);
-  if (!valor || !fuente || !tipoValido) return <p className={`text-sm ${etiqueta}`}>{TEXTO_SIN_DATOS}</p>;
+  const tiposValidos = ["tarjeta", "grafica", "metrica", "mapa_calor"];
+  const detalles = Array.isArray(muestra.detalles) ? muestra.detalles : [];
 
-  const valorFormateado = formatearMonto(valor);
-  return (
-    <>
-      {muestra.tipo === "tarjeta" && <p className={`text-2xl font-bold ${texto}`}>{valorFormateado}</p>}
-      {muestra.tipo === "grafica" && <div role="img" aria-label="Gráfica de demostración con serie fija" className="flex h-24 items-end gap-1">
-        {(muestra.serie || SERIE_GRAFICA_DEMO).map((barra, indice) => <div key={indice} data-testid="barra-grafica" className="w-full rounded-t-sm bg-emerald-primary" style={{ height: `${barra.altura}%` }} title={barra.etiqueta}><span className={`mt-1 block text-center text-xs ${etiqueta}`}>{barra.etiqueta}</span></div>)}
-      </div>}
-      {muestra.tipo === "metrica" && <div className="flex items-baseline gap-1"><span className={`text-3xl font-bold ${texto}`}>{valorFormateado}</span><span className="text-sm font-medium text-emerald-primary">{muestra.variacion || VARIACION_METRICA_DEMO}</span></div>}
-      {muestra.tipo === "mapa_calor" && <div role="img" aria-label="Mapa de calor de demostración (7 días × 5 franjas)" className="grid h-24 grid-cols-5 grid-rows-7 gap-1" data-testid="mapa-calor">
-        {(muestra.intensidades || INTENSIDADES_MAPA_DEMO).flatMap((fila, filaIndice) => fila.map((intensidad, columnaIndice) => <div key={`${filaIndice}-${columnaIndice}`} data-testid="celda-mapa-calor" className={`min-h-0 rounded-sm ${CLASES_INTENSIDAD[intensidad]}`} />))}
-      </div>}
-    </>
-  );
+  if (muestra.cargando) return <p role="status" className={`text-sm ${etiqueta}`}>Cargando datos de {fuente?.etiqueta || "la fuente"}…</p>;
+  if (muestra.error) return <p role="alert" className="text-sm text-red-700">{muestra.error}</p>;
+
+  const detallesMarkup = detalles.length > 0 && <dl aria-label="Detalles de la muestra" className={`grid w-full grid-cols-1 gap-2 border-t border-border-line/20 pt-3 sm:grid-cols-2 ${etiqueta}`}>
+    {detalles.map((detalle) => <div key={detalle.etiqueta} className="min-w-0"><dt className="text-xs">{detalle.etiqueta}</dt><dd className={`break-words text-sm font-medium ${texto}`}>{detalle.valor}</dd></div>)}
+  </dl>;
+
+  if (!tieneValorMuestra(valor) || !fuente || !tiposValidos.includes(muestra.tipo)) return <><p className={`text-sm ${etiqueta}`}>{TEXTO_SIN_DATOS}</p>{detallesMarkup}</>;
+
+  const valorFormateado = muestra.unidad === "moneda" ? formatearMonto(valor) : formatearCantidad(valor);
+  const serie = Array.isArray(muestra.serie) ? muestra.serie : [];
+  let visualizacion;
+  switch (muestra.tipo) {
+    case "tarjeta": visualizacion = <TarjetaMuestra muestra={muestra} fuente={fuente} temaOscuro={temaOscuro} valorFormateado={valorFormateado} />; break;
+    case "grafica": visualizacion = <GraficaMuestra serie={serie} fuente={fuente} unidad={muestra.unidad} etiqueta={etiqueta} />; break;
+    case "metrica": visualizacion = <MetricaMuestra muestra={muestra} fuente={fuente} temaOscuro={temaOscuro} valorFormateado={valorFormateado} />; break;
+    case "mapa_calor": visualizacion = <MapaCalorMuestra muestra={muestra} etiqueta={etiqueta} />; break;
+    default: visualizacion = null;
+  }
+
+  return <>{visualizacion}{detallesMarkup}</>;
 }

@@ -10,12 +10,14 @@ import { obtenerCorreosGmail } from "../../../services/gmailServicio";
 import { coincideDestino } from "../utils/correoHelpers";
 
 /** Recupera y filtra los mensajes destinados a una fuente específica. */
-export async function consultarCorreosDeFuente(token, fuente) {
-  const respuesta = await obtenerCorreosGmail(token, [fuente]);
+export async function consultarCorreosDeFuente(cuentaId, fuente) {
+  const respuesta = await obtenerCorreosGmail(cuentaId, [fuente]);
   return respuesta.filter((correo) => coincideDestino(correo, fuente.contenido));
 }
 
-/** Consulta fuentes por separado y devuelve pares [idFuente, mensajes]. */
-export async function consultarCorreosDeFuentes(token, fuentes) {
-  return Promise.all(fuentes.map(async (fuente) => [fuente.idFuente, await consultarCorreosDeFuente(token, fuente)]));
+/** Consulta una vez y reparte los mensajes encontrados entre sus fuentes. */
+export async function consultarCorreosDeFuentes(cuentaId, fuentes) {
+  if (!fuentes?.length) return [];
+  const correos = await obtenerCorreosGmail(cuentaId, fuentes);
+  return fuentes.map((fuente) => [fuente.idFuente, correos.filter((correo) => coincideDestino(correo, fuente.contenido))]);
 }

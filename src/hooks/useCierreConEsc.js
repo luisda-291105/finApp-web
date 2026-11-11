@@ -12,6 +12,54 @@ import { useEffect, useRef } from "react";
 const capas = [];
 let contadorOrden = 0;
 let listenerInstalado = false;
+let estadoScrollBloqueado = null;
+
+/** Bloquea el documento conservando la posición y permite scroll dentro del diálogo. */
+function bloquearScrollPagina() {
+  if (typeof document === "undefined" || typeof window === "undefined" || estadoScrollBloqueado) return;
+  const { body, documentElement } = document;
+  const scrollX = window.scrollX || 0;
+  const scrollY = window.scrollY || 0;
+  const anchoBarra = Math.max(0, window.innerWidth - documentElement.clientWidth);
+  estadoScrollBloqueado = {
+    scrollX,
+    scrollY,
+    htmlOverflow: documentElement.style.overflow,
+    bodyOverflow: body.style.overflow,
+    bodyPosition: body.style.position,
+    bodyTop: body.style.top,
+    bodyLeft: body.style.left,
+    bodyWidth: body.style.width,
+    bodyPaddingRight: body.style.paddingRight,
+  };
+
+  documentElement.style.overflow = "hidden";
+  body.style.overflow = "hidden";
+  body.style.position = "fixed";
+  body.style.top = `-${scrollY}px`;
+  body.style.left = `-${scrollX}px`;
+  body.style.width = "100%";
+  if (anchoBarra > 0) {
+    const paddingActual = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
+    body.style.paddingRight = `${paddingActual + anchoBarra}px`;
+  }
+}
+
+/** Restaura estilos y posición al cerrar la última superficie modal. */
+function restaurarScrollPagina() {
+  if (!estadoScrollBloqueado || typeof document === "undefined" || typeof window === "undefined") return;
+  const previo = estadoScrollBloqueado;
+  estadoScrollBloqueado = null;
+  const { body, documentElement } = document;
+  documentElement.style.overflow = previo.htmlOverflow;
+  body.style.overflow = previo.bodyOverflow;
+  body.style.position = previo.bodyPosition;
+  body.style.top = previo.bodyTop;
+  body.style.left = previo.bodyLeft;
+  body.style.width = previo.bodyWidth;
+  body.style.paddingRight = previo.bodyPaddingRight;
+  window.scrollTo(previo.scrollX, previo.scrollY);
+}
 
 /** Devuelve la capa superior: mayor `zIndex`; en empate, la registrada más tarde (`orden`). */
 function obtenerCapaSuperior() {
@@ -77,12 +125,16 @@ export function useCierreConEsc({ activo = true, zIndex = 0, alCerrar } = {}) {
       alCerrar: () => refAlCerrar.current?.(),
     };
     capas.push(capa);
+    if (capas.length === 1) bloquearScrollPagina();
     instalarListener();
 
     return () => {
       const indice = capas.indexOf(capa);
       if (indice !== -1) capas.splice(indice, 1);
-      if (capas.length === 0) retirarListener();
+      if (capas.length === 0) {
+        retirarListener();
+        restaurarScrollPagina();
+      }
     };
   }, [activo, zIndex]);
 }

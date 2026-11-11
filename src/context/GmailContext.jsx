@@ -11,7 +11,7 @@ import {
 } from "../services/gmailServicio";
 
 const GmailContext = createContext({
-  tokenGmail: "", cuentaGmail: "", cuentasGmail: [], cuentaSeleccionadaId: null,
+  gmailConectado: false, cuentaGmail: "", cuentasGmail: [], cuentaSeleccionadaId: null,
   gisListo: false, conexionCargando: false, errorGmail: "",
   conectarGmail: async () => {}, desconectarGmail: async () => {},
   seleccionarCuentaGmail: () => {}, limpiarErrorGmail: () => {},
@@ -19,13 +19,21 @@ const GmailContext = createContext({
 
 export function GmailProvider({ children }) {
   const { usuario } = useUsuarioActivo();
-  const [tokenGmail, setTokenGmail] = useState("");
+  const [gmailConectado, setGmailConectado] = useState(false);
   const [cuentaGmail, setCuentaGmail] = useState("");
   const [cuentasGmail, setCuentasGmail] = useState([]);
   const [cuentaSeleccionadaId, setCuentaSeleccionadaId] = useState(null);
   const [gisListo, setGisListo] = useState(!GMAIL_CONFIGURADO);
   const [conexionCargando, setConexionCargando] = useState(false);
   const [errorGmail, setErrorGmail] = useState("");
+
+  useEffect(() => {
+    if (!errorGmail) return undefined;
+    const temporizador = window.setTimeout(() => {
+      setErrorGmail((actual) => actual === errorGmail ? "" : actual);
+    }, 5000);
+    return () => window.clearTimeout(temporizador);
+  }, [errorGmail]);
 
   useEffect(() => {
     let vigente = true;
@@ -38,7 +46,7 @@ export function GmailProvider({ children }) {
 
   useEffect(() => {
     let vigente = true;
-    setTokenGmail("");
+    setGmailConectado(false);
     setCuentaGmail("");
     setCuentasGmail([]);
     setCuentaSeleccionadaId(null);
@@ -55,13 +63,13 @@ export function GmailProvider({ children }) {
         setCuentaSeleccionadaId(cuentas[0]?.id ?? null);
       })
       .catch((error) => { if (vigente) setErrorGmail(error?.message || "No se pudieron cargar las cuentas Gmail."); })
-      .finally(() => { if (vigente && !cuentaSeleccionadaId) setConexionCargando(false); });
+      .finally(() => { if (vigente) setConexionCargando(false); });
     return () => { vigente = false; };
   }, [usuario?.idUsuario]);
 
   useEffect(() => {
     let vigente = true;
-    setTokenGmail("");
+    setGmailConectado(false);
     const cuenta = cuentasGmail.find((item) => String(item.id) === String(cuentaSeleccionadaId));
     setCuentaGmail(cuenta?.email || "");
     if (!usuario?.idUsuario || !cuentaSeleccionadaId) {
@@ -72,7 +80,7 @@ export function GmailProvider({ children }) {
     obtenerConexionCuentaGmail(cuentaSeleccionadaId)
       .then((conexion) => {
         if (!vigente) return;
-        setTokenGmail(conexion.access_token || "");
+        setGmailConectado(conexion.connected === true);
         if (conexion.email) setCuentaGmail(conexion.email);
       })
       .catch((error) => { if (vigente) setErrorGmail(error?.message || "No se pudo restaurar esta cuenta Gmail."); })
@@ -80,27 +88,42 @@ export function GmailProvider({ children }) {
     return () => { vigente = false; };
   }, [usuario?.idUsuario, cuentasGmail, cuentaSeleccionadaId]);
 
-  const conectarGmail = async () => {
+  const conectarGmail = async ({ incluirContactos = false, cuentaEsperadaId = cuentaSeleccionadaId } = {}) => {
     setErrorGmail("");
+    setConexionCargando(true);
     try {
-      const code = await iniciarCodigoAutorizacionGmail();
-      const conexion = await canjearCodigoGmail(code);
-      const cuentas = await listarCuentasGmail();
-      setCuentasGmail(cuentas);
-      setCuentaSeleccionadaId(conexion.accountId);
-      setTokenGmail(conexion.token);
-      setCuentaGmail(conexion.email);
+      const cuentaEsperada = incluirContactos ? cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaEsperadaId)) : null;
+      if (incluirContactos && !cuentaEsperada) throw new Error("Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar Google Contacts.");
+      const code = await iniciarCodigoAutorizacionGmail({ incluirContactos, cuentaEsperada: cuentaEsperada?.email || "" });
+      const conexion = await canjearCodigoGmail(code, incluirContactos ? cuentaEsperadaId : "");
+      if (incluirContactos) {
+        // La autorización de un permiso adicional no debe reiniciar la cuenta Gmail activa.
+        // El backend actualiza la conexión de la fuente indicada.
+        if (String(cuentaSeleccionadaId) === String(conexion.accountId)) {
+          setGmailConectado(true);
+          setCuentaGmail(conexion.email);
+        }
+      } else {
+        const cuentas = await listarCuentasGmail();
+        setCuentasGmail(cuentas);
+        setCuentaSeleccionadaId(conexion.accountId);
+        setGmailConectado(true);
+        setCuentaGmail(conexion.email);
+      }
+      if (conexion.pushWarning) setErrorGmail(conexion.pushWarning);
       return conexion;
     } catch (error) {
       const mensaje = error?.message || "No se pudo iniciar la conexión con Gmail.";
       setErrorGmail(mensaje);
       throw error;
+    } finally {
+      setConexionCargando(false);
     }
   };
 
   const desconectarGmail = async (persistir = true, idCuenta = cuentaSeleccionadaId) => {
     if (!persistir) {
-      setTokenGmail("");
+      setGmailConectado(false);
       return;
     }
     if (!idCuenta) return;
@@ -109,7 +132,7 @@ export function GmailProvider({ children }) {
       const restantes = cuentasGmail.filter((cuenta) => String(cuenta.id) !== String(idCuenta));
       setCuentasGmail(restantes);
       if (String(idCuenta) === String(cuentaSeleccionadaId)) {
-        setTokenGmail("");
+        setGmailConectado(false);
         setCuentaGmail("");
         setCuentaSeleccionadaId(restantes[0]?.id ?? null);
       }
@@ -127,7 +150,7 @@ export function GmailProvider({ children }) {
 
   return (
     <GmailContext.Provider value={{
-      tokenGmail, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo,
+      gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo,
       conexionCargando, errorGmail, conectarGmail, desconectarGmail,
       seleccionarCuentaGmail, limpiarErrorGmail,
     }}>

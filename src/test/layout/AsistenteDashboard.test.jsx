@@ -38,8 +38,8 @@ afterEach(() => {
 
 beforeEach(() => {
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
-  window.sessionStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_pestana" ? "activa" : null
+  window.localStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_autenticada" ? "activa" : null
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_DASHBOARD });
@@ -295,18 +295,19 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       [
         "Asistente de FinApp",
         "Pregunta cómo funciona FinApp y cómo usar sus funciones.",
-        "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente solo ofrece información; no consulta tus datos ni realiza cambios.",
+        "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios.",
         "¿Para qué sirven los bolsillos?",
         "¿Cómo registro un gasto?",
         "¿Cómo conecto Gmail?",
         "¿Dónde administro mis tarjetas?",
-        "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No puede consultar tus datos ni hacer cambios.",
+        "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No consulta datos personales ni realiza cambios.",
         "Tu pregunta",
         "Enviar",
       ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
 
       expect(within(dialogo).getByLabelText("Tu pregunta")).toBeInTheDocument();
-      expect(within(dialogo).getByPlaceholderText("Escribe una pregunta con el contexto que necesites…")).toBeInTheDocument();
+      expect(within(dialogo).getByPlaceholderText("Escribe una pregunta sobre FinApp…")).toBeInTheDocument();
+      expect(within(dialogo).queryByRole("tab", { name: /sesiones pasadas/i })).not.toBeInTheDocument();
       expect(within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })).toBeInTheDocument();
       expect(within(dialogo).getByRole("log", { name: "Mensajes del asistente" })).toBeInTheDocument();
       expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
@@ -318,9 +319,9 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
       const dialogo = await abrirAsistente(user);
 
       // En estado vacío el componente muestra las sugerencias y el texto de aviso
-      expect(dialogo).toHaveTextContent("El asistente solo ofrece información; no consulta tus datos ni realiza cambios.");
+      expect(dialogo).toHaveTextContent("El asistente público no consulta datos personales ni realiza cambios.");
       expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
-      expect(within(dialogo).queryByRole("button", { name: /conversación/i })).not.toBeInTheDocument();
+      expect(within(dialogo).queryByRole("tab", { name: /sesiones pasadas/i })).not.toBeInTheDocument();
     });
 
   it("cumple el contrato ARIA, desactiva Enviar y cierra con Escape", async () => {

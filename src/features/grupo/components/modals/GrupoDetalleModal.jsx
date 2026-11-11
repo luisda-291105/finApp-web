@@ -6,13 +6,14 @@
  * @estados    Estado local del detalle
  * @usadoPor   GruposPage
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Settings2 } from "lucide-react";
 import EditarGrupoForm from "../forms/EditarGrupoForm";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import { crearFuente, obtenerFuentesPorUsuario } from "../../../../services/fuenteServicio";
 import { actualizarGrupo, eliminarGrupo, desvincularFuenteDeGrupo, vincularFuenteAGrupo } from "../../services/gruposService";
+import { crearEnlaceTelegram, desvincularTelegram, enviarMensajeTelegram, obtenerEstadoTelegram, obtenerMensajesTelegram } from "../../../../services/telegramServicio";
 
 const PESTANAS = ["Fuentes", "Chat grupal"];
 function fechaLocalISO() {
@@ -23,8 +24,11 @@ function generarId() {
   return globalThis.crypto?.randomUUID?.() || `fuente-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 function listaRespuesta(respuesta) {
-  return Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+  const datos = respuesta?.datos ?? respuesta?.data ?? respuesta?.content;
+  return Array.isArray(respuesta) ? respuesta : Array.isArray(datos) ? datos : [];
 }
+
+function datosRespuesta(respuesta) { return respuesta?.datos ?? respuesta?.data ?? respuesta ?? {}; }
 
 /** Presenta los detalles y permite gestionar fuentes vinculadas al grupo. */
 export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef, alGrupoActualizado }) {
@@ -35,6 +39,10 @@ export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef
   const [tipoNuevaFuente, setTipoNuevaFuente] = useState("CORREO");
   const [contenidoNuevaFuente, setContenidoNuevaFuente] = useState("");
   const [mensajes, setMensajes] = useState([]);
+  const [estadoTelegram, setEstadoTelegram] = useState(null);
+  const [enlaceTelegram, setEnlaceTelegram] = useState("");
+  const [cargandoTelegram, setCargandoTelegram] = useState(false);
+  const [enviandoTelegram, setEnviandoTelegram] = useState(false);
   const [borrador, setBorrador] = useState("");
   const [correoInvitacion, setCorreoInvitacion] = useState("");
   const [aviso, setAviso] = useState("");
@@ -67,6 +75,32 @@ export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef
     });
     return () => { vigente = false; };
   }, [abierto, grupo?.id, usuario?.idUsuario]);
+
+  useEffect(() => {
+    if (!abierto || configuracionAbierta || pestana !== "Chat grupal" || !usuario?.idUsuario) return undefined;
+    let vigente = true;
+    let consultando = false;
+    const consultar = async () => {
+      if (consultando) return;
+      consultando = true;
+      try {
+        const [estado, conversacion] = await Promise.all([obtenerEstadoTelegram(), obtenerMensajesTelegram()]);
+        if (!vigente) return;
+        setEstadoTelegram(datosRespuesta(estado));
+        setMensajes(listaRespuesta(conversacion));
+        setError("");
+      } catch (fallo) {
+        if (vigente) setError(fallo?.message || "No se pudo consultar el chat de Telegram.");
+      } finally {
+        consultando = false;
+        if (vigente) setCargandoTelegram(false);
+      }
+    };
+    setCargandoTelegram(true);
+    consultar();
+    const intervalo = window.setInterval(consultar, 3000);
+    return () => { vigente = false; window.clearInterval(intervalo); };
+  }, [abierto, configuracionAbierta, pestana, usuario?.idUsuario]);
 
   if (!abierto || !grupo) return null;
   const actualizarGrupoEnVista = (respuesta) => {
@@ -131,12 +165,39 @@ export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef
     } catch (fallo) { setError(fallo?.message || "No se pudo registrar y vincular la fuente."); }
     finally { setCargando(false); }
   };
-  const enviarMensaje = (evento) => {
+  const vincularTelegram = async () => {
+    setCargandoTelegram(true); setError(""); setAviso("");
+    try {
+      const respuesta = await crearEnlaceTelegram();
+      const datos = datosRespuesta(respuesta);
+      if (!datos.enlace) throw new Error("No se recibió un enlace de Telegram válido.");
+      setEnlaceTelegram(datos.enlace);
+    } catch (fallo) { setError(fallo?.message || "No se pudo crear el enlace de Telegram."); }
+    finally { setCargandoTelegram(false); }
+  };
+  const quitarVinculoTelegram = async () => {
+    setCargandoTelegram(true); setError(""); setAviso("");
+    try {
+      await desvincularTelegram();
+      setEstadoTelegram((estado) => ({ ...estado, conectado: false, usuarioTelegram: "" }));
+      setEnlaceTelegram("");
+      setAviso("La cuenta de Telegram se desvinculó.");
+    } catch (fallo) { setError(fallo?.message || "No se pudo desvincular Telegram."); }
+    finally { setCargandoTelegram(false); }
+  };
+  const enviarMensaje = async (evento) => {
     evento.preventDefault();
     const texto = borrador.trim();
-    if (!texto) return;
-    setMensajes((actuales) => [...actuales, { id: `${Date.now()}`, texto }]);
-    setBorrador("");
+    if (!texto || enviandoTelegram || !estadoTelegram?.conectado) return;
+    setEnviandoTelegram(true); setError(""); setAviso("");
+    try {
+      await enviarMensajeTelegram(texto, grupo.nombre);
+      setBorrador("");
+      setAviso("Mensaje enviado al chat privado de Telegram.");
+      const respuesta = await obtenerMensajesTelegram();
+      setMensajes(listaRespuesta(respuesta));
+    } catch (fallo) { setError(fallo?.message || "No se pudo enviar el mensaje por Telegram."); }
+    finally { setEnviandoTelegram(false); }
   };
   const prepararInvitacion = (evento) => {
     evento.preventDefault();
@@ -165,7 +226,35 @@ export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef
         <div className="mt-5 space-y-6"><section aria-labelledby="fuentes-vinculadas-titulo"><h3 id="fuentes-vinculadas-titulo" className="font-semibold">Fuentes vinculadas</h3>{fuentesVinculadas.length ? <ul className="mt-3 space-y-2">{fuentesVinculadas.map((fuente) => <li key={fuente.idFuente} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/50 bg-bg-cream/70 p-3"><span className="min-w-0"><span className="block text-xs uppercase tracking-wide text-slate-text">{fuente.tipo}</span><span className="break-all text-sm font-medium">{fuente.contenido}</span></span><button type="button" disabled={cargando} onClick={() => desvincular(fuente)} className="min-h-9 rounded-lg px-3 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">Desvincular</button></li>)}</ul> : <p className="mt-2 text-sm text-slate-text">Este grupo aún no tiene fuentes vinculadas.</p>}</section>
           <section aria-labelledby="vincular-fuente-titulo" className="rounded-2xl border border-border-line/50 p-4"><h3 id="vincular-fuente-titulo" className="font-semibold">Vincular una fuente registrada</h3>{fuentesDisponibles.length ? <div className="mt-3 flex flex-col gap-3 sm:flex-row"><label className="sr-only" htmlFor="grupo-fuente-existente">Fuente registrada</label><select id="grupo-fuente-existente" value={fuenteSeleccionada} onChange={(evento) => setFuenteSeleccionada(evento.target.value)} disabled={cargando} className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"><option value="">Selecciona una fuente</option>{fuentesDisponibles.map((fuente) => <option key={fuente.idFuente} value={fuente.idFuente}>{fuente.tipo}: {fuente.contenido}</option>)}</select><button type="button" disabled={!fuenteSeleccionada || cargando} onClick={() => vincular(fuentesDisponibles.find((fuente) => fuente.idFuente === fuenteSeleccionada))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">Vincular fuente</button></div> : <p className="mt-2 text-sm text-slate-text">No hay otras fuentes registradas para vincular.</p>}</section></div>
       ) : (
-        <div className="mt-5 space-y-5"><p className="rounded-xl bg-amber-100/70 p-3 text-sm text-amber-900">El chat y las invitaciones son una vista de demostración; todavía no se guardan ni se envían.</p><section aria-label="Mensajes del chat grupal" className="max-h-56 min-h-28 space-y-2 overflow-y-auto rounded-2xl border border-border-line/50 bg-bg-cream/60 p-4">{mensajes.length ? mensajes.map((mensaje) => <p key={mensaje.id} className="w-fit max-w-full break-words rounded-xl bg-emerald-primary/10 px-3 py-2 text-sm">{mensaje.texto}</p>) : <p className="text-sm text-slate-text">Aún no hay mensajes en esta demostración.</p>}</section><form onSubmit={enviarMensaje} className="flex gap-2"><label className="sr-only" htmlFor="grupo-chat-mensaje">Mensaje</label><input id="grupo-chat-mensaje" value={borrador} onChange={(evento) => setBorrador(evento.target.value)} maxLength={500} placeholder="Escribe un mensaje" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /><button type="submit" className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Enviar</button></form></div>
+        <div className="mt-5 space-y-4">
+          <section aria-label="Vínculo de Telegram" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/50 bg-bg-cream/50 p-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Chat privado de Telegram</p>
+              {estadoTelegram?.conectado
+                ? <p className="text-xs text-slate-text">Conectado{estadoTelegram.usuarioTelegram ? ` como @${estadoTelegram.usuarioTelegram}` : ""} · @{estadoTelegram.nombreBot}</p>
+                : <p className="text-xs text-slate-text">Vincula tu cuenta para enviar y recibir mensajes con el bot.</p>}
+            </div>
+            {estadoTelegram?.conectado
+              ? <button type="button" disabled={cargandoTelegram} onClick={quitarVinculoTelegram} className="min-h-9 rounded-lg border border-border-line/60 px-3 text-xs font-medium text-slate-text hover:bg-bg-cream disabled:opacity-50">Desvincular</button>
+              : <button type="button" disabled={cargandoTelegram || !estadoTelegram?.configurado} onClick={vincularTelegram} className="min-h-9 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream hover:bg-emerald-hover disabled:opacity-50">{cargandoTelegram ? "Preparando…" : "Vincular Telegram"}</button>}
+          </section>
+          {estadoTelegram && !estadoTelegram.configurado && <p role="alert" className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900">Telegram no está configurado en el backend. Revisa TELEGRAM_BOT_TOKEN y NOMBRE_BOT_TELEGRAM.</p>}
+          {estadoTelegram?.errorRecepcion && <p role="alert" className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900">{estadoTelegram.errorRecepcion}</p>}
+          {enlaceTelegram && !estadoTelegram?.conectado && <p className="text-sm text-slate-text">Abre el bot y pulsa <strong>Iniciar</strong> para completar el vínculo. <a href={enlaceTelegram} target="_blank" rel="noreferrer" className="font-semibold text-emerald-primary underline">Abrir @{estadoTelegram?.nombreBot || "bot"} en Telegram</a></p>}
+
+          <section aria-label="Mensajes del chat grupal" aria-busy={cargandoTelegram} className="max-h-72 min-h-36 space-y-2 overflow-y-auto rounded-2xl border border-border-line/50 bg-bg-cream/60 p-4">
+            {mensajes.length ? mensajes.map((mensaje) => <article key={mensaje.id} className={`w-fit max-w-[90%] break-words rounded-xl px-3 py-2 text-sm ${mensaje.rol === "assistant" ? "bg-white text-bg-dark" : "ml-auto bg-emerald-primary text-bg-cream"}`}>
+              {mensaje.grupo && <p className={`mb-1 text-[11px] font-semibold ${mensaje.rol === "assistant" ? "text-emerald-primary" : "text-bg-cream/80"}`}>{mensaje.grupo}</p>}
+              <p>{mensaje.texto}</p>
+              <time className={`mt-1 block text-right text-[10px] ${mensaje.rol === "assistant" ? "text-slate-text" : "text-bg-cream/70"}`} dateTime={mensaje.fecha}>{new Date(mensaje.fecha).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</time>
+            </article>) : <p className="text-sm text-slate-text">{cargandoTelegram ? "Conectando con Telegram…" : "Aún no hay mensajes en esta conversación."}</p>}
+          </section>
+          <form onSubmit={enviarMensaje} className="flex gap-2">
+            <label className="sr-only" htmlFor="grupo-chat-mensaje">Mensaje</label>
+            <input id="grupo-chat-mensaje" value={borrador} onChange={(evento) => setBorrador(evento.target.value)} maxLength={3500} disabled={!estadoTelegram?.conectado || enviandoTelegram} placeholder={estadoTelegram?.conectado ? "Escribe un mensaje" : "Vincula Telegram para escribir"} className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60" />
+            <button type="submit" disabled={!estadoTelegram?.conectado || !borrador.trim() || enviandoTelegram} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50">{enviandoTelegram ? "Enviando…" : "Enviar"}</button>
+          </form>
+        </div>
       )}
     </ModalDetalleRegistro>
   );

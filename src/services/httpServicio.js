@@ -51,7 +51,7 @@ async function leerRespuesta(respuesta, url, metodo) {
     || (metodo === "POST" && rutaNormalizada.endsWith("/usuario"))
     || rutaNormalizada.includes("/api/auth/");
   const consultaSesionSinSesion = respuesta.status === 401 && ruta === "/usuario/activo";
-  if (respuesta.status === 401 && !url.includes("/usuario/login") && !url.includes("/api/gmail/")) {
+  if (respuesta.status === 401 && !url.includes("/usuario/login")) {
     window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
   }
 

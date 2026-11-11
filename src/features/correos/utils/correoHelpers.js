@@ -11,6 +11,7 @@ export const CATEGORIAS_CORREO = [
   { id: "IMPORTANTES", etiqueta: "Importantes" },
   { id: "NO_IMPORTANTES", etiqueta: "No importantes" },
   { id: "CONTABLES", etiqueta: "Contables" },
+  { id: "ESTUDIOS", etiqueta: "Estudios" },
   { id: "ENTRETENIMIENTO", etiqueta: "Entretenimiento" },
   { id: "OTROS", etiqueta: "Otros" },
 ];
@@ -22,6 +23,20 @@ export function extraerLista(respuesta) {
 
 export function normalizarDireccion(direccion) {
   return String(direccion || "").trim().toLocaleLowerCase("es");
+}
+
+export function separarRemitente(remitente) {
+  const texto = String(remitente || "").trim();
+  const direccion = texto.match(/<?([^<>\s]+@[^<>\s]+)>?/);
+  const nombre = direccion ? texto.replace(direccion[0], "").replace(/[\"']/g, "").trim() : "";
+  return { nombre: nombre || (direccion ? direccion[1].split("@")[0] : texto), email: direccion?.[1] || "" };
+}
+
+export function separarDestinatarios(destinatarios, respaldo = "") {
+  const texto = `${destinatarios || ""} ${respaldo || ""}`;
+  const encontrados = texto.match(/[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+/g) || [];
+  const unicos = new Map(encontrados.map((correo) => [correo.toLowerCase(), correo]));
+  return [...unicos.values()];
 }
 
 export function quitarFuentesDuplicadas(fuentes) {
@@ -42,12 +57,14 @@ export function fechaLegible(fecha) {
 }
 
 export function coincideCategoria(correo, categoria) {
+  const tieneClasificacion = Boolean(correo.esContable || correo.esEstudios || correo.esEntretenimiento);
   switch (categoria) {
     case "IMPORTANTES": return correo.esImportante;
-    case "NO_IMPORTANTES": return !correo.esImportante;
+    case "NO_IMPORTANTES": return !correo.esImportante && tieneClasificacion;
     case "CONTABLES": return correo.esContable;
+    case "ESTUDIOS": return correo.esEstudios;
     case "ENTRETENIMIENTO": return correo.esEntretenimiento;
-    case "OTROS": return !correo.esContable && !correo.esEntretenimiento && !correo.esImportante;
+    case "OTROS": return !correo.esImportante && !tieneClasificacion;
     default: return true;
   }
 }

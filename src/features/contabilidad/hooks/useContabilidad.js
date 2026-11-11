@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsillosService";
-import { actualizarMovimiento, crearMovimiento, eliminarMovimiento, listarMovimientos, obtenerResumenesBolsillos } from "../services/movimientosService";
+import { actualizarMovimiento, crearMovimiento, eliminarMovimiento, listarMovimientos, obtenerResumenGlobal, obtenerResumenesBolsillos } from "../services/movimientosService";
 import { obtenerTarjetasPorUsuario } from "../../tarjetas/services/tarjetasService";
 
 const listaDe = (respuesta) => Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+const mesActual = () => {
+  const ahora = new Date();
+  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
+};
 
 export default function useContabilidad() {
   const navigate = useNavigate();
@@ -18,6 +22,10 @@ export default function useContabilidad() {
   const [resumenesBolsillos, setResumenesBolsillos] = useState({});
   const [cargandoResumenes, setCargandoResumenes] = useState(false);
   const [errorResumenes, setErrorResumenes] = useState("");
+  const [mesResumenGlobal, setMesResumenGlobal] = useState(mesActual);
+  const [resumenGlobal, setResumenGlobal] = useState(null);
+  const [cargandoResumenGlobal, setCargandoResumenGlobal] = useState(false);
+  const [errorResumenGlobal, setErrorResumenGlobal] = useState("");
   const [crearMovimientoAbierto, setCrearMovimientoAbierto] = useState(false);
   const [movimientoEditando, setMovimientoEditando] = useState(null);
   const [movimientoEliminando, setMovimientoEliminando] = useState(null);
@@ -78,6 +86,23 @@ export default function useContabilidad() {
   }, [usuario?.idUsuario, bolsillos, revisionMovimientos]);
 
   useEffect(() => {
+    let vigente = true;
+    if (!usuario?.idUsuario) {
+      setResumenGlobal(null);
+      setCargandoResumenGlobal(false);
+      setErrorResumenGlobal("");
+      return () => { vigente = false; };
+    }
+    setCargandoResumenGlobal(true);
+    obtenerResumenGlobal(mesResumenGlobal).then((data) => {
+      if (vigente) { setResumenGlobal(data); setErrorResumenGlobal(""); }
+    }).catch((fallo) => {
+      if (vigente) setErrorResumenGlobal(fallo?.message || "No se pudo cargar el resumen global.");
+    }).finally(() => { if (vigente) setCargandoResumenGlobal(false); });
+    return () => { vigente = false; };
+  }, [usuario?.idUsuario, mesResumenGlobal, revisionMovimientos]);
+
+  useEffect(() => {
     if (respuesta?.tipo !== "exito") return undefined;
     const temporizador = window.setTimeout(() => setRespuesta(null), 4000);
     return () => window.clearTimeout(temporizador);
@@ -106,6 +131,7 @@ export default function useContabilidad() {
     setRespuesta({ tipo: "exito", mensaje: movimientoEditando ? "Movimiento actualizado correctamente." : "Movimiento guardado correctamente en el bolsillo." });
     setRevisionMovimientos((revision) => revision + 1);
   };
+  const recargarMovimientos = () => setRevisionMovimientos((revision) => revision + 1);
   const editarMovimiento = (movimiento, evento) => {
     disparadorMovimientoRef.current = evento.currentTarget; setMovimientoEditando(movimiento); setCrearMovimientoAbierto(true);
   };
@@ -123,10 +149,11 @@ export default function useContabilidad() {
   return {
     navigate, usuario, movimientos, filtroMovimiento, setFiltroMovimiento, cargandoMovimientos, errorMovimientos,
     resumenesBolsillos, cargandoResumenes, errorResumenes, crearMovimientoAbierto, setCrearMovimientoAbierto,
+    resumenGlobal, cargandoResumenGlobal, errorResumenGlobal, mesResumenGlobal, setMesResumenGlobal,
     movimientoEditando, setMovimientoEditando, movimientoEliminando, setMovimientoEliminando,
     eliminandoMovimiento, errorEliminarMovimiento, setErrorEliminarMovimiento, respuesta, setRespuesta, bolsillos, tarjetas,
     cargandoBolsillos, errorBolsillos, modalBolsillo, setModalBolsillo,
     disparadorBolsilloRef, disparadorMovimientoRef, abrirModalBolsillo, guardarBolsillo,
-    borrarBolsillo, guardarMovimiento, editarMovimiento, confirmarEliminarMovimiento,
+    borrarBolsillo, guardarMovimiento, editarMovimiento, confirmarEliminarMovimiento, recargarMovimientos,
   };
 }

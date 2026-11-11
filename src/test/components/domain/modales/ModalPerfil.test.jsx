@@ -76,8 +76,8 @@ const abrirPerfil = async () => {
 beforeEach(() => {
   window.localStorage.getItem.mockReturnValue(JSON.stringify(USUARIO));
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
-  window.sessionStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_pestana" ? "activa" : null
+  window.localStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_autenticada" ? "activa" : null
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario (el provider lo llama al montarse)
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO });

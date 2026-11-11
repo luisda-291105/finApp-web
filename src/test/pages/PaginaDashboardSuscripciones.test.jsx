@@ -1,67 +1,98 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
-import { SuscripcionesPage as PaginaDashboardSuscripciones } from "../../features/suscripciones";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
+import { SuscripcionesPage } from "../../features/suscripciones";
+
+const listarSuscripcionesGmail = vi.hoisted(() => vi.fn());
+
+vi.mock("../../services/gmailServicio", () => ({ listarSuscripcionesGmail }));
+vi.mock("../../context/GmailContext", () => ({
+  useGmail: () => ({ cuentasGmail: [{ id: "cuenta-1", email: "ana@example.test" }] }),
+}));
+
+const suscripcion = {
+  id: "netflix",
+  nombre: "Netflix",
+  correoRemitente: "billing@netflix.example",
+  cuentaGmailId: "cuenta-1",
+  cuentaGmail: "ana@example.test",
+  categorias: ["CATEGORY_PROMOTIONS"],
+  urlBaja: "https://example.test/unsubscribe",
+  mailtoBaja: "",
+  bajaConUnClic: true,
+  correosRecientes: 4,
+};
 
 afterEach(cleanup);
 
-function listaSuscripciones() {
-  return screen.getByRole("list", { name: "Suscripciones" });
+beforeEach(() => {
+  listarSuscripcionesGmail.mockReset();
+  listarSuscripcionesGmail.mockResolvedValue({
+    suscripciones: [suscripcion],
+    erroresCuentas: [],
+    cuentasConsultadas: 1,
+  });
+});
+
+function renderPagina() {
+  return render(
+    <MemoryRouter>
+      <SuscripcionesPage />
+    </MemoryRouter>,
+  );
 }
 
 describe("PaginaDashboardSuscripciones", () => {
-  it("presenta el resumen mensual y las suscripciones de demostración", () => {
-    render(<PaginaDashboardSuscripciones />);
+  it("muestra las suscripciones Gmail obtenidas desde el backend", async () => {
+    renderPagina();
 
-    expect(screen.getByRole("heading", { name: "Suscripciones" })).toBeInTheDocument();
-    expect(screen.getByTestId("total-mensual")).toHaveTextContent(/105\.600/);
-    expect(screen.getByTestId("total-activas")).toHaveTextContent("4 de 5");
-    expect(screen.getByRole("note")).toHaveTextContent("Datos de demostración");
-    expect(within(listaSuscripciones()).getAllByRole("listitem")).toHaveLength(5);
-    expect(screen.getByRole("heading", { name: "Netflix" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Suscripciones" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Netflix" })).toBeInTheDocument();
+    expect(screen.getAllByRole("status").some((estado) =>
+      estado.textContent.includes("1 de 1 suscripciones detectadas en 1 cuenta.")
+    )).toBe(true);
+    expect(within(screen.getByRole("list", { name: "Suscripciones de Gmail" })).getAllByRole("listitem")).toHaveLength(1);
+    expect(listarSuscripcionesGmail).toHaveBeenCalledOnce();
   });
 
-  it("filtra por suscripciones activas y pausadas", async () => {
+  it("filtra las suscripciones por categoría Gmail", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardSuscripciones />);
+    renderPagina();
+    await screen.findByRole("heading", { name: "Netflix" });
 
-    await usuario.click(screen.getByRole("button", { name: "Activas" }));
-    expect(screen.getByRole("button", { name: "Activas" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(listaSuscripciones()).getAllByRole("listitem")).toHaveLength(4);
-    expect(screen.queryByRole("heading", { name: "Gimnasio" })).not.toBeInTheDocument();
+    await usuario.click(screen.getByRole("button", { name: "Filtrar suscripciones de Gmail" }));
+    await usuario.click(screen.getByRole("button", { name: /Actualizaciones/ }));
+    await usuario.click(screen.getByRole("button", { name: "Ver resultados" }));
 
-    await usuario.click(screen.getByRole("button", { name: "Pausadas" }));
-    expect(within(listaSuscripciones()).getAllByRole("listitem")).toHaveLength(1);
-    expect(screen.getByRole("heading", { name: "Gimnasio" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Netflix" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Suscripciones de Gmail" })).not.toBeInTheDocument();
   });
 
-  it("actualiza el resumen al pausar una suscripción", async () => {
+  it("busca remitentes en los resultados cargados", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardSuscripciones />);
+    renderPagina();
+    await screen.findByRole("heading", { name: "Netflix" });
 
-    await usuario.click(screen.getByRole("button", { name: "Pausar Netflix" }));
+    await usuario.click(screen.getByRole("button", { name: "Buscar suscripciones de Gmail" }));
+    const campo = screen.getByRole("searchbox", { name: "Remitente, dirección o cuenta" });
+    await usuario.type(campo, "desconocido");
 
-    expect(screen.getByTestId("total-mensual")).toHaveTextContent(/60\.700/);
-    expect(screen.getByTestId("total-activas")).toHaveTextContent("3 de 5");
-    expect(screen.getByRole("button", { name: "Activar Netflix" })).toBeInTheDocument();
-    const tarjetaNetflix = screen.getByRole("heading", { name: "Netflix" }).closest("li");
-    expect(within(tarjetaNetflix).getByText("Pausada")).toBeInTheDocument();
+    const dialogoBusqueda = screen.getByRole("dialog", { name: "Buscar suscripciones de correo" });
+    expect(within(dialogoBusqueda).getByRole("status")).toHaveTextContent("0 remitentes encontrados");
+    expect(within(dialogoBusqueda).getByText("No se encontraron remitentes con ese texto.")).toBeInTheDocument();
   });
 
-  it("abre el detalle con la fuente y los pagos pasados de la suscripción", async () => {
+  it("abre el detalle con la cuenta y opción de baja detectada", async () => {
     const usuario = userEvent.setup();
-    render(<PaginaDashboardSuscripciones />);
+    renderPagina();
+    await screen.findByRole("heading", { name: "Netflix" });
 
-    await usuario.click(screen.getByRole("button", { name: "Ver detalle de Netflix" }));
+    await usuario.click(screen.getByRole("button", { name: "Ver detalles de la suscripción de Netflix" }));
 
-    const detalle = screen.getByRole("dialog", { name: "Detalle de Netflix" });
-    expect(within(detalle).getByText("Fuente de pago")).toBeInTheDocument();
-    expect(within(detalle).getByText("Tarjeta débito ···· 4821")).toBeInTheDocument();
-    expect(within(detalle).getByText("Último pago")).toBeInTheDocument();
-    expect(within(detalle).getByRole("heading", { name: "Pagos pasados" })).toBeInTheDocument();
-    expect(within(detalle).getAllByRole("listitem")).toHaveLength(3);
-    expect(within(detalle).getByRole("button", { name: "Editar", exact: true })).toBeDisabled();
-    expect(within(detalle).getByRole("button", { name: "Eliminar", exact: true })).toBeDisabled();
+    const detalle = screen.getByRole("dialog", { name: "Suscripción: Netflix" });
+    expect(within(detalle).getByText("billing@netflix.example")).toBeInTheDocument();
+    expect(within(detalle).getByText("ana@example.test")).toBeInTheDocument();
+    expect(within(detalle).getByRole("button", { name: "Anular suscripción" })).toBeInTheDocument();
   });
 });

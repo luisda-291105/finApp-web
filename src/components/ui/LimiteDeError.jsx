@@ -30,7 +30,7 @@ export default class LimiteDeError extends Component {
         <section
           role="alert"
           aria-labelledby="error-carga-titulo"
-          className="grid min-h-screen place-items-center bg-bg-cream p-6"
+          className="grid min-h-[55vh] w-full place-items-center rounded-2xl bg-bg-cream p-6"
         >
           <div className="max-w-md text-center">
             <AlertTriangle className="mx-auto h-10 w-10 text-cat-expense" aria-hidden="true" />
@@ -38,7 +38,7 @@ export default class LimiteDeError extends Component {
               No se pudo cargar la página
             </h1>
             <p className="mt-2 text-sm text-slate-text">
-              Revisa tu conexión e inténtalo de nuevo.
+              Esta sección no pudo cargarse. Puedes volver a intentarlo o continuar usando la navegación.
             </p>
             <button
               type="button"

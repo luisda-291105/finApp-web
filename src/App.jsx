@@ -59,7 +59,13 @@ function CargandoRuta({ compacto = false }) {
  * @returns {JSX.Element}
  */
 function envolver(elemento, compacto = true) {
-  return <Suspense fallback={<CargandoRuta compacto={compacto} />}>{elemento}</Suspense>;
+  return (
+    <LimiteDeError>
+      <Suspense fallback={<CargandoRuta compacto={compacto} />}>
+        {elemento}
+      </Suspense>
+    </LimiteDeError>
+  );
 }
 
 /**
@@ -72,28 +78,26 @@ export default function App() {
     <TemaProvider>
       <UsuarioActivoProvider>
         <GmailProvider>
-          <LimiteDeError>
-            <Routes>
-              <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
-              <Route path="/inicio" element={<Navigate to="/" replace />} />
-              <Route path="/login" element={<PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>} />
+          <Routes>
+            <Route path="/" element={<PublicRoute><LimiteDeError><LandingPage /></LimiteDeError></PublicRoute>} />
+            <Route path="/inicio" element={<Navigate to="/" replace />} />
+            <Route path="/login" element={<PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>} />
 
-              <Route element={<ProtectedRoute>{envolver(<DashboardLayout />, false)}</ProtectedRoute>}>
-                <Route path="/dashboard" element={envolver(<PaginaDashboardInicio />)} />
-                <Route path="/dashboard/tarjetas" element={envolver(<PaginaDashboardTarjetas />)} />
-                <Route path="/dashboard/configuracion" element={envolver(<PaginaDashboardConfiguracion />)} />
-                <Route path="/dashboard/bolsillos" element={<Navigate to="/dashboard/grupos" replace />} />
-                <Route path="/dashboard/grupos" element={envolver(<PaginaDashboardBolsillos />)} />
-                <Route path="/dashboard/contactos" element={envolver(<PaginaDashboardContactos />)} />
-                <Route path="/dashboard/correos" element={envolver(<PaginaDashboardCorreos />)} />
-                <Route path="/dashboard/contabilidad" element={envolver(<PaginaDashboardContabilidad />)} />
-                <Route path="/dashboard/suscripciones" element={envolver(<PaginaDashboardSuscripciones />)} />
-                <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
-              </Route>
+            <Route element={<ProtectedRoute>{envolver(<DashboardLayout />, false)}</ProtectedRoute>}>
+              <Route path="/dashboard" element={<PaginaDashboardInicio />} />
+              <Route path="/dashboard/tarjetas" element={<PaginaDashboardTarjetas />} />
+              <Route path="/dashboard/configuracion" element={<PaginaDashboardConfiguracion />} />
+              <Route path="/dashboard/bolsillos" element={<Navigate to="/dashboard/grupos" replace />} />
+              <Route path="/dashboard/grupos" element={<PaginaDashboardBolsillos />} />
+              <Route path="/dashboard/contactos" element={<PaginaDashboardContactos />} />
+              <Route path="/dashboard/correos" element={<PaginaDashboardCorreos />} />
+              <Route path="/dashboard/contabilidad" element={<PaginaDashboardContabilidad />} />
+              <Route path="/dashboard/suscripciones" element={<PaginaDashboardSuscripciones />} />
+              <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
 
-              <Route path="*" element={<ErrorPage />} />
-            </Routes>
-          </LimiteDeError>
+            <Route path="*" element={<LimiteDeError><ErrorPage /></LimiteDeError>} />
+          </Routes>
         </GmailProvider>
       </UsuarioActivoProvider>
     </TemaProvider>

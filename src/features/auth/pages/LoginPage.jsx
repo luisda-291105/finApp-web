@@ -45,7 +45,7 @@ export default function PaginaLogin() {
 
     setVerificandoGoogle(true);
     navigate("/login", { replace: true });
-    try { sessionStorage.setItem("finapp_sesion_pestana", "activa"); } catch { /* El servidor sigue validando la cookie. */ }
+    try { localStorage.setItem("finapp_sesion_autenticada", "activa"); } catch { /* El JWT HttpOnly sigue validándose en el servidor. */ }
     obtenerUsuarioActivo()
       .then((respuesta) => {
         const usuario = respuesta?.datos || respuesta;
@@ -54,7 +54,7 @@ export default function PaginaLogin() {
         navigate("/dashboard", { replace: true });
       })
       .catch((error) => {
-        try { sessionStorage.removeItem("finapp_sesion_pestana"); } catch { /* Almacenamiento opcional. */ }
+        try { localStorage.removeItem("finapp_sesion_autenticada"); } catch { /* Almacenamiento opcional. */ }
         setMensajeGoogle(error?.message || "No se pudo verificar la sesión de FinApp.");
       })
       .finally(() => setVerificandoGoogle(false));

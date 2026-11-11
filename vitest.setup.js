@@ -40,6 +40,13 @@ Object.defineProperty(window, "innerWidth", {
   value: 1024,
 });
 
+// jsdom exposes scrollTo but logs a "not implemented" error when modal hooks restore the page.
+Object.defineProperty(window, "scrollTo", {
+  configurable: true,
+  writable: true,
+  value: vi.fn(),
+});
+
 // Mock localStorage for jsdom (used by useBreakpoint hook)
 const localStorageMock = {
   getItem: vi.fn(),

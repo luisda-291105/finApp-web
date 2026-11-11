@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ContabilidadPage as PaginaDashboardContabilidad } from "../../features/contabilidad";
 import { listarBolsillos } from "../../features/contabilidad/services/bolsillosService";
-import { listarMovimientos, obtenerResumenesBolsillos } from "../../features/contabilidad/services/movimientosService";
+import { listarMovimientos, obtenerResumenesBolsillos, obtenerResumenGlobal } from "../../features/contabilidad/services/movimientosService";
 
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ usuario: { idUsuario: "usuario-prueba", nombre: "Ana Pérez" } }),
@@ -14,7 +14,7 @@ vi.mock("../../features/contabilidad/services/bolsillosService", () => ({
 }));
 vi.mock("../../features/contabilidad/services/movimientosService", () => ({
   listarMovimientos: vi.fn(), crearMovimiento: vi.fn(), actualizarMovimiento: vi.fn(),
-  eliminarMovimiento: vi.fn(), obtenerResumenesBolsillos: vi.fn(),
+  eliminarMovimiento: vi.fn(), obtenerResumenesBolsillos: vi.fn(), obtenerResumenGlobal: vi.fn(),
 }));
 vi.mock("../../features/tarjetas/services/tarjetasService", () => ({ obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]) }));
 
@@ -31,6 +31,7 @@ beforeEach(() => {
   listarBolsillos.mockResolvedValue(BOLSILLOS);
   listarMovimientos.mockResolvedValue(MOVIMIENTOS);
   obtenerResumenesBolsillos.mockResolvedValue([]);
+  obtenerResumenGlobal.mockResolvedValue({ ingresos: 0, gastos: 0, ahorros: 0, transferencias: 0, saldoAhorros: 0, porRevisar: 0 });
 });
 afterEach(cleanup);
 
@@ -44,6 +45,8 @@ describe("PaginaDashboardContabilidad", () => {
     expect(await screen.findByRole("heading", { name: "Contabilidad" })).toBeInTheDocument();
     expect(await screen.findByText("Gastos diarios")).toBeInTheDocument();
     expect(listarBolsillos).toHaveBeenCalled();
+    const ahora = new Date();
+    expect(obtenerResumenGlobal).toHaveBeenCalledWith(`${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`);
     await waitFor(() => expect(listarMovimientos).toHaveBeenCalledWith(null, "TODOS"));
     expect(screen.getByRole("heading", { name: "Movimientos de todos los bolsillos" })).toBeInTheDocument();
   });
@@ -54,6 +57,13 @@ describe("PaginaDashboardContabilidad", () => {
     await screen.findByText("Gastos diarios");
     await usuario.click(screen.getByRole("button", { name: "Ingresos" }));
     expect(listarMovimientos).toHaveBeenLastCalledWith(null, "INGRESO");
+  });
+
+  it("solicita nuevamente el resumen cuando cambia el mes", async () => {
+    renderPagina();
+    const selectorMes = await screen.findByLabelText("Mes");
+    fireEvent.change(selectorMes, { target: { value: "2026-05" } });
+    await waitFor(() => expect(obtenerResumenGlobal).toHaveBeenLastCalledWith("2026-05"));
   });
 
   it("abre el formulario de movimiento con bolsillos disponibles", async () => {

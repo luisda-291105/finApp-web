@@ -88,8 +88,8 @@ const restaurarViewportEscritorio = () => {
 beforeEach(() => {
   restaurarViewportEscritorio();
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
-  window.sessionStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_pestana" ? "activa" : null
+  window.localStorage.getItem.mockImplementation((key) =>
+    key === "finapp_sesion_autenticada" ? "activa" : null
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_PERFIL });
