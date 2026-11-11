@@ -32,7 +32,7 @@ const opcionesTrampa = (ref) => ({
 });
 
 /** Permite crear movimientos asociados a un bolsillo y registrar su fuente de dinero. */
-export default function ModalCrearMovimientoContable({ abierto, modo = "crear", movimiento = null, bolsillos = [], tarjetas = [], triggerRef, alCerrar, alGuardar }) {
+export default function ModalCrearMovimientoContable({ abierto, modo = "crear", movimiento = null, valoresPredeterminados = null, bolsillos = [], tarjetas = [], triggerRef, alCerrar, alGuardar }) {
   const panelRef = useRef(null);
   const [valores, setValores] = useState(() => valoresIniciales());
   const [respuesta, setRespuesta] = useState(null);
@@ -49,7 +49,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
         origenTipo: movimiento.origenTipo || (String(movimiento.tipo).toUpperCase() === "INGRESO" ? "" : "EFECTIVO"),
         origenId: movimiento.origenId || "",
         origenNombre: movimiento.origenNombre || "",
-      } : valoresIniciales());
+      } : { ...valoresIniciales(), ...(valoresPredeterminados || {}) });
       setRespuesta(null);
       setOcupado(false);
     }
@@ -150,8 +150,8 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
               <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-concepto">Concepto <span className="font-normal text-slate-text">(opcional)</span><input id="nuevo-movimiento-concepto" maxLength={160} placeholder="Ej. Compra semanal del hogar" value={valores.concepto} onChange={(evento) => cambiar("concepto", evento.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text" /></label>
               {requiereOrigen && <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-origen-tipo">¿De dónde salió el dinero?
-                <select id="nuevo-movimiento-origen-tipo" required value={valores.origenTipo} disabled={modo === "editar" && movimiento?.origenTipo === "GMAIL"} onChange={(evento) => { cambiar("origenTipo", evento.target.value); cambiar("origenId", ""); }} className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 disabled:opacity-70">
-                    <option value="" disabled>Selecciona el origen</option>{modo === "editar" && movimiento?.origenTipo === "GMAIL" && <option value="GMAIL">Gmail · correo importado</option>}<option value="EFECTIVO">Efectivo</option><option value="BOLSILLO">Bolsillo</option>{tarjetas.length > 0 && <option value="CUENTA">Cuenta o tarjeta</option>}
+                <select id="nuevo-movimiento-origen-tipo" required value={valores.origenTipo} disabled={valores.origenTipo === "GMAIL" || (modo === "editar" && movimiento?.origenTipo === "GMAIL")} onChange={(evento) => { cambiar("origenTipo", evento.target.value); cambiar("origenId", ""); }} className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 disabled:opacity-70">
+                    <option value="" disabled>Selecciona el origen</option>{(valores.origenTipo === "GMAIL" || (modo === "editar" && movimiento?.origenTipo === "GMAIL")) && <option value="GMAIL">Gmail · correo importado</option>}<option value="EFECTIVO">Efectivo</option><option value="BOLSILLO">Bolsillo</option>{tarjetas.length > 0 && <option value="CUENTA">Cuenta o tarjeta</option>}
                   </select>
                 </label>
                 {origenRequiereDetalle && <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-origen-id">{valores.origenTipo === "BOLSILLO" ? "Bolsillo de origen" : "Cuenta"}

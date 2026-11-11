@@ -9,6 +9,7 @@ Administra los bolsillos del usuario, sus resúmenes y los movimientos financier
 - `pages/ContabilidadPage`: compone la vista de `/dashboard/contabilidad`.
 - `components/cards/BolsilloCard`: plantilla visual reutilizable para mostrar bolsillo, resumen y acciones.
 - `components/cards/MovimientoItem`: presentación individual de un movimiento y sus acciones.
+- `components/modals/DetalleMovimientoModal`: modal de lectura con la información del movimiento seleccionado.
 - `hooks/useContabilidad`: carga datos y coordina filtros, formularios y acciones CRUD.
 - `utils/contabilidadHelpers`: tipos base, etiquetas, filtros y saldos presentados por la vista.
 - `components/modals/ModalBolsillo`: crea, edita y elimina bolsillos.
