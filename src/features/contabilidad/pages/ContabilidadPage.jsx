@@ -7,13 +7,15 @@
  * @usadoPor   App.jsx (ruta /dashboard/contabilidad)
  */
 import { useState } from "react";
-import { Plus, Wallet } from "lucide-react";
+import { ClipboardCheck, Plus, Wallet } from "lucide-react";
 import { Card } from "../../../components/ui";
 import RespuestaMovimiento from "../components/feedback/RespuestaMovimiento";
 import ModalCrearMovimientoContable from "../components/modals/ModalCrearMovimientoContable";
 import ModalBolsillo from "../components/modals/ModalBolsillo";
 import DetalleBolsilloModal from "../components/modals/DetalleBolsilloModal";
 import DetalleMovimientoModal from "../components/modals/DetalleMovimientoModal";
+import ModalMovimientosPorRevisar from "../components/modals/ModalMovimientosPorRevisar";
+import ResumenGlobalCards from "../components/cards/ResumenGlobalCards";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
 import useContabilidad from "../hooks/useContabilidad";
 import BolsilloCard from "../components/cards/BolsilloCard";
@@ -24,20 +26,29 @@ import { agregarSaldoDisponible, crearFiltrosMovimiento } from "../utils/contabi
 export default function PaginaDashboardContabilidad() {
   const [bolsilloDetalle, setBolsilloDetalle] = useState(null);
   const [movimientoDetalle, setMovimientoDetalle] = useState(null);
+  const [bandejaRevisionAbierta, setBandejaRevisionAbierta] = useState(false);
+  const [recargaRevision, setRecargaRevision] = useState(0);
   const {
     navigate, usuario, movimientos, filtroMovimiento, setFiltroMovimiento, cargandoMovimientos, errorMovimientos,
     resumenesBolsillos, cargandoResumenes, errorResumenes, crearMovimientoAbierto, setCrearMovimientoAbierto,
+    resumenGlobal, cargandoResumenGlobal, errorResumenGlobal, mesResumenGlobal, setMesResumenGlobal,
     movimientoEditando, setMovimientoEditando, movimientoEliminando, setMovimientoEliminando,
     eliminandoMovimiento, errorEliminarMovimiento, setErrorEliminarMovimiento, respuesta, setRespuesta, bolsillos, tarjetas,
     cargandoBolsillos, errorBolsillos, modalBolsillo, setModalBolsillo,
     disparadorBolsilloRef, disparadorMovimientoRef, abrirModalBolsillo, guardarBolsillo,
-    borrarBolsillo, guardarMovimiento, confirmarEliminarMovimiento,
+    borrarBolsillo, guardarMovimiento, confirmarEliminarMovimiento, recargarMovimientos,
   } = useContabilidad();
+
+  const guardarMovimientoYActualizarRevision = async (movimiento) => {
+    await guardarMovimiento(movimiento);
+    setRecargaRevision((actual) => actual + 1);
+  };
 
   const bolsillosActivos = bolsillos.filter((bolsillo) => bolsillo.estado !== false);
   const bolsillosConSaldo = agregarSaldoDisponible(bolsillos, resumenesBolsillos);
   const bolsillosMovimiento = movimientoEditando ? bolsillosConSaldo : bolsillosConSaldo.filter((bolsillo) => bolsillo.estado !== false);
   const filtrosMovimiento = crearFiltrosMovimiento(bolsillos);
+  const cantidadPorRevisar = Number(resumenGlobal?.porRevisar ?? 0);
 
   return (
     <section aria-labelledby="contabilidad-titulo" className="space-y-6 pt-6">
@@ -48,6 +59,9 @@ export default function PaginaDashboardContabilidad() {
           <p className="mt-1 text-sm text-slate-text">Revisa tus gastos, ahorros y balance disponible.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setBandejaRevisionAbierta(true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-600 px-4 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600">
+            <ClipboardCheck className="h-4 w-4" aria-hidden="true" />Por revisar <span aria-label={`${cantidadPorRevisar} movimientos pendientes`}>({cantidadPorRevisar})</span>
+          </button>
           <button ref={disparadorMovimientoRef} type="button" disabled={bolsillosActivos.length === 0} onClick={() => { if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; } setRespuesta(null); setMovimientoEditando(null); setCrearMovimientoAbierto(true); }} title={bolsillosActivos.length === 0 ? "Crea y activa un bolsillo para registrar movimientos" : undefined} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-semibold text-bg-cream shadow-sm transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">
             <Plus className="h-4 w-4" aria-hidden="true" />Nuevo movimiento
           </button>
@@ -56,6 +70,8 @@ export default function PaginaDashboardContabilidad() {
           </button>
         </div>
       </header>
+      <ResumenGlobalCards resumen={resumenGlobal} mes={mesResumenGlobal} alCambiarMes={setMesResumenGlobal}
+        cargando={cargandoResumenGlobal} error={errorResumenGlobal} />
       <section aria-labelledby="bolsillos-contables-titulo" className="space-y-4">
         <div>
           <h2 id="bolsillos-contables-titulo" className="font-display text-xl font-semibold text-bg-dark">Bolsillos</h2>
@@ -105,7 +121,11 @@ export default function PaginaDashboardContabilidad() {
         alEditar={() => { setMovimientoDetalle(null); setMovimientoEditando(movimientoDetalle); setCrearMovimientoAbierto(true); }}
         alEliminar={() => { setMovimientoDetalle(null); setErrorEliminarMovimiento(""); setMovimientoEliminando(movimientoDetalle); }}
       />
-      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} bolsillos={bolsillosMovimiento} tarjetas={tarjetas} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); }} alGuardar={guardarMovimiento} />
+      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} bolsillos={bolsillosMovimiento} tarjetas={tarjetas} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); }} alGuardar={guardarMovimientoYActualizarRevision} />
+      <ModalMovimientosPorRevisar abierto={bandejaRevisionAbierta} bolsillos={bolsillos} recarga={recargaRevision}
+        triggerRef={disparadorMovimientoRef} alCerrar={() => setBandejaRevisionAbierta(false)}
+        alEditar={(movimiento) => { setBandejaRevisionAbierta(false); setMovimientoEditando(movimiento); setCrearMovimientoAbierto(true); }}
+        alConfirmar={recargarMovimientos} />
       <ModalDetalleRegistro abierto={Boolean(movimientoEliminando)} titulo="Eliminar movimiento" triggerRef={disparadorMovimientoRef} alCerrar={() => !eliminandoMovimiento && setMovimientoEliminando(null)} ancho="max-w-md">
         <p className="mb-4 text-sm text-slate-text">¿Eliminar definitivamente el movimiento <strong className="text-bg-dark">{movimientoEliminando?.concepto || movimientoEliminando?.categoria}</strong>? Esta acción no se puede deshacer.</p>
         {errorEliminarMovimiento && <p role="alert" className="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{errorEliminarMovimiento}</p>}

@@ -17,6 +17,7 @@ const MENSAJE_ACCESO_DENEGADO =
   "Google denegó el acceso (403 access_denied). Si la app está en modo de prueba, agrega tu cuenta a Usuarios de prueba en Google Cloud Console y vuelve a intentar.";
 const CACHE_CONSULTA_MS = 45 * 1000;
 const CACHE_CONTENIDO_MS = 5 * 60 * 1000;
+export const REMITENTE_MOVIMIENTOS_BANCOLOMBIA = "alertasynotificaciones@ayn.notificacionesbancolombia.com";
 
 let cargaBiblioteca;
 const cacheConsultas = new Map();
@@ -158,6 +159,28 @@ export async function listarCuentasGmail() {
 /** Obtiene del backend los remitentes suscritos ya agrupados y filtrados por usuario. */
 export async function listarSuscripcionesGmail() {
   return solicitarBackend(getEndpoint("gmail.suscripciones"));
+}
+
+/** Recupera los mensajes recientes guardados para el remitente de una suscripción activa. */
+export async function obtenerMensajesSuscripcionGmail(accountId, correoRemitente) {
+  if (!accountId || !correoRemitente) throw new Error("Selecciona una suscripción para consultar sus mensajes.");
+  const url = `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/mensajes?correo=${encodeURIComponent(correoRemitente)}`;
+  const mensajes = await solicitarBackend(url);
+  return (Array.isArray(mensajes) ? mensajes : []).map(clasificarCorreo);
+}
+
+/** Inicia la importación asíncrona de mensajes del remitente oficial de movimientos. */
+export async function iniciarImportacionLoteGmail(accountId) {
+  if (!accountId) throw new Error("Selecciona una cuenta Gmail para importar mensajes.");
+  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/importar-lote`, {
+    method: "POST",
+  });
+}
+
+/** Consulta el progreso y los resultados por mensaje de un lote Gmail. */
+export async function obtenerEstadoImportacionLoteGmail(accountId, loteId) {
+  if (!accountId || !loteId) throw new Error("Falta la cuenta o el identificador del lote Gmail.");
+  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/lotes/${encodeURIComponent(loteId)}`);
 }
 
 export async function listarNotificacionesMovimientosGmail() {

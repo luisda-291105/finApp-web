@@ -38,6 +38,7 @@ export const ENDPOINTS = {
   movimiento: {
     base: "/movimiento",
     resumen: "/movimiento/resumen",
+    resumenGlobal: "/movimiento/resumen-global",
     recurrentes: "/movimiento/recurrentes",
   },
   tarjeta: {

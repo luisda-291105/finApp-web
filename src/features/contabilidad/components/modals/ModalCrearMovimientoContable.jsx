@@ -41,7 +41,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
   useEffect(() => {
     if (abierto) {
       setValores(modo === "editar" && movimiento ? {
-        idBolsillo: movimiento.idBolsillo || "",
+        idBolsillo: movimiento.estadoRevision === "POR_REVISAR" ? "" : movimiento.idBolsillo || "",
         fecha: movimiento.fecha || fechaLocal(),
         monto: formatearPesos(movimiento.monto ?? ""),
         categoria: movimiento.categoria || "",
@@ -162,7 +162,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
             <RespuestaMovimiento respuesta={respuesta} />
             <div className="flex justify-end gap-2">
               <button type="button" disabled={ocupado} onClick={cerrar} className="min-h-11 rounded-xl border border-border-line px-4 text-sm font-medium hover:bg-white disabled:opacity-50">Cancelar</button>
-              <button type="submit" disabled={ocupado || !tipoSeleccionado || (requiereOrigen && (!valores.origenTipo || (origenRequiereDetalle && !valores.origenId))) || !bolsillos.some((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo && (bolsillo.estado !== false || movimiento?.idBolsillo === bolsillo.idBolsillo))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>
+              <button type="submit" disabled={ocupado || !tipoSeleccionado || (requiereOrigen && (!valores.origenTipo || (origenRequiereDetalle && !valores.origenId))) || !bolsillos.some((bolsillo) => bolsillo.idBolsillo === valores.idBolsillo && (bolsillo.estado !== false || movimiento?.idBolsillo === bolsillo.idBolsillo))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50">{ocupado ? "Guardando…" : modo === "editar" && movimiento?.estadoRevision === "POR_REVISAR" ? "Guardar y confirmar" : modo === "editar" ? "Guardar cambios" : "Guardar movimiento"}</button>
             </div>
           </form>
         </section>
