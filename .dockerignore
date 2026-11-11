@@ -1,0 +1,9 @@
+.git
+.agents
+.vscode
+node_modules
+dist
+.env
+.env.*
+!.env.example
+*.vitest-*.json
