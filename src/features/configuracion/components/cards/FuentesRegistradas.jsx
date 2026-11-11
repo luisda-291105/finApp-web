@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
@@ -6,6 +7,7 @@ import EstadoFuente from "./EstadoFuente";
 
 export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, alAutorizarContactosGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);
+  const [abierto, setAbierto] = useState(true);
   const fuenteTriggerRef = useRef(null);
   const cuentaGmailConectada = Boolean(gmailConectado && !errorGmail && !conexionCargando);
   const fuenteSeleccionada = fuentes.find((fuente) => fuente.idFuente === fuenteSeleccionadaId) || null;
@@ -25,12 +27,15 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
       <Card className="space-y-4 p-6">
         <div className="flex flex-col gap-4 border-t border-border-line/60 pt-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-display text-xl font-semibold text-bg-dark">Fuentes registradas</h2>
-            <p className="mt-1 text-sm text-slate-text">Consulta y administra las fuentes asociadas a tu usuario.</p>
+            <h2><button type="button" aria-expanded={abierto} aria-controls="fuentes-registradas-contenido" onClick={() => setAbierto((actual) => !actual)} className="flex min-h-10 items-center gap-2 text-left font-display text-xl font-semibold text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+              <span>Fuentes registradas</span><ChevronDown aria-hidden="true" className={`h-5 w-5 transition-transform ${abierto ? "rotate-180" : ""}`} />
+            </button></h2>
+            {abierto && <p className="mt-1 text-sm text-slate-text">Consulta y administra las fuentes asociadas a tu usuario.</p>}
           </div>
-          <button ref={disparadorFuentesRef} type="button" className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2" onClick={abrirModalFuentes}>Registrar fuentes</button>
+          {abierto && <button ref={disparadorFuentesRef} type="button" className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2" onClick={abrirModalFuentes}>Registrar fuentes</button>}
         </div>
 
+        <div id="fuentes-registradas-contenido" hidden={!abierto} className="space-y-4">
         {errorGmail && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorGmail}</p>}
         {avisoGmail && <p role="status" className="text-sm text-emerald-primary">{avisoGmail}</p>}
 
@@ -53,6 +58,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
               <div className="flex flex-wrap items-center gap-2"><EstadoFuente activo={cuentaGmailConectada} /><button type="button" onClick={() => seleccionarCuentaGmail(cuenta.id)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-emerald-primary hover:bg-emerald-primary/10">{String(cuenta.id) === String(cuentaSeleccionadaId) ? "Seleccionada" : "Consultar"}</button><button type="button" onClick={() => desconectarGmail(true, cuenta.id)} className="min-h-9 rounded-lg px-3 text-xs font-medium text-red-700 hover:bg-red-100">Desconectar</button></div>
             </div>
           ))}
+        </div>
         </div>
       </Card>
 
