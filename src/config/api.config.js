@@ -74,6 +74,10 @@ export const ENDPOINTS = {
   telegram: {
     base: "/api/telegram",
   },
+  almacenamiento: {
+    conexiones: "/api/almacenamiento/conexiones",
+    desconectar: "/api/almacenamiento/conexiones",
+  },
 };
 
 /**

@@ -27,6 +27,7 @@ const PaginaDashboardContactos = lazy(() => import("./features/contactos").then(
 const PaginaDashboardCorreos = lazy(() => import("./features/correos").then(({ CorreosPage }) => ({ default: CorreosPage })));
 const PaginaDashboardContabilidad = lazy(() => import("./features/contabilidad").then(({ ContabilidadPage }) => ({ default: ContabilidadPage })));
 const PaginaDashboardSuscripciones = lazy(() => import("./features/suscripciones").then(({ SuscripcionesPage }) => ({ default: SuscripcionesPage })));
+const PaginaDashboardAlmacenamiento = lazy(() => import("./features/almacenamiento").then(({ AlmacenamientoPage }) => ({ default: AlmacenamientoPage })));
 
 /**
  * CargandoRuta
@@ -93,6 +94,7 @@ export default function App() {
               <Route path="/dashboard/correos" element={<PaginaDashboardCorreos />} />
               <Route path="/dashboard/contabilidad" element={<PaginaDashboardContabilidad />} />
               <Route path="/dashboard/suscripciones" element={<PaginaDashboardSuscripciones />} />
+              <Route path="/dashboard/almacenamiento" element={<PaginaDashboardAlmacenamiento />} />
               <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
