@@ -33,3 +33,10 @@ export function agregarSaldoDisponible(bolsillos = [], resumenes = {}) {
     saldoDisponible: Number(resumenes[bolsillo.idBolsillo]?.saldo) || 0,
   }));
 }
+
+/** Regla compartida con el backend: «Ingresos»/INGRESO y «Gastos»/GASTO son bolsillos fijos del usuario. */
+export function esBolsilloFijo(bolsillo) {
+  const nombre = String(bolsillo?.nombre || "").trim().toLowerCase();
+  const tipo = String(bolsillo?.tipo || "").trim().toUpperCase();
+  return (nombre === "ingresos" && tipo === "INGRESO") || (nombre === "gastos" && tipo === "GASTO");
+}

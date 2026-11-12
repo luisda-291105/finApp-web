@@ -1,6 +1,6 @@
 import { PiggyBank, ReceiptText, TrendingUp, Wallet } from "lucide-react";
 import { Card } from "../../../../components/ui";
-import { formatoMoneda } from "../../utils/contabilidadHelpers";
+import { esBolsilloFijo, formatoMoneda } from "../../utils/contabilidadHelpers";
 
 const iconoPorTipo = { GASTO: ReceiptText, INGRESO: TrendingUp, AHORRO: PiggyBank };
 const campoPorTipo = { GASTO: "gastos", INGRESO: "ingresos", AHORRO: "ahorros" };
@@ -26,7 +26,10 @@ export default function BolsilloCard({ bolsillo, resumen = {}, cargandoResumen, 
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-primary/10 text-emerald-primary"><Icono className="h-5 w-5" aria-hidden="true" /></span>
         <div className="min-w-0 flex-1">
           <h3 className="break-words font-display text-lg font-semibold text-bg-dark">{bolsillo.nombre}</h3>
-          <span className="mt-2 inline-flex rounded-full bg-bg-cream px-2.5 py-1 text-xs font-semibold text-slate-text">{bolsillo.tipo || "Sin tipo"}</span>
+          <span className="mt-2 inline-flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-bg-cream px-2.5 py-1 text-xs font-semibold text-slate-text">{bolsillo.tipo || "Sin tipo"}</span>
+            {esBolsilloFijo(bolsillo) && <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">Fijo</span>}
+          </span>
         </div>
       </div>
       <div>

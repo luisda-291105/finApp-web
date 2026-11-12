@@ -14,6 +14,7 @@ import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../../utils/formatoPesos";
+import { esBolsilloFijo } from "../../utils/contabilidadHelpers";
 
 function fechaLocal() {
   const hoy = new Date();
@@ -145,7 +146,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
                 <label className="mb-1 block text-sm font-medium" htmlFor="nuevo-movimiento-bolsillo">Bolsillo</label>
                 <select id="nuevo-movimiento-bolsillo" required value={valores.idBolsillo} onChange={(evento) => { cambiar("idBolsillo", evento.target.value); if (!(modo === "editar" && movimiento?.origenTipo === "GMAIL")) { cambiar("origenTipo", ""); cambiar("origenId", ""); } }} className="min-h-11 w-full rounded-xl border border-border-line bg-white px-3">
                   <option value="" disabled>Selecciona un bolsillo</option>
-                  {bolsillos.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre} · {bolsillo.tipo}{bolsillo.estado === false ? " · Inactivo" : ""}</option>)}
+                  {bolsillos.map((bolsillo) => <option key={bolsillo.idBolsillo} value={bolsillo.idBolsillo}>{bolsillo.nombre} · {bolsillo.tipo}{esBolsilloFijo(bolsillo) ? " · Fijo" : ""}{bolsillo.estado === false ? " · Inactivo" : ""}</option>)}
                 </select>
                 {tipoSeleccionado && <p className="mt-1 text-xs text-slate-text">Tipo de movimiento: {tipoSeleccionado}</p>}
               </div>

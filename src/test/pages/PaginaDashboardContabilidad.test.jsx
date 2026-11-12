@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ContabilidadPage as PaginaDashboardContabilidad } from "../../features/contabilidad";
@@ -19,6 +19,8 @@ vi.mock("../../features/contabilidad/services/movimientosService", () => ({
 vi.mock("../../features/tarjetas/services/tarjetasService", () => ({ obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]) }));
 
 const BOLSILLOS = [
+  { idBolsillo: "fijo-ingreso", nombre: "Ingresos", tipo: "INGRESO", estado: true, montoObjetivo: 0 },
+  { idBolsillo: "fijo-gasto", nombre: "Gastos", tipo: "GASTO", estado: true, montoObjetivo: 0 },
   { idBolsillo: "gasto-1", nombre: "Gastos diarios", tipo: "GASTO", estado: true, montoObjetivo: 0 },
   { idBolsillo: "ingreso-1", nombre: "Nómina", tipo: "INGRESO", estado: true, montoObjetivo: 0 },
 ];
@@ -77,5 +79,29 @@ describe("PaginaDashboardContabilidad", () => {
     expect(screen.getByLabelText("Monto (COP)")).toBeInTheDocument();
     expect(screen.getByLabelText("Categoría")).toBeInTheDocument();
     expect(screen.getByLabelText("Concepto (opcional)")).toBeInTheDocument();
+  });
+
+  it("muestra los bolsillos fijos con insignia y sin acciones de edición", async () => {
+    const usuario = userEvent.setup();
+    renderPagina();
+    const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
+    expect(within(rejilla).getAllByText("Fijo")).toHaveLength(2);
+    await usuario.click(within(rejilla).getByRole("button", { name: /Abrir bolsillo Gastos, / }));
+    const dialogo = await screen.findByRole("dialog", { name: "Gastos" });
+    expect(within(dialogo).getByText(/Bolsillo fijo/)).toBeInTheDocument();
+    expect(within(dialogo).queryByRole("button", { name: "Editar bolsillo" })).not.toBeInTheDocument();
+    expect(within(dialogo).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+  });
+
+  it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {
+    const usuario = userEvent.setup();
+    renderPagina();
+    await screen.findByText("Gastos diarios");
+    await usuario.click(screen.getByRole("button", { name: "Nuevo movimiento" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Nuevo movimiento" });
+    const opciones = within(dialogo).getByLabelText("Bolsillo").querySelectorAll("option:not([disabled])");
+    expect(Array.from(opciones).map((opcion) => opcion.textContent)).toEqual([
+      "Ingresos · INGRESO · Fijo", "Gastos · GASTO · Fijo", "Gastos diarios · GASTO", "Nómina · INGRESO",
+    ]);
   });
 });

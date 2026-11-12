@@ -19,3 +19,5 @@ Administra los bolsillos del usuario, sus resúmenes y los movimientos financier
 - `index.js`: API pública usada por el mapa de rutas.
 
 La plantilla visual del bolsillo y la fila de movimiento están separadas en `components/cards/`. Los formatos de moneda y fecha, las etiquetas y los filtros compartidos por la página viven en `utils/contabilidadHelpers`.
+
+Los bolsillos fijos «Ingresos» (INGRESO) y «Gastos» (GASTO) los crea y mantiene el backend en el listado: siempre existen, están activos, aparecen primero y no se pueden editar ni eliminar. La regla compartida vive en `esBolsilloFijo` (`utils/contabilidadHelpers`), igual que en el backend (`SBolsillo.esFijo`). El botón «Nuevo movimiento» los reconoce como bolsillos y el tipo del movimiento se toma de ellos.
