@@ -209,9 +209,10 @@ export default function DashboardLayout() {
       )}
 
       {/* Área principal: margen reservado para la navegación desde 768px (sin prefijo lg:) */}
+      {/* `relative`: contextos de posicionamiento para los modales (scrim `absolute inset-0` = solo la página, no la sidebar) */}
       <div
         className={clsx(
-          "min-h-screen bg-bg-cream transition-all duration-300",
+          "relative min-h-screen bg-bg-cream transition-all duration-300",
           isDesktop ? (sidebarColapsada ? "ml-[72px]" : "ml-64") : "ml-0"
         )}
       >

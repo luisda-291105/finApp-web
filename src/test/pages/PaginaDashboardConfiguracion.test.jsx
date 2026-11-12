@@ -195,4 +195,37 @@ describe("PaginaDashboardConfiguracion", () => {
     expect(screen.getByRole("button", { name: "Eliminar", exact: true })).toBeInTheDocument();
   });
 
+  it("abre el modal de conexión Nextcloud y lo cierra con la «X»", async () => {
+    const usuario = userEvent.setup();
+    render(<PaginaDashboardConfiguracion />);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Conectar Nextcloud" }));
+
+    const dialogo = screen.getByRole("dialog", { name: "Conectar Nextcloud" });
+    expect(dialogo).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Cerrar conexión con Nextcloud" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("cierra el modal de conexión Nextcloud con Escape", async () => {
+    const usuario = userEvent.setup();
+    render(<PaginaDashboardConfiguracion />);
+
+    await usuario.click(screen.getByRole("button", { name: "Conectar Nextcloud" }));
+
+    expect(screen.getByRole("dialog", { name: "Conectar Nextcloud" })).toBeInTheDocument();
+
+    await usuario.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
 });
