@@ -7,3 +7,4 @@
  * @usadoPor   App.jsx
  */
 export { default as AlmacenamientoPage } from "./pages/AlmacenamientoPage";
+export { default as ModalGoogleDrive } from "./components/modals/ModalGoogleDrive";

@@ -9,20 +9,30 @@
 import { useState } from "react";
 import { Cloud, HardDrive } from "lucide-react";
 import { Card } from "../../../../components/ui";
-import { iniciarConexion } from "../../../almacenamiento/services/almacenamientoServicio";
+import { conectarGoogleDrive, conectarNextcloud, iniciarConexion } from "../../../almacenamiento/services/almacenamientoServicio";
 
 const PROVEEDORES = [
-  { id: "GOOGLE_DRIVE", etiqueta: "Conectar Google Drive" },
-  { id: "ONEDRIVE", etiqueta: "Conectar OneDrive" },
+  { id: "GOOGLE_DRIVE", etiqueta: "Conectar Google Drive", accion: conectarGoogleDrive },
+  { id: "ONEDRIVE", etiqueta: "Conectar OneDrive", accion: () => iniciarConexion("ONEDRIVE") },
 ];
 
 export default function ConectarAlmacenamientoCard({ nextcloudAbierto, alAbrirNextcloud, alCerrarNextcloud }) {
   const [proveedorIniciando, setProveedorIniciando] = useState(null);
+  const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
 
   const alIniciar = async (proveedor) => {
-    setProveedorIniciando(proveedor);
-    try { await iniciarConexion(proveedor); }
-    catch { setProveedorIniciando(null); }
+    setProveedorIniciando(proveedor.id);
+    setError("");
+    setAviso("");
+    try {
+      await proveedor.accion();
+      setAviso(`Cuenta ${proveedor.etiqueta.replace("Conectar ", "")} conectada. Revísala en Almacenamiento.`);
+      setProveedorIniciando(null);
+    } catch (errorConexion) {
+      setError(errorConexion?.message || "No se pudo iniciar la conexión. Inténtalo de nuevo.");
+      setProveedorIniciando(null);
+    }
   };
 
   return (
@@ -37,10 +47,10 @@ export default function ConectarAlmacenamientoCard({ nextcloudAbierto, alAbrirNe
 
       <div className="flex flex-wrap gap-3">
         {PROVEEDORES.map((proveedor) => (
-          <button key={proveedor.id} type="button" onClick={() => alIniciar(proveedor.id)} disabled={proveedorIniciando !== null}
+          <button key={proveedor.id} type="button" onClick={() => alIniciar(proveedor)} disabled={proveedorIniciando !== null}
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border-line/60 px-4 py-2 text-sm font-medium text-bg-dark hover:bg-emerald-primary/5 disabled:opacity-50">
             <Cloud className="h-4 w-4" aria-hidden="true" />
-            {proveedorIniciando === proveedor.id ? "Redirigiendo…" : proveedor.etiqueta}
+            {proveedorIniciando === proveedor.id ? "Conectando…" : proveedor.etiqueta}
           </button>
         ))}
         <button type="button" onClick={() => (nextcloudAbierto ? alCerrarNextcloud() : alAbrirNextcloud())}
@@ -50,6 +60,9 @@ export default function ConectarAlmacenamientoCard({ nextcloudAbierto, alAbrirNe
           {nextcloudAbierto ? "Cerrar Nextcloud" : "Conectar Nextcloud"}
         </button>
       </div>
+
+      {aviso && <p role="status" className="text-sm text-emerald-primary">{aviso}</p>}
+      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     </Card>
   );
 }
