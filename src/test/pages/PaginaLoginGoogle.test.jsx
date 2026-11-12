@@ -5,14 +5,22 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 const mocks = vi.hoisted(() => ({
   obtenerUsuarioActivo: vi.fn(),
   guardarUsuario: vi.fn(),
+  obtenerRegistroGooglePendiente: vi.fn(),
 }));
 
 vi.mock("../../features/auth/services/usuarioServicio", () => ({ obtenerUsuarioActivo: mocks.obtenerUsuarioActivo }));
+vi.mock("../../features/auth/services/authGoogleServicio", () => ({
+  obtenerRegistroGooglePendiente: mocks.obtenerRegistroGooglePendiente,
+}));
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({ guardarUsuario: mocks.guardarUsuario }),
 }));
 vi.mock("../../features/auth/components/modals/AuthModal", () => ({
-  default: ({ mensajeExterno }) => mensajeExterno ? <div role="alert">{mensajeExterno}</div> : null,
+  default: ({ mensajeExterno, modoInicial }) => (
+    <div data-testid="auth-modal" data-modo={modoInicial}>
+      {mensajeExterno ? <div role="alert">{mensajeExterno}</div> : null}
+    </div>
+  ),
 }));
 
 import PaginaLogin from "../../features/auth/pages/LoginPage";
@@ -32,6 +40,7 @@ describe("PaginaLogin — callback de Google", () => {
   beforeEach(() => {
     mocks.obtenerUsuarioActivo.mockReset();
     mocks.guardarUsuario.mockReset();
+    mocks.obtenerRegistroGooglePendiente.mockReset();
     localStorage.clear();
   });
 
@@ -48,5 +57,27 @@ describe("PaginaLogin — callback de Google", () => {
     renderLogin("/login?google=cancelled");
     expect(await screen.findByRole("alert")).toHaveTextContent("Cancelaste el inicio de sesión con Google.");
     expect(mocks.obtenerUsuarioActivo).not.toHaveBeenCalled();
+  });
+
+  it("muestra un mensaje y coloca modo registro si el usuario no está registrado", async () => {
+    renderLogin("/login?google=not_registered");
+    expect(await screen.findByRole("alert")).toHaveTextContent("No existe una cuenta registrada con este correo de Google. Por favor, regístrate.");
+    expect(screen.getByTestId("auth-modal")).toHaveAttribute("data-modo", "registro");
+  });
+
+  it("muestra un mensaje y coloca modo login si el usuario ya está registrado al intentar registro", async () => {
+    renderLogin("/login?google=already_registered");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Esta cuenta de Google ya está registrada. Por favor inicia sesión.");
+    expect(screen.getByTestId("auth-modal")).toHaveAttribute("data-modo", "login");
+  });
+
+  it("recupera datos de registro pendiente y abre modo completar_google cuando google=pending_registration", async () => {
+    mocks.obtenerRegistroGooglePendiente.mockResolvedValue({ correo: "nuevo@gmail.com", nombre: "Nuevo" });
+    renderLogin("/login?google=pending_registration");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-modal")).toHaveAttribute("data-modo", "completar_google");
+    });
+    expect(mocks.obtenerRegistroGooglePendiente).toHaveBeenCalledOnce();
   });
 });

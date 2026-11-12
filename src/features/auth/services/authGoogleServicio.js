@@ -1,5 +1,5 @@
 import { getEndpoint } from "../../../config/api.config";
-import { obtener } from "../../../services/httpServicio";
+import { crear, obtener } from "../../../services/httpServicio";
 
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -34,9 +34,11 @@ function cargarBibliotecaGoogle() {
   return cargaBiblioteca;
 }
 
-export async function iniciarLoginGoogle() {
+export async function iniciarLoginGoogle(modo = "") {
   if (!CLIENT_ID) throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para habilitar Google.");
-  const resultado = await obtener(getEndpoint("googleAuth.state"));
+  const rutaBase = getEndpoint("googleAuth.state");
+  const urlEstado = modo ? `${rutaBase}?modo=${encodeURIComponent(modo)}` : rutaBase;
+  const resultado = await obtener(urlEstado);
   const state = resultado?.datos?.state;
   if (!state) throw new Error("No se pudo preparar la verificación segura de Google.");
   await cargarBibliotecaGoogle();
@@ -52,3 +54,13 @@ export async function iniciarLoginGoogle() {
   });
   cliente.requestCode();
 }
+
+export async function obtenerRegistroGooglePendiente() {
+  const respuesta = await obtener(getEndpoint("googleAuth.registroPendiente"));
+  return respuesta?.datos || respuesta;
+}
+
+export async function completarRegistroGoogle(datos) {
+  return crear(getEndpoint("googleAuth.completarRegistro"), datos);
+}
+

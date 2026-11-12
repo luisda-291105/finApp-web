@@ -14,6 +14,7 @@ import { TRIAL_MODE } from "../../../config/app.config";
 import { AuthModal } from "../components/modals";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { obtenerUsuarioActivo } from "../services/usuarioServicio";
+import { obtenerRegistroGooglePendiente } from "../services/authGoogleServicio";
 
 /**
  * PaginaLogin
@@ -25,6 +26,8 @@ export default function PaginaLogin() {
   const { guardarUsuario } = useUsuarioActivo();
   const [mensajeGoogle, setMensajeGoogle] = useState("");
   const [verificandoGoogle, setVerificandoGoogle] = useState(false);
+  const [modoInicial, setModoInicial] = useState("login");
+  const [datosGooglePendiente, setDatosGooglePendiente] = useState(null);
   const resultadoGoogleProcesado = useRef("");
 
   useEffect(() => {
@@ -35,11 +38,52 @@ export default function PaginaLogin() {
     if (resultado === "cancelled") {
       navigate("/login", { replace: true });
       setMensajeGoogle("Cancelaste el inicio de sesión con Google.");
+      setModoInicial("login");
       return;
     }
+
+    if (resultado === "not_registered") {
+      navigate("/login", { replace: true });
+      setMensajeGoogle("No existe una cuenta registrada con este correo de Google. Por favor, regístrate.");
+      setModoInicial("registro");
+      return;
+    }
+
+    if (resultado === "already_registered") {
+      navigate("/login", { replace: true });
+      setMensajeGoogle("Esta cuenta de Google ya está registrada. Por favor inicia sesión.");
+      setModoInicial("login");
+      return;
+    }
+
+    if (resultado === "email_exists") {
+      navigate("/login", { replace: true });
+      setMensajeGoogle("Ya existe una cuenta con este correo de Google. Inicia sesión con tus credenciales.");
+      setModoInicial("login");
+      return;
+    }
+
+    if (resultado === "pending_registration") {
+      navigate("/login", { replace: true });
+      setVerificandoGoogle(true);
+      obtenerRegistroGooglePendiente()
+        .then((datos) => {
+          setDatosGooglePendiente(datos);
+          setModoInicial("completar_google");
+          setMensajeGoogle("");
+        })
+        .catch((error) => {
+          setMensajeGoogle(error?.message || "No se pudo recuperar la verificación de Google. Inténtalo de nuevo.");
+          setModoInicial("registro");
+        })
+        .finally(() => setVerificandoGoogle(false));
+      return;
+    }
+
     if (resultado !== "success") {
       navigate("/login", { replace: true });
-      setMensajeGoogle("No se pudo completar el inicio de sesión con Google. Intenta de nuevo.");
+      setMensajeGoogle("No se pudo completar el acceso con Google. Intenta de nuevo.");
+      setModoInicial("login");
       return;
     }
 
@@ -71,7 +115,12 @@ export default function PaginaLogin() {
       ) : (
         <AuthModal
           abierto
-          modoInicial="login"
+          modoInicial={modoInicial}
+          datosGooglePendiente={datosGooglePendiente}
+          alCancelarGoogle={() => {
+            setDatosGooglePendiente(null);
+            setModoInicial("registro");
+          }}
           mensajeExterno={mensajeGoogle}
           alCerrar={() => navigate(TRIAL_MODE ? "/dashboard" : "/", { state: { focoEnDestino: true } })}
         />

@@ -19,6 +19,8 @@ export const ENDPOINTS = {
   googleAuth: {
     state: "/api/auth/google/state",
     callback: "/api/auth/google/callback",
+    registroPendiente: "/api/auth/google/registro-pendiente",
+    completarRegistro: "/api/auth/google/completar-registro",
   },
   usuario: {
     base: "/usuario",
