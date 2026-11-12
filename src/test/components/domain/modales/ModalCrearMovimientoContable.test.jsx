@@ -27,7 +27,7 @@ function renderModal(props = {}) {
 }
 
 describe("ModalCrearMovimientoContable: origen del dinero", () => {
-  it("pide origen para un bolsillo no ingreso y ofrece solo ingresos y ahorros con saldo", async () => {
+  it("pide origen al registrar un gasto y ofrece solo ingresos y ahorros con saldo", async () => {
     const usuario = userEvent.setup();
     renderModal();
 
@@ -42,13 +42,27 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
     expect(within(origen).queryByRole("option", { name: /Otro gasto/ })).not.toBeInTheDocument();
   });
 
-  it("no solicita un origen al registrar un ingreso", async () => {
+  it("pide el origen de llegada al registrar un ingreso", async () => {
     const usuario = userEvent.setup();
     renderModal();
 
     const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
     await usuario.selectOptions(within(dialogo).getByLabelText("Bolsillo"), "origen-ingreso");
 
-    expect(within(dialogo).queryByLabelText("¿De dónde salió el dinero?")).not.toBeInTheDocument();
+    const llegada = within(dialogo).getByLabelText("¿De dónde llegó el dinero?");
+    expect(within(llegada).getByRole("option", { name: "Efectivo" })).toBeInTheDocument();
+    expect(within(llegada).getByRole("option", { name: "Bolsillo" })).toBeInTheDocument();
+  });
+
+  it("ofrece cuentas bancarias como origen del dinero", async () => {
+    const usuario = userEvent.setup();
+    renderModal({ tarjetas: [{ idTarjeta: "tarjeta-1", entidad: "Bancolombia", titular: "Luis" }] });
+
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    await usuario.selectOptions(within(dialogo).getByLabelText("Bolsillo"), "destino-gasto");
+    await usuario.selectOptions(within(dialogo).getByLabelText("¿De dónde salió el dinero?"), "CUENTA");
+
+    const cuenta = within(dialogo).getByLabelText("Cuenta");
+    expect(within(cuenta).getByRole("option", { name: /Bancolombia/ })).toBeInTheDocument();
   });
 });

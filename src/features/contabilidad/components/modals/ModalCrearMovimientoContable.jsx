@@ -1,7 +1,7 @@
 /**
  * @uso        Modal para registrar un movimiento en un bolsillo
  * @funciones  ModalCrearMovimientoContable({ abierto, bolsillos, triggerRef, alCerrar, alGuardar })
- * @datos      Bolsillo, tipo, fecha, monto, categoría y concepto del movimiento
+ * @datos      Bolsillo, tipo, fecha, monto, categoría, concepto y origen del dinero del movimiento
  * @eventos    Submit del formulario y cierre por Escape, botón, clic exterior o deslizar
  * @estados    valores, respuesta, ocupado
  * @usadoPor   PaginaDashboardContabilidad
@@ -30,6 +30,11 @@ const opcionesTrampa = (ref) => ({
   initialFocus: () => ref.current,
   returnFocusOnDeactivate: false,
 });
+
+/** Pregunta de origen según el tipo: un ingreso recibe dinero, los demás tipos lo entregan. */
+function etiquetaOrigen(tipo) {
+  return String(tipo).toUpperCase() === "INGRESO" ? "¿De dónde llegó el dinero?" : "¿De dónde salió el dinero?";
+}
 
 /** Permite crear movimientos asociados a un bolsillo y registrar su fuente de dinero. */
 export default function ModalCrearMovimientoContable({ abierto, modo = "crear", movimiento = null, valoresPredeterminados = null, bolsillos = [], tarjetas = [], triggerRef, alCerrar, alGuardar }) {
@@ -70,7 +75,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
     evento.preventDefault();
     const bolsilloSeleccionado = bolsillos.find((item) => item.idBolsillo === valores.idBolsillo);
     const tipo = bolsilloSeleccionado?.tipo || "";
-    const requiereOrigen = Boolean(tipo) && tipo.toUpperCase() !== "INGRESO";
+    const requiereOrigen = Boolean(tipo);
     const requeridos = ["idBolsillo", "fecha", "monto", "categoria", ...(requiereOrigen ? ["origenTipo"] : [])];
     const faltante = requeridos.find((campo) => !String(valores[campo] ?? "").trim());
     const monto = parsearPesos(valores.monto);
@@ -81,7 +86,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
         campo: faltante || "monto",
         mensaje: faltante ? "Completa todos los campos requeridos." : "El monto debe ser mayor que cero.",
       });
-      const campoFoco = faltante === "idBolsillo" ? "bolsillo" : faltante || "monto";
+      const campoFoco = faltante === "idBolsillo" ? "bolsillo" : faltante === "origenTipo" ? "origen-tipo" : faltante || "monto";
       document.getElementById(`nuevo-movimiento-${campoFoco}`)?.focus();
       return;
     }
@@ -114,7 +119,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
   const cerrar = () => { if (!ocupado) alCerrar(); };
   const bolsilloSeleccionado = bolsillos.find((item) => item.idBolsillo === valores.idBolsillo);
   const tipoSeleccionado = bolsilloSeleccionado?.tipo || "";
-  const requiereOrigen = Boolean(tipoSeleccionado) && tipoSeleccionado.toUpperCase() !== "INGRESO";
+  const requiereOrigen = Boolean(tipoSeleccionado);
   const origenRequiereDetalle = valores.origenTipo === "BOLSILLO" || valores.origenTipo === "CUENTA";
   const bolsillosOrigen = bolsillos.filter((item) => {
     const tipo = String(item.tipo || "").toUpperCase();
@@ -149,7 +154,7 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
               <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-categoria">Categoría<input id="nuevo-movimiento-categoria" required maxLength={80} placeholder="Ej. Alimentación" value={valores.categoria} onChange={(evento) => cambiar("categoria", evento.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text" /></label>
               <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-concepto">Concepto <span className="font-normal text-slate-text">(opcional)</span><input id="nuevo-movimiento-concepto" maxLength={160} placeholder="Ej. Compra semanal del hogar" value={valores.concepto} onChange={(evento) => cambiar("concepto", evento.target.value)} className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text" /></label>
               {requiereOrigen && <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-origen-tipo">¿De dónde salió el dinero?
+                <label className="block text-sm font-medium" htmlFor="nuevo-movimiento-origen-tipo">{etiquetaOrigen(tipoSeleccionado)}
                 <select id="nuevo-movimiento-origen-tipo" required value={valores.origenTipo} disabled={valores.origenTipo === "GMAIL" || (modo === "editar" && movimiento?.origenTipo === "GMAIL")} onChange={(evento) => { cambiar("origenTipo", evento.target.value); cambiar("origenId", ""); }} className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 disabled:opacity-70">
                     <option value="" disabled>Selecciona el origen</option>{(valores.origenTipo === "GMAIL" || (modo === "editar" && movimiento?.origenTipo === "GMAIL")) && <option value="GMAIL">Gmail · correo importado</option>}<option value="EFECTIVO">Efectivo</option><option value="BOLSILLO">Bolsillo</option>{tarjetas.length > 0 && <option value="CUENTA">Cuenta o tarjeta</option>}
                   </select>
