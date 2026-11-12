@@ -81,16 +81,18 @@ describe("PaginaDashboardContabilidad", () => {
     expect(screen.getByLabelText("Concepto (opcional)")).toBeInTheDocument();
   });
 
-  it("muestra los bolsillos fijos con insignia y sin acciones de edición", async () => {
+  it("muestra una sola card dividida para los fijos y preselecciona el bolsillo al registrar", async () => {
     const usuario = userEvent.setup();
     renderPagina();
     const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
-    expect(within(rejilla).getAllByText("Fijo")).toHaveLength(2);
-    await usuario.click(within(rejilla).getByRole("button", { name: /Abrir bolsillo Gastos, / }));
-    const dialogo = await screen.findByRole("dialog", { name: "Gastos" });
-    expect(within(dialogo).getByText(/Bolsillo fijo/)).toBeInTheDocument();
-    expect(within(dialogo).queryByRole("button", { name: "Editar bolsillo" })).not.toBeInTheDocument();
-    expect(within(dialogo).queryByRole("button", { name: "Eliminar" })).not.toBeInTheDocument();
+    const cardFijos = within(rejilla).getByRole("article", { name: "Bolsillos fijos" });
+    expect(within(cardFijos).getByText("Ingresos")).toBeInTheDocument();
+    expect(within(cardFijos).getByText("Gastos")).toBeInTheDocument();
+    expect(within(rejilla).queryAllByText("Fijo")).toHaveLength(0);
+
+    await usuario.click(within(cardFijos).getByRole("button", { name: "Registrar movimiento en Gastos" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Nuevo movimiento" });
+    expect(within(dialogo).getByLabelText("Bolsillo").value).toBe("fijo-gasto");
   });
 
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {

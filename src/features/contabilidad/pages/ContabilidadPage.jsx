@@ -19,13 +19,15 @@ import ResumenGlobalCards from "../components/cards/ResumenGlobalCards";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
 import useContabilidad from "../hooks/useContabilidad";
 import BolsilloCard from "../components/cards/BolsilloCard";
+import BolsillosFijosCard from "../components/cards/BolsillosFijosCard";
 import MovimientoItem from "../components/cards/MovimientoItem";
-import { agregarSaldoDisponible, crearFiltrosMovimiento } from "../utils/contabilidadHelpers";
+import { agregarSaldoDisponible, crearFiltrosMovimiento, esBolsilloFijo } from "../utils/contabilidadHelpers";
 
 /** Página de bolsillos persistidos y movimientos contables. */
 export default function PaginaDashboardContabilidad() {
   const [bolsilloDetalle, setBolsilloDetalle] = useState(null);
   const [movimientoDetalle, setMovimientoDetalle] = useState(null);
+  const [valoresPredeterminados, setValoresPredeterminados] = useState(null);
   const [bandejaRevisionAbierta, setBandejaRevisionAbierta] = useState(false);
   const [recargaRevision, setRecargaRevision] = useState(0);
   const {
@@ -80,15 +82,33 @@ export default function PaginaDashboardContabilidad() {
         {errorBolsillos && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorBolsillos}</p>}
         {cargandoBolsillos && <p role="status" className="text-sm text-slate-text">Cargando bolsillos…</p>}
         {!cargandoBolsillos && !errorBolsillos && bolsillos.length === 0 && <Card className="p-8 text-center"><Wallet className="mx-auto h-8 w-8 text-emerald-primary" aria-hidden="true" /><p className="mt-3 font-medium text-bg-dark">Todavía no tienes bolsillos</p><p className="mt-1 text-sm text-slate-text">Crea uno para empezar a organizar tu contabilidad.</p></Card>}
-        {!cargandoBolsillos && bolsillos.length > 0 && <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {bolsillos.map((bolsillo) => <BolsilloCard
-            key={bolsillo.idBolsillo}
-            bolsillo={bolsillo}
-            resumen={resumenesBolsillos[bolsillo.idBolsillo]}
-            cargandoResumen={cargandoResumenes}
-            errorResumen={errorResumenes}
-            onDetalle={(evento) => { disparadorBolsilloRef.current = evento.currentTarget; setBolsilloDetalle(bolsillo); }}
-          />)}
+        {!cargandoBolsillos && bolsillos.length > 0 && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {(() => {
+            const fijos = bolsillos.filter(esBolsilloFijo);
+            const propios = bolsillos.filter((bolsillo) => !esBolsilloFijo(bolsillo));
+            return (<>
+              {fijos.length > 0 && <BolsillosFijosCard
+                fijos={fijos}
+                resumenes={resumenesBolsillos}
+                cargando={cargandoResumenes}
+                alRegistrar={(bolsillo, evento) => {
+                  if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; }
+                  setRespuesta(null); setMovimientoEditando(null);
+                  setValoresPredeterminados({ idBolsillo: bolsillo.idBolsillo });
+                  setCrearMovimientoAbierto(true);
+                  disparadorMovimientoRef.current = evento.currentTarget;
+                }}
+              />}
+              {propios.map((bolsillo) => <BolsilloCard
+                key={bolsillo.idBolsillo}
+                bolsillo={bolsillo}
+                resumen={resumenesBolsillos[bolsillo.idBolsillo]}
+                cargandoResumen={cargandoResumenes}
+                errorResumen={errorResumenes}
+                onDetalle={(evento) => { disparadorBolsilloRef.current = evento.currentTarget; setBolsilloDetalle(bolsillo); }}
+              />)}
+            </>);
+          })()}
         </div>}
       </section>
 
@@ -121,7 +141,7 @@ export default function PaginaDashboardContabilidad() {
         alEditar={() => { setMovimientoDetalle(null); setMovimientoEditando(movimientoDetalle); setCrearMovimientoAbierto(true); }}
         alEliminar={() => { setMovimientoDetalle(null); setErrorEliminarMovimiento(""); setMovimientoEliminando(movimientoDetalle); }}
       />
-      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} bolsillos={bolsillosMovimiento} tarjetas={tarjetas} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); }} alGuardar={guardarMovimientoYActualizarRevision} />
+      <ModalCrearMovimientoContable abierto={crearMovimientoAbierto} modo={movimientoEditando ? "editar" : "crear"} movimiento={movimientoEditando} valoresPredeterminados={valoresPredeterminados} bolsillos={bolsillosMovimiento} tarjetas={tarjetas} triggerRef={disparadorMovimientoRef} alCerrar={() => { setCrearMovimientoAbierto(false); setMovimientoEditando(null); setValoresPredeterminados(null); }} alGuardar={guardarMovimientoYActualizarRevision} />
       <ModalMovimientosPorRevisar abierto={bandejaRevisionAbierta} bolsillos={bolsillos} recarga={recargaRevision}
         triggerRef={disparadorMovimientoRef} alCerrar={() => setBandejaRevisionAbierta(false)}
         alEditar={(movimiento) => { setBandejaRevisionAbierta(false); setMovimientoEditando(movimiento); setCrearMovimientoAbierto(true); }}
