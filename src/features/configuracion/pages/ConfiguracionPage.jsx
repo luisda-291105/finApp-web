@@ -193,7 +193,7 @@ export default function ConfiguracionPage() {
             aria-modal="true"
             aria-labelledby="nc-titulo"
             onSubmit={(e) => { e.stopPropagation(); alConectarNextcloud(e); }}
-            className="relative z-[111] space-y-3 rounded-xl border border-border-line/50 bg-bg-cream/60 p-4 w-full max-w-md shadow-xl"
+            className="relative z-[111] w-full max-w-md space-y-3 rounded-3xl border border-border-line/30 bg-bg-cream/95 glass-surface p-4 shadow-xl"
           >
             <header className="flex items-start justify-between gap-4">
               <h2 id="nc-titulo" className="font-display text-lg font-semibold text-bg-dark">Conectar Nextcloud</h2>
