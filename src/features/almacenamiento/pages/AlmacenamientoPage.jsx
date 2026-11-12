@@ -8,9 +8,9 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { Cloud, HardDrive, RefreshCw, Unplug } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card } from "../../../components/ui";
-import { desconectarCuenta, obtenerConexiones } from "../services/almacenamientoServicio";
+import { completarConexion, desconectarCuenta, obtenerConexiones } from "../services/almacenamientoServicio";
 
 const ETIQUETAS_PROVEEDOR = { GOOGLE_DRIVE: "Google Drive", ONEDRIVE: "OneDrive", NEXTCLOUD: "Nextcloud" };
 const ETIQUETAS_ESTADO = { ACTIVA: "Conectada", REQUIERE_RECONEXION: "Requiere reconexión", DESCONECTADA: "Desconectada" };
@@ -20,6 +20,7 @@ export default function AlmacenamientoPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [cuentaDesconectando, setCuentaDesconectando] = useState(null);
+  const [parametros, setParametros] = useSearchParams();
 
   const cargarConexiones = useCallback(async () => {
     setCargando(true);
@@ -30,6 +31,18 @@ export default function AlmacenamientoPage() {
   }, []);
 
   useEffect(() => { cargarConexiones(); }, [cargarConexiones]);
+
+  // Completa el OAuth si el proveedor regresó a esta página con código y estado.
+  useEffect(() => {
+    const code = parametros.get("code");
+    const state = parametros.get("state");
+    if (!code || !state) return;
+    setParametros({}, { replace: true });
+    setCargando(true);
+    completarConexion(code, state)
+      .then(() => cargarConexiones())
+      .catch(() => { setCargando(false); setError("No se pudo completar la conexión con el proveedor. Inténtalo de nuevo."); });
+  }, [parametros, setParametros, cargarConexiones]);
 
   const alDesconectar = async (cuenta) => {
     setCuentaDesconectando(cuenta.id);

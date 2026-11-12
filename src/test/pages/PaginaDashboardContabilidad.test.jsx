@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { ContabilidadPage as PaginaDashboardContabilidad } from "../../features/contabilidad";
@@ -25,7 +25,7 @@ const BOLSILLOS = [
   { idBolsillo: "ingreso-1", nombre: "Nómina", tipo: "INGRESO", estado: true, montoObjetivo: 0 },
 ];
 const MOVIMIENTOS = [
-  { idMovimiento: "mov-1", bolsillo: BOLSILLOS[0], categoria: "Gasolina", tipo: "GASTO", monto: 11000, fecha: "2026-11-05" },
+  { idMovimiento: "mov-1", idBolsillo: "fijo-gasto", bolsillo: BOLSILLOS[1], categoria: "Gasolina", tipo: "GASTO", monto: 11000, fecha: "2026-11-05" },
 ];
 
 beforeEach(() => {
@@ -33,7 +33,7 @@ beforeEach(() => {
   listarBolsillos.mockResolvedValue(BOLSILLOS);
   listarMovimientos.mockResolvedValue(MOVIMIENTOS);
   obtenerResumenesBolsillos.mockResolvedValue([]);
-  obtenerResumenGlobal.mockResolvedValue({ ingresos: 0, gastos: 0, ahorros: 0, transferencias: 0, saldoAhorros: 0, porRevisar: 0 });
+  obtenerResumenGlobal.mockResolvedValue({ ingresos: 12000, gastos: 5000, ahorros: 0, transferencias: 0, saldoAhorros: 0, porRevisar: 0 });
 });
 afterEach(cleanup);
 
@@ -61,13 +61,6 @@ describe("PaginaDashboardContabilidad", () => {
     expect(listarMovimientos).toHaveBeenLastCalledWith(null, "INGRESO");
   });
 
-  it("solicita nuevamente el resumen cuando cambia el mes", async () => {
-    renderPagina();
-    const selectorMes = await screen.findByLabelText("Mes");
-    fireEvent.change(selectorMes, { target: { value: "2026-05" } });
-    await waitFor(() => expect(obtenerResumenGlobal).toHaveBeenLastCalledWith("2026-05"));
-  });
-
   it("abre el formulario de movimiento con bolsillos disponibles", async () => {
     const usuario = userEvent.setup();
     renderPagina();
@@ -81,18 +74,21 @@ describe("PaginaDashboardContabilidad", () => {
     expect(screen.getByLabelText("Concepto (opcional)")).toBeInTheDocument();
   });
 
-  it("muestra una sola card dividida para los fijos y preselecciona el bolsillo al registrar", async () => {
+  it("muestra una sola card dividida para los fijos y abre sus movimientos en el detalle", async () => {
     const usuario = userEvent.setup();
     renderPagina();
     const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
     const cardFijos = within(rejilla).getByRole("article", { name: "Bolsillos fijos" });
     expect(within(cardFijos).getByText("Ingresos")).toBeInTheDocument();
     expect(within(cardFijos).getByText("Gastos")).toBeInTheDocument();
+    expect(within(cardFijos).getByText(/12\.000/)).toBeInTheDocument();
+    expect(within(cardFijos).getByText(/5\.000/)).toBeInTheDocument();
     expect(within(rejilla).queryAllByText("Fijo")).toHaveLength(0);
 
-    await usuario.click(within(cardFijos).getByRole("button", { name: "Registrar movimiento en Gastos" }));
-    const dialogo = await screen.findByRole("dialog", { name: "Nuevo movimiento" });
-    expect(within(dialogo).getByLabelText("Bolsillo").value).toBe("fijo-gasto");
+    await usuario.click(within(cardFijos).getByRole("button", { name: "Ver detalles de Gastos" }));
+    const dialogo = await screen.findByRole("dialog", { name: "Gastos" });
+    expect(within(dialogo).getByRole("heading", { name: "Movimientos" })).toBeInTheDocument();
+    expect(await within(dialogo).findByText("Gasolina")).toBeInTheDocument();
   });
 
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {

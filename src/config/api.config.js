@@ -77,6 +77,9 @@ export const ENDPOINTS = {
   almacenamiento: {
     conexiones: "/api/almacenamiento/conexiones",
     desconectar: "/api/almacenamiento/conexiones",
+    iniciar: "/api/almacenamiento/conexiones/iniciar",
+    callback: "/api/almacenamiento/conexiones/callback",
+    nextcloud: "/api/almacenamiento/conexiones/nextcloud",
   },
 };
 
