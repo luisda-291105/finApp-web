@@ -6,7 +6,7 @@
  * @estados    Ninguno; la selección y apertura son controladas por la página
  * @usadoPor   ContabilidadPage
  */
-import { ArrowDownRight, ArrowUpRight, CalendarDays, CircleDollarSign, Pencil, Tag, Trash2, Wallet } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarDays, CircleDollarSign, Landmark, Pencil, Tag, Trash2, Wallet } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { formatoFecha, formatoMoneda } from "../../utils/contabilidadHelpers";
 
@@ -37,6 +37,7 @@ export default function DetalleMovimientoModal({ movimiento, triggerRef, alCerra
         <div className="rounded-xl border border-border-line/40 p-3"><dt className="flex items-center gap-2 text-xs text-slate-text"><Wallet className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Bolsillo</dt><dd className="mt-1 break-words text-sm font-medium text-bg-dark">{movimiento.nombreBolsillo || movimiento.bolsillo?.nombre || "Sin bolsillo"}</dd></div>
         <div className="rounded-xl border border-border-line/40 p-3"><dt className="flex items-center gap-2 text-xs text-slate-text"><CalendarDays className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Fecha</dt><dd className="mt-1 text-sm font-medium text-bg-dark">{fechaLegible(movimiento.fecha)}</dd></div>
         <div className="rounded-xl border border-border-line/40 p-3"><dt className="flex items-center gap-2 text-xs text-slate-text"><CircleDollarSign className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Origen</dt><dd className="mt-1 break-words text-sm font-medium text-bg-dark">{movimiento.origenNombre || "No especificado"}</dd></div>
+        <div className="rounded-xl border border-border-line/40 p-3"><dt className="flex items-center gap-2 text-xs text-slate-text"><Landmark className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Entidad</dt><dd className="mt-1 break-words text-sm font-medium text-bg-dark">{movimiento.entidad || movimiento.remitente || "No especificado"}</dd></div>
       </dl>
       {movimiento.descripcion && <p className="rounded-xl border border-border-line/40 p-3 text-sm text-slate-text"><span className="font-medium text-bg-dark">Descripción: </span>{movimiento.descripcion}</p>}
       <footer className="flex flex-wrap justify-between gap-2 border-t border-border-line/40 pt-4">
