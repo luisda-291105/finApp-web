@@ -9,6 +9,7 @@
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { Card } from "../../../components/ui";
+import { AvisoEnDesarrollo } from "../../enDesarrollo";
 import { useTarjetas } from "../hooks/useTarjetas";
 import TarjetaCard from "../components/cards/TarjetaCard";
 import CrearTarjetaModal from "../components/modals/CrearTarjetaModal";
@@ -27,6 +28,7 @@ export default function TarjetasPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p><h1 id="dashboard-title" className="mt-1 font-display text-3xl font-medium text-bg-dark">Tus tarjetas</h1><p className="mt-1 text-sm text-slate-text">Administra tus tarjetas y revisa sus saldos.</p></div>
         <button ref={disparadorRef} type="button" onClick={() => setModalAbierto(true)} aria-label="Agregar nueva tarjeta" className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream shadow-md transition-all hover:scale-[1.02] hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"><Plus className="h-4 w-4" aria-hidden="true" /><span>Nueva tarjeta</span></button>
       </div>
+      <AvisoEnDesarrollo />
       <Card className="space-y-4 p-6"><h2 className="font-display text-lg font-semibold text-bg-dark">Tarjetas registradas</h2>
         {cargando && <p role="status" className="text-sm text-slate-text">Cargando tarjetas...</p>}
         {!cargando && error && <p role="alert" className="text-sm text-red-600">{error}</p>}
