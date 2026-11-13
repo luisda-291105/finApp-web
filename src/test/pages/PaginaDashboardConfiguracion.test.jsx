@@ -38,6 +38,15 @@ vi.mock("../../services/gmailServicio", () => ({
   prepararGoogleIdentityServices: () => Promise.resolve(),
 }));
 
+vi.mock("../../features/almacenamiento/services/almacenamientoServicio", () => ({
+  obtenerConexiones: () => Promise.resolve([]),
+  desconectarCuenta: () => Promise.resolve({}),
+  conectarGoogleDrive: () => Promise.resolve({}),
+  iniciarConexion: () => Promise.resolve({}),
+  completarConexion: () => Promise.resolve({}),
+  conectarNextcloud: () => Promise.resolve({}),
+}));
+
 // Mock contextos
 vi.mock("../../context/UsuarioActivoContext", () => {
   const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez", fechaCreacion: "2026-01-01" };

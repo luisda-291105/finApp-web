@@ -4,7 +4,7 @@
  * @datos      Delega transporte y rutas en httpServicio y api.config; el navegador solo recibe metadatos
  * @eventos    Popup de Google Identity Services (Drive) y redirección al proveedor (OneDrive)
  * @estados    Ninguno
- * @usadoPor   AlmacenamientoPage y ConectarAlmacenamientoCard
+ * @usadoPor   AlmacenamientoPage y CuentasAlmacenamientoCard
  */
 import { getEndpoint } from "../../../config/api.config";
 import { crear, eliminar, obtener } from "../../../services/httpServicio";

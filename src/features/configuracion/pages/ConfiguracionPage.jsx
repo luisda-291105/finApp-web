@@ -14,7 +14,7 @@ import FuentesRegistradas from "../components/cards/FuentesRegistradas";
 import AparienciaCard from "../components/cards/AparienciaCard";
 import PerfilCard from "../components/cards/PerfilCard";
 import TelegramCard from "../components/cards/TelegramCard";
-import ConectarAlmacenamientoCard from "../components/cards/ConectarAlmacenamientoCard";
+import CuentasAlmacenamientoCard from "../components/cards/CuentasAlmacenamientoCard";
 import { CrearFuenteModal, PerfilUsuarioModal } from "../components/modals";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { useTema } from "../../../context/TemaContext";
@@ -132,7 +132,7 @@ export default function ConfiguracionPage() {
       <AparienciaCard tema={tema} alternarTema={alternarTema} />
       <PerfilCard usuario={usuario} triggerRef={triggerUsuarioRef} alAbrir={() => setUsuarioAbierto(true)} />
       <TelegramCard />
-      <ConectarAlmacenamientoCard
+      <CuentasAlmacenamientoCard
         nextcloudAbierto={nextcloudAbierto}
         alAbrirNextcloud={alAbrirNextcloud}
         alCerrarNextcloud={alCerrarNextcloud}

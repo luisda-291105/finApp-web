@@ -4,7 +4,7 @@
  * @datos      cuenta (opcional: { etiquetaCuenta, identificadorExterno, estado })
  * @eventos    Cierre con Escape, botón «X», clic exterior; botón «Ir a Google Drive» abre en nueva pestaña
  * @estados    Ninguno
- * @usadoPor   AlmacenamientoPage y ConectarAlmacenamientoCard
+ * @usadoPor   CuentasAlmacenamientoCard
  */
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
