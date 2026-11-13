@@ -16,6 +16,8 @@ import ContextoMenuArchivos from "../components/files/ContextoMenuArchivos";
 import ModalPrevisualizacion from "../components/files/ModalPrevisualizacion";
 import { useGestorArchivos } from "../hooks/useGestorArchivos";
 
+import { AvisoEnDesarrollo } from "../../enDesarrollo";
+
 /**
  * AlmacenamientoPage
  * Rediseño tipo Google Drive del listado de archivos. La gestión de cuentas conectadas vive
@@ -76,6 +78,7 @@ export default function AlmacenamientoPage() {
           <h1 id="dashboard-title" className="mt-1 font-display text-3xl font-medium text-bg-dark">Almacenamiento</h1>
           <p className="mt-1 text-sm text-slate-text">Explora y gestiona tus archivos en la nube.</p>
         </div>
+        <AvisoEnDesarrollo />
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
