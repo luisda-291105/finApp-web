@@ -1,6 +1,6 @@
 /**
  * @uso        Operaciones HTTP de las conexiones de almacenamiento
- * @funciones  obtenerConexiones, desconectarCuenta, conectarGoogleDrive, iniciarConexion, completarConexion, conectarNextcloud
+ * @funciones  obtenerConexiones, obtenerArchivos, desconectarCuenta, conectarGoogleDrive, iniciarConexion, completarConexion, conectarNextcloud
  * @datos      Delega transporte y rutas en httpServicio y api.config; el navegador solo recibe metadatos
  * @eventos    Popup de Google Identity Services (Drive) y redirección al proveedor (OneDrive)
  * @estados    Ninguno
@@ -36,6 +36,11 @@ export async function iniciarConexion(proveedor) {
 /** Canjea el código OAuth devuelto por el proveedor en la URL de retorno (OneDrive). */
 export function completarConexion(code, state) {
   return crear(getEndpoint("almacenamiento.callback"), { proveedor: "", code, state }, { headers: ENCABEZADOS_SOLICITUD });
+}
+
+/** Obtiene la lista de archivos del almacenamiento conectado (p. ej. Google Drive) por cuenta. */
+export async function obtenerArchivos(cuentaId) {
+  return obtener(`${getEndpoint("almacenamiento.conexiones")}/${encodeURIComponent(cuentaId)}/archivos`);
 }
 
 /** Conecta Google Drive con popup de Google Identity Services y canje en el backend. */
