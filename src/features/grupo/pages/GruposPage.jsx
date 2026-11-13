@@ -9,6 +9,7 @@
 import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { Card } from "../../../components/ui";
+import { AvisoEnDesarrollo } from "../../enDesarrollo";
 import { useGrupos } from "../hooks/useGrupos";
 import GrupoCard from "../components/cards/GrupoCard";
 import CrearGrupoModal from "../components/modals/CrearGrupoModal";
@@ -43,6 +44,7 @@ export default function GruposPage() {
         <div><p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p><h1 id="grupos-titulo" className="mt-1 font-display text-3xl font-medium text-bg-dark">Grupos</h1><p className="mt-1 text-sm text-slate-text">Gestiona tus grupos, sus fuentes vinculadas y la conversación de cada grupo.</p></div>
         <button type="button" ref={disparadorRef} onClick={() => setModalAbierto(true)} aria-label="Crear nuevo grupo" className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream shadow-md transition-all hover:scale-[1.02] hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"><Plus className="h-4 w-4" aria-hidden="true" /><span>Nuevo grupo</span></button>
       </div>
+      <AvisoEnDesarrollo />
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {!usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para consultar y crear grupos.</p>}
       <div className="space-y-4"><h2 className="text-lg font-semibold text-bg-dark">Mis grupos</h2>

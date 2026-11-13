@@ -9,7 +9,7 @@
  */
 
 import { NavLink } from "react-router-dom";
-import { Home, CreditCard, Users, Contact, Mail, Wallet, Repeat } from "lucide-react";
+import { Home, CreditCard, Users, Contact, Mail, Wallet, Repeat, HardDrive } from "lucide-react";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 import clsx from "clsx";
 
@@ -74,6 +74,7 @@ export default function SidebarNavContenido({
     { ruta: "/dashboard/correos", icono: Mail, etiqueta: "Correos" },
     { ruta: "/dashboard/contabilidad", icono: Wallet, etiqueta: "Contabilidad" },
     { ruta: "/dashboard/suscripciones", icono: Repeat, etiqueta: "Suscripciones" },
+    { ruta: "/dashboard/almacenamiento", icono: HardDrive, etiqueta: "Almacenamiento" },
   ];
 
   const enlacesNavegacion = enlaces.map(({ ruta, icono: Icono, etiqueta, exacto }) => (

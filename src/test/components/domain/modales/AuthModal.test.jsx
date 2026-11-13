@@ -117,19 +117,17 @@ describe("AuthModal", () => {
       expect(dialogo.getAttribute("aria-modal")).toBe("true");
     });
 
-    it("muestra solo placeholders del login y conserva el botón de Google visible y distinguible", () => {
+    it("muestra solo placeholders del login y no ofrece inicio con Google", () => {
       renderModal();
 
       const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
       const contrasena = screen.getByLabelText("Contraseña");
-      const botonGoogle = screen.getByRole("button", { name: "Iniciar sesión con Google" });
 
       expect(screen.queryByText("Nombre, identificación, correo o teléfono")).not.toBeInTheDocument();
       expect(screen.queryByText("Contraseña")).not.toBeInTheDocument();
       expect(identificacion).toHaveAttribute("placeholder", "Nombre, identificación, correo o teléfono");
       expect(contrasena).toHaveAttribute("placeholder", "Ingresa tu contraseña");
-      expect(botonGoogle).toHaveClass("google-auth-button");
-      expect(botonGoogle.querySelector("svg")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Iniciar sesión con Google" })).not.toBeInTheDocument();
     });
 
     it("la «X» está dentro del panel y tiene nombre accesible específico (ya no «Cerrar modal»)", async () => {

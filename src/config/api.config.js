@@ -16,10 +16,6 @@ export const ENDPOINTS = {
     login: "/api/auth/login",
     registro: "/api/auth/registro",
   },
-  googleAuth: {
-    state: "/api/auth/google/state",
-    callback: "/api/auth/google/callback",
-  },
   usuario: {
     base: "/usuario",
     porId: "/usuario/id",
@@ -73,6 +69,13 @@ export const ENDPOINTS = {
   },
   telegram: {
     base: "/api/telegram",
+  },
+  almacenamiento: {
+    conexiones: "/api/almacenamiento/conexiones",
+    desconectar: "/api/almacenamiento/conexiones",
+    iniciar: "/api/almacenamiento/conexiones/iniciar",
+    callback: "/api/almacenamiento/conexiones/callback",
+    nextcloud: "/api/almacenamiento/conexiones/nextcloud",
   },
 };
 

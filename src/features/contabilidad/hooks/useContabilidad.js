@@ -22,10 +22,8 @@ export default function useContabilidad() {
   const [resumenesBolsillos, setResumenesBolsillos] = useState({});
   const [cargandoResumenes, setCargandoResumenes] = useState(false);
   const [errorResumenes, setErrorResumenes] = useState("");
-  const [mesResumenGlobal, setMesResumenGlobal] = useState(mesActual);
-  const [resumenGlobal, setResumenGlobal] = useState(null);
-  const [cargandoResumenGlobal, setCargandoResumenGlobal] = useState(false);
-  const [errorResumenGlobal, setErrorResumenGlobal] = useState("");
+  const [resumenMensual, setResumenMensual] = useState(null);
+  const [cargandoResumenMensual, setCargandoResumenMensual] = useState(false);
   const [crearMovimientoAbierto, setCrearMovimientoAbierto] = useState(false);
   const [movimientoEditando, setMovimientoEditando] = useState(null);
   const [movimientoEliminando, setMovimientoEliminando] = useState(null);
@@ -88,19 +86,18 @@ export default function useContabilidad() {
   useEffect(() => {
     let vigente = true;
     if (!usuario?.idUsuario) {
-      setResumenGlobal(null);
-      setCargandoResumenGlobal(false);
-      setErrorResumenGlobal("");
+      setResumenMensual(null);
+      setCargandoResumenMensual(false);
       return () => { vigente = false; };
     }
-    setCargandoResumenGlobal(true);
-    obtenerResumenGlobal(mesResumenGlobal).then((data) => {
-      if (vigente) { setResumenGlobal(data); setErrorResumenGlobal(""); }
-    }).catch((fallo) => {
-      if (vigente) setErrorResumenGlobal(fallo?.message || "No se pudo cargar el resumen global.");
-    }).finally(() => { if (vigente) setCargandoResumenGlobal(false); });
+    setCargandoResumenMensual(true);
+    obtenerResumenGlobal(mesActual()).then((data) => {
+      if (vigente) setResumenMensual(data);
+    }).catch(() => {
+      if (vigente) setResumenMensual(null);
+    }).finally(() => { if (vigente) setCargandoResumenMensual(false); });
     return () => { vigente = false; };
-  }, [usuario?.idUsuario, mesResumenGlobal, revisionMovimientos]);
+  }, [usuario?.idUsuario, revisionMovimientos]);
 
   useEffect(() => {
     if (respuesta?.tipo !== "exito") return undefined;
@@ -149,7 +146,7 @@ export default function useContabilidad() {
   return {
     navigate, usuario, movimientos, filtroMovimiento, setFiltroMovimiento, cargandoMovimientos, errorMovimientos,
     resumenesBolsillos, cargandoResumenes, errorResumenes, crearMovimientoAbierto, setCrearMovimientoAbierto,
-    resumenGlobal, cargandoResumenGlobal, errorResumenGlobal, mesResumenGlobal, setMesResumenGlobal,
+    resumenMensual, cargandoResumenMensual,
     movimientoEditando, setMovimientoEditando, movimientoEliminando, setMovimientoEliminando,
     eliminandoMovimiento, errorEliminarMovimiento, setErrorEliminarMovimiento, respuesta, setRespuesta, bolsillos, tarjetas,
     cargandoBolsillos, errorBolsillos, modalBolsillo, setModalBolsillo,

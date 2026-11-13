@@ -67,11 +67,6 @@ vi.mock("../../features/auth/services/usuarioServicio", () => ({
   iniciarSesion: () => Promise.resolve({ ok: true }),
 }));
 
-vi.mock("../../features/auth/services/authGoogleServicio", () => ({
-  GOOGLE_AUTH_CONFIGURADO: false,
-  iniciarLoginGoogle: () => Promise.resolve(),
-}));
-
 vi.mock("../../features/asistenteia/services/asistenteServicio", () => ({
   conversarConAsistente: () => Promise.resolve({ respuesta: "Respuesta de prueba" }),
 }));

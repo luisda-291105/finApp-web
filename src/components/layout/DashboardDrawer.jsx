@@ -75,6 +75,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
     ["/dashboard/contactos", "Contactos"],
     ["/dashboard/correos", "Correos"],
     ["/dashboard/contabilidad", "Contabilidad"],
+    ["/dashboard/almacenamiento", "Almacenamiento"],
   ].find(([ruta]) => ruta === "/dashboard" ? location.pathname === ruta : location.pathname.startsWith(ruta))?.[1] || "Inicio";
 
   // Esc: mecanismo único compartido con el resto de superficies (capa del panel: 55)

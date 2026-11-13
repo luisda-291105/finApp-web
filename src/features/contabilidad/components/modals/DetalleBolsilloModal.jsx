@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, CalendarDays, LoaderCircle, Pencil, PiggyBank, ReceiptText, Trash2, TrendingUp, Wallet } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { listarMovimientos } from "../../services/movimientosService";
-import { formatoFecha, formatoMoneda } from "../../utils/contabilidadHelpers";
+import { esBolsilloFijo, formatoFecha, formatoMoneda } from "../../utils/contabilidadHelpers";
 
 const iconoPorTipo = { GASTO: ReceiptText, INGRESO: TrendingUp, AHORRO: PiggyBank };
 const campoPorTipo = { GASTO: "gastos", INGRESO: "ingresos", AHORRO: "ahorros" };
@@ -92,9 +92,11 @@ export default function DetalleBolsilloModal({ abierto, bolsillo, resumen = {}, 
       </section>
       </div>
 
-      <footer className="flex justify-end gap-2 border-t border-border-line/40 pt-4">
-        <button type="button" onClick={alEliminar} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50"><Trash2 className="h-4 w-4" aria-hidden="true" />Eliminar</button>
-        <button type="button" onClick={alEditar} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-emerald-primary px-4 text-sm font-semibold text-white hover:bg-emerald-hover"><Pencil className="h-4 w-4" aria-hidden="true" />Editar bolsillo</button>
+      <footer className="flex items-center justify-end gap-2 border-t border-border-line/40 pt-4">
+        {esBolsilloFijo(bolsillo) ? <p className="text-sm text-slate-text">Bolsillo fijo: siempre está disponible para registrar movimientos y no se puede editar ni eliminar.</p> : <>
+          <button type="button" onClick={alEliminar} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50"><Trash2 className="h-4 w-4" aria-hidden="true" />Eliminar</button>
+          <button type="button" onClick={alEditar} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-emerald-primary px-4 text-sm font-semibold text-white hover:bg-emerald-hover"><Pencil className="h-4 w-4" aria-hidden="true" />Editar bolsillo</button>
+        </>}
       </footer>
     </div>}
   </ModalDetalleRegistro>;

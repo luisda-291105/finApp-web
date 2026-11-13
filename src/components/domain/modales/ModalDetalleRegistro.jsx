@@ -7,12 +7,14 @@
  * @usadoPor   Detalles de correo, grupo, tarjeta y perfil
  */
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import FocusTrap from "focus-trap-react";
 import { BotonCerrar } from "../../ui/BotonCerrar";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
 
-/** Contenedor común para los modales de lectura de registros. */
+/** Contenedor común para los modales de lectura de registros. Se monta via portal en document.body
+ *  para que el overlay `fixed inset-0` quede relativo al viewport (sin ancestros con transform). */
 export default function ModalDetalleRegistro({ abierto, titulo, alCerrar, triggerRef, children, ancho = "max-w-2xl", etiquetaCerrar, icono: Icono }) {
   const panelRef = useRef(null);
   useCierreConEsc({ activo: abierto, zIndex: 80, alCerrar });
@@ -20,14 +22,17 @@ export default function ModalDetalleRegistro({ abierto, titulo, alCerrar, trigge
   useEffect(() => { if (abierto) panelRef.current?.focus(); }, [abierto]);
   if (!abierto) return null;
   const cerrarDesdeFondo = (evento) => { if (evento.target === evento.currentTarget) alCerrar(); };
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-bg-dark/70 p-3 sm:p-5" onMouseDown={cerrarDesdeFondo}>
+  // El overlay se monta vía portal en document.body: sin transform/backdrop-filter en el
+  // ancestro, `position: fixed` queda relativo al viewport y cubre toda la ventana.
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-bg-dark/70 p-3 sm:p-5" onClick={cerrarDesdeFondo}>
         <FocusTrap focusTrapOptions={{ allowOutsideClick: true, escapeDeactivates: false, initialFocus: () => panelRef.current, returnFocusOnDeactivate: false }}>
         <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="detalle-registro-titulo" tabIndex={-1} className={`glass-surface relative max-h-[90vh] w-full ${ancho} overflow-y-auto rounded-3xl border border-border-line/30 bg-bg-cream/95 p-5 text-bg-dark shadow-xl outline-none sm:p-7`}>
           <header className="mb-5 flex items-start justify-between gap-4 border-b border-border-line/30 pb-4"><div className="flex min-w-0 items-center gap-3">{Icono && <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-primary/10 text-emerald-primary"><Icono className="h-5 w-5" /></span>}<h2 id="detalle-registro-titulo" className="font-display text-xl font-semibold">{titulo}</h2></div><BotonCerrar ariaLabel={etiquetaCerrar || `Cerrar ${titulo}`} alCerrar={alCerrar} /></header>
           {children}
         </section>
       </FocusTrap>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -2,7 +2,7 @@
  * @uso        Modal de autenticación con tabs Iniciar Sesión / Registrarse y backdrop blur; cumple
  *             las CUATRO formas de cierre (spec 010): «X» superior, Esc, toque/clic fuera y
  *             deslizar hacia abajo (solo móvil)
- * @funciones  AuthModal({ abierto, modoInicial, alCerrar })
+ * @funciones  AuthModal({ abierto, modoInicial, alCerrar, mensajeExterno })
  * @datos      Lee endpoints mediante getEndpoint() de src/config/api.config.js
  * @eventos    onSubmit en formulario, click en tabs, click en la «X», Esc (useCierreConEsc),
  *             clic fuera (overlay con guarda de destino) y gesto (useDeslizarParaCerrar) → alCerrar;
@@ -18,9 +18,7 @@ import FocusTrap from "focus-trap-react";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
-import { BotonServicioExterno } from "../../../../components/ui";
 import { crearUsuario, iniciarSesion } from "../../services/usuarioServicio";
-import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle } from "../../services/authGoogleServicio";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import LoginForm from "../forms/LoginForm";
 import RegistroForm from "../forms/RegistroForm";
@@ -55,17 +53,23 @@ function crearOpcionesTrampa(refPanel) {
  * @param {boolean} props.abierto - Control de visibilidad
  * @param {'login' | 'registro'} props.modoInicial - Tab activo al abrir
  * @param {() => void} props.alCerrar - Callback de cierre
+ * @param {string} [props.mensajeExterno] - Mensaje externo opcional (p.ej. error de sesión)
  */
-export default function AuthModal({ abierto, modoInicial = "login", alCerrar, mensajeExterno = "" }) {
+export default function AuthModal({
+  abierto,
+  modoInicial = "login",
+  alCerrar,
+  mensajeExterno = "",
+}) {
   const panelRef = useRef(null);
   const punteroFondoRef = useRef({ inicioEnFondo: false, finEnFondo: false });
   // Obtener navigate de React Router si está disponible; de lo contrario usar función no‑op para evitar errores en entornos de pruebas sin router.
-let navigate;
-try {
-  navigate = useNavigate();
-} catch {
-  navigate = () => {};
-}
+  let navigate;
+  try {
+    navigate = useNavigate();
+  } catch {
+    navigate = () => {};
+  }
   const { guardarUsuario } = useUsuarioActivo();
   const [modo, setModo] = useState(modoInicial);
   const [idUsuario, setIdUsuario] = useState("");
@@ -83,9 +87,6 @@ try {
   useDeslizarParaCerrar({ activo: abierto, refPanel: panelRef, alCerrar });
 
   // Captura al abrir y devolución del foco al cerrar con la pieza compartida (RF-10, spec 011).
-  // Sin `triggerRef` propio: el respaldo es la cadena común (elemento capturado → control de la
-  // versión de vista → primer control enfocable); en `/login` no hay candidato y la pieza devuelve
-  // `null` (limitación explícita, H2).
   useRetornoDeFoco({ activo: abierto });
 
   useEffect(() => {
@@ -113,17 +114,6 @@ try {
 
   const registrarFinPuntero = (evento) => {
     punteroFondoRef.current.finEnFondo = evento.target === evento.currentTarget;
-  };
-
-  const manejarLoginGoogle = async () => {
-    setCargando(true);
-    setMensaje("");
-    try {
-      await iniciarLoginGoogle();
-    } catch (error) {
-      setMensaje(error?.message || "No se pudo iniciar sesión con Google.");
-      setCargando(false);
-    }
   };
 
   const manejarEnvio = async (e) => {
@@ -313,27 +303,6 @@ try {
             />
           )}
 
-          <div className="my-5 flex items-center gap-3 text-xs text-white/60" aria-hidden="true">
-            <span className="h-px flex-1 bg-white/10" />
-            <span>{modo === "registro" ? "o regístrate con" : "o continúa con"}</span>
-            <span className="h-px flex-1 bg-white/10" />
-          </div>
-          <BotonServicioExterno
-            onClick={manejarLoginGoogle}
-            disabled={cargando || !GOOGLE_AUTH_CONFIGURADO}
-          >
-            {cargando
-              ? "Conectando con Google…"
-              : modo === "registro" ? "Registrarse con Google" : "Iniciar sesión con Google"}
-          </BotonServicioExterno>
-          {modo === "registro" && (
-            <p className="mt-2 text-center text-xs text-white/70">
-              Google completará tus datos y abrirá tu cuenta automáticamente. Para entrar con identificación y contraseña, regístrate con correo.
-            </p>
-          )}
-          {!GOOGLE_AUTH_CONFIGURADO && (
-            <p role="status" className="mt-2 text-xs text-amber-200">Google no está configurado para este entorno.</p>
-          )}
           {mensajeExterno && (
             <p role="alert" className="mt-3 rounded-xl border border-red-300/30 bg-red-500/10 p-3 text-xs text-red-100">
               {mensajeExterno}

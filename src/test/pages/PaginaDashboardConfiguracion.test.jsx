@@ -38,6 +38,15 @@ vi.mock("../../services/gmailServicio", () => ({
   prepararGoogleIdentityServices: () => Promise.resolve(),
 }));
 
+vi.mock("../../features/almacenamiento/services/almacenamientoServicio", () => ({
+  obtenerConexiones: () => Promise.resolve([]),
+  desconectarCuenta: () => Promise.resolve({}),
+  conectarGoogleDrive: () => Promise.resolve({}),
+  iniciarConexion: () => Promise.resolve({}),
+  completarConexion: () => Promise.resolve({}),
+  conectarNextcloud: () => Promise.resolve({}),
+}));
+
 // Mock contextos
 vi.mock("../../context/UsuarioActivoContext", () => {
   const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez", fechaCreacion: "2026-01-01" };
@@ -193,6 +202,39 @@ describe("PaginaDashboardConfiguracion", () => {
     expect(screen.getByText("2026-10-20")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Editar", exact: true })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Eliminar", exact: true })).toBeInTheDocument();
+  });
+
+  it("abre el modal de conexión Nextcloud y lo cierra con la «X»", async () => {
+    const usuario = userEvent.setup();
+    render(<PaginaDashboardConfiguracion />);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Conectar Nextcloud" }));
+
+    const dialogo = screen.getByRole("dialog", { name: "Conectar Nextcloud" });
+    expect(dialogo).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Cerrar conexión con Nextcloud" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("cierra el modal de conexión Nextcloud con Escape", async () => {
+    const usuario = userEvent.setup();
+    render(<PaginaDashboardConfiguracion />);
+
+    await usuario.click(screen.getByRole("button", { name: "Conectar Nextcloud" }));
+
+    expect(screen.getByRole("dialog", { name: "Conectar Nextcloud" })).toBeInTheDocument();
+
+    await usuario.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 
 });

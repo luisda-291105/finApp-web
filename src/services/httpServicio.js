@@ -85,14 +85,15 @@ async function leerRespuesta(respuesta, url, metodo) {
  */
 export async function obtener(rutaRelativa, opciones = {}) {
   const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
   const respuesta = await fetch(url, {
     method: "GET",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(opciones.headers || {}),
+      ...(encabezadosExtra || {}),
     },
-    ...opciones,
+    ...resto,
   });
   return leerRespuesta(respuesta, url, "GET");
 }
@@ -107,15 +108,16 @@ export async function obtener(rutaRelativa, opciones = {}) {
  */
 export async function crear(rutaRelativa, cuerpo, opciones = {}) {
   const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
   const respuesta = await fetch(url, {
     method: "POST",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(opciones.headers || {}),
+      ...(encabezadosExtra || {}),
     },
     body: JSON.stringify(cuerpo),
-    ...opciones,
+    ...resto,
   });
   return leerRespuesta(respuesta, url, "POST");
 }
@@ -130,15 +132,16 @@ export async function crear(rutaRelativa, cuerpo, opciones = {}) {
  */
 export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
   const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
   const respuesta = await fetch(url, {
     method: "PUT",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(opciones.headers || {}),
+      ...(encabezadosExtra || {}),
     },
     body: JSON.stringify(cuerpo),
-    ...opciones,
+    ...resto,
   });
   return leerRespuesta(respuesta, url, "PUT");
 }
@@ -152,14 +155,15 @@ export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
  */
 export async function eliminar(rutaRelativa, opciones = {}) {
   const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
   const respuesta = await fetch(url, {
     method: "DELETE",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(opciones.headers || {}),
+      ...(encabezadosExtra || {}),
     },
-    ...opciones,
+    ...resto,
   });
   return leerRespuesta(respuesta, url, "DELETE");
 }
