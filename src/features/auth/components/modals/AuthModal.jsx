@@ -2,7 +2,7 @@
  * @uso        Modal de autenticación con tabs Iniciar Sesión / Registrarse y backdrop blur; cumple
  *             las CUATRO formas de cierre (spec 010): «X» superior, Esc, toque/clic fuera y
  *             deslizar hacia abajo (solo móvil)
- * @funciones  AuthModal({ abierto, modoInicial, alCerrar })
+ * @funciones  AuthModal({ abierto, modoInicial, alCerrar, mensajeExterno })
  * @datos      Lee endpoints mediante getEndpoint() de src/config/api.config.js
  * @eventos    onSubmit en formulario, click en tabs, click en la «X», Esc (useCierreConEsc),
  *             clic fuera (overlay con guarda de destino) y gesto (useDeslizarParaCerrar) → alCerrar;
@@ -18,13 +18,10 @@ import FocusTrap from "focus-trap-react";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
-import { BotonServicioExterno } from "../../../../components/ui";
 import { crearUsuario, iniciarSesion } from "../../services/usuarioServicio";
-import { GOOGLE_AUTH_CONFIGURADO, iniciarLoginGoogle, completarRegistroGoogle } from "../../services/authGoogleServicio";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import LoginForm from "../forms/LoginForm";
 import RegistroForm from "../forms/RegistroForm";
-import CompletarRegistroGoogleForm from "../forms/CompletarRegistroGoogleForm";
 
 
 /**
@@ -56,24 +53,23 @@ function crearOpcionesTrampa(refPanel) {
  * @param {boolean} props.abierto - Control de visibilidad
  * @param {'login' | 'registro'} props.modoInicial - Tab activo al abrir
  * @param {() => void} props.alCerrar - Callback de cierre
+ * @param {string} [props.mensajeExterno] - Mensaje externo opcional (p.ej. error de sesión)
  */
 export default function AuthModal({
   abierto,
   modoInicial = "login",
   alCerrar,
   mensajeExterno = "",
-  datosGooglePendiente = null,
-  alCancelarGoogle = null,
 }) {
   const panelRef = useRef(null);
   const punteroFondoRef = useRef({ inicioEnFondo: false, finEnFondo: false });
   // Obtener navigate de React Router si está disponible; de lo contrario usar función no‑op para evitar errores en entornos de pruebas sin router.
-let navigate;
-try {
-  navigate = useNavigate();
-} catch {
-  navigate = () => {};
-}
+  let navigate;
+  try {
+    navigate = useNavigate();
+  } catch {
+    navigate = () => {};
+  }
   const { guardarUsuario } = useUsuarioActivo();
   const [modo, setModo] = useState(modoInicial);
   const [idUsuario, setIdUsuario] = useState("");
@@ -94,15 +90,9 @@ try {
   useRetornoDeFoco({ activo: abierto });
 
   useEffect(() => {
-    if (datosGooglePendiente) {
-      setModo("completar_google");
-      if (datosGooglePendiente.nombre) setNombre(datosGooglePendiente.nombre);
-      if (datosGooglePendiente.correo) setCorreo(datosGooglePendiente.correo);
-    } else {
-      setModo(modoInicial);
-    }
+    setModo(modoInicial);
     setMensaje("");
-  }, [modoInicial, abierto, datosGooglePendiente]);
+  }, [modoInicial, abierto]);
 
   if (!abierto) return null;
 
@@ -126,63 +116,12 @@ try {
     punteroFondoRef.current.finEnFondo = evento.target === evento.currentTarget;
   };
 
-  const manejarLoginGoogle = async () => {
-    setCargando(true);
-    setMensaje("");
-    try {
-      await iniciarLoginGoogle(modo === "registro" ? "registro" : "login");
-    } catch (error) {
-      setMensaje(error?.message || "No se pudo conectar con Google.");
-      setCargando(false);
-    }
-  };
-
   const manejarEnvio = async (e) => {
     e.preventDefault();
     setCargando(true);
     setMensaje("");
 
     try {
-      if (modo === "completar_google") {
-        const idUsuarioLimpio = idUsuario.trim();
-        const nombreLimpio = nombre.trim();
-        const telefonoLimpio = telefono.trim();
-
-        if (!idUsuarioLimpio) {
-          setMensaje("Ingresa tu cédula o identificación.");
-          setCargando(false);
-          return;
-        }
-        if (!nombreLimpio) {
-          setMensaje("Ingresa tu nombre.");
-          setCargando(false);
-          return;
-        }
-        if (contrasena.length < 8) {
-          setMensaje("La contraseña debe tener al menos 8 caracteres.");
-          setCargando(false);
-          return;
-        }
-
-        const respuestaRegistro = await completarRegistroGoogle({
-          idUsuario: idUsuarioLimpio,
-          contrasena,
-          nombre: nombreLimpio,
-          telefono: telefonoLimpio,
-        });
-
-        const usuarioAutenticado = respuestaRegistro?.datos || respuestaRegistro;
-        if (usuarioAutenticado?.idUsuario) {
-          guardarUsuario(usuarioAutenticado);
-        }
-
-        setMensaje("¡Cuenta creada correctamente!");
-        setCargando(false);
-        alCerrar();
-        navigate("/dashboard");
-        return;
-      }
-
       if (modo === "login") {
         const identificadorLimpio = idUsuario.trim();
 
@@ -310,59 +249,33 @@ try {
             </svg>
           </button>
 
-          {/* Tabs de cambio - solo si no estamos en completar_google */}
-          {modo !== "completar_google" ? (
-            <div className="flex border-b border-white/10 mb-6 pb-2 gap-6">
-              <button
-                type="button"
-                onClick={() => setModo("login")}
-                className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
-                  modo === "login"
-                    ? "border-[#1a7a5e] text-white"
-                    : "border-transparent text-white/70 hover:text-white/80"
-                }`}
-              >
-                Iniciar sesión
-              </button>
-              <button
-                type="button"
-                onClick={() => setModo("registro")}
-                className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
-                  modo === "registro"
-                    ? "border-[#1a7a5e] text-white"
-                    : "border-transparent text-white/70 hover:text-white/80"
-                }`}
-              >
-                Registrarse
-              </button>
-            </div>
-          ) : (
-            <div className="border-b border-white/10 mb-5 pb-3">
-              <h2 className="text-lg font-semibold text-white">Completar registro</h2>
-              <p className="text-xs text-white/60">Paso final para crear y vincular tu cuenta con Google</p>
-            </div>
-          )}
+          {/* Tabs de cambio */}
+          <div className="flex border-b border-white/10 mb-6 pb-2 gap-6">
+            <button
+              type="button"
+              onClick={() => setModo("login")}
+              className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
+                modo === "login"
+                  ? "border-[#1a7a5e] text-white"
+                  : "border-transparent text-white/70 hover:text-white/80"
+              }`}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              onClick={() => setModo("registro")}
+              className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
+                modo === "registro"
+                  ? "border-[#1a7a5e] text-white"
+                  : "border-transparent text-white/70 hover:text-white/80"
+              }`}
+            >
+              Registrarse
+            </button>
+          </div>
 
-          {modo === "completar_google" ? (
-            <CompletarRegistroGoogleForm
-              datosGoogle={datosGooglePendiente}
-              idUsuario={idUsuario}
-              nombre={nombre}
-              telefono={telefono}
-              contrasena={contrasena}
-              alCambiarIdUsuario={setIdUsuario}
-              alCambiarNombre={setNombre}
-              alCambiarTelefono={setTelefono}
-              alCambiarContrasena={setContrasena}
-              alEnviar={manejarEnvio}
-              cargando={cargando}
-              mensaje={mensaje}
-              alCancelar={() => {
-                if (alCancelarGoogle) alCancelarGoogle();
-                setModo("registro");
-              }}
-            />
-          ) : modo === "login" ? (
+          {modo === "login" ? (
             <LoginForm
               idUsuario={idUsuario}
               contrasena={contrasena}
@@ -390,31 +303,6 @@ try {
             />
           )}
 
-          {modo !== "completar_google" && (
-            <>
-              <div className="my-5 flex items-center gap-3 text-xs text-white/60" aria-hidden="true">
-                <span className="h-px flex-1 bg-white/10" />
-                <span>{modo === "registro" ? "o regístrate con" : "o continúa con"}</span>
-                <span className="h-px flex-1 bg-white/10" />
-              </div>
-              <BotonServicioExterno
-                onClick={manejarLoginGoogle}
-                disabled={cargando || !GOOGLE_AUTH_CONFIGURADO}
-              >
-                {cargando
-                  ? "Conectando con Google…"
-                  : modo === "registro" ? "Registrarse con Google" : "Iniciar sesión con Google"}
-              </BotonServicioExterno>
-              {modo === "registro" && (
-                <p className="mt-2 text-center text-xs text-white/70">
-                  Google verificará tu identidad y luego te pedirá crear tu identificación y contraseña.
-                </p>
-              )}
-              {!GOOGLE_AUTH_CONFIGURADO && (
-                <p role="status" className="mt-2 text-xs text-amber-200">Google no está configurado para este entorno.</p>
-              )}
-            </>
-          )}
           {mensajeExterno && (
             <p role="alert" className="mt-3 rounded-xl border border-red-300/30 bg-red-500/10 p-3 text-xs text-red-100">
               {mensajeExterno}
