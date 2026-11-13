@@ -7,7 +7,7 @@
  * @usadoPor   App.jsx mediante la API pública de features/almacenamiento
  */
 import { useCallback, useEffect, useState } from "react";
-import { Cloud, ExternalLink, HardDrive, RefreshCw, Trash2, Upload } from "lucide-react";
+import { Cloud, ExternalLink, HardDrive, RefreshCw, Trash2, Unplug, Upload } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Card } from "../../../components/ui";
 import { completarConexion, desconectarCuenta, obtenerConexiones } from "../services/almacenamientoServicio";
