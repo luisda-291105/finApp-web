@@ -1,16 +1,18 @@
 import { Link } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Filter, Plus, Search } from "lucide-react";
+import { Filter, Plus, Search } from "lucide-react";
 import { Card } from "../../../components/ui";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
 import { useGmail } from "../../../context/GmailContext";
 import useSuscripcionesGmail from "../hooks/useSuscripcionesGmail";
 import SuscripcionGmailCard from "../components/cards/SuscripcionGmailCard";
 import CobrosRecurrentesReales from "../components/cards/CobrosRecurrentesReales";
+import SuscripcionesManualesSection from "../components/cards/SuscripcionesManualesSection";
 import useSuscripcionesRecurrentes from "../hooks/useSuscripcionesRecurrentes";
 import BuscarSuscripcionesModal from "../components/modals/BuscarSuscripcionesModal";
 import FiltrarSuscripcionesModal from "../components/modals/FiltrarSuscripcionesModal";
 import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModal";
+import CrearSuscripcionManualModal from "../components/modals/CrearSuscripcionManualModal";
 import { formatoMoneda } from "../utils/suscripcionesData";
 
 const FILTROS_CORREO_INICIALES = { cuentas: [], categorias: [], baja: [] };
@@ -78,6 +80,11 @@ export default function SuscripcionesPage() {
     const seleccionadas = actuales[campo];
     return { ...actuales, [campo]: seleccionadas.includes(valor) ? seleccionadas.filter((item) => item !== valor) : [...seleccionadas, valor] };
   });
+
+  const cambiarSuscripcionManual = (campo, valor) => {
+    setSuscripcionManual((actual) => ({ ...actual, [campo]: valor }));
+  };
+
   const guardarSuscripcionManual = (evento) => {
     evento.preventDefault();
     const nombre = suscripcionManual.nombre.trim();
@@ -128,44 +135,12 @@ export default function SuscripcionesPage() {
 
       <CobrosRecurrentesReales datos={recurrentes.suscripciones} cargando={recurrentes.cargando} error={recurrentes.error} />
 
-      <section aria-labelledby="suscripciones-manuales-titulo" className="space-y-4">
-        <Card className="space-y-4 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="suscripciones-manuales-titulo" className="font-display text-xl font-semibold text-bg-dark">Suscripciones registradas</h2>
-            <span className="text-sm text-slate-text">{suscripcionesManuales.length} manuales</span>
-          </div>
-          {suscripcionesManuales.length === 0 ? (
-            <p className="text-sm text-slate-text">Registra suscripciones de cobros o importantes para hacerles seguimiento manual.</p>
-          ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Suscripciones registradas manualmente">
-              {suscripcionesManuales.map((item) => (
-                <li key={item.id} className="rounded-xl border border-border-line/50 bg-bg-cream/60 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-bg-dark">{item.nombre}</p>
-                      <p className="text-sm text-slate-text">{item.categoria} · Cobro: {formatoFechaCobro.format(new Date(`${item.fechaCobro}T00:00:00`))}</p>
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${item.importancia === "Alta" ? "bg-emerald-primary/10 text-emerald-primary" : "bg-border-line/40 text-slate-text"}`}>
-                      {item.importancia === "Alta" ? "Importante" : "Baja importancia"}
-                    </span>
-                  </div>
-                  <p className="mt-2 font-semibold tabular-nums text-bg-dark">{formatoMoneda.format(item.monto)}</p>
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => alternarImportanciaManual(item.id)}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-line px-3 text-xs font-medium text-bg-dark hover:border-emerald-primary/50 hover:text-emerald-primary"
-                    >
-                      {item.importancia === "Alta" ? <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />}
-                      {item.importancia === "Alta" ? "Bajar importancia" : "Subir importancia"}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </section>
+      <SuscripcionesManualesSection
+        suscripciones={suscripcionesManuales}
+        alAlternarImportancia={alternarImportanciaManual}
+        formatoMoneda={formatoMoneda}
+        formatoFecha={formatoFechaCobro}
+      />
 
       <section aria-labelledby="suscripciones-correo-titulo" className="space-y-4">
         <Card className="space-y-4 p-5">
@@ -197,41 +172,15 @@ export default function SuscripcionesPage() {
         alCrearCategoria={() => { setFiltrarAbierto(false); setCrearCategoriaAbierto(true); }}
       />
       <DetalleSuscripcionModal suscripcion={suscripcionCorreoDetalle} triggerRef={triggerDetalleCorreoRef} alCerrar={() => setSuscripcionCorreoDetalle(null)} />
-      <ModalDetalleRegistro abierto={modalManualAbierto} titulo="Registrar suscripción" alCerrar={() => setModalManualAbierto(false)} triggerRef={triggerManualRef} ancho="max-w-md">
-        <form className="space-y-4" onSubmit={guardarSuscripcionManual}>
-          <p className="text-sm text-slate-text">Registra manualmente una suscripción de cobro o importante y ajusta su importancia.</p>
-          <label className="block space-y-2 text-sm font-medium text-bg-dark">Nombre
-            <input required maxLength={60} value={suscripcionManual.nombre} onChange={(e) => setSuscripcionManual((a) => ({ ...a, nombre: e.target.value }))} placeholder="Ej. Netflix, Internet" className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-2 text-sm font-medium text-bg-dark">Monto (COP)
-              <input required type="number" min="1" step="1" value={suscripcionManual.monto} onChange={(e) => setSuscripcionManual((a) => ({ ...a, monto: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
-            </label>
-            <label className="block space-y-2 text-sm font-medium text-bg-dark">Fecha de cobro
-              <input required type="date" value={suscripcionManual.fechaCobro} onChange={(e) => setSuscripcionManual((a) => ({ ...a, fechaCobro: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-2 text-sm font-medium text-bg-dark">Categoría
-              <select value={suscripcionManual.categoria} onChange={(e) => setSuscripcionManual((a) => ({ ...a, categoria: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-                {CATEGORIAS_SUSCRIPCION_MANUAL.map((categoria) => (
-                  <option key={categoria} value={categoria}>{categoria}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block space-y-2 text-sm font-medium text-bg-dark">Importancia
-              <select value={suscripcionManual.importancia} onChange={(e) => setSuscripcionManual((a) => ({ ...a, importancia: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-                <option value="Alta">Alta</option>
-                <option value="Baja">Baja</option>
-              </select>
-            </label>
-          </div>
-          <div className="flex justify-end gap-2 border-t border-border-line/40 pt-3">
-            <button type="button" onClick={() => setModalManualAbierto(false)} className="min-h-10 rounded-xl border border-border-line px-4 text-sm font-medium text-bg-dark">Cancelar</button>
-            <button type="submit" className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white">Guardar suscripción</button>
-          </div>
-        </form>
-      </ModalDetalleRegistro>
+      <CrearSuscripcionManualModal
+        abierto={modalManualAbierto}
+        alCerrar={() => setModalManualAbierto(false)}
+        triggerRef={triggerManualRef}
+        valores={suscripcionManual}
+        alCambiar={cambiarSuscripcionManual}
+        alGuardar={guardarSuscripcionManual}
+        categorias={CATEGORIAS_SUSCRIPCION_MANUAL}
+      />
       <ModalDetalleRegistro abierto={crearCategoriaAbierto} titulo="Crear categoría" alCerrar={() => setCrearCategoriaAbierto(false)} ancho="max-w-md">
         <form className="space-y-4" onSubmit={(evento) => { evento.preventDefault(); const nombre = nombreCategoria.trim(); if (!nombre) return; const ids = suscripcionesCorreoFiltradas.map((item) => `${item.cuentaGmailId || ""}:${item.id || item.correoRemitente || ""}`); setCategoriasPersonalizadas((actuales) => { const existentes = actuales.filter((item) => item.nombre.toLocaleLowerCase() !== nombre.toLocaleLowerCase()); return [...existentes, { nombre, ids }]; }); setFiltrosCorreo((actuales) => ({ ...actuales, categorias: [nombre] })); setNombreCategoria(""); setCrearCategoriaAbierto(false); }}>
           <p className="text-sm text-slate-text">La categoría se aplicará a las {suscripcionesCorreoFiltradas.length} suscripciones que coinciden actualmente con la búsqueda y los filtros.</p>
