@@ -6,7 +6,6 @@ import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetall
 import { useGmail } from "../../../context/GmailContext";
 import useSuscripcionesGmail from "../hooks/useSuscripcionesGmail";
 import SuscripcionGmailCard from "../components/cards/SuscripcionGmailCard";
-import FiltroCategoriasSuscripciones from "../components/cards/FiltroCategoriasSuscripciones";
 import CobrosRecurrentesReales from "../components/cards/CobrosRecurrentesReales";
 import useSuscripcionesRecurrentes from "../hooks/useSuscripcionesRecurrentes";
 import BuscarSuscripcionesModal from "../components/modals/BuscarSuscripcionesModal";
@@ -89,8 +88,6 @@ export default function SuscripcionesPage() {
         </div>
       </header>
 
-      <FiltroCategoriasSuscripciones seleccionadas={filtrosCorreo.categorias} cantidades={conteosFiltro.categoria} total={gmail.suscripcionesCorreo.length} categoriasPersonalizadas={categoriasPersonalizadas.map(({ nombre, ids }) => ({ nombre, cantidad: ids.length }))} alCrearCategoria={() => setCrearCategoriaAbierto(true)} alAlternar={(valor) => cambiarFiltroCorreo("categorias", valor)} />
-
       <CobrosRecurrentesReales datos={recurrentes.suscripciones} cargando={recurrentes.cargando} error={recurrentes.error} />
 
       <section aria-labelledby="suscripciones-correo-titulo" className="space-y-4">
@@ -109,7 +106,19 @@ export default function SuscripcionesPage() {
       </section>
 
       <BuscarSuscripcionesModal abierto={buscarAbierto} alCerrar={() => setBuscarAbierto(false)} triggerRef={triggerBuscarRef} busqueda={busquedaCorreo} alCambiarBusqueda={setBusquedaCorreo} resultados={suscripcionesCorreoFiltradas} alSeleccionar={(item) => { triggerDetalleCorreoRef.current = triggerBuscarRef.current; setBuscarAbierto(false); setSuscripcionCorreoDetalle(item); }} />
-      <FiltrarSuscripcionesModal abierto={filtrarAbierto} alCerrar={() => setFiltrarAbierto(false)} triggerRef={triggerFiltrarRef} filtros={filtrosCorreo} alCambiarFiltro={cambiarFiltroCorreo} alLimpiar={() => setFiltrosCorreo(FILTROS_CORREO_INICIALES)} cuentas={cuentasGmail} cantidades={conteosFiltro} />
+      <FiltrarSuscripcionesModal
+        abierto={filtrarAbierto}
+        alCerrar={() => setFiltrarAbierto(false)}
+        triggerRef={triggerFiltrarRef}
+        filtros={filtrosCorreo}
+        alCambiarFiltro={cambiarFiltroCorreo}
+        alLimpiar={() => setFiltrosCorreo(FILTROS_CORREO_INICIALES)}
+        cuentas={cuentasGmail}
+        cantidades={conteosFiltro}
+        totalCategorias={gmail.suscripcionesCorreo.length}
+        categoriasPersonalizadas={categoriasPersonalizadas.map(({ nombre, ids }) => ({ nombre, cantidad: ids.length }))}
+        alCrearCategoria={() => { setFiltrarAbierto(false); setCrearCategoriaAbierto(true); }}
+      />
       <DetalleSuscripcionModal suscripcion={suscripcionCorreoDetalle} triggerRef={triggerDetalleCorreoRef} alCerrar={() => setSuscripcionCorreoDetalle(null)} />
       <ModalDetalleRegistro abierto={crearCategoriaAbierto} titulo="Crear categoría" alCerrar={() => setCrearCategoriaAbierto(false)} ancho="max-w-md">
         <form className="space-y-4" onSubmit={(evento) => { evento.preventDefault(); const nombre = nombreCategoria.trim(); if (!nombre) return; const ids = suscripcionesCorreoFiltradas.map((item) => `${item.cuentaGmailId || ""}:${item.id || item.correoRemitente || ""}`); setCategoriasPersonalizadas((actuales) => { const existentes = actuales.filter((item) => item.nombre.toLocaleLowerCase() !== nombre.toLocaleLowerCase()); return [...existentes, { nombre, ids }]; }); setFiltrosCorreo((actuales) => ({ ...actuales, categorias: [nombre] })); setNombreCategoria(""); setCrearCategoriaAbierto(false); }}>
