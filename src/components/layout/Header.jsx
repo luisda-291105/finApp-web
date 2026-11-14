@@ -39,17 +39,15 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logotipo FinApp */}
-        <Link to="/" className="flex items-center gap-2" aria-label="Ir al inicio de FinApp">
-          <picture>
-            <source type="image/webp" srcSet="/logo.webp" />
-            <img src="/logo.png" alt="FinApp" className="h-9 w-9 rounded-lg object-contain" />
-          </picture>
+        <Link to="/" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
+          <span className="text-[#1a7a5e] sm:hidden">F</span>
+          <span className="hidden sm:inline">Fin</span>
           <span
-            className={`hidden sm:inline font-display text-xl font-semibold tracking-tight transition-colors duration-400 ${
+            className={`transition-colors duration-400 ${
               desplazado ? "text-[#0f1117]" : "text-white"
-            }`}
+            } sm:inline`}
           >
-            FinApp
+            App
           </span>
         </Link>
 
