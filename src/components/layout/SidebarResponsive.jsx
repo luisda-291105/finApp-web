@@ -45,19 +45,18 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
             "hover:bg-emerald-primary/10 focus-visible:outline-none",
             "focus-visible:ring-2 focus-visible:ring-mint-accent/50 focus-visible:ring-offset-2",
             temaClaro ? "focus-visible:ring-offset-bg-cream" : "focus-visible:ring-offset-bg-dark",
-            colapsada ? "justify-center" : "justify-start gap-0",
+            colapsada ? "justify-center" : "justify-start gap-2",
           )}
           aria-expanded={!colapsada}
           aria-label={colapsada ? "Expandir navegación" : "Colapsar navegación"}
         >
-          {colapsada ? (
-            <span className="font-display text-xl font-medium text-emerald-primary" aria-hidden="true">
-              F
-            </span>
-          ) : (
-            <span className={clsx("flex items-center whitespace-nowrap font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
-              <span className="text-emerald-primary">Fin</span>
-              <span>App</span>
+          <picture className="shrink-0">
+            <source type="image/webp" srcSet="/logo.webp" />
+            <img src="/logo.png" alt="" aria-hidden="true" className={clsx("rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
+          </picture>
+          {!colapsada && (
+            <span className={clsx("truncate font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
+              FinApp
             </span>
           )}
         </button>

@@ -117,18 +117,18 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
-      expect(toggleButton).toHaveTextContent("Fin");
-      expect(toggleButton).toHaveTextContent("App");
+      expect(toggleButton).toHaveTextContent("FinApp");
+      expect(toggleButton.querySelector("img")).toBeTruthy();
       expect(screen.queryByRole("link", { name: /FinApp - Inicio/i })).toBeNull();
     });
 
-    it("logo 'Fin' tiene color emerald-primary y 'App' en bg-cream", () => {
+    it("logo muestra imagen y texto FinApp cuando expandida", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
-      const finSpan = toggleButton.querySelector(".text-emerald-primary");
-      expect(finSpan).toHaveTextContent("Fin");
-      expect(toggleButton).toHaveTextContent("App");
+      expect(toggleButton.querySelector("picture")).toBeTruthy();
+      expect(toggleButton.querySelector("img")).toBeTruthy();
+      expect(toggleButton).toHaveTextContent("FinApp");
     });
 
     it("no renderiza chevron cuando expandida", () => {
@@ -226,14 +226,12 @@ describe("SidebarResponsive", () => {
       expect(aside).not.toHaveClass("w-64");
     });
 
-    it("renderiza inicial 'F' en emerald-primary cuando colapsada", () => {
+    it("renderiza imagen de logo cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
       const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
-      const marca = toggleButton.querySelector(".text-emerald-primary");
-      expect(marca).toBeTruthy();
-      expect(marca).toHaveTextContent("F");
-      expect(toggleButton).not.toHaveTextContent("App");
+      expect(toggleButton.querySelector("picture")).toBeTruthy();
+      expect(toggleButton.querySelector("img")).toBeTruthy();
       expect(toggleButton.querySelector("svg.lucide-house")).toBeNull();
     });
 
@@ -242,7 +240,6 @@ describe("SidebarResponsive", () => {
 
       const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
       expect(toggleButton).not.toHaveTextContent("FinApp");
-      expect(toggleButton).not.toHaveTextContent("App");
     });
 
     it("no renderiza chevron cuando colapsada", () => {

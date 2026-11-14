@@ -35,8 +35,8 @@ describe("LandingLayout", () => {
   it("compone Header, Hero, StatsBar, Features, HowItWorks, CtaSection, Footer correctamente", () => {
     renderLayout();
 
-    // Header - logo muestra "F" en móvil y "FinApp" en desktop
-    expect(screen.getByRole("link", { name: /Fin App/i })).toBeDefined();
+    // Header - logo imagen con accesible "FinApp" / inicio
+    expect(screen.getByRole("link", { name: /FinApp/i })).toBeDefined();
     expect(screen.getByText("Iniciar sesión")).toBeDefined();
     // Registrarse ya no está en el header (simplificado por diseño)
     expect(screen.queryByText("Registrarse")).not.toBeInTheDocument();
@@ -66,7 +66,7 @@ describe("LandingLayout", () => {
     expect(screen.getByText(/empezar/i)).toBeDefined();
 
     // Footer - busca copyright o marca
-    expect(screen.getByText(/FinApp/i)).toBeDefined();
+    expect(screen.getAllByText(/FinApp/i).length).toBeGreaterThan(0);
   });
 
   it("renderiza children pasados (AuthModal, botón flotante, etc.)", () => {
