@@ -65,7 +65,7 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
 
   return (
     <>
-      <Card className="space-y-4 p-6">
+      <Card className="space-y-3 p-5">
         <div className="flex items-center gap-3">
           <HardDrive className="h-5 w-5 text-emerald-primary" aria-hidden="true" />
           <div>

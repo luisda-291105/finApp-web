@@ -40,11 +40,12 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logotipo FinApp */}
         <Link to="/" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
-          <span className="text-[#1a7a5e]">Fin</span>
+          <span className="text-[#1a7a5e] sm:hidden">F</span>
+          <span className="hidden sm:inline">Fin</span>
           <span
             className={`transition-colors duration-400 ${
               desplazado ? "text-[#0f1117]" : "text-white"
-            }`}
+            } sm:inline`}
           >
             App
           </span>
@@ -56,20 +57,13 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
             <button
               type="button"
               onClick={() => alAbrirAuth?.("login")}
-              className={`text-sm font-medium px-3 py-1.5 transition-colors duration-400 cursor-pointer ${
+              className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-400 cursor-pointer ${
                 desplazado
-                  ? "text-[#0f1117] hover:text-[#1a7a5e]"
-                  : "text-white/85 hover:text-white"
+                  ? "text-[#0f1117] hover:text-[#1a7a5e] bg-white/80 hover:bg-white"
+                  : "text-white/90 hover:text-white bg-white/10 hover:bg-white/20"
               }`}
             >
               Iniciar sesión
-            </button>
-            <button
-              type="button"
-              onClick={() => alAbrirAuth?.("registro")}
-              className="bg-[#1a7a5e] hover:bg-[#15634c] text-white text-sm font-medium px-5 py-2 rounded-lg transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md"
-            >
-              Registrarse
             </button>
           </div>
         )}

@@ -52,10 +52,12 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
   const [importandoTodos, setImportandoTodos] = useState(false);
   const [progresoLote, setProgresoLote] = useState(null);
   const [modalContabilidadAbierto, setModalContabilidadAbierto] = useState(false);
+  const [modalMensajesAbierto, setModalMensajesAbierto] = useState(false);
   const [bolsillos, setBolsillos] = useState([]);
   const [valoresMovimiento, setValoresMovimiento] = useState(null);
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState(null);
   const triggerContabilidadRef = useRef(null);
+  const triggerMensajesRef = useRef(null);
 
   useEffect(() => {
     setConfirmando(false);
@@ -68,6 +70,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
     setAvisoImportacion("");
     setProgresoLote(null);
     setModalContabilidadAbierto(false);
+    setModalMensajesAbierto(false);
     setMovimientoSeleccionado(null);
     setValoresMovimiento(null);
   }, [suscripcion?.id, suscripcion?.cuentaGmailId]);
@@ -249,7 +252,60 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
       <section aria-labelledby="mensajes-suscripcion-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 id="mensajes-suscripcion-titulo" className="font-semibold text-bg-dark">Mensajes de este remitente</h3>
-          {!cargandoMensajes && !errorMensajes && <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">{mensajes.length}</span>}
+          {!cargandoMensajes && !errorMensajes && (
+            <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
+              {mensajes.length}
+            </span>
+          )}
+        </div>
+        {cargandoMensajes && <p role="status" className="text-sm text-slate-text">Cargando mensajes recientes…</p>}
+        {errorMensajes && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{errorMensajes}</p>}
+        {!cargandoMensajes && !errorMensajes && mensajes.length === 0 && <p className="text-sm text-slate-text">No hay mensajes recientes de este remitente en la cuenta seleccionada.</p>}
+        <button
+          ref={triggerMensajesRef}
+          type="button"
+          onClick={() => setModalMensajesAbierto(true)}
+          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-primary/30 bg-emerald-primary/10 px-4 text-sm font-semibold text-emerald-primary hover:bg-emerald-primary/15"
+        >
+          <Mail className="h-4 w-4" aria-hidden="true" />
+          Ver mensajes
+        </button>
+        <p className="text-xs text-slate-text">Se muestran los mensajes de este remitente guardados en FinApp durante los últimos 90 días.</p>
+      </section>
+
+      <section aria-labelledby="opciones-baja-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
+        <h3 id="opciones-baja-titulo" className="font-semibold text-bg-dark">Anular suscripción</h3>
+        {!tieneOpcionBaja && <p className="text-sm text-slate-text">Este remitente no incluyó un enlace de baja detectable. Puedes gestionarlo en Gmail.</p>}
+        {suscripcion.bajaConUnClic && suscripcion.urlBaja && !resultadoBaja && <>
+          <p className="text-sm text-slate-text">El remitente admite la baja con un clic. FinApp enviará la solicitud solo cuando la confirmes.</p>
+          {confirmando ? <div className="space-y-3 rounded-xl bg-red-50 p-3 text-sm text-red-800"><p>¿Quieres enviar la solicitud para anular esta suscripción?</p><div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => setConfirmando(false)} disabled={enviando} className="min-h-10 rounded-lg border border-border-line px-3 font-medium text-bg-dark">Cancelar</button><button type="button" onClick={solicitarBaja} disabled={enviando} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-red-700 px-3 font-semibold text-white disabled:opacity-60">{enviando && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />}{enviando ? "Enviando…" : "Confirmar anulación"}</button></div></div> : <button type="button" onClick={() => setConfirmando(true)} className="min-h-10 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Anular suscripción</button>}
+        </>}
+        {!suscripcion.bajaConUnClic && suscripcion.urlBaja && <a href={suscripcion.urlBaja} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><ExternalLink className="h-4 w-4" aria-hidden="true" />Abrir página para anular</a>}
+        {suscripcion.mailtoBaja && <a href={suscripcion.mailtoBaja} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><Mail className="h-4 w-4" aria-hidden="true" />Preparar correo de baja</a>}
+        {resultadoBaja && <p role="status" className="flex gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{resultadoBaja}</p>}
+        {errorBaja && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">{errorBaja}</p>}
+      </section>
+
+      <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-xs leading-relaxed text-slate-text">FinApp detecta remitentes suscritos en Gmail y muestra aquí sus mensajes de los últimos 90 días. Desde cada mensaje puedes abrir el original en Gmail.</p>
+      <div className="flex justify-end border-t border-border-line/40 pt-4"><a href={urlAdministrar} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" aria-hidden="true" />Administrar en Gmail</a></div>
+    </div>
+    </ModalDetalleRegistro>
+
+    <ModalDetalleRegistro
+      abierto={Boolean(suscripcion) && !modalContabilidadAbierto && modalMensajesAbierto}
+      titulo="Mensajes de este remitente"
+      alCerrar={() => setModalMensajesAbierto(false)}
+      triggerRef={triggerMensajesRef}
+      ancho="max-w-lg"
+    >
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium text-bg-dark">{suscripcion.nombre || "Remitente"}</p>
+          {!cargandoMensajes && !errorMensajes && (
+            <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
+              {mensajes.length}
+            </span>
+          )}
         </div>
         {!cargandoMensajes && !errorMensajes && mensajes.length > 0
           && suscripcion.correoRemitente?.trim().toLowerCase() === REMITENTE_MOVIMIENTOS_BANCOLOMBIA
@@ -277,25 +333,9 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
           </li>)}
         </ul>}
         <p className="text-xs text-slate-text">Se muestran los mensajes de este remitente guardados en FinApp durante los últimos 90 días.</p>
-      </section>
-
-      <section aria-labelledby="opciones-baja-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
-        <h3 id="opciones-baja-titulo" className="font-semibold text-bg-dark">Anular suscripción</h3>
-        {!tieneOpcionBaja && <p className="text-sm text-slate-text">Este remitente no incluyó un enlace de baja detectable. Puedes gestionarlo en Gmail.</p>}
-        {suscripcion.bajaConUnClic && suscripcion.urlBaja && !resultadoBaja && <>
-          <p className="text-sm text-slate-text">El remitente admite la baja con un clic. FinApp enviará la solicitud solo cuando la confirmes.</p>
-          {confirmando ? <div className="space-y-3 rounded-xl bg-red-50 p-3 text-sm text-red-800"><p>¿Quieres enviar la solicitud para anular esta suscripción?</p><div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => setConfirmando(false)} disabled={enviando} className="min-h-10 rounded-lg border border-border-line px-3 font-medium text-bg-dark">Cancelar</button><button type="button" onClick={solicitarBaja} disabled={enviando} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-red-700 px-3 font-semibold text-white disabled:opacity-60">{enviando && <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />}{enviando ? "Enviando…" : "Confirmar anulación"}</button></div></div> : <button type="button" onClick={() => setConfirmando(true)} className="min-h-10 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Anular suscripción</button>}
-        </>}
-        {!suscripcion.bajaConUnClic && suscripcion.urlBaja && <a href={suscripcion.urlBaja} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><ExternalLink className="h-4 w-4" aria-hidden="true" />Abrir página para anular</a>}
-        {suscripcion.mailtoBaja && <a href={suscripcion.mailtoBaja} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><Mail className="h-4 w-4" aria-hidden="true" />Preparar correo de baja</a>}
-        {resultadoBaja && <p role="status" className="flex gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{resultadoBaja}</p>}
-        {errorBaja && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">{errorBaja}</p>}
-      </section>
-
-      <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-xs leading-relaxed text-slate-text">FinApp detecta remitentes suscritos en Gmail y muestra aquí sus mensajes de los últimos 90 días. Desde cada mensaje puedes abrir el original en Gmail.</p>
-      <div className="flex justify-end border-t border-border-line/40 pt-4"><a href={urlAdministrar} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" aria-hidden="true" />Administrar en Gmail</a></div>
-    </div>
+      </div>
     </ModalDetalleRegistro>
+
     <ModalCrearMovimientoContable abierto={modalContabilidadAbierto} valoresPredeterminados={valoresMovimiento} bolsillos={valoresMovimiento?.tipo ? bolsillos.filter((bolsillo) => String(bolsillo.tipo).toUpperCase() === valoresMovimiento.tipo) : bolsillos} triggerRef={triggerContabilidadRef} alCerrar={() => { setModalContabilidadAbierto(false); setMovimientoSeleccionado(null); }} alGuardar={guardarMovimiento} />
   </>;
 }
