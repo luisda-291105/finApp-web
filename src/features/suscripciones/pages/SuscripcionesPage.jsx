@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
-import { Filter, Plus, Search } from "lucide-react";
+import { ChevronDown, Filter, Plus, Search } from "lucide-react";
 import { Card } from "../../../components/ui";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
 import { useGmail } from "../../../context/GmailContext";
@@ -36,6 +36,7 @@ export default function SuscripcionesPage() {
   const [modalManualAbierto, setModalManualAbierto] = useState(false);
   const [suscripcionManual, setSuscripcionManual] = useState(SUSCRIPCION_MANUAL_INICIAL);
   const [suscripcionesManuales, setSuscripcionesManuales] = useState([]);
+  const [colapsadoCorreo, setColapsadoCorreo] = useState(false);
   const triggerBuscarRef = useRef(null);
   const triggerFiltrarRef = useRef(null);
   const triggerDetalleCorreoRef = useRef(null);
@@ -149,16 +150,37 @@ export default function SuscripcionesPage() {
 
       <section aria-labelledby="suscripciones-correo-titulo" className="space-y-4">
         <Card className="space-y-4 p-5">
-          <h2 id="suscripciones-correo-titulo" className="sr-only">Suscripciones de Gmail</h2>
-          {!cuentasGmail.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-sm text-slate-text">Conecta Gmail desde <Link to="/dashboard/configuracion" className="font-semibold text-emerald-primary underline">Configuración → Fuentes</Link> para consultar las suscripciones.</p>}
-          {gmail.error && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{gmail.error}</p>}
-          {gmail.erroresCuentas.length > 0 && <ul aria-label="Cuentas Gmail con error" className="space-y-1 rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900">{gmail.erroresCuentas.map((item) => <li key={item.correo}><strong>{item.correo}:</strong> {item.mensaje}</li>)}</ul>}
-          {gmail.cargando && <p role="status" className="py-4 text-sm text-slate-text">Consultando las suscripciones recientes por cuenta Gmail…</p>}
-          {!gmail.cargando && gmail.consultaRealizada && <p role="status" className="text-sm text-slate-text">Mostrando {suscripcionesCorreoFiltradas.length} de {gmail.suscripcionesCorreo.length} suscripciones detectadas en {cuentasGmail.length} {cuentasGmail.length === 1 ? "cuenta" : "cuentas"}.</p>}
-          {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length === 0 && !gmail.erroresCuentas.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text">No se detectaron suscripciones en los correos recientes. Gmail puede mostrar más en su administrador.</p>}
-          {!gmail.cargando && suscripcionesCorreoFiltradas.length > 0 && <ul aria-label="Suscripciones de Gmail" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{suscripcionesCorreoFiltradas.map((item) => <SuscripcionGmailCard key={`${item.cuentaGmailId}:${item.id}`} suscripcion={item} alAbrir={(evento) => { triggerDetalleCorreoRef.current = evento.currentTarget; setSuscripcionCorreoDetalle(item); }} />)}</ul>}
-          {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length > 0 && suscripcionesCorreoFiltradas.length === 0 && <div className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text"><p>No hay suscripciones que coincidan con la búsqueda y los filtros seleccionados.</p><button type="button" onClick={() => { setFiltrosCorreo(FILTROS_CORREO_INICIALES); setBusquedaCorreo(""); }} className="mt-2 font-semibold text-emerald-primary underline">Limpiar filtros y búsqueda</button></div>}
-          <p className="text-xs leading-relaxed text-slate-text">La lista se detecta en mensajes de Promociones y Actualizaciones. Para exactitud y administrar bajas, Gmail mantiene su administrador de suscripciones.</p>
+          <button
+            type="button"
+            onClick={() => setColapsadoCorreo((actual) => !actual)}
+            aria-expanded={!colapsadoCorreo}
+            aria-controls="suscripciones-correo-contenido"
+            className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
+          >
+            <h2 id="suscripciones-correo-titulo" className="font-display text-xl font-semibold text-bg-dark">
+              Suscripciones de Gmail
+            </h2>
+            <span className="inline-flex items-center gap-2 text-sm text-slate-text">
+              {gmail.suscripcionesCorreo.length} detectadas
+              <ChevronDown
+                aria-hidden="true"
+                className={`h-5 w-5 transition-transform ${colapsadoCorreo ? "" : "rotate-180"}`}
+              />
+            </span>
+          </button>
+          {!colapsadoCorreo && (
+            <div id="suscripciones-correo-contenido" className="space-y-4">
+              {!cuentasGmail.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-sm text-slate-text">Conecta Gmail desde <Link to="/dashboard/configuracion" className="font-semibold text-emerald-primary underline">Configuración → Fuentes</Link> para consultar las suscripciones.</p>}
+              {gmail.error && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{gmail.error}</p>}
+              {gmail.erroresCuentas.length > 0 && <ul aria-label="Cuentas Gmail con error" className="space-y-1 rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900">{gmail.erroresCuentas.map((item) => <li key={item.correo}><strong>{item.correo}:</strong> {item.mensaje}</li>)}</ul>}
+              {gmail.cargando && <p role="status" className="py-4 text-sm text-slate-text">Consultando las suscripciones recientes por cuenta Gmail…</p>}
+              {!gmail.cargando && gmail.consultaRealizada && <p role="status" className="text-sm text-slate-text">Mostrando {suscripcionesCorreoFiltradas.length} de {gmail.suscripcionesCorreo.length} suscripciones detectadas en {cuentasGmail.length} {cuentasGmail.length === 1 ? "cuenta" : "cuentas"}.</p>}
+              {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length === 0 && !gmail.erroresCuentas.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text">No se detectaron suscripciones en los correos recientes. Gmail puede mostrar más en su administrador.</p>}
+              {!gmail.cargando && suscripcionesCorreoFiltradas.length > 0 && <ul aria-label="Suscripciones de Gmail" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{suscripcionesCorreoFiltradas.map((item) => <SuscripcionGmailCard key={`${item.cuentaGmailId}:${item.id}`} suscripcion={item} alAbrir={(evento) => { triggerDetalleCorreoRef.current = evento.currentTarget; setSuscripcionCorreoDetalle(item); }} />)}</ul>}
+              {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length > 0 && suscripcionesCorreoFiltradas.length === 0 && <div className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text"><p>No hay suscripciones que coincidan con la búsqueda y los filtros seleccionados.</p><button type="button" onClick={() => { setFiltrosCorreo(FILTROS_CORREO_INICIALES); setBusquedaCorreo(""); }} className="mt-2 font-semibold text-emerald-primary underline">Limpiar filtros y búsqueda</button></div>}
+              <p className="text-xs leading-relaxed text-slate-text">La lista se detecta en mensajes de Promociones y Actualizaciones. Para exactitud y administrar bajas, Gmail mantiene su administrador de suscripciones.</p>
+            </div>
+          )}
         </Card>
       </section>
 
