@@ -35,10 +35,11 @@ describe("LandingLayout", () => {
   it("compone Header, Hero, StatsBar, Features, HowItWorks, CtaSection, Footer correctamente", () => {
     renderLayout();
 
-    // Header - usa el link del logo que contiene "Fin" y "App"
+    // Header - logo muestra "F" en móvil y "FinApp" en desktop
     expect(screen.getByRole("link", { name: /Fin App/i })).toBeDefined();
     expect(screen.getByText("Iniciar sesión")).toBeDefined();
-    expect(screen.getByText("Registrarse")).toBeDefined();
+    // Registrarse ya no está en el header (simplificado por diseño)
+    expect(screen.queryByText("Registrarse")).not.toBeInTheDocument();
 
     // Hero - busca texto característico del Hero
     expect(screen.getByText(/Controla tu dinero/i)).toBeDefined();
@@ -97,9 +98,8 @@ describe("LandingLayout", () => {
     btnLogin.click();
     expect(mockAbrirAuth).toHaveBeenCalledWith("login");
 
-    // Click en botón "Registrarse" del Header
-    const btnRegistro = screen.getByText("Registrarse");
-    btnRegistro.click();
-    expect(mockAbrirAuth).toHaveBeenCalledWith("registro");
+    // Registrarse ya no está en el header (simplificado por diseño)
+    // El registro se maneja desde el modal de autenticación
+    expect(screen.queryByText("Registrarse")).not.toBeInTheDocument();
   });
 });
