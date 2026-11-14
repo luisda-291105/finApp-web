@@ -14,7 +14,8 @@ import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModa
 import { formatoMoneda } from "../utils/suscripcionesData";
 
 const FILTROS_CORREO_INICIALES = { cuentas: [], categorias: [], baja: [] };
-const SUSCRIPCION_MANUAL_INICIAL = { nombre: "", monto: "", fechaCobro: "", tipo: "Cobro", importancia: "Alta" };
+const CATEGORIAS_SUSCRIPCION_MANUAL = ["Alimentación", "Comunicación", "Entretenimiento", "Servicios", "Transporte", "Salud", "Educación", "Hogar", "Otros"];
+const SUSCRIPCION_MANUAL_INICIAL = { nombre: "", monto: "", fechaCobro: "", categoria: "Servicios", importancia: "Alta" };
 const formatoFechaCobro = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 /** Vista principal de suscripciones, compone el resumen, filtros y lista. */
@@ -89,7 +90,7 @@ export default function SuscripcionesPage() {
         nombre,
         monto,
         fechaCobro,
-        tipo: suscripcionManual.tipo,
+        categoria: suscripcionManual.categoria,
         importancia: suscripcionManual.importancia,
       },
       ...actuales,
@@ -142,7 +143,7 @@ export default function SuscripcionesPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-bg-dark">{item.nombre}</p>
-                      <p className="text-sm text-slate-text">{item.tipo} · Cobro: {formatoFechaCobro.format(new Date(`${item.fechaCobro}T00:00:00`))}</p>
+                      <p className="text-sm text-slate-text">{item.categoria} · Cobro: {formatoFechaCobro.format(new Date(`${item.fechaCobro}T00:00:00`))}</p>
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${item.importancia === "Alta" ? "bg-emerald-primary/10 text-emerald-primary" : "bg-border-line/40 text-slate-text"}`}>
                       {item.importancia === "Alta" ? "Importante" : "Baja importancia"}
@@ -211,10 +212,11 @@ export default function SuscripcionesPage() {
             </label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-2 text-sm font-medium text-bg-dark">Tipo
-              <select value={suscripcionManual.tipo} onChange={(e) => setSuscripcionManual((a) => ({ ...a, tipo: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-                <option value="Cobro">Cobro</option>
-                <option value="Importante">Importante</option>
+            <label className="block space-y-2 text-sm font-medium text-bg-dark">Categoría
+              <select value={suscripcionManual.categoria} onChange={(e) => setSuscripcionManual((a) => ({ ...a, categoria: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+                {CATEGORIAS_SUSCRIPCION_MANUAL.map((categoria) => (
+                  <option key={categoria} value={categoria}>{categoria}</option>
+                ))}
               </select>
             </label>
             <label className="block space-y-2 text-sm font-medium text-bg-dark">Importancia
