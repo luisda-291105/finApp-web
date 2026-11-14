@@ -32,7 +32,19 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
             </button></h2>
             {abierto && <p className="mt-1 text-sm text-slate-text">Consulta y administra las fuentes asociadas a tu usuario.</p>}
           </div>
-          {abierto && <button ref={disparadorFuentesRef} type="button" className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2" onClick={abrirModalFuentes}>Registrar fuentes</button>}
+          {abierto && <div className="flex flex-wrap gap-2">
+            {cuentasGmail.length > 0 && (
+              <a
+                href={`https://mail.google.com/mail/u/?authuser=${encodeURIComponent((cuentasGmail.find((c) => String(c.id) === String(cuentaSeleccionadaId)) || cuentasGmail[0])?.email || "")}#sub`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border-line px-4 py-2 text-sm font-medium text-bg-dark outline-none transition-colors hover:border-emerald-primary/50 hover:text-emerald-primary focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2"
+              >
+                Administrar en Gmail
+              </a>
+            )}
+            <button ref={disparadorFuentesRef} type="button" className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2" onClick={abrirModalFuentes}>Registrar fuentes</button>
+          </div>}
         </div>
 
         <div id="fuentes-registradas-contenido" hidden={!abierto} className="space-y-4">
