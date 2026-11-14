@@ -45,12 +45,11 @@ export default function CrearSuscripcionManualModal({
             Monto (COP)
             <input
               required
-              type="number"
-              min="1"
-              step="1"
+              type="text"
+              inputMode="decimal"
               value={valores.monto}
               onChange={(e) => alCambiar("monto", e.target.value)}
-              placeholder="Ej. 45000"
+              placeholder="Ej. 47.068,11"
               className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
             />
           </label>

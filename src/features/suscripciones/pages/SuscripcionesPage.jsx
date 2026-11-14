@@ -88,9 +88,14 @@ export default function SuscripcionesPage() {
   const guardarSuscripcionManual = (evento) => {
     evento.preventDefault();
     const nombre = suscripcionManual.nombre.trim();
-    const monto = Number(suscripcionManual.monto);
+    const montoTexto = String(suscripcionManual.monto || "").trim();
+    const montoNormalizado = montoTexto
+      .replace(/\s/g, "")
+      .replace(/\./g, "")
+      .replace(/,/g, ".");
+    const monto = Number(montoNormalizado);
     const fechaCobro = suscripcionManual.fechaCobro;
-    if (!nombre || !Number.isFinite(monto) || monto <= 0 || !fechaCobro) return;
+    if (!nombre || !montoTexto || !Number.isFinite(monto) || monto <= 0 || !fechaCobro) return;
     setSuscripcionesManuales((actuales) => [
       {
         id: `manual-${Date.now()}`,
