@@ -14,7 +14,8 @@ import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModa
 import { formatoMoneda } from "../utils/suscripcionesData";
 
 const FILTROS_CORREO_INICIALES = { cuentas: [], categorias: [], baja: [] };
-const SUSCRIPCION_MANUAL_INICIAL = { nombre: "", monto: "", diaCobro: "1", tipo: "Cobro", importancia: "Alta" };
+const SUSCRIPCION_MANUAL_INICIAL = { nombre: "", monto: "", fechaCobro: "", tipo: "Cobro", importancia: "Alta" };
+const formatoFechaCobro = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 /** Vista principal de suscripciones, compone el resumen, filtros y lista. */
 export default function SuscripcionesPage() {
@@ -80,14 +81,14 @@ export default function SuscripcionesPage() {
     evento.preventDefault();
     const nombre = suscripcionManual.nombre.trim();
     const monto = Number(suscripcionManual.monto);
-    const diaCobro = Number(suscripcionManual.diaCobro);
-    if (!nombre || !Number.isFinite(monto) || monto <= 0 || !Number.isFinite(diaCobro)) return;
+    const fechaCobro = suscripcionManual.fechaCobro;
+    if (!nombre || !Number.isFinite(monto) || monto <= 0 || !fechaCobro) return;
     setSuscripcionesManuales((actuales) => [
       {
         id: `manual-${Date.now()}`,
         nombre,
         monto,
-        diaCobro: Math.min(31, Math.max(1, Math.round(diaCobro))),
+        fechaCobro,
         tipo: suscripcionManual.tipo,
         importancia: suscripcionManual.importancia,
       },
@@ -141,7 +142,7 @@ export default function SuscripcionesPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-bg-dark">{item.nombre}</p>
-                      <p className="text-sm text-slate-text">{item.tipo} · Día {item.diaCobro}</p>
+                      <p className="text-sm text-slate-text">{item.tipo} · Cobro: {formatoFechaCobro.format(new Date(`${item.fechaCobro}T00:00:00`))}</p>
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${item.importancia === "Alta" ? "bg-emerald-primary/10 text-emerald-primary" : "bg-border-line/40 text-slate-text"}`}>
                       {item.importancia === "Alta" ? "Importante" : "Baja importancia"}
@@ -205,8 +206,8 @@ export default function SuscripcionesPage() {
             <label className="block space-y-2 text-sm font-medium text-bg-dark">Monto (COP)
               <input required type="number" min="1" step="1" value={suscripcionManual.monto} onChange={(e) => setSuscripcionManual((a) => ({ ...a, monto: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
             </label>
-            <label className="block space-y-2 text-sm font-medium text-bg-dark">Día de cobro
-              <input required type="number" min="1" max="31" step="1" value={suscripcionManual.diaCobro} onChange={(e) => setSuscripcionManual((a) => ({ ...a, diaCobro: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
+            <label className="block space-y-2 text-sm font-medium text-bg-dark">Fecha de cobro
+              <input required type="date" value={suscripcionManual.fechaCobro} onChange={(e) => setSuscripcionManual((a) => ({ ...a, fechaCobro: e.target.value }))} className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" />
             </label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
