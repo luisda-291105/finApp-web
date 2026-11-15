@@ -2,6 +2,8 @@ import { listarMovimientos } from "../../contabilidad/services/movimientosServic
 import { obtenerContactosPorUsuario } from "../../contactos/services/contactosService";
 import { obtenerOrigenContacto } from "../../contactos/utils/origenContacto";
 import { listarCuentasGmail, listarSuscripcionesGmail, obtenerCorreosGmail } from "../../../services/gmailServicio";
+import { obtener } from "../../../services/httpServicio";
+import { getEndpoint } from "../../../config/api.config";
 
 const extraerLista = (respuesta) => {
   if (Array.isArray(respuesta)) return respuesta;
@@ -242,6 +244,40 @@ async function datosCorreo(cuentaSeleccionada = "todas", cuentasSeleccionadas = 
   };
 }
 
+async function datosTrm() {
+  const respuesta = await obtener(getEndpoint("indicadores.trm"));
+  const datos = respuesta?.datos || respuesta?.data || respuesta || {};
+  const valor = valorNumerico(datos.valor ?? datos.tasa ?? datos.trm);
+  const variacionNumero = Number(datos.variacion ?? datos.cambio ?? datos.variacionPorcentual);
+  const variacion = Number.isFinite(variacionNumero)
+    ? `${variacionNumero >= 0 ? "+" : ""}${variacionNumero.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`
+    : (typeof datos.variacion === "string" ? datos.variacion : null);
+  const fechaVigencia = datos.fechaVigencia || datos.fecha || datos.vigencia || null;
+  const serieHistorica = Array.isArray(datos.historico || datos.serie) ? (datos.historico || datos.serie) : [];
+  const serie = serieHistorica.slice(-12).map((item, indice) => ({
+    etiqueta: item.etiqueta || item.fecha || `${indice + 1}`,
+    valor: valorNumerico(item.valor ?? item.tasa ?? item.trm),
+  }));
+  const maximo = Math.max(...serie.map((item) => item.valor), 0);
+  const serieNormalizada = serie.map((item) => ({
+    ...item,
+    altura: maximo ? Math.max(8, Math.round((item.valor / maximo) * 100)) : 0,
+  }));
+  const detalles = [
+    ...(fechaVigencia ? [{ etiqueta: "Fecha de vigencia", valor: String(fechaVigencia) }] : []),
+    ...(datos.unidadOrigen || datos.monedaOrigen ? [{ etiqueta: "Moneda origen", valor: String(datos.monedaOrigen || datos.unidadOrigen) }] : [{ etiqueta: "Moneda origen", valor: "USD" }]),
+    ...(datos.unidadDestino || datos.monedaDestino ? [{ etiqueta: "Moneda destino", valor: String(datos.monedaDestino || datos.unidadDestino) }] : [{ etiqueta: "Moneda destino", valor: "COP" }]),
+    ...(datos.fuente ? [{ etiqueta: "Fuente", valor: String(datos.fuente) }] : []),
+  ];
+  return {
+    valor: Number.isFinite(valor) && valor > 0 ? valor : null,
+    variacion,
+    serie: serieNormalizada,
+    detalles,
+    unidad: "moneda",
+  };
+}
+
 export async function obtenerDatosMuestra(fuente, idUsuario, segmento = "todos", cuentaCorreo = "todas", cuentasCorreoSeleccionadas = null) {
   switch (fuente) {
     case "suscripciones":
@@ -252,6 +288,8 @@ export async function obtenerDatosMuestra(fuente, idUsuario, segmento = "todos",
       return datosCorreo(cuentaCorreo, cuentasCorreoSeleccionadas);
     case "contactos":
       return datosContactos(extraerLista(await obtenerContactosPorUsuario(idUsuario)));
+    case "trm":
+      return datosTrm();
     default:
       throw new Error(`No se reconoce la fuente «${fuente}» para esta muestra.`);
   }

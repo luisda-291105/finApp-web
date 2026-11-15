@@ -3,6 +3,7 @@ export const FUENTES_MUESTRAS = [
   { valor: "contabilidad", etiqueta: "Contabilidad", destino: "/dashboard/contabilidad" },
   { valor: "correo", etiqueta: "Correo", destino: "/dashboard/correos" },
   { valor: "contactos", etiqueta: "Contactos", destino: "/dashboard/contactos" },
+  { valor: "trm", etiqueta: "TRM (USD/COP)", destino: "/dashboard" },
 ];
 
 export const SEGMENTOS_CONTABLES = [
