@@ -29,8 +29,7 @@ export default function CorreosPage() {
   );
   const notificaciones = useNotificacionesCorreos({
     gmailConectado: estado.gmailConectado,
-    cuentaSeleccionadaId: estado.cuentaSeleccionadaId,
-    cuentaGmail: estado.cuentaGmail,
+    cuentasGmail: estado.cuentasGmail,
     mensajes: mensajesFinancieros,
   });
   return (

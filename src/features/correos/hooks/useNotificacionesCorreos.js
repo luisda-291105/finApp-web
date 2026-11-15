@@ -1,7 +1,7 @@
 /**
  * @uso        Gestionar notificaciones temporales y bandeja de mensajes de movimientos Gmail
- * @funciones  useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId, cuentaGmail, mensajes })
- * @datos      Consulta alertas Gmail, sincroniza sugerencias financieras y persiste notificaciones en localStorage
+ * @funciones  useNotificacionesCorreos({ gmailConectado, cuentasGmail, mensajes })
+ * @datos      Consulta alertas Gmail, sincroniza sugerencias financieras para todas las cuentas y persiste notificaciones en localStorage
  * @eventos    Polling periódico de alertas, llegada de nuevas notificaciones y marcado como visto
  * @estados    notificaciones, toast, sincronizando, errorSincronizacion
  * @usadoPor   CorreosPage
@@ -35,7 +35,7 @@ function guardarBandeja(notificaciones) {
   }
 }
 
-export function useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId, cuentaGmail, mensajes = [] }) {
+export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], mensajes = [] }) {
   const [notificaciones, setNotificaciones] = useState(() => leerBandeja());
   const [toast, setToast] = useState(null);
   const [sincronizando, setSincronizando] = useState(false);
@@ -43,7 +43,7 @@ export function useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId,
   const idsConocidosRef = useRef(new Set(leerBandeja().map((n) => n.id)));
   const toastTimerRef = useRef(null);
 
-  const agregarNotificaciones = useCallback((nuevas, origen = "gmail") => {
+  const agregarNotificaciones = useCallback((nuevas, origen = "gmail", cuentaGmailNotificacion = "") => {
     if (!nuevas.length) return;
     setNotificaciones((actuales) => {
       const existentes = new Set(actuales.map((n) => n.id));
@@ -56,7 +56,7 @@ export function useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId,
           fecha: n.fecha || new Date().toISOString(),
           leida: false,
           origen,
-          cuentaGmail: cuentaGmail || "",
+          cuentaGmail: cuentaGmailNotificacion || "",
         }));
       if (!entrantes.length) return actuales;
       entrantes.forEach((n) => idsConocidosRef.current.add(n.id));
@@ -71,7 +71,7 @@ export function useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId,
       toastTimerRef.current = window.setTimeout(() => setToast(null), 5000);
       return actualizadas;
     });
-  }, [cuentaGmail]);
+  }, []);
 
   const cerrarToast = useCallback(() => {
     window.clearTimeout(toastTimerRef.current);
@@ -103,58 +103,67 @@ export function useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId,
     };
   }, [gmailConectado, agregarNotificaciones]);
 
-  // Sincronización de sugerencias financieras (lógica preservada sin UI de tarjeta)
+  // Sincronización de sugerencias financieras para todas las cuentas (lógica preservada sin UI de tarjeta)
   useEffect(() => {
-    if (!gmailConectado || !cuentaSeleccionadaId) return undefined;
+    if (!gmailConectado || cuentasGmail.length === 0) return undefined;
     let vigente = true;
     const sincronizar = async () => {
       setSincronizando(true);
       setErrorSincronizacion("");
       try {
-        const respuestaCorreos = await obtenerContenidoCorreosFinancierosGmail(
-          cuentaSeleccionadaId,
-          mensajes
+        const cuentasIds = cuentasGmail.map((c) => c.id).filter(Boolean);
+        let totalGuardados = 0;
+        for (const cuentaId of cuentasIds) {
+          const cuenta = cuentasGmail.find((c) => String(c.id) === String(cuentaId));
+          const candidatosCuenta = mensajes
+            .filter((correo) => String(correo.cuentaGmailId || "") === String(cuentaId))
             .filter(esCandidatoFinanciero)
             .slice(0, 5)
-            .map((correo) => ({ ...correo, cuentaGmailId: cuentaSeleccionadaId })),
-        );
-        if (!vigente) return;
-        const cuentas = new Map(
-          (respuestaCorreos || []).map((correo) => [correo.id, { ...correo, cuentaGmailId: cuentaSeleccionadaId }]),
-        );
-        const candidatas = [...cuentas.values()].map(extraerMovimientoSugerido).filter(Boolean);
-        if (!candidatas.length) return;
-        const importados = await listarCorreosImportados(candidatas.map((item) => item.origenId));
-        const origenesImportados = new Set(Array.isArray(importados) ? importados : importados?.data || []);
-        let guardados = 0;
-        for (const item of candidatas.filter((candidata) => !origenesImportados.has(candidata.origenId))) {
-          try {
-            await guardarCorreoPorRevisar({
-              idBolsillo: null,
-              tipo: item.tipo,
-              fecha: item.fecha,
-              monto: item.monto,
-              categoria: item.categoria,
-              concepto: item.concepto,
-              origenTipo: "GMAIL",
-              origenId: item.origenId,
-              origenNombre: item.remitente,
-            });
-            guardados += 1;
-          } catch {
-            // Continúa con el resto de candidatos.
+            .map((correo) => ({ ...correo, cuentaGmailId: cuentaId }));
+          if (candidatosCuenta.length === 0) continue;
+
+          const respuestaCorreos = await obtenerContenidoCorreosFinancierosGmail(cuentaId, candidatosCuenta);
+          if (!vigente) return;
+          const cuentasMap = new Map(
+            (respuestaCorreos || []).map((correo) => [correo.id, { ...correo, cuentaGmailId: cuentaId }]),
+          );
+          const candidatas = [...cuentasMap.values()].map(extraerMovimientoSugerido).filter(Boolean);
+          if (!candidatas.length) continue;
+          const importados = await listarCorreosImportados(candidatas.map((item) => item.origenId));
+          const origenesImportados = new Set(Array.isArray(importados) ? importados : importados?.data || []);
+          let guardados = 0;
+          for (const item of candidatas.filter((candidata) => !origenesImportados.has(candidata.origenId))) {
+            try {
+              await guardarCorreoPorRevisar({
+                idBolsillo: null,
+                tipo: item.tipo,
+                fecha: item.fecha,
+                monto: item.monto,
+                categoria: item.categoria,
+                concepto: item.concepto,
+                origenTipo: "GMAIL",
+                origenId: item.origenId,
+                origenNombre: item.remitente,
+              });
+              guardados += 1;
+            } catch {
+              // Continúa con el resto de candidatos.
+            }
+          }
+          totalGuardados += guardados;
+          if (vigente && guardados > 0) {
+            agregarNotificaciones(
+              [{
+                id: `sync-${cuentaId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                asunto: `${guardados} movimiento${guardados === 1 ? "" : "s"} enviado${guardados === 1 ? "" : "s"} a Contabilidad · Por revisar`,
+                fecha: new Date().toISOString(),
+              }],
+              "sincronizacion",
+              cuenta?.email || "",
+            );
           }
         }
-        if (vigente && guardados > 0) {
-          agregarNotificaciones(
-            [{
-              id: `sync-${cuentaSeleccionadaId}-${Date.now()}`,
-              asunto: `${guardados} movimiento${guardados === 1 ? "" : "s"} enviado${guardados === 1 ? "" : "s"} a Contabilidad · Por revisar`,
-              fecha: new Date().toISOString(),
-            }],
-            "sincronizacion",
-          );
-        }
+        if (!vigente && totalGuardados === 0) return;
       } catch (fallo) {
         if (vigente) setErrorSincronizacion(fallo?.message || "No se pudo analizar Gmail.");
       } finally {
@@ -165,7 +174,7 @@ export function useNotificacionesCorreos({ gmailConectado, cuentaSeleccionadaId,
     return () => {
       vigente = false;
     };
-  }, [gmailConectado, cuentaGmail, cuentaSeleccionadaId, mensajes, agregarNotificaciones]);
+  }, [gmailConectado, cuentasGmail, mensajes, agregarNotificaciones]);
 
   const marcarTodasLeidas = useCallback(async () => {
     const idsGmail = notificaciones
