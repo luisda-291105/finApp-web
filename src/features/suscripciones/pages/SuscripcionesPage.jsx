@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Filter, Plus, Search } from "lucide-react";
 import { Card } from "../../../components/ui";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
@@ -13,6 +13,7 @@ import BuscarSuscripcionesModal from "../components/modals/BuscarSuscripcionesMo
 import FiltrarSuscripcionesModal from "../components/modals/FiltrarSuscripcionesModal";
 import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModal";
 import CrearSuscripcionManualModal from "../components/modals/CrearSuscripcionManualModal";
+import { AlertaGlobal } from "../../../components/ui/alertas";
 import { formatoMoneda } from "../utils/suscripcionesData";
 
 const FILTROS_CORREO_INICIALES = { cuentas: [], categorias: [], baja: [] };
@@ -37,10 +38,21 @@ export default function SuscripcionesPage() {
   const [suscripcionManual, setSuscripcionManual] = useState(SUSCRIPCION_MANUAL_INICIAL);
   const [suscripcionesManuales, setSuscripcionesManuales] = useState([]);
   const [colapsadoCorreo, setColapsadoCorreo] = useState(false);
+  const [errorRecurrentesCerrado, setErrorRecurrentesCerrado] = useState("");
+  const [errorGmailCerrado, setErrorGmailCerrado] = useState("");
+  const [erroresCuentasCerrados, setErroresCuentasCerrados] = useState("");
   const triggerBuscarRef = useRef(null);
   const triggerFiltrarRef = useRef(null);
   const triggerDetalleCorreoRef = useRef(null);
   const triggerManualRef = useRef(null);
+
+  useEffect(() => { setErrorRecurrentesCerrado(""); }, [recurrentes.error]);
+  useEffect(() => { setErrorGmailCerrado(""); }, [gmail.error]);
+  const textoErroresCuentas = useMemo(
+    () => gmail.erroresCuentas.map((item) => `${item.correo}: ${item.mensaje}`).join(" · "),
+    [gmail.erroresCuentas],
+  );
+  useEffect(() => { setErroresCuentasCerrados(""); }, [textoErroresCuentas]);
 
   const suscripcionesCorreoFiltradas = useMemo(() => {
     const termino = busquedaCorreo.trim().toLocaleLowerCase();
@@ -126,6 +138,24 @@ export default function SuscripcionesPage() {
 
   return (
     <section aria-labelledby="suscripciones-titulo" className="space-y-6 pt-6 pb-12">
+      <AlertaGlobal
+        idBase="suscripciones-recurrentes-error"
+        tipo="error"
+        mensaje={recurrentes.error && recurrentes.error !== errorRecurrentesCerrado ? recurrentes.error : ""}
+        alCerrar={() => setErrorRecurrentesCerrado(recurrentes.error || "")}
+      />
+      <AlertaGlobal
+        idBase="suscripciones-gmail-error"
+        tipo="error"
+        mensaje={gmail.error && gmail.error !== errorGmailCerrado ? gmail.error : ""}
+        alCerrar={() => setErrorGmailCerrado(gmail.error || "")}
+      />
+      <AlertaGlobal
+        idBase="suscripciones-gmail-cuentas-error"
+        tipo="error"
+        mensaje={textoErroresCuentas && textoErroresCuentas !== erroresCuentasCerrados ? `Algunas cuentas Gmail no se pudieron consultar: ${textoErroresCuentas}` : ""}
+        alCerrar={() => setErroresCuentasCerrados(textoErroresCuentas)}
+      />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
@@ -171,8 +201,6 @@ export default function SuscripcionesPage() {
           {!colapsadoCorreo && (
             <div id="suscripciones-correo-contenido" className="space-y-4">
               {!cuentasGmail.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-sm text-slate-text">Conecta Gmail desde <Link to="/dashboard/configuracion" className="font-semibold text-emerald-primary underline">Configuración → Fuentes</Link> para consultar las suscripciones.</p>}
-              {gmail.error && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{gmail.error}</p>}
-              {gmail.erroresCuentas.length > 0 && <ul aria-label="Cuentas Gmail con error" className="space-y-1 rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900">{gmail.erroresCuentas.map((item) => <li key={item.correo}><strong>{item.correo}:</strong> {item.mensaje}</li>)}</ul>}
               {gmail.cargando && <p role="status" className="py-4 text-sm text-slate-text">Consultando las suscripciones recientes por cuenta Gmail…</p>}
               {!gmail.cargando && gmail.consultaRealizada && <p role="status" className="text-sm text-slate-text">Mostrando {suscripcionesCorreoFiltradas.length} de {gmail.suscripcionesCorreo.length} suscripciones detectadas en {cuentasGmail.length} {cuentasGmail.length === 1 ? "cuenta" : "cuentas"}.</p>}
               {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length === 0 && !gmail.erroresCuentas.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text">No se detectaron suscripciones en los correos recientes. Gmail puede mostrar más en su administrador.</p>}

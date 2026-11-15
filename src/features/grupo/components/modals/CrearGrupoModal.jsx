@@ -14,6 +14,7 @@ import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import { crearGrupo } from "../../services/gruposService";
 import GrupoForm from "../forms/GrupoForm";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 function opcionesTrampa(refPanel) {
   return { allowOutsideClick: true, escapeDeactivates: false, initialFocus: () => refPanel.current, returnFocusOnDeactivate: false };
@@ -86,7 +87,7 @@ export default function CrearGrupoModal({ abierto, alCerrar, triggerRef, alGuard
           </header>
           <form onSubmit={enviar} className="space-y-4">
             <GrupoForm valores={valores} alCambiar={cambiar} deshabilitado={cargando} />
-            {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
+            <AlertaGlobal tipo="error" mensaje={error} idBase="CrearGrupoModal-error" />
             <button type="submit" disabled={cargando} className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">{cargando ? "Guardando…" : "Guardar registro"}</button>
           </form>
         </section>

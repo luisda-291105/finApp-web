@@ -1,4 +1,5 @@
 import { FUENTES_MUESTRAS, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION } from "../../utils/inicioHelpers";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 /** Campos controlados para crear o editar una muestra. */
 export default function CrearMuestraForm({
@@ -74,7 +75,7 @@ export default function CrearMuestraForm({
           </div>
         </fieldset>
         {cargandoCuentasCorreo && <p role="status" className="text-sm text-slate-text">Cargando cuentas de correo…</p>}
-        {errorCuentasCorreo && <p role="alert" className="text-sm text-red-700">{errorCuentasCorreo}</p>}
+        <AlertaGlobal tipo="error" mensaje={errorCuentasCorreo} idBase="CrearMuestraForm-errorCuentasCorreo" />
         {!cargandoCuentasCorreo && !errorCuentasCorreo && cuentasCorreo.length === 0 && <p className="text-sm text-slate-text">No hay cuentas de correo disponibles.</p>}
       </>}
 
@@ -89,7 +90,7 @@ export default function CrearMuestraForm({
       <button type="submit" disabled={guardando} className="w-full cursor-pointer rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-60">
         {guardando ? "Guardando…" : indiceEditando === null ? "guardar muestra" : "guardar cambios"}
       </button>
-      {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+      <AlertaGlobal tipo="error" mensaje={error} idBase="CrearMuestraForm-error" />
     </form>
   );
 }

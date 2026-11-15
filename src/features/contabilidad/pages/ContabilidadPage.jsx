@@ -19,6 +19,7 @@ import ModalMovimientosPorRevisar from "../components/modals/ModalMovimientosPor
 import MovimientosContablesSection from "../components/sections/MovimientosContablesSection";
 import useContabilidad from "../hooks/useContabilidad";
 import { agregarSaldoDisponible, crearFiltrosMovimiento } from "../utils/contabilidadHelpers";
+import { AlertaGlobal } from "../../../components/ui/alertas";
 
 /** Página de bolsillos persistidos y movimientos contables. */
 export default function ContabilidadPage() {
@@ -77,7 +78,7 @@ export default function ContabilidadPage() {
     <ModalMovimientosPorRevisar abierto={bandejaRevisionAbierta} bolsillos={bolsillos} recarga={recargaRevision} triggerRef={disparadorMovimientoRef} alCerrar={() => setBandejaRevisionAbierta(false)} alEditar={(movimiento) => { setBandejaRevisionAbierta(false); setMovimientoEditando(movimiento); setCrearMovimientoAbierto(true); }} alConfirmar={recargarMovimientos} />
     <ModalDetalleRegistro abierto={Boolean(movimientoEliminando)} titulo="Eliminar movimiento" triggerRef={disparadorMovimientoRef} alCerrar={() => !eliminandoMovimiento && setMovimientoEliminando(null)} ancho="max-w-md">
       <p className="mb-4 text-sm text-slate-text">¿Eliminar definitivamente el movimiento <strong className="text-bg-dark">{movimientoEliminando?.concepto || movimientoEliminando?.categoria}</strong>? Esta acción no se puede deshacer.</p>
-      {errorEliminarMovimiento && <p role="alert" className="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{errorEliminarMovimiento}</p>}
+      <AlertaGlobal tipo="error" mensaje={errorEliminarMovimiento} idBase="ContabilidadPage-errorEliminarMovimiento" />
       <div className="flex justify-end gap-2"><button type="button" disabled={eliminandoMovimiento} onClick={() => setMovimientoEliminando(null)} className="min-h-10 rounded-xl border border-border-line px-4 text-sm font-medium text-bg-dark hover:bg-bg-cream disabled:opacity-50">Cancelar</button><button type="button" disabled={eliminandoMovimiento} onClick={confirmarEliminarMovimiento} className="min-h-10 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-50">{eliminandoMovimiento ? "Eliminando…" : "Eliminar movimiento"}</button></div>
     </ModalDetalleRegistro>
   </section>;

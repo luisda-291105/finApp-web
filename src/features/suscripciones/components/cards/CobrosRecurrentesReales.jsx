@@ -2,13 +2,14 @@
  * @uso        Mostrar cobros recurrentes inferidos de movimientos reales
  * @funciones  CobrosRecurrentesReales({ datos, cargando, error })
  * @datos      DTOs del endpoint movimiento/recurrentes
- * @eventos    Ninguno
- * @estados    Renderiza carga, error, métricas y resultados; colapsable en móvil
+ * @eventos    Ninguno (las notificaciones de error se muestran en la pila lateral de la página)
+ * @estados    Renderiza carga, métricas y resultados; colapsable en móvil
  * @usadoPor   SuscripcionesPage
  */
 import { useState } from "react";
 import { CalendarClock, ChevronDown, CircleDollarSign, Repeat } from "lucide-react";
 import { Card } from "../../../../components/ui";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 const moneda = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -64,14 +65,6 @@ export default function CobrosRecurrentesReales({ datos, cargando, error }) {
       </button>
 
       <div id="cobros-recurrentes-contenido" className={`${colapsadoMovil ? "hidden" : "block"} space-y-4 sm:block`}>
-        {error && (
-          <p
-            role="alert"
-            className="rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900"
-          >
-            {error}
-          </p>
-        )}
         <div className="grid gap-3 sm:grid-cols-3">
           <Card className="p-4">
             <div className="flex items-center gap-2 text-sm text-slate-text">
@@ -107,14 +100,12 @@ export default function CobrosRecurrentesReales({ datos, cargando, error }) {
           </p>
         )}
         {!cargando && !error && datos.length === 0 && (
-          <div
-            role="alert"
-            className="rounded-xl border border-amber-300/50 bg-amber-50/90 px-4 py-3 text-sm text-amber-900"
-          >
-            Aún no hay suficientes gastos periódicos registrados para detectar
-            suscripciones. Registra al menos dos cobros del mismo servicio con una
-            frecuencia regular.
-          </div>
+          <AlertaGlobal
+            tipo="advertencia"
+            duracionMs={6000}
+            idBase="cobros-recurrentes-sin-datos"
+            mensaje="Aún no hay suficientes gastos periódicos registrados para detectar suscripciones. Registra al menos dos cobros del mismo servicio con una frecuencia regular."
+          />
         )}
         {!cargando && datos.length > 0 && (
           <ul

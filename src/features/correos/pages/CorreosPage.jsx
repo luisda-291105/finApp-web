@@ -16,6 +16,7 @@ import CorreoCuentaCard from "../components/cards/CorreoCuentaCard";
 import BandejaCorreosModal from "../components/modals/BandejaCorreosModal";
 import BandejaNotificacionesModal from "../components/modals/BandejaNotificacionesModal";
 import { fechaLegible } from "../utils/correoHelpers";
+import { AlertaGlobal } from "../../../components/ui/alertas";
 
 /** Renderiza las direcciones y entrega las acciones de datos a su hook. */
 export default function CorreosPage() {
@@ -98,7 +99,7 @@ export default function CorreosPage() {
         {estado.ultimaConsulta && <p className="text-xs text-slate-text">Última consulta: {fechaLegible(estado.ultimaConsulta.toISOString())} · actualización cada 5 minutos mientras esta página esté abierta.</p>}
       </Card>
 
-      {estado.error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{estado.error}</p>}
+      <AlertaGlobal tipo="error" mensaje={estado.error} idBase="CorreosPage-estado-error" />
 
       <BandejaCorreosModal fuente={estado.fuenteSeleccionada} gmailConectado={estado.gmailConectado} cuentaId={estado.cuentaSeleccionadaId} cuentaGmail={estado.cuentaGmail} mensajesFuente={estado.mensajesFuente} cargandoMensajes={estado.cargandoMensajes} triggerRef={disparadorFuenteRef} alCerrar={estado.cerrarBandeja} />
       <BandejaNotificacionesModal

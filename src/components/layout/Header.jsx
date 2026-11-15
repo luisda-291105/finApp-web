@@ -15,8 +15,9 @@ import { Link } from "react-router-dom";
  * @param {Object} props
  * @param {(modo: 'login' | 'registro') => void} [props.alAbrirAuth] - Callback para abrir modal (requerido en modo landing)
  * @param {'landing' | 'dashboard'} [props.modo='landing'] - Modo de visualización
+ * @param {boolean} [props.oculto=false] - Oculta el header (p. ej. mientras el modal de acceso está abierto)
  */
-export default function Header({ alAbrirAuth, modo = "landing" }) {
+export default function Header({ alAbrirAuth, modo = "landing", oculto = false }) {
   const [desplazado, setDesplazado] = useState(false);
 
   useEffect(() => {
@@ -29,9 +30,11 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
     return () => window.removeEventListener("scroll", manejarScroll);
   }, []);
 
+  if (oculto) return null;
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 w-full transition-all duration-400 ease-in-out ${
+      className={`fixed top-0 left-0 right-0 z-[1100] w-full transition-all duration-400 ease-in-out ${
         desplazado
           ? "bg-[#f7f6f2]/92 glass-surface border-b border-[#e0ddd8] py-3.5 shadow-sm"
           : "bg-transparent border-b border-transparent py-5"
@@ -40,8 +43,8 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logotipo FinApp */}
         <Link to="/" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
-          <span className="text-[#1a7a5e] sm:hidden">F</span>
-          <span className="hidden sm:inline">Fin</span>
+          <span className={`transition-colors duration-400 sm:hidden ${desplazado ? "text-[#0f1117]" : "text-[#1a7a5e]"}`}>F</span>
+          <span className={`hidden transition-colors duration-400 sm:inline ${desplazado ? "text-[#0f1117]" : "text-[#1a7a5e]"}`}>Fin</span>
           <span
             className={`transition-colors duration-400 ${
               desplazado ? "text-[#0f1117]" : "text-white"

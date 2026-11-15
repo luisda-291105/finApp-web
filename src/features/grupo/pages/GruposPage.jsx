@@ -14,6 +14,7 @@ import { useGrupos } from "../hooks/useGrupos";
 import GrupoCard from "../components/cards/GrupoCard";
 import CrearGrupoModal from "../components/modals/CrearGrupoModal";
 import GrupoDetalleModal from "../components/modals/GrupoDetalleModal";
+import { AlertaGlobal } from "../../../components/ui/alertas";
 
 /** Renderiza el listado de grupos y conecta sus acciones. */
 export default function GruposPage() {
@@ -45,7 +46,7 @@ export default function GruposPage() {
         <button type="button" ref={disparadorRef} onClick={() => setModalAbierto(true)} aria-label="Crear nuevo grupo" className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream shadow-md transition-all hover:scale-[1.02] hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"><Plus className="h-4 w-4" aria-hidden="true" /><span>Nuevo grupo</span></button>
       </div>
       <AvisoEnDesarrollo />
-      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      <AlertaGlobal tipo="error" mensaje={error} idBase="GruposPage-error" />
       {!usuario?.idUsuario && <p className="text-sm text-slate-text">Inicia sesión para consultar y crear grupos.</p>}
       <div className="space-y-4"><h2 className="text-lg font-semibold text-bg-dark">Mis grupos</h2>
         {cargando && <p role="status" className="text-sm text-slate-text">Cargando grupos…</p>}

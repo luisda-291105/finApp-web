@@ -116,7 +116,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
           aria-label="Menú de navegación"
           tabIndex={-1}
           className={clsx(
-            "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col glass-surface border-l z-55 outline-none",
+            "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col glass-surface border-l z-[1110] outline-none",
             temaClaro ? "bg-bg-cream/95 border-border-line/70 shadow-xl" : "bg-bg-dark/95 border-border-line/20"
           )}
           initial={{ x: "100%" }}
@@ -150,7 +150,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
     <>
       {/* Backdrop: cierra el menú al tocar/clicar fuera (`allowOutsideClick` deja pasar el evento) */}
       <div
-        className="fixed inset-0 bg-bg-dark/80 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-bg-dark/80 backdrop-blur-sm z-[1105]"
         onClick={handleOverlayClick}
         aria-hidden="true"
       />

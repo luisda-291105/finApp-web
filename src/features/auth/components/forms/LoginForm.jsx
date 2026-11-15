@@ -1,4 +1,5 @@
 import { CLASE_ENTRADA } from "./authFormStyles";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 export default function LoginForm({ idUsuario, contrasena, alCambiarIdUsuario, alCambiarContrasena, alEnviar, cargando, mensaje }) {
   return (
@@ -28,7 +29,7 @@ export default function LoginForm({ idUsuario, contrasena, alCambiarIdUsuario, a
           className={CLASE_ENTRADA}
         />
       </div>
-      {mensaje && <p role="alert" className="rounded-xl border border-[#1a7a5e]/50 bg-[#1a7a5e]/20 p-3 text-xs text-[#6ee7c0]">{mensaje}</p>}
+      <AlertaGlobal tipo="error" mensaje={mensaje} idBase="LoginForm-mensaje" />
       <button type="submit" disabled={cargando} className="mt-4 w-full rounded-xl bg-[#1a7a5e] py-3 font-medium text-white shadow-lg transition-all hover:bg-[#15634c] disabled:opacity-50">
         {cargando ? "Procesando..." : "Entrar a mi cuenta"}
       </button>

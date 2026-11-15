@@ -25,6 +25,7 @@ import { useFuentesConfiguracion } from "../hooks/useFuentesConfiguracion";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { GMAIL_CONFIGURADO } from "../../../services/gmailServicio";
 import { BotonCerrar } from "../../../components/ui";
+import { AlertaGlobal } from "../../../components/ui/alertas";
 
 export default function ConfiguracionPage() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);
@@ -233,7 +234,7 @@ export default function ConfiguracionPage() {
       )}
 
       {avisoNc && <p role="status" className="fixed right-4 top-20 z-[120] w-[min(calc(100vw-2rem),24rem)] rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 shadow-xl">{avisoNc}</p>}
-      {errorNc && <p role="alert" className="fixed right-4 top-20 z-[120] w-[min(calc(100vw-2rem),24rem)] rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 shadow-xl">{errorNc}</p>}
+      <AlertaGlobal tipo="error" mensaje={errorNc} idBase="ConfiguracionPage-errorNc" />
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { CLASE_ENTRADA } from "./authFormStyles";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 export default function RegistroForm({ idUsuario, nombre, correo, telefono, contrasena, alCambiarIdUsuario, alCambiarNombre, alCambiarCorreo, alCambiarTelefono, alCambiarContrasena, alEnviar, cargando, mensaje }) {
   return (
@@ -12,7 +13,7 @@ export default function RegistroForm({ idUsuario, nombre, correo, telefono, cont
         <input id="auth-contrasena" type="password" required autoComplete="new-password" aria-label="Contraseña" aria-describedby="auth-contrasena-ayuda" value={contrasena} onChange={(evento) => alCambiarContrasena(evento.target.value)} placeholder="Ingresa tu contraseña" minLength={8} className={CLASE_ENTRADA} />
         <p id="auth-contrasena-ayuda" className="mt-2 text-xs text-white/70">Mínimo 8 caracteres</p>
       </div>
-      {mensaje && <p role="alert" className="rounded-xl border border-[#1a7a5e]/50 bg-[#1a7a5e]/20 p-3 text-xs text-[#6ee7c0]">{mensaje}</p>}
+      <AlertaGlobal tipo="error" mensaje={mensaje} idBase="RegistroForm-mensaje" />
       <button type="submit" disabled={cargando} className="mt-4 w-full rounded-xl bg-[#1a7a5e] py-3 font-medium text-white shadow-lg transition-all hover:bg-[#15634c] disabled:opacity-50">
         {cargando ? "Procesando..." : "Crear cuenta"}
       </button>

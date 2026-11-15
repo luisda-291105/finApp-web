@@ -1,4 +1,5 @@
 import CampoDetalle from "./CampoDetalle";
+import { AlertaGlobal } from "../../../../../components/ui/alertas";
 
 function normalizarDestino(destino) {
   let candidato = String(destino || "");
@@ -55,7 +56,7 @@ export default function ContenidoCorreo({ contenido, fragmento, cargando, error 
   const texto = contenido || fragmento || "Este mensaje no contiene texto legible.";
   return <CampoDetalle titulo="Contenido">
     {cargando && <p role="status" className="text-slate-text">Cargando contenido completo…</p>}
-    {error && <p role="alert" className="mb-2 text-sm text-red-700">{error}</p>}
+    <AlertaGlobal tipo="error" mensaje={error} idBase="ContenidoCorreo-error" />
     {!cargando && <div className="max-h-[38vh] overflow-y-auto whitespace-pre-wrap">{renderEnlaces(texto)}</div>}
   </CampoDetalle>;
 }

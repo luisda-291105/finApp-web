@@ -3,6 +3,7 @@ import { BotonServicioExterno } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { verificarPermisoContactosGoogle } from "../../../../services/gmailServicio";
 import EstadoFuente from "../cards/EstadoFuente";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 const claseCampo = "min-h-11 w-full min-w-0 rounded-xl border border-border-line bg-bg-cream px-3 text-sm text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary";
 
@@ -89,8 +90,8 @@ export default function FuenteDetalleModal({ abierto, fuente, triggerRef, cuenta
     <ModalDetalleRegistro abierto={abierto} titulo="Detalle de fuente" alCerrar={alCerrar} triggerRef={triggerRef} ancho="max-w-lg">
       {editando ? (
         <form className="space-y-4" onSubmit={guardar}>
-          {errorOperacionFuente && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorOperacionFuente}</p>}
-          {errorGmail && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorGmail}</p>}
+          <AlertaGlobal tipo="error" mensaje={errorOperacionFuente} idBase="FuenteDetalleModal-errorOperacionFuente" />
+          <AlertaGlobal tipo="error" mensaje={errorGmail} idBase="FuenteDetalleModal-errorGmail" />
           <label className="block space-y-1.5 text-sm font-medium text-bg-dark">Tipo
             <select className={claseCampo} value={tipo} onChange={(evento) => setTipo(evento.target.value)}>
               <option value="CORREO">Correo</option><option value="TELEFONO">Teléfono</option><option value="OTRO">Otro</option>
@@ -113,8 +114,8 @@ export default function FuenteDetalleModal({ abierto, fuente, triggerRef, cuenta
         </form>
       ) : (
         <div className="space-y-5">
-          {errorOperacionFuente && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorOperacionFuente}</p>}
-          {errorGmail && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorGmail}</p>}
+          <AlertaGlobal tipo="error" mensaje={errorOperacionFuente} idBase="FuenteDetalleModal-errorOperacionFuente" />
+          <AlertaGlobal tipo="error" mensaje={errorGmail} idBase="FuenteDetalleModal-errorGmail" />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="rounded-lg bg-emerald-primary/10 px-3 py-1 text-xs font-semibold uppercase text-emerald-primary">{fuente.tipo || "OTRO"}</span>
             <EstadoFuente activo={fuente.estado !== false} />

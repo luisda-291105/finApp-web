@@ -4,6 +4,7 @@ import { Card } from "../../../../components/ui";
 import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, alAutorizarContactosGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);
@@ -48,7 +49,7 @@ export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFue
         </div>
 
         <div id="fuentes-registradas-contenido" hidden={!abierto} className="space-y-4">
-        {errorGmail && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorGmail}</p>}
+        <AlertaGlobal tipo="error" mensaje={errorGmail} idBase="FuentesRegistradas-errorGmail" />
         {avisoGmail && <p role="status" className="text-sm text-emerald-primary">{avisoGmail}</p>}
 
         <div className="space-y-3 pt-2" aria-label="Fuentes registradas">

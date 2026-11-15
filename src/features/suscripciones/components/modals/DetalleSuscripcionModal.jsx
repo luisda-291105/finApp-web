@@ -20,6 +20,7 @@ import { clasificarMovimientoCorreo, extraerMovimientoSugerido } from "../../../
 import { crearMovimiento, listarCorreosImportados } from "../../../contabilidad/services/movimientosService";
 import { listarBolsillos } from "../../../contabilidad/services/bolsillosService";
 import ModalCrearMovimientoContable from "../../../contabilidad/components/modals/ModalCrearMovimientoContable";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 function textoActividad(cantidad) {
   if (cantidad == null) return "Actividad reciente no disponible";
@@ -259,7 +260,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
           )}
         </div>
         {cargandoMensajes && <p role="status" className="text-sm text-slate-text">Cargando mensajes recientes…</p>}
-        {errorMensajes && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{errorMensajes}</p>}
+        <AlertaGlobal tipo="error" mensaje={errorMensajes} idBase="DetalleSuscripcionModal-errorMensajes" />
         {!cargandoMensajes && !errorMensajes && mensajes.length === 0 && <p className="text-sm text-slate-text">No hay mensajes recientes de este remitente en la cuenta seleccionada.</p>}
         <button
           ref={triggerMensajesRef}
@@ -283,7 +284,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
         {!suscripcion.bajaConUnClic && suscripcion.urlBaja && <a href={suscripcion.urlBaja} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><ExternalLink className="h-4 w-4" aria-hidden="true" />Abrir página para anular</a>}
         {suscripcion.mailtoBaja && <a href={suscripcion.mailtoBaja} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><Mail className="h-4 w-4" aria-hidden="true" />Preparar correo de baja</a>}
         {resultadoBaja && <p role="status" className="flex gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{resultadoBaja}</p>}
-        {errorBaja && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">{errorBaja}</p>}
+        <AlertaGlobal tipo="error" mensaje={errorBaja} idBase="DetalleSuscripcionModal-errorBaja" />
       </section>
 
       <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-xs leading-relaxed text-slate-text">FinApp detecta remitentes suscritos en Gmail y muestra aquí sus mensajes de los últimos 90 días. Desde cada mensaje puedes abrir el original en Gmail.</p>
@@ -318,7 +319,11 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
         {(errorMensajes || errorImportacion) && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{errorMensajes || errorImportacion}</p>}
         {avisoImportacion && <p role="status" className="rounded-xl border border-emerald-300/40 bg-emerald-50 p-3 text-sm text-emerald-800">{avisoImportacion}</p>}
         {!cargandoMensajes && !errorMensajes && mensajes.length === 0 && <p className="text-sm text-slate-text">No hay mensajes recientes de este remitente en la cuenta seleccionada.</p>}
-        {!cargandoMensajes && mensajes.length > 0 && <ul aria-label={`Mensajes de ${suscripcion.correoRemitente}`} className="max-h-80 space-y-2 overflow-y-auto">
+        {!cargandoMensajes && mensajes.length > 0 && (
+          <ul
+            aria-label={`Mensajes de ${suscripcion.correoRemitente}`}
+            className="space-y-2 pr-1"
+          >
           {mensajes.map((mensaje) => <li key={mensaje.id} className="rounded-xl border border-border-line/50 bg-bg-cream/70 p-3">
             <div className="flex flex-wrap items-start justify-between gap-2"><span className="min-w-0 flex-1 break-words text-sm font-semibold text-bg-dark">{mensaje.asunto || "(Sin asunto)"}</span><time className="shrink-0 text-xs text-slate-text">{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(mensaje.fecha))}</time></div>
             {clasificarMovimientoCorreo(mensaje) && <p className="mt-1 text-xs font-medium text-emerald-primary">{clasificarMovimientoCorreo(mensaje).categoria} · {({ GASTO: "Gasto", INGRESO: "Ingreso" })[clasificarMovimientoCorreo(mensaje).tipo]}</p>}
@@ -331,8 +336,8 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
               </button>
             </div>
           </li>)}
-        </ul>}
-        <p className="text-xs text-slate-text">Se muestran los mensajes de este remitente guardados en FinApp durante los últimos 90 días.</p>
+        </ul>
+        )}
       </div>
     </ModalDetalleRegistro>
 

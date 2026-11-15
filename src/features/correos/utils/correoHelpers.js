@@ -1,11 +1,13 @@
 /**
  * @uso        Transformaciones y filtros puros de los datos de correo
- * @funciones  extraerLista, normalizarDireccion, quitarFuentesDuplicadas, fechaLegible, coincideCategoria, coincideDestino, combinarTarjetasCorreo
+ * @funciones  extraerLista, normalizarDireccion, quitarFuentesDuplicadas, fechaLegible, coincideCategoria, coincideTipoMovimiento, tipoMovimientoCorreo, coincideDestino, combinarTarjetasCorreo
  * @datos      Respuestas de fuente, cuentas Gmail y mensajes
  * @eventos    Ninguno
  * @estados    Ninguno
  * @usadoPor   useCorreos, CorreoCuentaCard y BandejaCorreosModal
  */
+import { clasificarMovimientoCorreo } from "./correoFinancieroHelpers";
+
 export const CATEGORIAS_CORREO = [
   { id: "TODOS", etiqueta: "Todos" },
   { id: "IMPORTANTES", etiqueta: "Importantes" },
@@ -14,6 +16,13 @@ export const CATEGORIAS_CORREO = [
   { id: "ESTUDIOS", etiqueta: "Estudios" },
   { id: "ENTRETENIMIENTO", etiqueta: "Entretenimiento" },
   { id: "OTROS", etiqueta: "Otros" },
+];
+
+/** Filtros de tipo de movimiento: mismo vocabulario que contabilidad (TIPOS_BASE) sin AHORRO, que nunca se deriva de correos. */
+export const FILTROS_TIPO_MOVIMIENTO = [
+  { valor: "TODOS", etiqueta: "Todos" },
+  { valor: "INGRESO", etiqueta: "Ingresos" },
+  { valor: "GASTO", etiqueta: "Gastos" },
 ];
 
 export function extraerLista(respuesta) {
@@ -67,6 +76,26 @@ export function coincideCategoria(correo, categoria) {
     case "OTROS": return !correo.esImportante && !tieneClasificacion;
     default: return true;
   }
+}
+
+const PATRON_INGRESO = /nomina|salario|abono|consignacion|deposito|transferencia recibida|ingreso|reembolso|devolucion|income|payroll|refund|credited/;
+const PATRON_GASTO = /compra|compras|factura|recibo|pago|cobro|debito|retiro|retiraste|consumo|suscrip|subscription|invoice|receipt|payment|purchase|category.?purchases|cargo/;
+
+/** Deriva el tipo de movimiento (INGRESO/GASTO) de un correo contable, igual que la clasificación usada al sugerir movimientos. */
+export function tipoMovimientoCorreo(correo) {
+  const clasificacion = clasificarMovimientoCorreo(correo);
+  if (clasificacion?.tipo) return clasificacion.tipo;
+  const texto = `${correo.asunto || ""} ${correo.remitente || ""} ${correo.fragmento || ""} ${(correo.nombresEtiquetas || []).join(" ")}`
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es-CO");
+  if (PATRON_INGRESO.test(texto)) return "INGRESO";
+  return "GASTO";
+}
+
+/** Aplica el filtro de tipo de movimiento: solo restringe a los correos contables; TODOS deja pasar todo. */
+export function coincideTipoMovimiento(correo, tipo) {
+  if (!tipo || tipo === "TODOS") return true;
+  if (!correo.esContable) return false;
+  return tipoMovimientoCorreo(correo) === tipo;
 }
 
 export function coincideDestino(correo, direccion) {

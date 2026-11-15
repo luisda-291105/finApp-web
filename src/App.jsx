@@ -16,6 +16,7 @@ import { LimiteDeError } from "./components/ui";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
 import { GmailProvider } from "./context/GmailContext";
+import { AlertasProvider } from "./context/AlertasContext";
 
 const PaginaLogin = lazy(() => import("./features/auth").then(({ LoginPage }) => ({ default: LoginPage })));
 const DashboardLayout = lazy(() => import("./layout/DashboardLayout"));
@@ -79,7 +80,8 @@ export default function App() {
     <TemaProvider>
       <UsuarioActivoProvider>
         <GmailProvider>
-          <Routes>
+          <AlertasProvider>
+            <Routes>
             <Route path="/" element={<PublicRoute><LimiteDeError><LandingPage /></LimiteDeError></PublicRoute>} />
             <Route path="/inicio" element={<Navigate to="/" replace />} />
             <Route path="/login" element={<PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>} />
@@ -99,7 +101,8 @@ export default function App() {
             </Route>
 
             <Route path="*" element={<LimiteDeError><ErrorPage /></LimiteDeError>} />
-          </Routes>
+            </Routes>
+          </AlertasProvider>
         </GmailProvider>
       </UsuarioActivoProvider>
     </TemaProvider>

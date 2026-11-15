@@ -2,8 +2,8 @@
  * @uso        Bandeja modal con filtros y mensajes de una dirección
  * @funciones  BandejaCorreosModal({ fuente, mensajesFuente, ... })
  * @datos      Presenta mensajes ya consultados, categorizados por Gmail
- * @eventos    Filtrar, abrir un mensaje en Gmail y cerrar
- * @estados    Categoría de filtro
+ * @eventos    Filtrar por categoría, filtrar por tipo de movimiento, abrir un mensaje en Gmail y cerrar
+ * @estados    Categoría de filtro y tipo de movimiento activos
  * @usadoPor   CorreosPage
  */
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { Card } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import DetalleCorreoModal from "./DetalleCorreoModal";
-import { CATEGORIAS_CORREO, coincideCategoria, fechaLegible, separarRemitente } from "../../utils/correoHelpers";
+import { CATEGORIAS_CORREO, FILTROS_TIPO_MOVIMIENTO, coincideCategoria, coincideTipoMovimiento, fechaLegible, separarRemitente } from "../../utils/correoHelpers";
 
 const TONOS_FILTRO = {
   TODOS: { boton: "correo-tono-todos", barra: "correo-barra-contable" },
@@ -23,7 +23,14 @@ const TONOS_FILTRO = {
   OTROS: { boton: "correo-tono-otros", barra: "correo-barra-otros" },
 };
 
-function barraParaCorreo(correo, filtro) {
+const TONOS_TIPO = {
+  TODOS: "correo-tono-todos",
+  INGRESO: "correo-tono-contable",
+  GASTO: "correo-tono-gasto",
+};
+
+function barraParaCorreo(correo, filtro, tipo) {
+  if (tipo !== "TODOS") return tipo === "INGRESO" ? TONOS_FILTRO.CONTABLES.barra : "correo-barra-gasto";
   if (filtro !== "TODOS") return TONOS_FILTRO[filtro]?.barra || TONOS_FILTRO.TODOS.barra;
   if (correo.esImportante) return TONOS_FILTRO.IMPORTANTES.barra;
   if (correo.esContable) return TONOS_FILTRO.CONTABLES.barra;
@@ -42,11 +49,13 @@ function inicialesRemitente(remitente) {
 /** Filtra y muestra cada correo en una tarjeta independiente con sus datos clave. */
 export default function BandejaCorreosModal({ fuente, gmailConectado, cuentaId, cuentaGmail, mensajesFuente, cargandoMensajes, triggerRef, alCerrar }) {
   const [categoria, setCategoria] = useState("TODOS");
+  const [tipoMovimiento, setTipoMovimiento] = useState("TODOS");
   const [correoDetalle, setCorreoDetalle] = useState(null);
   const detalleTriggerRef = useRef(null);
-  useEffect(() => { setCategoria("TODOS"); }, [fuente?.idFuente]);
+  useEffect(() => { setCategoria("TODOS"); setTipoMovimiento("TODOS"); }, [fuente?.idFuente]);
   useEffect(() => { setCorreoDetalle(null); }, [fuente?.idFuente]);
-  const mensajesVisibles = mensajesFuente.filter((correo) => coincideCategoria(correo, categoria));
+  const mensajesVisibles = mensajesFuente.filter((correo) => coincideCategoria(correo, categoria) && coincideTipoMovimiento(correo, tipoMovimiento));
+  const hayContables = mensajesFuente.some((correo) => correo.esContable);
 
   return <>
     <ModalDetalleRegistro abierto={Boolean(fuente)} titulo={fuente ? `Correos de ${fuente.contenido}` : "Correos"} alCerrar={alCerrar} triggerRef={triggerRef}>
@@ -63,11 +72,20 @@ export default function BandejaCorreosModal({ fuente, gmailConectado, cuentaId, 
           </button>;
         })}
       </div>
+      {hayContables && <div className="flex flex-wrap gap-2 border-t border-border-line/30 bg-transparent px-4 pb-3 pt-2" role="group" aria-label="Filtrar correos contables por tipo de movimiento">
+        {FILTROS_TIPO_MOVIMIENTO.map((filtro) => {
+          const seleccionada = tipoMovimiento === filtro.valor;
+          const cantidad = mensajesFuente.filter((correo) => correo.esContable && coincideTipoMovimiento(correo, filtro.valor)).length;
+          return <button key={filtro.valor} type="button" aria-pressed={seleccionada} onClick={() => setTipoMovimiento(filtro.valor)} className={`inline-flex items-center gap-2.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary ${TONOS_TIPO[filtro.valor] || TONOS_TIPO.TODOS} ${seleccionada ? "correo-filtro-activo" : ""}`}>
+            <span>{filtro.etiqueta}</span><span className="correo-contador inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-semibold leading-none tabular-nums">{cantidad}</span>
+          </button>;
+        })}
+      </div>}
       {cargandoMensajes && <p role="status" className="p-6 text-sm text-slate-text">Consultando Gmail...</p>}
       {!cargandoMensajes && mensajesVisibles.length === 0 && <div className="space-y-2 p-6 text-sm text-slate-text"><p>{categoria === "TODOS" ? `No encontramos mensajes recibidos para ${fuente.contenido} en la cuenta conectada (${cuentaGmail || "Gmail"}).` : "No hay mensajes en esta categoría para esta fuente."}</p>{categoria === "TODOS" && <p>La cuenta conectada debe recibir estos mensajes o tener configurado el reenvío/alias de esa dirección. Se incluyen mensajes archivados.</p>}</div>}
       {!cargandoMensajes && mensajesVisibles.length > 0 && <ul className="grid min-w-0 gap-3 p-3 sm:gap-4 sm:p-4">
         {mensajesVisibles.map((correo) => {
-          const acento = barraParaCorreo(correo, categoria);
+          const acento = barraParaCorreo(correo, categoria, tipoMovimiento);
           const remitente = separarRemitente(correo.remitente);
           return <li key={correo.id} className={`min-w-0 max-w-full space-y-3 rounded-2xl border border-border-line/70 border-l-4 ${acento} bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5`}>
             <div className="flex min-w-0 items-start gap-3">
