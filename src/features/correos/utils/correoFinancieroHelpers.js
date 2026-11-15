@@ -1,10 +1,10 @@
 /**
  * @uso        Identifica movimientos sugeridos a partir de correos Gmail
- * @funciones  extraerMovimientoSugerido(correo)
+ * @funciones  extraerMovimientoSugerido(correo), esCandidatoFinanciero(correo)
  * @datos      Recibe metadatos y texto temporal del mensaje; nunca persiste el cuerpo
  * @eventos    Ninguno
  * @estados    Ninguno
- * @usadoPor   ImportarCorreosFinancieros
+ * @usadoPor   useNotificacionesCorreos
  */
 
 /** Evita pedir el cuerpo de mensajes sin señales de una transacción o etiqueta financiera. */
