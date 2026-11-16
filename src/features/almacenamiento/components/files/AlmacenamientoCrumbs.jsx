@@ -28,7 +28,7 @@ export default function AlmacenamientoCrumbs({ ruta = [], alNavegar }) {
             className={`truncate rounded-lg px-2 py-1 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${
               indice === ruta.length - 1
                 ? "text-emerald-primary"
-                : "text-slate-text hover:bg-emerald-primary/5 hover:text-bg-dark"
+                : "text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark dark:hover:text-bg-cream"
             }`}
           >
             {nivel.nombre}

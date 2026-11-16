@@ -7,6 +7,7 @@
  * @usadoPor   AlmacenamientoPage
  */
 import { Cloud } from "lucide-react";
+import { useBreakpoint } from "../../../../hooks/useBreakpoint";
 import AlmacenamientoArchivoItem from "./AlmacenamientoArchivoItem";
 
 const MENSAJES_VACIO = {
@@ -39,9 +40,11 @@ export default function AlmacenamientoArchivos({
   alConfirmarRenombrado,
   alCancelarRenombrado,
 }) {
+  const { isMobile } = useBreakpoint();
   const modo = modoVista || (vista === "lista" || vista === "grid" ? vista : "grid");
   const vistaNombre = vistaActual || (vista && !["lista", "grid"].includes(vista) ? vista : "unidad");
   const idRenombrando = renombrandoId || (renombrando ? "__activo__" : null);
+  const modoEfectivo = isMobile ? "lista" : modo;
 
   if (cargando) {
     return <p role="status" className="rounded-2xl border border-border-line/50 bg-bg-cream/60 p-8 text-center text-sm text-slate-text">Cargando archivos…</p>;
@@ -80,7 +83,7 @@ export default function AlmacenamientoArchivos({
     alCancelarRenombrado,
   });
 
-  if (modo === "lista") {
+  if (modoEfectivo === "lista") {
     return (
       <ul className="divide-y divide-border-line/40 rounded-2xl border border-border-line/50 bg-bg-cream/60">
         {items.map((item) => <AlmacenamientoArchivoItem key={item.id} {...propsComunes(item)} vista="lista" />)}

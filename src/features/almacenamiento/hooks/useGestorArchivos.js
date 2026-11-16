@@ -66,14 +66,26 @@ function esErrorNoEncontrado(error) {
 }
 
 function mensajeAccionable(error) {
-  const mensaje = String(error?.message || error || "No se pudo completar la operación.");
-  if (/401|sesión|sesion|caduc/i.test(mensaje)) return "Tu sesión caducó. Inicia sesión nuevamente para continuar.";
-  if (/403|permiso|denegad/i.test(mensaje)) return "No tienes permisos para realizar esta acción en este archivo o carpeta.";
-  if (/quota|cuota|espacio|almacen/i.test(mensaje)) return "No hay espacio disponible o se alcanzó la cuota de almacenamiento.";
-  if (/409|conflic|reconex|reaut|token|scope|alcance|invalid_grant|desconect|expir/i.test(mensaje)) {
-    return `${mensaje} La cuenta puede requerir reconexión.`;
+  const mensaje = String(error?.message || error || "");
+  if (/401|sesión|sesion|caduc|inicia sesi/i.test(mensaje)) {
+    return "Tu sesión se cerró. Vuelve a iniciar sesión para continuar.";
   }
-  return mensaje;
+  if (/403|permiso|denegad|autoriz/i.test(mensaje)) {
+    return "No tienes permiso para hacer esto.";
+  }
+  if (/quota|cuota|espacio|almacen/i.test(mensaje)) {
+    return "No hay espacio disponible en esta cuenta.";
+  }
+  if (/409|conflic|reconex|reaut|token|scope|alcance|invalid_grant|desconect|expir|drive/i.test(mensaje)) {
+    return "Necesitamos volver a conectar esta cuenta para continuar.";
+  }
+  if (/red|network|fetch|timeout|conexi|servidor|5\d\d/i.test(mensaje)) {
+    return "No pudimos conectarnos en este momento. Inténtalo de nuevo.";
+  }
+  if (/^error http/i.test(mensaje)) {
+    return "Algo no salió bien. Inténtalo de nuevo.";
+  }
+  return mensaje || "Algo no salió bien. Inténtalo de nuevo.";
 }
 
 function ordenarItems(items, orden) {
@@ -170,7 +182,7 @@ export function useGestorArchivos({ cuentaId = "" } = {}) {
         setAviso("");
       } else if (esErrorNoEncontrado(fallo)) {
         setError("");
-        setAviso("Carpeta o recurso no encontrado o inaccesible.");
+        setAviso("No pudimos abrir esta carpeta. Puede que ya no exista o que no tengas acceso.");
       } else {
         setError(mensajeAccionable(fallo));
         setAviso("");

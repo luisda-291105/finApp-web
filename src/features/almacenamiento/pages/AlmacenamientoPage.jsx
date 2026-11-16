@@ -65,7 +65,7 @@ export default function AlmacenamientoPage() {
         return normalizadas[0]?.id ? String(normalizadas[0].id) : "";
       });
     } catch (error) {
-      const mensaje = error?.message || "No se pudieron cargar las cuentas de almacenamiento.";
+      const mensaje = error?.message || "No pudimos cargar tus cuentas de almacenamiento.";
       setErrorCuentas(mensaje);
     } finally {
       setCargandoCuentas(false);
@@ -78,9 +78,10 @@ export default function AlmacenamientoPage() {
     if (alertas?.mostrarAlerta) alertas.mostrarAlerta(mensaje, { tipo, duracionMs });
   }, [alertas]);
 
-  const mostrarError = useCallback((error, titulo = "No se pudo completar la acción") => {
+  const mostrarError = useCallback((error, titulo = "") => {
     const mensaje = error?.message || String(error || "Ocurrió un error inesperado.");
-    notificar("error", titulo ? `${titulo}. ${mensaje}` : mensaje);
+    const texto = /^error http/i.test(mensaje) ? "Algo no salió bien. Inténtalo de nuevo." : mensaje;
+    notificar("error", titulo ? `${titulo}. ${texto}` : texto);
   }, [notificar]);
 
   const mostrarExito = useCallback((mensaje, titulo = "Listo") => {
@@ -111,7 +112,7 @@ export default function AlmacenamientoPage() {
     if (!item || item.tipo !== "archivo") return;
     try {
       const blob = await gestor.descargar(id);
-      if (!blob) throw new Error("No se recibió contenido para descargar.");
+      if (!blob) throw new Error("No pudimos descargar el archivo. Inténtalo de nuevo.");
       const url = URL.createObjectURL(blob);
       const enlace = document.createElement("a");
       enlace.href = url;

@@ -101,10 +101,10 @@ export default function ModalPrevisualizacion({ abierto, item, cuentaId, obtener
   if (!abierto || !item) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-bg-dark/70 p-3 backdrop-blur-sm" onClick={(evento) => { if (evento.target === evento.currentTarget) alCerrar(); }}>
+    <div className="fixed inset-0 z-[1050] flex items-end justify-center bg-bg-dark/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={(evento) => { if (evento.target === evento.currentTarget) alCerrar(); }}>
       <FocusTrap focusTrapOptions={{ allowOutsideClick: true, escapeDeactivates: false, initialFocus: () => panelRef.current, returnFocusOnDeactivate: false }}>
-        <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-previsualizacion-titulo" aria-describedby="modal-previsualizacion-descripcion" tabIndex={-1} className="glass-surface relative w-full max-w-3xl rounded-3xl border border-border-line/30 bg-bg-cream/95 p-5 text-bg-dark shadow-2xl outline-none sm:p-6">
-          <header className="mb-4 flex items-start justify-between gap-4 border-b border-border-line/30 pb-4">
+        <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-previsualizacion-titulo" aria-describedby="modal-previsualizacion-descripcion" tabIndex={-1} className="glass-surface relative flex max-h-[85dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-border-line/30 bg-bg-cream/95 p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] text-bg-dark shadow-2xl outline-none sm:max-h-[85vh] sm:rounded-3xl sm:p-6 sm:pb-6">
+          <header className="mb-4 flex shrink-0 items-start justify-between gap-4 border-b border-border-line/30 pb-4">
             <div className="min-w-0">
               <h2 id="modal-previsualizacion-titulo" className="truncate font-display text-lg font-semibold">{item.nombre}</h2>
               <p id="modal-previsualizacion-descripcion" className="text-xs text-slate-text">{item.mime || "Archivo"}{item.tamanio ? ` · ${Math.round(item.tamanio / 1024)} KB` : ""}</p>
@@ -112,7 +112,7 @@ export default function ModalPrevisualizacion({ abierto, item, cuentaId, obtener
             <BotonCerrar ariaLabel="Cerrar previsualización" alCerrar={alCerrar} className="text-slate-text hover:text-bg-dark" />
           </header>
 
-          <div className="max-h-[70vh] overflow-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {mostrarInlineImagen && !cargandoContenido && !errorContenido && <img src={contenidoBlobUrl || urlContenido} alt={`Vista previa de ${item.nombre}`} className="mx-auto max-h-[60vh] rounded-xl object-contain" />}
             {mostrarInlinePdf && !mostrarInlineImagen && !cargandoContenido && !errorContenido && <iframe title={`Vista previa de ${item.nombre}`} src={contenidoBlobUrl || urlPrev || urlContenido} className="h-[60vh] w-full rounded-xl border border-border-line/30 bg-white" />}
             {(mostrarTexto || ((mostrarInlineImagen || mostrarInlinePdf) && (cargandoContenido || errorContenido))) && (
@@ -130,7 +130,7 @@ export default function ModalPrevisualizacion({ abierto, item, cuentaId, obtener
             )}
           </div>
 
-          <footer className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border-line/30 pt-4">
+          <footer className="mt-4 flex shrink-0 flex-wrap justify-end gap-2 border-t border-border-line/30 pt-4">
             {esExterno && (enlaceExterno || urlContenido) && (
               <a href={enlaceExterno || urlContenido} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border-line/60 px-4 text-sm font-medium text-bg-dark hover:bg-emerald-primary/5">
                 <ExternalLink className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Abrir externo
