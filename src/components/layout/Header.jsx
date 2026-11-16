@@ -8,6 +8,8 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import logoClaro from "../../assets/logo-claro.webp";
+import logoOscuro from "../../assets/logo-oscuro.webp";
 
 /**
  * Header
@@ -36,22 +38,15 @@ export default function Header({ alAbrirAuth, modo = "landing", oculto = false }
     <header
       className={`fixed top-0 left-0 right-0 z-[1100] w-full transition-all duration-400 ease-in-out ${
         desplazado
-          ? "bg-[#f7f6f2]/92 glass-surface border-b border-[#e0ddd8] py-3.5 shadow-sm"
-          : "bg-transparent border-b border-transparent py-5"
+          ? "glass-surface border-b border-border-line bg-bg-cream/95 py-3.5 shadow-sm"
+          : "border-b border-transparent bg-transparent py-5"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logotipo FinApp */}
-        <Link to="/" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
-          <span className={`transition-colors duration-400 sm:hidden ${desplazado ? "text-[#0f1117]" : "text-[#1a7a5e]"}`}>F</span>
-          <span className={`hidden transition-colors duration-400 sm:inline ${desplazado ? "text-[#0f1117]" : "text-[#1a7a5e]"}`}>Fin</span>
-          <span
-            className={`transition-colors duration-400 ${
-              desplazado ? "text-[#0f1117]" : "text-white"
-            } sm:inline`}
-          >
-            App
-          </span>
+        <Link to="/" className="flex items-center" aria-label="FinApp">
+          <img src={logoClaro} alt="FinApp" className="logo-tema-claro h-8 w-auto sm:h-9" />
+          <img src={logoOscuro} alt="" aria-hidden="true" className="logo-tema-oscuro h-8 w-auto sm:h-9" />
         </Link>
 
         {/* Acciones de autenticación (solo en modo landing) */}
@@ -62,8 +57,8 @@ export default function Header({ alAbrirAuth, modo = "landing", oculto = false }
               onClick={() => alAbrirAuth?.("login")}
               className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-400 cursor-pointer ${
                 desplazado
-                  ? "text-[#0f1117] hover:text-[#1a7a5e] bg-white/80 hover:bg-white"
-                  : "text-white/90 hover:text-white bg-white/10 hover:bg-white/20"
+                  ? "bg-bg-cream/80 text-bg-dark hover:bg-bg-cream hover:text-emerald-primary"
+                  : "bg-bg-cream/10 text-bg-cream/90 hover:bg-bg-cream/20 hover:text-bg-cream"
               }`}
             >
               Iniciar sesión
@@ -74,7 +69,7 @@ export default function Header({ alAbrirAuth, modo = "landing", oculto = false }
         {/* Placeholder para menú de usuario futuro (modo dashboard) */}
         {modo === "dashboard" && (
           <div className="flex items-center gap-4">
-            <span className="text-sm text-[#6b7280]">Usuario</span>
+            <span className="text-sm text-slate-text">Usuario</span>
           </div>
         )}
       </div>

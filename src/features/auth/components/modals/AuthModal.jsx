@@ -252,10 +252,7 @@ export default function AuthModal({
 
           <div className="grid max-h-[85vh] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
             <aside className="hidden md:flex flex-col items-center justify-center gap-4 border-r border-white/10 bg-gradient-to-br from-[#1a7a5e]/30 via-[#0f1117]/40 to-[#0f1117]/80 p-8 text-center">
-              <picture>
-                <source type="image/webp" srcSet="/logo.webp" />
-                <img src="/logo.png" alt="FinApp" className="h-20 w-20 rounded-2xl object-contain shadow-lg" />
-              </picture>
+              <img src="/logo-claro.webp" alt="FinApp" className="h-20 w-20 rounded-2xl object-contain shadow-lg" />
               <p className="font-display text-3xl font-medium">
                 <span className="text-[#1a7a5e]">Fin</span>App
               </p>
@@ -266,10 +263,7 @@ export default function AuthModal({
 
             <div className="max-h-[85vh] overflow-y-auto p-7 md:p-8">
               <div className="mb-5 flex items-center gap-3 md:hidden">
-                <picture className="shrink-0">
-                  <source type="image/webp" srcSet="/logo.webp" />
-                  <img src="/logo.png" alt="FinApp" className="h-10 w-10 rounded-xl object-contain" />
-                </picture>
+                <img src="/logo-claro.webp" alt="FinApp" className="h-10 w-10 shrink-0 rounded-xl object-contain" />
                 <p className="font-display text-xl font-medium">
                   <span className="text-[#1a7a5e]">Fin</span>App
                 </p>

@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import SidebarNavContenido from "./SidebarNavContenido";
 import { useTema } from "../../context/TemaContext";
+import logoClaro from "../../assets/logo-claro.webp";
+import logoOscuro from "../../assets/logo-oscuro.webp";
 
 /** SidebarResponsive
  * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
@@ -50,10 +52,10 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
           aria-expanded={!colapsada}
           aria-label={colapsada ? "Expandir navegación" : "Colapsar navegación"}
         >
-          <picture className="shrink-0">
-            <source type="image/webp" srcSet="/logo.webp" />
-            <img src="/logo.png" alt="" aria-hidden="true" className={clsx("rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
-          </picture>
+          <span className="shrink-0">
+            <img src={logoClaro} alt="" aria-hidden="true" className={clsx("logo-tema-claro rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
+            <img src={logoOscuro} alt="" aria-hidden="true" className={clsx("logo-tema-oscuro rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
+          </span>
           {!colapsada && (
             <span className={clsx("truncate font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
               FinApp
