@@ -22,6 +22,7 @@ export default function MuestraCard({ muestra, idItemDashboard = muestra.id, ind
   return (
     <li
       data-muestra-id={muestra.id}
+      data-dashboard-item={String(idItemDashboard)}
       className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl shadow-sm ${superficie} col-span-1 ${arrastrando ? "opacity-50" : ""} ${soltarSobre ? "ring-2 ring-dashed ring-emerald-primary" : ""}`}
     >
       {mostrarBarraOrden && <div className={`flex items-center justify-between gap-2 border-b border-border-line/20 px-3 py-1.5 ${temaOscuro ? "text-bg-cream/70" : "text-slate-text"}`}>
