@@ -137,7 +137,7 @@ describe("DashboardDrawer", () => {
       expect(backdrop).toHaveClass("inset-0");
       expect(backdrop).toHaveClass("bg-bg-dark/80");
       expect(backdrop).toHaveClass("backdrop-blur-sm");
-      expect(backdrop).toHaveClass("z-50");
+      expect(backdrop).toHaveClass("z-[1105]");
 
       expect(obtenerPanel()).toBeTruthy();
     });
@@ -157,7 +157,7 @@ describe("DashboardDrawer", () => {
       expect(classList.contains("max-w-sm")).toBe(true);
     });
 
-    it("panel: bg-bg-dark/95 glass-surface border-l border-border-line/20 z-55", () => {
+    it("panel: bg-bg-dark/95 glass-surface border-l border-border-line/20 z-[1110]", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -167,7 +167,7 @@ describe("DashboardDrawer", () => {
       expect(classList.contains("glass-surface")).toBe(true);
       expect(classList.contains("border-l")).toBe(true);
       expect(classList.contains("border-border-line/20")).toBe(true);
-      expect(classList.contains("z-55")).toBe(true);
+      expect(classList.contains("z-[1110]")).toBe(true);
     });
 
     it("panel: aria-label='Menú de navegación'", () => {
@@ -286,7 +286,7 @@ describe("DashboardDrawer", () => {
       document.body.removeChild(externo);
     });
 
-    it("elementos enfocables: la «X» + 7 enlaces + el avatar del menú (9), en orden", () => {
+    it("elementos enfocables: la «X» + 8 enlaces + el avatar del menú (10), en orden", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -295,7 +295,7 @@ describe("DashboardDrawer", () => {
       );
 
       // Orden de tabulación: el cromo superior (la «X») precede al contenido del menú.
-      expect(focusables.length).toBe(9);
+      expect(focusables.length).toBe(10);
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar menú");
       expect(focusables[1].tagName).toBe("A"); // Inicio
       expect(focusables[2].tagName).toBe("A"); // Tarjetas
@@ -304,11 +304,12 @@ describe("DashboardDrawer", () => {
       expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
       expect(focusables[6].getAttribute("href")).toBe("/dashboard/contabilidad");
       expect(focusables[7].getAttribute("href")).toBe("/dashboard/suscripciones");
-      expect(focusables[8].tagName).toBe("BUTTON"); // Avatar
-      expect(focusables[8].getAttribute("aria-label")).toContain("Cuenta de");
+      expect(focusables[8].getAttribute("href")).toBe("/dashboard/almacenamiento");
+      expect(focusables[9].tagName).toBe("BUTTON"); // Avatar
+      expect(focusables[9].getAttribute("aria-label")).toContain("Cuenta de");
     });
 
-    it("mantiene el avatar después de los siete enlaces y dentro del flujo del menú", () => {
+    it("mantiene el avatar después de los ocho enlaces y dentro del flujo del menú", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -316,7 +317,7 @@ describe("DashboardDrawer", () => {
       const links = [...nav.querySelectorAll("a[href]")];
       const avatar = nav.querySelector("button[aria-label^='Cuenta de']");
 
-      expect(links).toHaveLength(7);
+      expect(links).toHaveLength(8);
       expect(nav.lastElementChild).toBe(avatar);
       expect(avatar).toBeTruthy();
       expect(avatar.className).not.toMatch(/\b(?:fixed|sticky|absolute|bottom-0|mt-auto)\b/);
@@ -429,7 +430,7 @@ describe("DashboardDrawer", () => {
 
       // Verificar los enlaces (NavLink renderiza <a> con href).
       const links = panel.querySelectorAll("a[href]");
-      expect(links.length).toBe(7);
+      expect(links.length).toBe(8);
 
       // Verificar avatar button
       const avatarButton = panel.querySelector("button[aria-label*='Cuenta de']");

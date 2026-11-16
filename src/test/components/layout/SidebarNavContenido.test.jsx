@@ -58,12 +58,12 @@ const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) 
 
 describe("SidebarNavContenido", () => {
   describe("renderizado de enlaces de navegación", () => {
-    it("renderiza 7 NavLink con href e iconos correctos", () => {
+    it("renderiza 8 NavLink con href e iconos correctos", () => {
       renderSidebarNavContenido();
 
-      // Verificar los siete enlaces de la navegación lateral.
+      // Verificar los ocho enlaces de la navegación lateral.
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(7);
+      expect(links).toHaveLength(8);
 
       // Verificar cada enlace con su ruta, icono y etiqueta
       const inicioLink = screen.getByRole("link", { name: /Inicio/i });
@@ -93,6 +93,10 @@ describe("SidebarNavContenido", () => {
       const suscripcionesLink = screen.getByRole("link", { name: /Suscripciones/i });
       expect(suscripcionesLink.getAttribute("href")).toBe("/dashboard/suscripciones");
       expect(suscripcionesLink.querySelector("svg.lucide-repeat")).toBeTruthy();
+
+      const almacenamientoLink = screen.getByRole("link", { name: /Almacenamiento/i });
+      expect(almacenamientoLink.getAttribute("href")).toBe("/dashboard/almacenamiento");
+      expect(almacenamientoLink.querySelector("svg.lucide-hard-drive")).toBeTruthy();
     });
 
     it("iconos tienen flex-shrink-0 w-6 h-6", () => {
@@ -101,7 +105,7 @@ describe("SidebarNavContenido", () => {
       // Buscar todos los svg dentro de los links de navegación
       const nav = screen.getByRole("navigation");
       const svgs = nav.querySelectorAll("a svg");
-      expect(svgs.length).toBe(7);
+      expect(svgs.length).toBe(8);
       svgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -261,7 +265,7 @@ describe("SidebarNavContenido", () => {
     it("conserva nombres accesibles cuando la sidebar está colapsada", () => {
       renderSidebarNavContenido({ colapsada: true });
 
-      ["Inicio", "Tarjetas", "Contactos", "Correos", "Contabilidad", "Suscripciones"].forEach((etiqueta) => {
+      ["Inicio", "Tarjetas", "Grupos", "Contactos", "Correos", "Contabilidad", "Suscripciones", "Almacenamiento"].forEach((etiqueta) => {
         expect(screen.getByRole("link", { name: etiqueta })).toHaveAttribute(
           "aria-label",
           etiqueta

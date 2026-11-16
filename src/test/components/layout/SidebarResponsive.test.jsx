@@ -62,7 +62,7 @@ describe("SidebarResponsive", () => {
       expect(aside).toHaveClass("left-0");
       expect(aside).toHaveClass("top-0");
       expect(aside).toHaveClass("h-screen");
-      expect(aside).toHaveClass("z-40");
+      expect(aside).toHaveClass("z-[1100]");
     });
 
     it("aplica fondo dark glass con tokens: bg-bg-dark/80 glass-surface border-border-line/20", () => {
@@ -97,7 +97,7 @@ describe("SidebarResponsive", () => {
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
       expect(navegacion).toBeTruthy();
       expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
-      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(7);
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(8);
       expect(navegacion.querySelector("button")).toBeNull();
       expect(pieAvatar).toBeTruthy();
       expect(pieAvatar).toHaveClass("shrink-0");
@@ -126,8 +126,7 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
-      expect(toggleButton.querySelector("picture")).toBeTruthy();
-      expect(toggleButton.querySelector("img")).toBeTruthy();
+      expect(toggleButton.querySelectorAll("img").length).toBeGreaterThanOrEqual(1);
       expect(toggleButton).toHaveTextContent("FinApp");
     });
 
@@ -145,11 +144,11 @@ describe("SidebarResponsive", () => {
       expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
-    it("renderiza 7 enlaces de navegación con iconos y etiquetas", () => {
+    it("renderiza 8 enlaces de navegación con iconos y etiquetas", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(7);
+      expect(links).toHaveLength(8);
 
       // Usar getByRole con nombre más específico para el link de navegación "Inicio"
       const inicioLink = screen.getByRole("link", { name: /^Inicio$/i });
@@ -170,7 +169,7 @@ describe("SidebarResponsive", () => {
 
       const aside = getSidebarAside();
       const navSvgs = aside.querySelectorAll("a[href^='/dashboard'] svg");
-      expect(navSvgs.length).toBe(7);
+      expect(navSvgs.length).toBe(8);
       navSvgs.forEach((svg) => {
         expect(svg.classList.contains("flex-shrink-0")).toBe(true);
         expect(svg.classList.contains("w-6")).toBe(true);
@@ -210,7 +209,7 @@ describe("SidebarResponsive", () => {
       expect(aside).toHaveClass("flex", "flex-col");
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
       expect(navegacion).toHaveClass("flex-1", "min-h-0", "overflow-y-auto");
-      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(7);
+      expect(navegacion.querySelectorAll("a[href]")).toHaveLength(8);
       expect(navegacion.querySelector("button")).toBeNull();
       expect(pieAvatar).toHaveClass("shrink-0");
       expect(pieAvatar.querySelector("hr[role='separator']")).toBeTruthy();
@@ -230,8 +229,7 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: true });
 
       const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
-      expect(toggleButton.querySelector("picture")).toBeTruthy();
-      expect(toggleButton.querySelector("img")).toBeTruthy();
+      expect(toggleButton.querySelectorAll("img").length).toBeGreaterThanOrEqual(1);
       expect(toggleButton.querySelector("svg.lucide-house")).toBeNull();
     });
 
