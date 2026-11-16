@@ -201,6 +201,30 @@ export async function actualizar(rutaRelativa, cuerpo, opciones = {}) {
 }
 
 /**
+ * patch
+ * Realiza petición PATCH con cuerpo JSON (ediciones parciales).
+ * @param {string} rutaRelativa
+ * @param {any} cuerpo
+ * @param {RequestInit} opciones
+ * @returns {Promise<any>}
+ */
+export async function patch(rutaRelativa, cuerpo, opciones = {}) {
+  const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
+  const respuesta = await fetch(url, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(encabezadosExtra || {}),
+    },
+    body: JSON.stringify(cuerpo),
+    ...resto,
+  });
+  return leerRespuesta(respuesta, url, "PATCH");
+}
+
+/**
  * eliminar
  * Realiza petición DELETE.
  * @param {string} rutaRelativa

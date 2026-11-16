@@ -7,7 +7,7 @@
  * @usadoPor   AlmacenamientoPage, useGestorArchivos y CuentasAlmacenamientoCard
  */
 import { API_BASE_URL, getEndpoint } from "../../../config/api.config";
-import { actualizar, crear, descargar, eliminar, obtener, subir } from "../../../services/httpServicio";
+import { crear, descargar, eliminar, obtener, patch, subir } from "../../../services/httpServicio";
 import { prepararGoogleIdentityServices } from "../../../services/gmailServicio";
 
 const ENCABEZADOS_SOLICITUD = { "X-Requested-With": "XmlHttpRequest" };
@@ -74,39 +74,75 @@ export function urlPrevisualizacion(cuentaId, archivoId) {
   return urlAbsoluta(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/previsualizacion`);
 }
 
-export async function crearCarpeta(cuentaId, datos) {
-  const respuesta = await crear(`${baseArchivos(cuentaId)}/carpeta`, datos, { headers: ENCABEZADOS_SOLICITUD });
+/** Normaliza la lista de identificadores que recibe el hook. */
+const listaIds = (datos = {}) => (Array.isArray(datos.ids) ? datos.ids.filter(Boolean) : []);
+
+/** Normaliza la carpeta destino (el backend la llama idNuevoPadre o carpetaId según la operación). */
+const carpetaDestino = (datos = {}) => datos.destinoId ?? datos.carpetaId ?? datos.idNuevoPadre ?? datos.padreId ?? "root";
+
+export async function crearCarpeta(cuentaId, datos = {}) {
+  // El backend espera el cuerpo { carpetaId, nombre }.
+  const cuerpo = { carpetaId: carpetaDestino(datos), nombre: datos.nombre };
+  const respuesta = await crear(`${baseArchivos(cuentaId)}/carpeta`, cuerpo, { headers: ENCABEZADOS_SOLICITUD });
   return respuesta?.datos || respuesta?.data || respuesta;
 }
 
 export async function subirArchivo(cuentaId, formData) {
-  const respuesta = await subir(baseArchivos(cuentaId), formData, { headers: ENCABEZADOS_SOLICITUD });
+  // El backend expone POST /subir y espera multipart con los campos "archivo" e "idPadre".
+  const archivo = formData?.get?.("archivo");
+  const padre = formData?.get?.("idPadre") ?? formData?.get?.("padreId");
+  const form = new FormData();
+  if (archivo) form.append("archivo", archivo, archivo.name);
+  if (padre) form.append("idPadre", padre);
+  const respuesta = await subir(`${baseArchivos(cuentaId)}/subir`, form, { headers: ENCABEZADOS_SOLICITUD });
   return respuesta?.datos || respuesta?.data || respuesta;
 }
 
 export async function renombrar(cuentaId, archivoId, nombre) {
-  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/renombrar`, { nombre }, { headers: ENCABEZADOS_SOLICITUD });
+  // El backend edita el archivo con PATCH /{fileId} y el cuerpo { nombre }.
+  const respuesta = await patch(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}`,
+    { nombre }, { headers: ENCABEZADOS_SOLICITUD });
   return respuesta?.datos || respuesta?.data || respuesta;
 }
 
-export async function mover(cuentaId, datos) {
-  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/mover`, datos, { headers: ENCABEZADOS_SOLICITUD });
-  return respuesta?.datos || respuesta?.data || respuesta;
+export async function mover(cuentaId, datos = {}) {
+  // Mover es PATCH /{fileId} con { idNuevoPadre }; el backend mueve de a un archivo.
+  const destino = carpetaDestino(datos);
+  const resultados = [];
+  for (const id of listaIds(datos)) {
+    const respuesta = await patch(`${baseArchivos(cuentaId)}/${encodeURIComponent(id)}`,
+      { idNuevoPadre: destino }, { headers: ENCABEZADOS_SOLICITUD });
+    resultados.push(respuesta?.datos || respuesta?.data || respuesta);
+  }
+  return resultados;
 }
 
-export async function copiar(cuentaId, datos) {
-  const respuesta = await crear(`${baseArchivos(cuentaId)}/copiar`, datos, { headers: ENCABEZADOS_SOLICITUD });
-  return respuesta?.datos || respuesta?.data || respuesta;
+export async function copiar(cuentaId, datos = {}) {
+  // Copiar es POST /{fileId}/copiar con { carpetaId }; el backend copia de a un archivo.
+  const destino = carpetaDestino(datos);
+  const resultados = [];
+  for (const id of listaIds(datos)) {
+    const respuesta = await crear(`${baseArchivos(cuentaId)}/${encodeURIComponent(id)}/copiar`,
+      { carpetaId: destino }, { headers: ENCABEZADOS_SOLICITUD });
+    resultados.push(respuesta?.datos || respuesta?.data || respuesta);
+  }
+  return resultados;
 }
 
-export async function enviarAPapelera(cuentaId, datos) {
-  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/papelera`, datos, { headers: ENCABEZADOS_SOLICITUD });
-  return respuesta?.datos || respuesta?.data || respuesta;
+export async function enviarAPapelera(cuentaId, datos = {}) {
+  // Enviar a la papelera es DELETE /{fileId}; el backend mueve de a un archivo.
+  for (const id of listaIds(datos)) {
+    await eliminar(`${baseArchivos(cuentaId)}/${encodeURIComponent(id)}`, { headers: ENCABEZADOS_SOLICITUD });
+  }
+  return { enviados: listaIds(datos).length };
 }
 
-export async function restaurar(cuentaId, datos) {
-  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/restaurar`, datos, { headers: ENCABEZADOS_SOLICITUD });
-  return respuesta?.datos || respuesta?.data || respuesta;
+export async function restaurar(cuentaId, datos = {}) {
+  // Restaurar es POST /{fileId}/restaurar; el backend restaura de a un archivo.
+  for (const id of listaIds(datos)) {
+    await crear(`${baseArchivos(cuentaId)}/${encodeURIComponent(id)}/restaurar`, {}, { headers: ENCABEZADOS_SOLICITUD });
+  }
+  return { restaurados: listaIds(datos).length };
 }
 
 export async function vaciarPapelera(cuentaId) {
@@ -129,9 +165,17 @@ export async function revocarPermiso(cuentaId, archivoId, permisoId) {
   return respuesta?.datos || respuesta?.data || respuesta;
 }
 
-export async function operacionLote(cuentaId, datos) {
-  const respuesta = await crear(`${baseArchivos(cuentaId)}/lote`, datos, { headers: ENCABEZADOS_SOLICITUD });
-  return respuesta?.datos || respuesta?.data || respuesta;
+export async function operacionLote(cuentaId, datos = {}) {
+  // El backend no expone un borrado en lote: cada archivo se envía con su propia ruta.
+  // "eliminar_definitivo" borra de la papelera (DELETE /{fileId}/permanente);
+  // "eliminar" mueve a la papelera (DELETE /{fileId}).
+  const ids = listaIds(datos);
+  const definitiva = datos.accion === "eliminar_definitivo";
+  for (const id of ids) {
+    const ruta = definitiva ? `/${encodeURIComponent(id)}/permanente` : `/${encodeURIComponent(id)}`;
+    await eliminar(`${baseArchivos(cuentaId)}${ruta}`, { headers: ENCABEZADOS_SOLICITUD });
+  }
+  return { eliminados: ids.length, definitivo: definitiva };
 }
 
 export async function descargarArchivo(cuentaId, archivoId) {
