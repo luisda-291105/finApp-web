@@ -63,8 +63,8 @@ export default function AlmacenamientoToolbar({
           </button>
           {menuNuevoAbierto && (
             <>
-              <button type="button" aria-label="Cerrar menú Nuevo" className="fixed inset-0 z-30" onClick={() => setMenuNuevoAbierto(false)} />
-              <div role="menu" className="absolute right-0 z-40 mt-2 w-56 rounded-2xl border border-border-line/60 bg-bg-cream p-2 shadow-xl">
+              <button type="button" aria-label="Cerrar menú Nuevo" className="fixed inset-0 z-[1110]" onClick={() => setMenuNuevoAbierto(false)} />
+              <div role="menu" className="absolute right-0 z-[1111] mt-2 w-56 rounded-2xl border border-border-line/60 bg-bg-cream p-2 shadow-xl">
                 <button type="button" role="menuitem" onClick={() => { setMenuNuevoAbierto(false); alCrearCarpeta?.(); }} className="block w-full rounded-xl px-3 py-2 text-left text-sm text-bg-dark hover:bg-emerald-primary/5">Nueva carpeta</button>
                 <button type="button" role="menuitem" onClick={() => { setMenuNuevoAbierto(false); inputRef.current?.click(); }} className="block w-full rounded-xl px-3 py-2 text-left text-sm text-bg-dark hover:bg-emerald-primary/5">Subir archivo</button>
               </div>
