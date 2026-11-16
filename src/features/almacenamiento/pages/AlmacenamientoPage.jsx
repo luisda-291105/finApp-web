@@ -3,12 +3,11 @@
  * @funciones  AlmacenamientoPage()
  * @datos      Conexiones de almacenamiento y árbol de archivos remoto vía useGestorArchivos
  * @eventos    Selección de cuenta, reconexión, navegación, subida, descarga, compartir, mover, restaurar y eliminación
- * @estados    conexiones, cuentaActivaId, cargandoCuentas, errorCuentas, arrastrandoSobre, modalCompartir, modalMover, procesandoMover, accionesSeleccionAbiertas
+ * @estados    conexiones, cuentaActivaId, cargandoCuentas, errorCuentas, arrastrandoSobre, modalCompartir, modalMover, procesandoMover, reconectando
  * @usadoPor   App.jsx mediante la API pública de features/almacenamiento
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { AlertCircle, Copy, ExternalLink, HardDrive, MoreHorizontal, RefreshCcw, RotateCcw, Trash2, Upload, X } from "lucide-react";
+import { RefreshCcw, Trash2, Upload } from "lucide-react";
 import { useAlertas } from "../../../context/AlertasContext";
 import { obtenerConexiones, conectarGoogleDrive } from "../services/almacenamientoServicio";
 import AlmacenamientoSidebar from "../components/files/AlmacenamientoSidebar";
@@ -48,7 +47,6 @@ export default function AlmacenamientoPage() {
   const [modalMover, setModalMover] = useState({ abierto: false, ids: [], accion: "mover" });
   const [procesandoMover, setProcesandoMover] = useState(false);
   const [reconectando, setReconectando] = useState(false);
-  const [accionesSeleccionAbiertas, setAccionesSeleccionAbiertas] = useState(false);
 
   const gestor = useGestorArchivos({ cuentaId: cuentaActivaId });
   const cuentaActiva = useMemo(() => conexiones.find((c) => String(c.id) === String(cuentaActivaId)) || null, [conexiones, cuentaActivaId]);
@@ -88,6 +86,18 @@ export default function AlmacenamientoPage() {
   const mostrarExito = useCallback((mensaje, titulo = "Listo") => {
     notificar("exito", titulo && titulo !== "Listo" ? `${titulo}. ${mensaje}` : mensaje, 4000);
   }, [notificar]);
+
+  useEffect(() => {
+    if (!gestor.error) return;
+    notificar("error", gestor.error, 6000);
+    gestor.limpiarError();
+  }, [gestor.error, gestor.limpiarError, notificar]);
+
+  useEffect(() => {
+    if (!gestor.aviso) return;
+    notificar("advertencia", gestor.aviso, 6000);
+    gestor.limpiarAviso();
+  }, [gestor.aviso, gestor.limpiarAviso, notificar]);
 
   const alAbrir = useCallback((id) => {
     const item = gestor.items.find((itemActual) => itemActual.id === id);
@@ -239,43 +249,12 @@ export default function AlmacenamientoPage() {
 
           {mostrarCrumbs && <AlmacenamientoCrumbs ruta={gestor.ruta} alNavegar={gestor.abrirCarpeta} />}
 
-          {gestor.error && (
-            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-300/30 bg-red-500/10 p-4">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" aria-hidden="true" />
-                <p className="text-sm text-red-100">{gestor.error}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                {/reconex|scope|alcance|token|409|conflic/i.test(gestor.error) && cuentaActiva?.proveedor === "GOOGLE_DRIVE" && (
-                  <button type="button" onClick={alReconectar} disabled={reconectando} className="text-sm font-semibold text-amber-700 underline disabled:opacity-50">
-                    {reconectando ? "Reconectando…" : "Reconectar"}
-                  </button>
-                )}
-                <button type="button" onClick={gestor.recargar} className="text-sm font-semibold text-emerald-primary underline">Reintentar</button>
-              </div>
-            </div>
-          )}
-
           {esPapelera && gestor.itemsVisibles.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border-line/50 bg-bg-cream/60 p-3">
               <p className="text-sm text-slate-text">Los elementos en la papelera se pueden restaurar o eliminar definitivamente.</p>
               <button type="button" onClick={confirmarVaciarPapelera} disabled={!puedeOperar} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-300/40 px-3 text-sm font-medium text-red-700 hover:bg-red-500/10 disabled:opacity-50">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />Vaciar papelera
               </button>
-            </div>
-          )}
-
-          {gestor.seleccionIds.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-primary/40 bg-emerald-primary/10 p-3">
-              <p className="text-sm font-medium text-bg-dark">{gestor.seleccionIds.length} elemento(s) seleccionado(s)</p>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setAccionesSeleccionAbiertas(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-primary px-3 text-sm font-semibold text-white hover:bg-emerald-hover">
-                  <MoreHorizontal className="h-4 w-4" aria-hidden="true" />Acciones
-                </button>
-                <button type="button" onClick={gestor.limpiarSeleccion} aria-label="Limpiar selección" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-line/60 text-slate-text hover:bg-emerald-primary/5 hover:text-bg-dark">
-                  <X className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
             </div>
           )}
 
@@ -335,6 +314,7 @@ export default function AlmacenamientoPage() {
         obtenerUrlContenido={gestor.obtenerUrlContenido}
         obtenerUrlPrevisualizacion={gestor.obtenerUrlPrevisualizacion}
         alDescargar={alDescargar}
+        cargarContenido={gestor.descargar}
         alCerrar={gestor.cerrarArchivo}
       />
 
@@ -356,35 +336,6 @@ export default function AlmacenamientoPage() {
         alCerrar={() => setModalMover({ abierto: false, ids: [], accion: "mover" })}
         alConfirmar={confirmarMover}
       />
-
-      {accionesSeleccionAbiertas && createPortal(
-        <div className="fixed inset-0 z-[1200] flex items-end justify-center bg-bg-dark/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) setAccionesSeleccionAbiertas(false); }}>
-          <section role="dialog" aria-modal="true" aria-label="Acciones de elementos seleccionados" className="glass-surface w-full max-w-md rounded-t-3xl border border-border-line/30 bg-bg-cream/95 p-4 text-bg-dark shadow-2xl sm:rounded-3xl">
-            <header className="mb-3 flex items-center justify-between gap-3 border-b border-border-line/30 pb-3">
-              <h2 className="font-display text-lg font-semibold">Acciones</h2>
-              <button type="button" onClick={() => setAccionesSeleccionAbiertas(false)} aria-label="Cerrar acciones" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark"><X className="h-4 w-4" aria-hidden="true" /></button>
-            </header>
-            <p className="mb-3 text-sm text-slate-text">{gestor.seleccionIds.length} elemento(s) seleccionado(s)</p>
-            <div className="grid gap-2">
-              {!esPapelera && (
-                <>
-                  <button type="button" onClick={() => { setAccionesSeleccionAbiertas(false); gestor.copiar(gestor.seleccionIds); abrirMover(gestor.seleccionIds, "copiar"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-bg-dark hover:bg-emerald-primary/5"><Copy className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Copiar</button>
-                  <button type="button" onClick={() => { setAccionesSeleccionAbiertas(false); abrirMover(gestor.seleccionIds, "mover"); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-bg-dark hover:bg-emerald-primary/5"><HardDrive className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Mover</button>
-                  <button type="button" onClick={() => { setAccionesSeleccionAbiertas(false); setItemCompartir(gestor.items.find((i) => i.id === gestor.seleccionIds[0]) || null); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-bg-dark hover:bg-emerald-primary/5"><ExternalLink className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Compartir</button>
-                  <button type="button" onClick={async () => { setAccionesSeleccionAbiertas(false); if (window.confirm("¿Mover los elementos seleccionados a la papelera?")) { try { await gestor.eliminarItems(gestor.seleccionIds); mostrarExito("Elementos enviados a la papelera."); } catch (e) { mostrarError(e, "No se pudieron mover a la papelera"); } } }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-red-700 hover:bg-red-500/10"><Trash2 className="h-4 w-4" aria-hidden="true" />Mover a papelera</button>
-                </>
-              )}
-              {esPapelera && (
-                <>
-                  <button type="button" onClick={async () => { setAccionesSeleccionAbiertas(false); await alRestaurar(gestor.seleccionIds); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-bg-dark hover:bg-emerald-primary/5"><RotateCcw className="h-4 w-4 text-emerald-primary" aria-hidden="true" />Restaurar</button>
-                  <button type="button" onClick={async () => { setAccionesSeleccionAbiertas(false); await eliminarDefinitivo(gestor.seleccionIds); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-red-700 hover:bg-red-500/10"><Trash2 className="h-4 w-4" aria-hidden="true" />Eliminar definitivamente</button>
-                </>
-              )}
-            </div>
-          </section>
-        </div>,
-        document.body
-      )}
     </section>
   );
 }

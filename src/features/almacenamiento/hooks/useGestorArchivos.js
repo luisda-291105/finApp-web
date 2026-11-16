@@ -1,93 +1,103 @@
 /**
- * @uso        Gestor del árbol de archivos del feature almacenamiento (demo local)
- * @funciones  useGestorArchivos()
- * @datos      Items planos con padreId; vistas unidad, recientes, compartidos y papelera
- * @eventos    Navegación, creación, subida, selección, contexto, copiar/mover/eliminar
- * @estados    items, carpetaId, vista, busqueda, seleccion, menuContexto, archivoActivoId, subiendo, progreso, cargando, error
+ * @uso        Gestor del árbol de archivos del feature almacenamiento conectado a backend
+ * @funciones  useGestorArchivos({ cuentaId })
+ * @datos      Items remotos por cuenta/vista/carpeta; rutas, búsqueda, orden y selección múltiple
+ * @eventos    Navegación, carga, creación, subida, selección, contexto, copiar/mover/eliminar/compartir
+ * @estados    items, itemsPorVista, carpetaId, ruta, vista, busqueda, orden, seleccion, menuContexto, archivoActivoId, subiendo, progreso, cargando, error, modoMover, portapapeles, renombrandoId, nombreEditando
  * @usadoPor   AlmacenamientoPage
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { crearId, esArchivo, esRecienteArchivo, TIPO_ARCHIVO, TIPO_CARPETA } from "../utils/archivos";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  copiar as copiarRemoto,
+  crearCarpeta as crearCarpetaRemota,
+  descargarArchivo,
+  enviarAPapelera,
+  listarArchivos,
+  mover as moverRemoto,
+  operacionLote,
+  renombrar as renombrarRemoto,
+  restaurar as restaurarRemoto,
+  subirArchivo,
+  urlContenido,
+  urlPrevisualizacion,
+  vaciarPapelera as vaciarPapeleraRemota,
+} from "../services/almacenamientoServicio";
 
-/** Identificador de la carpeta raíz demo: «Mi unidad». */
-const ID_RAIZ = "arch-unidad";
+const VISTAS = ["unidad", "recientes", "compartidos", "destacados", "papelera"];
+const normalizarVista = (vista) => (VISTAS.includes(vista) ? vista : "unidad");
+const extraerLista = (respuesta) => Array.isArray(respuesta) ? respuesta : respuesta?.items || respuesta?.archivos || respuesta?.datos || respuesta?.data || [];
+const extraerRuta = (respuesta, carpetaDestino, carpetas = {}, rutaAnterior = []) => {
+  const ruta = Array.isArray(respuesta?.ruta) ? respuesta.ruta : Array.isArray(respuesta?.breadcrumbs) ? respuesta.breadcrumbs : null;
+  if (ruta?.length) return ruta.map((n) => ({ id: n.id || "root", nombre: n.nombre || "Carpeta" }));
+  if (!carpetaDestino || carpetaDestino === "root") return [{ id: "root", nombre: "Mi unidad" }];
+  const indice = rutaAnterior.findIndex((n) => String(n.id) === String(carpetaDestino));
+  if (indice >= 0) return rutaAnterior.slice(0, indice + 1);
+  const conocida = carpetas[carpetaDestino];
+  if (rutaAnterior.length) return [...rutaAnterior, { id: carpetaDestino, nombre: conocida?.nombre || "Carpeta" }];
+  return [{ id: "root", nombre: "Mi unidad" }, { id: carpetaDestino, nombre: conocida?.nombre || "Carpeta" }];
+};
 
-const VISTA_UNIDAD = "unidad";
-const VISTA_RECIENTES = "recientes";
-const VISTA_COMPARTIDOS = "compartidos";
-const VISTA_PAPELERA = "papelera";
-
-function crearArbolDemo() {
-  const ahora = Date.now();
-  const dia = 24 * 60 * 60 * 1000;
-  const item = (id, nombre, tipo, padreId, diasModificacion, tamanio = 0, extra = {}) => ({
-    id,
-    nombre,
-    tipo,
-    padreId,
-    fechaModificacion: new Date(ahora - (diasModificacion ?? 0) * dia).toISOString(),
-    tamanio,
-    ...extra,
-  });
-  return [
-    item(ID_RAIZ, "Mi unidad", TIPO_CARPETA, null, 0, 0),
-    item("arch-finanzas", "Finanzas", TIPO_CARPETA, ID_RAIZ, 2, 0),
-    item("arch-personal", "Personal", TIPO_CARPETA, ID_RAIZ, 5, 0),
-    item("arch-facturas", "Facturas", TIPO_CARPETA, "arch-finanzas", 1, 0),
-    item("arch-presupuestos", "Presupuestos", TIPO_CARPETA, "arch-finanzas", 3, 0),
-    item("arch-contrato", "contrato-personal.pdf", TIPO_ARCHIVO, "arch-personal", 6, 148_520, {
-      mime: "application/pdf",
-      compartido: false,
-      eliminado: false,
-    }),
-    item("arch-factura-2026-03", "factura-2026-03.pdf", TIPO_ARCHIVO, "arch-facturas", 0.2, 248_120, {
-      mime: "application/pdf",
-      compartido: false,
-      eliminado: false,
-    }),
-    item("arch-factura-2026-04", "factura-2026-04.pdf", TIPO_ARCHIVO, "arch-facturas", 1.2, 231_980, {
-      mime: "application/pdf",
-      compartido: false,
-      eliminado: false,
-    }),
-    item("arch-presupuesto-2026", "presupuesto-2026.xlsx", TIPO_ARCHIVO, "arch-presupuestos", 3.5, 88_430, {
-      mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      compartido: false,
-      eliminado: false,
-    }),
-  ];
+function normalizarItem(item = {}) {
+  return {
+    ...item,
+    id: item.id ?? item.archivoId ?? item.idArchivo ?? "",
+    nombre: item.nombre ?? item.name ?? "Sin nombre",
+    tipo: item.tipo === "CARPETA" || item.tipo === "carpeta" || item.esCarpeta ? "carpeta" : "archivo",
+    padreId: item.padreId ?? item.parentId ?? item.carpetaId ?? null,
+    mime: item.mime ?? item.mimeType ?? item.tipoMime ?? "",
+    tamanio: Number(item.tamanio ?? item.size ?? 0) || 0,
+    fechaModificacion: item.fechaModificacion ?? item.updatedAt ?? item.fechaActualizacion ?? item.modifiedTime ?? item.fecha ?? null,
+    compartido: Boolean(item.compartido ?? item.shared),
+    destacado: Boolean(item.destacado ?? item.starred),
+    eliminado: Boolean(item.eliminado ?? item.trashed),
+    enlaceExterno: item.enlaceExterno ?? item.webViewLink ?? item.urlExterna ?? "",
+    proveedor: item.proveedor ?? item.provider ?? "",
+  };
 }
 
-/** Devuelve los hijos directos de una carpeta (carpetas primero, luego archivos). */
-function hijosDe(items, carpetaId) {
-  const hijos = items.filter((item) => item.padreId === carpetaId && !item.eliminado);
-  const carpetas = hijos
-    .filter((item) => item.tipo === TIPO_CARPETA)
-    .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es", { sensitivity: "base" }));
-  const archivos = hijos
-    .filter((item) => item.tipo === TIPO_ARCHIVO)
-    .sort((a, b) => String(b.nombre).localeCompare(String(a.nombre), "es", { sensitivity: "base" }));
-  return [...carpetas, ...archivos];
+function esErrorSinContenido(error) {
+  const mensaje = String(error?.message || error || "");
+  return /no hay contenido|sin contenido|contenido vacío|contenido vacio|vac(í|i)o|no soportad[ao]|vista no soportada/i.test(mensaje);
 }
 
-/** Construye la miga de pan: la ruta desde «Mi unidad» hasta la carpeta activa. */
-function construirRuta(items, carpetaId) {
-  const ruta = [];
-  let actual = items.find((item) => item.id === carpetaId) || null;
-  let guardado = 0;
-  while (actual && guardado < 24) {
-    ruta.unshift({ id: actual.id, nombre: actual.nombre });
-    actual = actual.padreId ? items.find((item) => item.id === actual.padreId) || null : null;
-    guardado += 1;
+function esErrorNoEncontrado(error) {
+  const mensaje = String(error?.message || error || "");
+  return /recurso solicitado no existe|no existe|no encontrad/i.test(mensaje);
+}
+
+function mensajeAccionable(error) {
+  const mensaje = String(error?.message || error || "No se pudo completar la operación.");
+  if (/401|sesión|sesion|caduc/i.test(mensaje)) return "Tu sesión caducó. Inicia sesión nuevamente para continuar.";
+  if (/403|permiso|denegad/i.test(mensaje)) return "No tienes permisos para realizar esta acción en este archivo o carpeta.";
+  if (/quota|cuota|espacio|almacen/i.test(mensaje)) return "No hay espacio disponible o se alcanzó la cuota de almacenamiento.";
+  if (/409|conflic|reconex|reaut|token|scope|alcance|invalid_grant|desconect|expir/i.test(mensaje)) {
+    return `${mensaje} La cuenta puede requerir reconexión.`;
   }
-  return ruta;
+  return mensaje;
 }
 
-export function useGestorArchivos() {
-  const [items, setItems] = useState(crearArbolDemo);
-  const [carpetaId, setCarpetaId] = useState(ID_RAIZ);
-  const [vista, setVista] = useState(VISTA_UNIDAD);
+function ordenarItems(items, orden) {
+  const copia = [...items];
+  const criterio = orden?.campo || "nombre";
+  const direccion = orden?.direccion === "asc" ? 1 : -1;
+  copia.sort((a, b) => {
+    if (a.tipo !== b.tipo) return a.tipo === "carpeta" ? -1 : 1;
+    if (criterio === "fecha") return ((new Date(a.fechaModificacion || 0)).getTime() - (new Date(b.fechaModificacion || 0)).getTime()) * direccion;
+    if (criterio === "tamanio") return ((a.tamanio || 0) - (b.tamanio || 0)) * direccion;
+    return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es", { sensitivity: "base" }) * direccion;
+  });
+  return copia;
+}
+
+export function useGestorArchivos({ cuentaId = "" } = {}) {
+  const [itemsPorVista, setItemsPorVista] = useState({ unidad: [], recientes: [], compartidos: [], destacados: [], papelera: [] });
+  const [carpetas, setCarpetas] = useState({ root: { id: "root", nombre: "Mi unidad", padreId: null } });
+  const [carpetaId, setCarpetaId] = useState("root");
+  const [ruta, setRuta] = useState([{ id: "root", nombre: "Mi unidad" }]);
+  const [vista, setVista] = useState("unidad");
+  const [modoVista, setModoVista] = useState("grid");
   const [busqueda, setBusqueda] = useState("");
+  const [orden, setOrden] = useState({ campo: "nombre", direccion: "asc" });
   const [seleccion, setSeleccion] = useState(() => new Set());
   const [menuContexto, setMenuContexto] = useState(null);
   const [archivoActivoId, setArchivoActivoId] = useState(null);
@@ -95,51 +105,114 @@ export function useGestorArchivos() {
   const [portapapeles, setPortapapeles] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
   const [progreso, setProgreso] = useState(0);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
   const [renombrandoId, setRenombrandoId] = useState(null);
   const [nombreEditando, setNombreEditando] = useState("");
+  const cuentaRef = useRef(cuentaId);
+  const cuentaAnteriorRef = useRef(cuentaId);
+
+  useEffect(() => { cuentaRef.current = cuentaId; }, [cuentaId]);
 
   useEffect(() => {
-    const temporador = setTimeout(() => setCargando(false), 200);
-    return () => clearTimeout(temporador);
-  }, []);
+    setCarpetaId("root");
+    setRuta([{ id: "root", nombre: "Mi unidad" }]);
+    setSeleccion(new Set());
+    setMenuContexto(null);
+    setArchivoActivoId(null);
+    setModoMover(null);
+    setPortapapeles(null);
+    setRenombrandoId(null);
+    setNombreEditando("");
+    setBusqueda("");
+  }, [cuentaId]);
 
-  const carpetaActual = useMemo(
-    () => items.find((item) => item.id === carpetaId) || items.find((item) => item.id === ID_RAIZ) || null,
-    [items, carpetaId]
-  );
-
-  const itemsVisibles = useMemo(() => {
-    const consulta = busqueda.trim().toLowerCase();
-    let resultado = [];
-    if (vista === VISTA_UNIDAD) {
-      resultado = carpetaActual?.tipo === TIPO_CARPETA ? hijosDe(items, carpetaActual.id) : [];
-    } else if (vista === VISTA_RECIENTES) {
-      resultado = items.filter((item) => item.tipo === TIPO_ARCHIVO && !item.eliminado && esRecienteArchivo(item.fechaModificacion));
-    } else if (vista === VISTA_COMPARTIDOS) {
-      resultado = items.filter((item) => item.compartido && !item.eliminado);
-    } else if (vista === VISTA_PAPELERA) {
-      resultado = items.filter((item) => item.eliminado);
+  const cargarVista = useCallback(async (vistaDestino = vista, carpetaDestino = carpetaId, busquedaDestino = busqueda) => {
+    if (!cuentaRef.current) {
+      setItemsPorVista({ unidad: [], recientes: [], compartidos: [], destacados: [], papelera: [] });
+      setRuta([{ id: "root", nombre: "Mi unidad" }]);
+      setCargando(false);
+      setError("");
+      setAviso("");
+      return;
     }
-    const filtrado = consulta ? resultado.filter((item) => item.nombre.toLowerCase().includes(consulta)) : resultado;
-    return [...filtrado].sort((a, b) => String(b.nombre).localeCompare(String(a.nombre), "es", { sensitivity: "base" }));
-  }, [items, vista, busqueda, carpetaActual]);
+    setCargando(true);
+    setError("");
+    setAviso("");
+    if (vistaDestino === "unidad") {
+      setRuta((previa) => extraerRuta(null, carpetaDestino, carpetas, previa));
+    }
+    try {
+      const respuesta = await listarArchivos(cuentaRef.current, {
+        vista: vistaDestino,
+        carpetaId: vistaDestino === "unidad" ? carpetaDestino : undefined,
+        busqueda: busquedaDestino || undefined,
+        ordenCampo: orden.campo,
+        ordenDireccion: orden.direccion,
+      });
+      const lista = extraerLista(respuesta).map(normalizarItem).filter((item) => item.id);
+      setItemsPorVista((previo) => ({ ...previo, [vistaDestino]: lista }));
+      if (vistaDestino === "unidad") {
+        const rutaRespuesta = extraerRuta(respuesta, carpetaDestino, carpetas, [{ id: "root", nombre: "Mi unidad" }]);
+        setRuta((previa) => extraerRuta(respuesta, carpetaDestino, carpetas, previa.length ? previa : rutaRespuesta));
+        setCarpetas((previo) => {
+          const siguiente = { ...previo };
+          lista.filter((item) => item.tipo === "carpeta").forEach((item) => { siguiente[item.id] = { id: item.id, nombre: item.nombre, padreId: item.padreId ?? carpetaDestino }; });
+          (extraerRuta(respuesta, carpetaDestino, carpetas, rutaRespuesta)).forEach((nodo) => { siguiente[nodo.id] = { ...(siguiente[nodo.id] || {}), id: nodo.id, nombre: nodo.nombre }; });
+          return siguiente;
+        });
+      }
+    } catch (fallo) {
+      setItemsPorVista((previo) => ({ ...previo, [vistaDestino]: [] }));
+      if (esErrorSinContenido(fallo)) {
+        setError("");
+        setAviso("");
+      } else if (esErrorNoEncontrado(fallo)) {
+        setError("");
+        setAviso("Carpeta o recurso no encontrado o inaccesible.");
+      } else {
+        setError(mensajeAccionable(fallo));
+        setAviso("");
+      }
+    } finally {
+      setCargando(false);
+    }
+  }, [busqueda, carpetaId, carpetas, orden.campo, orden.direccion, vista]);
 
-  const ruta = useMemo(() => construirRuta(items, carpetaId), [items, carpetaId]);
+  useEffect(() => {
+    setSeleccion(new Set());
+    setMenuContexto(null);
+    const cambioCuenta = cuentaAnteriorRef.current !== cuentaId;
+    cuentaAnteriorRef.current = cuentaId;
+    if (cambioCuenta) {
+      cargarVista(vista, "root", "");
+      return;
+    }
+    cargarVista(vista, carpetaId, busqueda);
+  }, [cuentaId, vista, carpetaId, busqueda, orden.campo, orden.direccion]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const itemsBase = itemsPorVista[normalizarVista(vista)] || [];
+  const itemsVisibles = useMemo(() => {
+    const filtrados = busqueda ? itemsBase : itemsBase;
+    return ordenarItems(filtrados, orden);
+  }, [itemsBase, orden, busqueda]);
+
+  const items = useMemo(() => Object.values(itemsPorVista).flat(), [itemsPorVista]);
   const seleccionIds = useMemo(() => Array.from(seleccion), [seleccion]);
+  const archivoActivo = useMemo(() => items.find((item) => item.id === archivoActivoId) || null, [items, archivoActivoId]);
 
   const abrirCarpeta = useCallback((id) => {
-    setCarpetaId(id);
-    setVista(VISTA_UNIDAD);
+    setCarpetaId(id || "root");
+    setVista("unidad");
     setBusqueda("");
     setSeleccion(new Set());
   }, []);
 
   const seleccionarVista = useCallback((nuevaVista) => {
-    setVista(nuevaVista);
-    if (nuevaVista !== VISTA_UNIDAD) setCarpetaId(ID_RAIZ);
+    const destino = normalizarVista(nuevaVista);
+    setVista(destino);
+    if (destino !== "unidad") setCarpetaId("root");
     setBusqueda("");
     setSeleccion(new Set());
   }, []);
@@ -147,9 +220,8 @@ export function useGestorArchivos() {
   const seleccionarId = useCallback((id, evento) => {
     setSeleccion((previo) => {
       const siguiente = new Set(previo);
-      if (evento?.ctrlKey || evento?.metaKey) {
-        if (siguiente.has(id)) siguiente.delete(id);
-        else siguiente.add(id);
+      if (evento?.ctrlKey || evento?.metaKey || evento?.alternar) {
+        if (siguiente.has(id)) siguiente.delete(id); else siguiente.add(id);
         return siguiente;
       }
       siguiente.clear();
@@ -159,168 +231,145 @@ export function useGestorArchivos() {
   }, []);
 
   const limpiarSeleccion = useCallback(() => setSeleccion(new Set()), []);
-
-  const abrirMenuContextual = useCallback((evento, ids) => {
-    evento.preventDefault();
-    evento.stopPropagation();
-    setMenuContexto({ ids, x: evento.clientX, y: evento.clientY });
-  }, []);
-
+  const abrirMenuContextual = useCallback((evento, ids) => { evento.preventDefault(); evento.stopPropagation(); setMenuContexto({ ids, x: evento.clientX, y: evento.clientY }); }, []);
   const cerrarMenu = useCallback(() => setMenuContexto(null), []);
-
-  const abrirArchivo = useCallback((id) => {
-    setArchivoActivoId(id);
-  }, []);
-
+  const abrirArchivo = useCallback((id) => setArchivoActivoId(id), []);
   const cerrarArchivo = useCallback(() => setArchivoActivoId(null), []);
 
+  const recargar = useCallback(() => cargarVista(vista, carpetaId, busqueda), [cargarVista, vista, carpetaId, busqueda]);
+  const limpiarError = useCallback(() => setError(""), []);
+  const limpiarAviso = useCallback(() => setAviso(""), []);
+
+  const ejecutarAccion = useCallback(async (accion) => {
+    if (!cuentaId) return;
+    setError("");
+    setAviso("");
+    try {
+      await accion();
+      await recargar();
+    } catch (fallo) {
+      setError(mensajeAccionable(fallo));
+      throw fallo;
+    }
+  }, [cuentaId, recargar]);
+
   const iniciarRenombrado = useCallback((id) => {
-    setArchivoActivoId(null);
-    setMenuContexto(null);
-    setRenombrandoId(id);
+    setArchivoActivoId(null); setMenuContexto(null); setRenombrandoId(id);
     const item = items.find((itemActual) => itemActual.id === id);
     setNombreEditando(item?.nombre || "");
   }, [items]);
 
-  const confirmarRenombrado = useCallback(() => {
-    const id = renombrandoId;
-    const nombre = String(nombreEditando || "").trim();
-    if (id && nombre) {
-      setItems((previo) => previo.map((item) => (item.id === id ? { ...item, nombre } : item)));
-    }
-    setRenombrandoId(null);
-    setNombreEditando("");
-  }, [renombrandoId, nombreEditando]);
+  const confirmarRenombrado = useCallback(async (id = renombrandoId, nombre = nombreEditando) => {
+    const valor = String(nombre || "").trim();
+    if (!id || !valor || !cuentaId) { setRenombrandoId(null); setNombreEditando(""); return; }
+    await ejecutarAccion(() => renombrarRemoto(cuentaId, id, valor));
+    setRenombrandoId(null); setNombreEditando("");
+  }, [cuentaId, ejecutarAccion, nombreEditando, renombrandoId]);
 
-  const cancelarRenombrado = useCallback(() => {
-    setRenombrandoId(null);
-    setNombreEditando("");
-  }, []);
-
-  const iniciarModoMover = useCallback((ids) => {
-    setMenuContexto(null);
-    setSeleccion(new Set(ids));
-    setModoMover({ ids });
-  }, []);
-
-  const cancelarModoMover = useCallback(() => setModoMover(null), []);
-
-  const copiar = useCallback((ids) => {
-    setModoMover(null);
-    setPortapapeles({ ids, corte: false });
-  }, []);
-
-  const mover = useCallback((ids) => {
-    setModoMover(null);
-    setPortapapeles({ ids, corte: true });
-  }, []);
-
-  const pegar = useCallback(() => {
-    if (!portapapeles || portapapeles.ids.length === 0) return;
-    const idsOrigen = portapapeles.ids;
-    const corte = portapapeles.corte;
-    const destino = carpetaId;
-    if (corte) {
-      setItems((previo) => previo.filter((item) => !idsOrigen.includes(item.id)));
-    }
-    idsOrigen.forEach((idOrigen) => {
-      const origen = items.find((item) => item.id === idOrigen);
-      if (!origen) return;
-      setItems((previo) => [
-        ...previo,
-        {
-          id: crearId(),
-          nombre: origen.nombre,
-          tipo: origen.tipo,
-          padreId: destino,
-          mime: origen.mime,
-          tamanio: origen.tamanio,
-          fechaModificacion: new Date().toISOString(),
-          compartido: false,
-          eliminado: false,
-        },
-      ]);
-    });
-    setPortapapeles(null);
-  }, [portapapeles, items, carpetaId]);
-
-  const crearCarpeta = useCallback(() => {
-    const existentes = items.filter((item) => item.padreId === carpetaId && !item.eliminado && item.tipo === TIPO_CARPETA);
-    const nombre = `Nueva carpeta ${existentes.length + 1}`;
-    const nuevo = {
-      id: crearId(),
-      nombre,
-      tipo: TIPO_CARPETA,
-      padreId: carpetaId,
-      fechaModificacion: new Date().toISOString(),
-      tamanio: 0,
-      compartido: false,
-      eliminado: false,
-    };
-    setItems((previo) => [...previo, nuevo]);
-    setSeleccion(new Set([nuevo.id]));
-    setRenombrandoId(nuevo.id);
-    setNombreEditando(nombre);
-    return nuevo.id;
-  }, [items, carpetaId]);
-
-  const subirArchivos = useCallback(async (archivos) => {
-    if (!archivos || archivos.length === 0) return;
-    setSubiendo(true);
-    setProgreso(0);
-    try {
-      for (const archivo of archivos) {
-        setProgreso((valor) => Math.min(100, valor + 20));
-        await new Promise((resolver) => setTimeout(resolver, 40));
-        setItems((previo) => [
-          ...previo,
-          {
-            id: crearId(),
-            nombre: archivo.name || "archivo",
-            tipo: TIPO_ARCHIVO,
-            padreId: carpetaId,
-            mime: archivo.type || "application/octet-stream",
-            tamanio: Number(archivo.size) || 0,
-            fechaModificacion: new Date(archivo.lastModified || Date.now()).toISOString(),
-            compartido: false,
-            eliminado: false,
-          },
-        ]);
-      }
-      setProgreso(100);
-    } finally {
-      setSubiendo(false);
-    }
-  }, [carpetaId]);
-
-  const eliminarItems = useCallback((ids) => {
-    const lista = Array.isArray(ids) ? ids : [ids];
-    setItems((previo) => previo.map((item) => (lista.includes(item.id) ? { ...item, eliminado: true } : item)));
-    setSeleccion(new Set());
-  }, []);
+  const cancelarRenombrado = useCallback(() => { setRenombrandoId(null); setNombreEditando(""); }, []);
 
   const renombrarItem = useCallback((id, nombre) => {
-    const valor = String(nombre || "").trim();
-    if (!id || !valor) return;
-    setItems((previo) => previo.map((item) => (item.id === id ? { ...item, nombre: valor } : item)));
+    setRenombrandoId(id);
+    setNombreEditando(nombre ?? "");
   }, []);
 
-  const compartirItem = useCallback((id) => {
-    setItems((previo) => previo.map((item) => (item.id === id ? { ...item, compartido: !item.compartido } : item)));
-  }, []);
+  const iniciarModoMover = useCallback((ids) => { setMenuContexto(null); setSeleccion(new Set(ids)); setModoMover({ ids }); }, []);
+  const cancelarModoMover = useCallback(() => setModoMover(null), []);
+  const copiar = useCallback((ids) => { setModoMover(null); setPortapapeles({ ids, corte: false }); }, []);
+  const mover = useCallback((ids) => { setModoMover(null); setPortapapeles({ ids, corte: true }); }, []);
 
-  const archivoActivo = useMemo(() => items.find((item) => item.id === archivoActivoId) || null, [items, archivoActivoId]);
+  const pegar = useCallback(async (destinoId = carpetaId) => {
+    if (!portapapeles || portapapeles.ids.length === 0 || !cuentaId) return;
+    const idsOrigen = portapapeles.ids;
+    if (portapapeles.corte) await ejecutarAccion(() => moverRemoto(cuentaId, { ids: idsOrigen, destinoId }));
+    else await ejecutarAccion(() => copiarRemoto(cuentaId, { ids: idsOrigen, destinoId }));
+    setPortapapeles(null); setModoMover(null);
+  }, [carpetaId, cuentaId, ejecutarAccion, portapapeles]);
+
+  const crearCarpeta = useCallback(async () => {
+    if (!cuentaId) return null;
+    const nombre = "Nueva carpeta";
+    const creada = await ejecutarAccion(async () => {
+      const resultado = await crearCarpetaRemota(cuentaId, { nombre, padreId: vista === "unidad" ? carpetaId : "root" });
+      if (resultado?.id) { setRenombrandoId(resultado.id); setNombreEditando(resultado.nombre || nombre); }
+      return resultado;
+    }).then(() => null).catch(() => null);
+    return creada;
+  }, [carpetaId, cuentaId, ejecutarAccion, vista]);
+
+  const subirArchivos = useCallback(async (archivos) => {
+    const lista = Array.from(archivos || []);
+    if (!cuentaId || lista.length === 0) return;
+    setSubiendo(true); setProgreso(0); setError("");
+    try {
+      let completados = 0;
+      for (const archivo of lista) {
+        const form = new FormData();
+        form.append("archivo", archivo);
+        form.append("padreId", vista === "unidad" ? carpetaId : "root");
+        await subirArchivo(cuentaId, form);
+        completados += 1;
+        setProgreso(Math.round((completados / lista.length) * 100));
+      }
+      await recargar();
+    } catch (fallo) {
+      setError(mensajeAccionable(fallo));
+    } finally {
+      setSubiendo(false);
+      setTimeout(() => setProgreso(0), 400);
+    }
+  }, [carpetaId, cuentaId, recargar, vista]);
+
+  const eliminarItems = useCallback(async (ids, { definitivo = false } = {}) => {
+    const lista = Array.isArray(ids) ? ids : [ids];
+    if (!lista.length || !cuentaId) return;
+    if (vista === "papelera" || definitivo) {
+      await ejecutarAccion(() => operacionLote(cuentaId, { accion: "eliminar_definitivo", ids: lista }));
+    } else {
+      await ejecutarAccion(() => enviarAPapelera(cuentaId, { ids: lista }));
+    }
+    setSeleccion(new Set());
+  }, [cuentaId, ejecutarAccion, vista]);
+
+  const restaurarItems = useCallback(async (ids) => {
+    const lista = Array.isArray(ids) ? ids : [ids];
+    if (!lista.length || !cuentaId) return;
+    await ejecutarAccion(() => restaurarRemoto(cuentaId, { ids: lista }));
+    setSeleccion(new Set());
+  }, [cuentaId, ejecutarAccion]);
+
+  const vaciarPapelera = useCallback(async () => {
+    if (!cuentaId) return;
+    await ejecutarAccion(() => vaciarPapeleraRemota(cuentaId));
+    setSeleccion(new Set());
+  }, [cuentaId, ejecutarAccion]);
+
+  const compartirItem = useCallback((id) => id, []);
+
+  const obtenerUrlContenido = useCallback((archivoId = archivoActivoId) => (cuentaId && archivoId ? urlContenido(cuentaId, archivoId) : ""), [archivoActivoId, cuentaId]);
+  const obtenerUrlPrevisualizacion = useCallback((archivoId = archivoActivoId) => (cuentaId && archivoId ? urlPrevisualizacion(cuentaId, archivoId) : ""), [archivoActivoId, cuentaId]);
+  const descargar = useCallback(async (archivoId) => {
+    if (!cuentaId || !archivoId) return null;
+    return descargarArchivo(cuentaId, archivoId);
+  }, [cuentaId]);
+
+  const listarCarpetasDestino = useCallback(() => items.filter((item) => item.tipo === "carpeta"), [items]);
 
   return {
+    cuentaId,
     items,
-    carpetaActual,
+    carpetaActual: carpetas[carpetaId] || { id: "root", nombre: "Mi unidad" },
     itemsVisibles,
     ruta,
     carpetaId,
     vista,
     setVista,
+    modoVista,
+    setModoVista,
     busqueda,
     setBusqueda,
+    orden,
+    setOrden,
     seleccion,
     seleccionIds,
     seleccionarId,
@@ -349,11 +398,21 @@ export function useGestorArchivos() {
     subiendo,
     progreso,
     eliminarItems,
+    restaurarItems,
+    vaciarPapelera,
     renombrarItem,
     compartirItem,
     seleccionarVista,
     abrirCarpeta,
     cargando,
     error,
+    aviso,
+    limpiarError,
+    limpiarAviso,
+    recargar,
+    obtenerUrlContenido,
+    obtenerUrlPrevisualizacion,
+    descargar,
+    listarCarpetasDestino,
   };
 }
