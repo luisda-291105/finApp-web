@@ -26,10 +26,9 @@ describe("LandingLayout", () => {
   const mockAbrirAuth = vi.fn();
 
   beforeEach(() => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
   });
 
   it("compone Header, Hero, StatsBar, Features, HowItWorks, CtaSection, Footer correctamente", () => {

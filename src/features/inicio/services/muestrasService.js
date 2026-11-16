@@ -12,6 +12,8 @@ function prepararPayload(muestra) {
     ? [...new Set((Array.isArray(muestra.cuentasCorreo) ? muestra.cuentasCorreo : [muestra.cuentaCorreo || "todas"]).map(String))]
     : null;
   const cuentaCorreo = cuentasCorreo?.length === 1 ? cuentasCorreo[0] : (cuentasCorreo ? "todas" : null);
+  const fuentes = [...new Set((Array.isArray(muestra.fuentes) && muestra.fuentes.length > 0 ? muestra.fuentes : [fuente]).filter(Boolean).map(String))];
+  const columnasDashboard = String(muestra.columnasDashboard) === "2" || Number(muestra.columnasDashboard) === 2 ? 2 : 1;
   return {
     tipo,
     titulo: muestra.titulo.trim(),
@@ -20,6 +22,8 @@ function prepararPayload(muestra) {
       segmentoContable,
       cuentaCorreo,
       cuentasCorreo,
+      fuentes,
+      columnasDashboard,
       ...(muestra.agrupacionId ? { agrupacionId: String(muestra.agrupacionId), agrupacionNombre: muestra.agrupacionNombre || "Agrupación" } : {}),
       ...(Number.isSafeInteger(Number(muestra.ordenDashboard)) ? { ordenDashboard: Number(muestra.ordenDashboard) } : {}),
     }),
@@ -31,14 +35,19 @@ function normalizarRespuesta(muestra) {
   try { datos = typeof muestra.datos === "string" ? JSON.parse(muestra.datos) : (muestra.datos || {}); }
   catch { datos = {}; }
   const fuenteGuardada = datos.fuente || "contabilidad";
+  const fuente = fuenteGuardada === "transacciones" ? "contabilidad" : fuenteGuardada;
+  const fuentesGuardadas = Array.isArray(datos.fuentes) && datos.fuentes.length > 0 ? datos.fuentes.map(String) : [fuente];
+  const columnasDashboard = Number(datos.columnasDashboard) === 2 ? 2 : 1;
   return {
     id: String(muestra.id),
     titulo: muestra.titulo,
     tipo: tipoAUi[String(muestra.tipo).toUpperCase()] || "tarjeta",
-    fuente: fuenteGuardada === "transacciones" ? "contabilidad" : fuenteGuardada,
+    fuente,
+    fuentes: fuentesGuardadas,
     segmentoContable: datos.segmentoContable || "todos",
     cuentaCorreo: datos.cuentaCorreo || "todas",
     cuentasCorreo: Array.isArray(datos.cuentasCorreo) ? datos.cuentasCorreo : undefined,
+    columnasDashboard,
     ordenDashboard: Number.isSafeInteger(Number(datos.ordenDashboard)) ? Number(datos.ordenDashboard) : undefined,
     agrupacionId: datos.agrupacionId ? String(datos.agrupacionId) : undefined,
     agrupacionNombre: datos.agrupacionNombre || undefined,

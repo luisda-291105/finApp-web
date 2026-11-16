@@ -136,7 +136,7 @@ describe("BottomNav", () => {
     expect(container.querySelectorAll("style")).toHaveLength(0);
   });
 
-  it("aplica clases de contenedor correctas (fixed, bottom-0, z-50, grid-cols-4)", () => {
+  it("aplica clases de contenedor correctas (fixed, bottom-0, z-[1100], grid-cols-4)", () => {
     render(<BottomNav {...propsBase} />);
 
     const nav = screen.getByRole("navigation");
@@ -144,7 +144,7 @@ describe("BottomNav", () => {
     expect(nav).toHaveClass("bottom-0");
     expect(nav).toHaveClass("left-0");
     expect(nav).toHaveClass("right-0");
-    expect(nav).toHaveClass("z-50");
+    expect(nav).toHaveClass("z-[1100]");
     expect(nav).toHaveClass("grid");
     expect(nav).toHaveClass("grid-cols-4");
     expect(nav).toHaveClass("bg-bg-dark/80");

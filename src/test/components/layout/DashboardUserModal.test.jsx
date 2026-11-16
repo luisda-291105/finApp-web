@@ -486,15 +486,15 @@ describe("DashboardUserModal", () => {
   });
 
   describe("estilos y clases Fluid Glass", () => {
-    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-50", () => {
+    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-[1105]", () => {
       renderModal();
       const overlay = obtenerOverlay();
       expect(overlay).toBeTruthy();
       expect(overlay.classList.contains("backdrop-blur-sm")).toBe(true);
-      expect(overlay.classList.contains("z-50")).toBe(true);
+      expect(overlay.classList.contains("z-[1105]")).toBe(true);
     });
 
-    it("panel usa bg-bg-cream/95 glass-surface border-border-line/30 rounded-2xl shadow-xl z-60", () => {
+    it("panel usa bg-bg-cream/95 glass-surface border-border-line/30 rounded-2xl shadow-xl z-[1110]", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
@@ -502,7 +502,7 @@ describe("DashboardUserModal", () => {
       expect(panel.classList.contains("border-border-line/30")).toBe(true);
       expect(panel.classList.contains("rounded-2xl")).toBe(true);
       expect(panel.classList.contains("shadow-xl")).toBe(true);
-      expect(panel.classList.contains("z-60")).toBe(true);
+      expect(panel.classList.contains("z-[1110]")).toBe(true);
       expect(panel.classList.contains("w-[90vw]")).toBe(true);
       expect(panel.classList.contains("max-w-sm")).toBe(true);
     });

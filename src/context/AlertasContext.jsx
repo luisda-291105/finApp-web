@@ -9,7 +9,15 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { NotificacionLateral, PilaNotificacionesLaterales } from "../components/ui/alertas";
 
-const AlertasContext = createContext(null);
+const alertasNoOp = Object.freeze({
+  __sinProveedor: true,
+  alertas: [],
+  mostrarAlerta: () => null,
+  cerrarAlerta: () => {},
+  limpiarAlertas: () => {},
+});
+
+const AlertasContext = createContext(alertasNoOp);
 
 let contadorId = 0;
 function crearId() {
@@ -92,7 +100,5 @@ export function AlertasProvider({ children }) {
 
 /** Hook para mostrar y cerrar alertas globales laterales. */
 export function useAlertas() {
-  const contexto = useContext(AlertasContext);
-  if (!contexto) throw new Error("useAlertas debe usarse dentro de AlertasProvider.");
-  return contexto;
+  return useContext(AlertasContext);
 }

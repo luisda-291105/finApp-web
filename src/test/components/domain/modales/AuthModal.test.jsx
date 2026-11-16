@@ -154,7 +154,8 @@ describe("AuthModal", () => {
       renderModal();
       const dialogo = obtenerDialogo();
       expect(dialogo.classList.contains("max-h-[85vh]")).toBe(true);
-      expect(dialogo.classList.contains("overflow-y-auto")).toBe(true);
+      expect(dialogo.classList.contains("overflow-hidden")).toBe(true);
+      expect(dialogo.querySelector(".overflow-y-auto")).not.toBeNull();
       expect(dialogo.getAttribute("tabindex")).toBe("-1");
     });
   });

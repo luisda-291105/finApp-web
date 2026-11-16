@@ -14,17 +14,16 @@ import { useReveal } from "../../hooks/useReveal";
 describe("useReveal", () => {
   it("inicia visible=false", () => {
     let observe = vi.fn();
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe,
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe, disconnect: vi.fn() };
+    });
     const { result } = renderHook(() => useReveal());
     expect(result.current.visible).toBe(false);
   });
 
   it("usa threshold 0.15 y rootMargin 0px 0px -8% 0px por defecto", () => {
     let opcionesRecibidas;
-    global.IntersectionObserver = vi.fn().mockImplementation((cb, opts) => {
+    global.IntersectionObserver = vi.fn().mockImplementation(function (cb, opts) {
       opcionesRecibidas = opts;
       return { observe: vi.fn(), disconnect: vi.fn() };
     });
@@ -40,7 +39,7 @@ describe("useReveal", () => {
   it("desconecta el observer tras la primera intersección", () => {
     let callback;
     const disconnect = vi.fn();
-    global.IntersectionObserver = vi.fn().mockImplementation((cb) => {
+    global.IntersectionObserver = vi.fn().mockImplementation(function (cb) {
       callback = cb;
       return { observe: vi.fn(), disconnect };
     });
@@ -58,10 +57,9 @@ describe("useReveal", () => {
 
   it("desconecta el observer al desmontar", () => {
     const disconnect = vi.fn();
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect,
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect };
+    });
     function Sonda() {
       const { ref } = useReveal();
       return createElement("div", { ref });
@@ -73,10 +71,9 @@ describe("useReveal", () => {
 
   it("no falla ni marca visible si nunca intersecta", () => {
     const disconnect = vi.fn();
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect,
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect };
+    });
     function Sonda() {
       const { ref, visible } = useReveal();
       return createElement("div", { ref, "data-visible": String(visible) });

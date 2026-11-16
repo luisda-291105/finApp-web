@@ -5,8 +5,9 @@ import { MemoryRouter } from "react-router-dom";
 import { SuscripcionesPage } from "../../features/suscripciones";
 
 const listarSuscripcionesGmail = vi.hoisted(() => vi.fn());
+const obtenerMensajesSuscripcionGmail = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 
-vi.mock("../../services/gmailServicio", () => ({ listarSuscripcionesGmail }));
+vi.mock("../../services/gmailServicio", () => ({ listarSuscripcionesGmail, obtenerMensajesSuscripcionGmail }));
 vi.mock("../../context/GmailContext", () => ({
   useGmail: () => ({ cuentasGmail: [{ id: "cuenta-1", email: "ana@example.test" }] }),
 }));

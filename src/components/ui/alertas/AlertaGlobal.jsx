@@ -11,7 +11,8 @@ import { useAlertas } from "../../../context/AlertasContext";
 
 /** Muestra una alerta global lateral mientras exista mensaje. */
 export default function AlertaGlobal({ tipo = "error", mensaje, idBase, alCerrar, duracionMs }) {
-  const { mostrarAlerta, cerrarAlerta } = useAlertas();
+  const contextoAlertas = useAlertas();
+  const { mostrarAlerta, cerrarAlerta, __sinProveedor } = contextoAlertas;
   const idRef = useRef(idBase || `alerta-global-${Math.random().toString(36).slice(2)}`);
 
   useEffect(() => {
@@ -25,5 +26,9 @@ export default function AlertaGlobal({ tipo = "error", mensaje, idBase, alCerrar
     return () => cerrarAlerta(id);
   }, [mensaje, tipo, mostrarAlerta, cerrarAlerta, alCerrar, duracionMs]);
 
+  const texto = typeof mensaje === "string" ? mensaje : "";
+  if (__sinProveedor && texto) {
+    return <div role="alert">{texto}</div>;
+  }
   return null;
 }

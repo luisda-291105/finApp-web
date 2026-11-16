@@ -38,7 +38,7 @@ describe("datosMuestrasService correo", () => {
   });
 
   it("consulta por separado todas las cuentas seleccionadas", async () => {
-    const datos = await obtenerDatosMuestra("correo", "usuario-prueba", "todos", "todas", [], ["cuenta-1", "cuenta-2"]);
+    const datos = await obtenerDatosMuestra("correo", "usuario-prueba", "todos", "todas", ["cuenta-1", "cuenta-2"]);
 
     expect(gmailMocks.obtenerCorreosGmail).toHaveBeenCalledTimes(2);
     expect(gmailMocks.obtenerCorreosGmail).toHaveBeenCalledWith("cuenta-1", []);
@@ -68,25 +68,13 @@ describe("datosMuestrasService correo", () => {
     expect(gmailMocks.obtenerCorreosGmail).not.toHaveBeenCalled();
   });
 
-  it("devuelve datos por separado cuando se seleccionan fuentes con unidades distintas", async () => {
-    const datos = await obtenerDatosMuestra(
-      "contabilidad",
-      "usuario-prueba",
-      "todos",
-      "cuenta-1",
-      ["contabilidad", "correo"],
-    );
+  it("obtiene datos de una fuente individual según los parámetros recibidos", async () => {
+    const datosContables = await obtenerDatosMuestra("contabilidad", "usuario-prueba", "todos", "todas");
+    expect(datosContables).toMatchObject({ unidad: "moneda" });
+    expect(gmailMocks.listarMovimientos).toHaveBeenCalled();
 
-    expect(datos.fuentesDatos).toHaveLength(2);
-    expect(datos.fuentesDatos.map(({ fuente }) => fuente)).toEqual(["contabilidad", "correo"]);
-    expect(datos.fuentesDatos.find(({ fuente }) => fuente === "contabilidad")).toMatchObject({
-      valor: 250,
-      unidad: "moneda",
-    });
-    expect(datos.fuentesDatos.find(({ fuente }) => fuente === "correo")).toMatchObject({
-      valor: 2,
-      unidad: "cantidad",
-      cuentaCorreoEtiqueta: "personal@example.test",
-    });
+    const datosCorreo = await obtenerDatosMuestra("correo", "usuario-prueba", "todos", "cuenta-1");
+    expect(datosCorreo).toMatchObject({ unidad: "cantidad", cuentaCorreoEtiqueta: "personal@example.test" });
+    expect(gmailMocks.obtenerCorreosGmail).toHaveBeenCalledWith("cuenta-1", []);
   });
 });

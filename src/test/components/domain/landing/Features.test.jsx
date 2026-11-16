@@ -12,10 +12,9 @@ import Features from "../../../../features/landing/components/sections/Features"
 
 describe("Features", () => {
   it("renderiza las 5 tarjetas de funcionalidades vía Card con clase glass-card efectiva", () => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
 
     render(<Features />);
 
@@ -32,10 +31,9 @@ describe("Features", () => {
   });
 
   it("usa la clase de revelado global en lugar de utilidades en línea", () => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
 
     render(<Features />);
 

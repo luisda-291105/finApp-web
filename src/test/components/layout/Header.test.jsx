@@ -12,18 +12,17 @@ import { MemoryRouter } from "react-router-dom";
 import Header from "../../../components/layout/Header";
 
 describe("Header", () => {
-  it("renderiza logotipo FinApp y botones de accion en modo landing", () => {
+  it("renderiza logotipo FinApp y botón de acceso en modo landing", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Header alAbrirAuth={vi.fn()} modo="landing" />
       </MemoryRouter>
     );
 
-    expect(screen.getByText("Fin")).toBeDefined();
-    expect(screen.getByText("App")).toBeDefined();
+    expect(screen.getByRole("link", { name: "FinApp" })).toHaveAttribute("href", "/");
+    expect(screen.getByAltText("FinApp")).toBeDefined();
     expect(screen.getByText("Iniciar sesión")).toBeDefined();
-    expect(screen.getByText("Registrarse")).toBeDefined();
-    expect(screen.getByRole("link").getAttribute("href")).toBe("/");
+    expect(screen.queryByText("Registrarse")).toBeNull();
   });
 
   it("dispara callback alAbrirAuth con el modo correspondiente", () => {
@@ -36,9 +35,6 @@ describe("Header", () => {
 
     fireEvent.click(screen.getByText("Iniciar sesión"));
     expect(mockAbrir).toHaveBeenCalledWith("login");
-
-    fireEvent.click(screen.getByText("Registrarse"));
-    expect(mockAbrir).toHaveBeenCalledWith("registro");
   });
 
   it("usa modo landing por defecto si no se especifica", () => {
@@ -49,6 +45,6 @@ describe("Header", () => {
     );
 
     expect(screen.getByText("Iniciar sesión")).toBeDefined();
-    expect(screen.getByText("Registrarse")).toBeDefined();
+    expect(screen.queryByText("Registrarse")).toBeNull();
   });
 });

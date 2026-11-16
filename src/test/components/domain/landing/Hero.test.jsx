@@ -12,10 +12,9 @@ import Hero from "../../../../features/landing/components/sections/Hero";
 
 describe("Hero", () => {
   it("renderiza el titular y las 4 categorias del resumen", () => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
 
     render(<Hero alAbrirAuth={vi.fn()} />);
 
@@ -29,10 +28,9 @@ describe("Hero", () => {
   });
 
   it("usa la clase de revelado global en lugar de utilidades en línea", () => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
 
     render(<Hero alAbrirAuth={vi.fn()} />);
 

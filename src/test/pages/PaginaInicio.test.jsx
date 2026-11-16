@@ -101,10 +101,9 @@ import PaginaInicio from "../../features/landing/pages/LandingPage";
 
 describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => {
   beforeEach(() => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
     vi.stubGlobal("fetch", vi.fn());
   });
 

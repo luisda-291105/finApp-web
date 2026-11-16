@@ -12,10 +12,9 @@ import StatsBar from "../../../../features/landing/components/sections/StatsBar"
 
 describe("StatsBar", () => {
   beforeEach(() => {
-    global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.IntersectionObserver = vi.fn().mockImplementation(function () {
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    });
   });
 
   it("muestra las cuatro métricas con su etiqueta", () => {
