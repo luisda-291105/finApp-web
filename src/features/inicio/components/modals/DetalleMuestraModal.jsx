@@ -7,6 +7,7 @@ import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import MuestraVisual from "../cards/MuestraVisual";
 import { FUENTES_MUESTRAS, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION, normalizarFuente } from "../../utils/inicioHelpers";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 const opcionesTrampa = (panelRef) => ({
   allowOutsideClick: true,
@@ -85,7 +86,7 @@ export default function DetalleMuestraModal({
                 <button type="button" onClick={alEliminar} disabled={eliminando} className="rounded-xl border border-red-300/60 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">{eliminando ? "Eliminando…" : confirmandoEliminacion ? "Confirmar eliminación" : "Eliminar"}</button>
                 {confirmandoEliminacion && <button type="button" onClick={alCancelarEliminacion} className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">Cancelar</button>}
               </div>
-              {error && <p role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+              <AlertaGlobal tipo="error" mensaje={error} idBase="DetalleMuestraModal-error" />
             </div>
           </motion.div>
         </FocusTrap>

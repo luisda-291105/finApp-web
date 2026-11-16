@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { actualizarMovimiento, confirmarMovimientoGmailGlobal, listarMovimientos } from "../../services/movimientosService";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 function listaDe(respuesta) {
   return Array.isArray(respuesta) ? respuesta : respuesta?.datos || respuesta?.data || [];
@@ -80,7 +81,7 @@ export default function ModalMovimientosPorRevisar({ abierto, bolsillos = [], tr
     alCerrar={() => !ocupado && alCerrar()} ancho="max-w-2xl">
     <div className="space-y-4">
       <p className="text-sm text-slate-text">Confirma los ingresos y gastos de Gmail como movimientos globales. Los demás movimientos pendientes pueden asignarse a un bolsillo compatible.</p>
-      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      <AlertaGlobal tipo="error" mensaje={error} idBase="ModalMovimientosPorRevisar-error" />
       {cargando && <p role="status" className="text-sm text-slate-text">Cargando movimientos…</p>}
       {!cargando && !error && movimientos.length === 0 && <p className="rounded-xl bg-bg-cream p-4 text-sm text-slate-text">No hay movimientos pendientes de revisión.</p>}
       <ul className="max-h-[55vh] space-y-3 overflow-y-auto">

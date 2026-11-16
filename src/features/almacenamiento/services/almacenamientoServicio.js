@@ -1,49 +1,143 @@
 /**
- * @uso        Operaciones HTTP de las conexiones de almacenamiento
- * @funciones  obtenerConexiones, obtenerArchivos, desconectarCuenta, conectarGoogleDrive, iniciarConexion, completarConexion, conectarNextcloud
- * @datos      Delega transporte y rutas en httpServicio y api.config; el navegador solo recibe metadatos
+ * @uso        Operaciones HTTP de conexiones y archivos de almacenamiento en la nube
+ * @funciones  obtenerConexiones, desconectarCuenta, conectarGoogleDrive, iniciarConexion, completarConexion, conectarNextcloud, listarArchivos, obtenerArchivo, urlContenido, urlPrevisualizacion, crearCarpeta, subirArchivo, renombrar, mover, copiar, enviarAPapelera, restaurar, vaciarPapelera, listarPermisos, compartir, revocarPermiso, operacionLote
+ * @datos      Delega transporte y rutas en httpServicio y api.config; el navegador solo recibe metadatos y contenido/URLs provistos por backend
  * @eventos    Popup de Google Identity Services (Drive) y redirección al proveedor (OneDrive)
  * @estados    Ninguno
- * @usadoPor   AlmacenamientoPage y CuentasAlmacenamientoCard
+ * @usadoPor   AlmacenamientoPage, useGestorArchivos y CuentasAlmacenamientoCard
  */
-import { getEndpoint } from "../../../config/api.config";
-import { crear, eliminar, obtener } from "../../../services/httpServicio";
+import { API_BASE_URL, getEndpoint } from "../../../config/api.config";
+import { actualizar, crear, descargar, eliminar, obtener, subir } from "../../../services/httpServicio";
 import { prepararGoogleIdentityServices } from "../../../services/gmailServicio";
 
 const ENCABEZADOS_SOLICITUD = { "X-Requested-With": "XmlHttpRequest" };
-const ALCANCE_GOOGLE_DRIVE = "openid email profile";
+const ALCANCE_GOOGLE_DRIVE = "openid email profile https://www.googleapis.com/auth/drive";
 
-/** Solo redirige a endpoints reales de autorización de Google (evita URLs de origen inválido). */
-const ES_URL_AUTORIZACION_VALIDA = (url) => typeof url === "string" && /^https:\/\/accounts\.google\.com\/o\/oauth2\//i.test(url);
+const baseCuenta = (cuentaId) => `${getEndpoint("almacenamiento.conexiones")}/${encodeURIComponent(cuentaId)}`;
+const baseArchivos = (cuentaId) => `${baseCuenta(cuentaId)}/archivos`;
+
+function conQuery(ruta, params = {}) {
+  const consulta = new URLSearchParams();
+  Object.entries(params).forEach(([clave, valor]) => {
+    if (valor === undefined || valor === null || valor === "") return;
+    if (Array.isArray(valor)) valor.forEach((item) => consulta.append(clave, String(item)));
+    else consulta.set(clave, String(valor));
+  });
+  const qs = consulta.toString();
+  return qs ? `${ruta}?${qs}` : ruta;
+}
+
+function urlAbsoluta(ruta) {
+  if (!ruta) return "";
+  if (/^https?:\/\//i.test(ruta)) return ruta;
+  if (API_BASE_URL.endsWith("/") && ruta.startsWith("/")) return `${API_BASE_URL}${ruta.slice(1)}`;
+  if (!API_BASE_URL.endsWith("/") && !ruta.startsWith("/")) return `${API_BASE_URL}/${ruta}`;
+  return `${API_BASE_URL}${ruta}`;
+}
 
 export async function obtenerConexiones() {
   const respuesta = await obtener(getEndpoint("almacenamiento.conexiones"));
-  return Array.isArray(respuesta) ? respuesta : respuesta?.datos || [];
+  return Array.isArray(respuesta) ? respuesta : respuesta?.datos || respuesta?.data || [];
 }
 
 export async function desconectarCuenta(id) {
   return eliminar(`${getEndpoint("almacenamiento.desconectar")}/${encodeURIComponent(id)}`);
 }
 
-/** Pide al backend la URL de autorización del proveedor y redirige el navegador (OneDrive). */
 export async function iniciarConexion(proveedor) {
   const inicio = await crear(getEndpoint("almacenamiento.iniciar"), { proveedor }, { headers: ENCABEZADOS_SOLICITUD });
-  const url = inicio?.url;
-  if (ES_URL_AUTORIZACION_VALIDA(url)) window.location.href = url;
+  const url = inicio?.url || inicio?.datos?.url;
+  if (typeof url === "string" && /^https:\/\/accounts\.google\.com\/o\/oauth2\//i.test(url)) window.location.href = url;
   return inicio;
 }
 
-/** Canjea el código OAuth devuelto por el proveedor en la URL de retorno (OneDrive). */
 export function completarConexion(code, state) {
   return crear(getEndpoint("almacenamiento.callback"), { proveedor: "", code, state }, { headers: ENCABEZADOS_SOLICITUD });
 }
 
-/** Obtiene la lista de archivos del almacenamiento conectado (p. ej. Google Drive) por cuenta. */
-export async function obtenerArchivos(cuentaId) {
-  return obtener(`${getEndpoint("almacenamiento.conexiones")}/${encodeURIComponent(cuentaId)}/archivos`);
+export async function listarArchivos(cuentaId, params = {}) {
+  if (!cuentaId) throw new Error("Selecciona una cuenta de almacenamiento.");
+  const respuesta = await obtener(conQuery(baseArchivos(cuentaId), params));
+  return respuesta?.datos || respuesta?.data || respuesta || [];
 }
 
-/** Conecta Google Drive con popup de Google Identity Services y canje en el backend. */
+export async function obtenerArchivo(cuentaId, archivoId) {
+  const respuesta = await obtener(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}`);
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export function urlContenido(cuentaId, archivoId) {
+  return urlAbsoluta(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/contenido`);
+}
+
+export function urlPrevisualizacion(cuentaId, archivoId) {
+  return urlAbsoluta(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/previsualizacion`);
+}
+
+export async function crearCarpeta(cuentaId, datos) {
+  const respuesta = await crear(`${baseArchivos(cuentaId)}/carpeta`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function subirArchivo(cuentaId, formData) {
+  const respuesta = await subir(baseArchivos(cuentaId), formData, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function renombrar(cuentaId, archivoId, nombre) {
+  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/renombrar`, { nombre }, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function mover(cuentaId, datos) {
+  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/mover`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function copiar(cuentaId, datos) {
+  const respuesta = await crear(`${baseArchivos(cuentaId)}/copiar`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function enviarAPapelera(cuentaId, datos) {
+  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/papelera`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function restaurar(cuentaId, datos) {
+  const respuesta = await actualizar(`${baseArchivos(cuentaId)}/restaurar`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function vaciarPapelera(cuentaId) {
+  const respuesta = await eliminar(`${baseArchivos(cuentaId)}/papelera`, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function listarPermisos(cuentaId, archivoId) {
+  const respuesta = await obtener(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/permisos`);
+  return respuesta?.datos || respuesta?.data || respuesta || [];
+}
+
+export async function compartir(cuentaId, archivoId, datos) {
+  const respuesta = await crear(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/permisos`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function revocarPermiso(cuentaId, archivoId, permisoId) {
+  const respuesta = await eliminar(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/permisos/${encodeURIComponent(permisoId)}`, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function operacionLote(cuentaId, datos) {
+  const respuesta = await crear(`${baseArchivos(cuentaId)}/lote`, datos, { headers: ENCABEZADOS_SOLICITUD });
+  return respuesta?.datos || respuesta?.data || respuesta;
+}
+
+export async function descargarArchivo(cuentaId, archivoId) {
+  return descargar(`${baseArchivos(cuentaId)}/${encodeURIComponent(archivoId)}/contenido`);
+}
+
 export function conectarGoogleDrive() {
   return new Promise(async (resolver, rechazar) => {
     try {
@@ -83,8 +177,12 @@ export function conectarGoogleDrive() {
   });
 }
 
-/** Conecta una cuenta Nextcloud con URL, usuario y contraseña de aplicación. */
 export function conectarNextcloud(datos) {
   return crear(getEndpoint("almacenamiento.nextcloud"), datos, { headers: ENCABEZADOS_SOLICITUD });
+}
+
+// Compatibilidad temporal con código que aún espera obtenerArchivos.
+export async function obtenerArchivos(cuentaId) {
+  return listarArchivos(cuentaId);
 }
 

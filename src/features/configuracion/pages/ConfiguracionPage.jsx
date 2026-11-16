@@ -25,6 +25,7 @@ import { useFuentesConfiguracion } from "../hooks/useFuentesConfiguracion";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { GMAIL_CONFIGURADO } from "../../../services/gmailServicio";
 import { BotonCerrar } from "../../../components/ui";
+import { AlertaGlobal } from "../../../components/ui/alertas";
 
 export default function ConfiguracionPage() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);
@@ -218,7 +219,7 @@ export default function ConfiguracionPage() {
                   onChange={(evento) => setDatosNc({ ...datosNc, credencial: evento.target.value })}
                   className="w-full rounded-lg border border-border-line/70 bg-bg-cream px-3 py-2 pr-10 text-sm text-bg-dark" />
                 <button type="button" onClick={() => setCredencialVisible(!credencialVisible)} aria-label={credencialVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-text hover:text-bg-dark">
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-text transition-colors hover:bg-emerald-primary/10 hover:text-emerald-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">
                   {credencialVisible ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>
@@ -233,7 +234,7 @@ export default function ConfiguracionPage() {
       )}
 
       {avisoNc && <p role="status" className="fixed right-4 top-20 z-[120] w-[min(calc(100vw-2rem),24rem)] rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 shadow-xl">{avisoNc}</p>}
-      {errorNc && <p role="alert" className="fixed right-4 top-20 z-[120] w-[min(calc(100vw-2rem),24rem)] rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 shadow-xl">{errorNc}</p>}
+      <AlertaGlobal tipo="error" mensaje={errorNc} idBase="ConfiguracionPage-errorNc" />
     </section>
   );
 }

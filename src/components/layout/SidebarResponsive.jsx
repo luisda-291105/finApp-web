@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import SidebarNavContenido from "./SidebarNavContenido";
 import { useTema } from "../../context/TemaContext";
+import logoClaro from "../../assets/logo-claro.webp";
+import logoOscuro from "../../assets/logo-oscuro.webp";
 
 /** SidebarResponsive
  * @uso        Navegación lateral permanente de pantallas grandes (≥768px), colapsable, con logo toggle y avatar
@@ -26,7 +28,7 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
   return (
     <aside
       className={clsx(
-        "fixed left-0 top-0 h-screen z-40 transition-all duration-300",
+        "fixed left-0 top-0 h-screen z-[1100] transition-all duration-300",
         temaClaro ? "bg-bg-cream/95 glass-surface border-r border-border-line/70 shadow-lg" : "bg-bg-dark/80 glass-surface border-r border-border-line/20",
         "flex flex-col overflow-hidden",
         colapsada ? "w-[72px]" : "w-64",
@@ -45,19 +47,18 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
             "hover:bg-emerald-primary/10 focus-visible:outline-none",
             "focus-visible:ring-2 focus-visible:ring-mint-accent/50 focus-visible:ring-offset-2",
             temaClaro ? "focus-visible:ring-offset-bg-cream" : "focus-visible:ring-offset-bg-dark",
-            colapsada ? "justify-center" : "justify-start gap-0",
+            colapsada ? "justify-center" : "justify-start gap-2",
           )}
           aria-expanded={!colapsada}
           aria-label={colapsada ? "Expandir navegación" : "Colapsar navegación"}
         >
-          {colapsada ? (
-            <span className="font-display text-xl font-medium text-emerald-primary" aria-hidden="true">
-              F
-            </span>
-          ) : (
-            <span className={clsx("flex items-center whitespace-nowrap font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
-              <span className="text-emerald-primary">Fin</span>
-              <span>App</span>
+          <span className="shrink-0">
+            <img src={logoClaro} alt="" aria-hidden="true" className={clsx("logo-tema-claro rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
+            <img src={logoOscuro} alt="" aria-hidden="true" className={clsx("logo-tema-oscuro rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
+          </span>
+          {!colapsada && (
+            <span className={clsx("truncate font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
+              FinApp
             </span>
           )}
         </button>

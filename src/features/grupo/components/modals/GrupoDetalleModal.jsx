@@ -14,6 +14,7 @@ import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import { crearFuente, obtenerFuentesPorUsuario } from "../../../../services/fuenteServicio";
 import { actualizarGrupo, eliminarGrupo, desvincularFuenteDeGrupo, vincularFuenteAGrupo } from "../../services/gruposService";
 import { crearEnlaceTelegram, desvincularTelegram, enviarMensajeTelegram, obtenerEstadoTelegram, obtenerMensajesTelegram } from "../../../../services/telegramServicio";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 const PESTANAS = ["Fuentes", "Chat grupal"];
 function fechaLocalISO() {
@@ -211,7 +212,7 @@ export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef
     <ModalDetalleRegistro abierto={abierto} titulo={grupo.nombre} etiquetaCerrar={`Cerrar grupo ${grupo.nombre}`} alCerrar={cerrar} triggerRef={triggerRef}>
       <div className="mb-4 flex items-center justify-between gap-3"><p className="min-w-0 text-sm text-slate-text">{grupo.descripcion}</p><button type="button" aria-pressed={configuracionAbierta} onClick={() => { setConfiguracionAbierta((actual) => !actual); setError(""); setAviso(""); }} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${configuracionAbierta ? "border-emerald-primary bg-emerald-primary/10 text-emerald-primary" : "border-border-line/50 text-slate-text hover:bg-emerald-primary/5 hover:text-bg-dark"}`}><Settings2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Configuración</span></button></div>
       {!configuracionAbierta && <div className="flex flex-wrap gap-2 border-b border-border-line/40" role="tablist" aria-label={`Secciones de ${grupo.nombre}`}>{PESTANAS.map((nombre) => <button key={nombre} type="button" role="tab" aria-selected={pestana === nombre} onClick={() => { setPestana(nombre); setError(""); setAviso(""); }} className={`min-h-10 rounded-t-lg border-b-2 px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${pestana === nombre ? "border-emerald-primary text-emerald-primary" : "border-transparent text-slate-text hover:text-bg-dark"}`}>{nombre}</button>)}</div>}
-      {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}
+      <AlertaGlobal tipo="error" mensaje={error} idBase="GrupoDetalleModal-error" />
       {aviso && <p role="status" className="mt-4 rounded-xl border border-emerald-primary/20 bg-emerald-primary/10 p-3 text-sm text-bg-dark">{aviso}</p>}
       {configuracionAbierta ? (
         <div className="mt-5 space-y-5">

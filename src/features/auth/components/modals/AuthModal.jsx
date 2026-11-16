@@ -22,6 +22,7 @@ import { crearUsuario, iniciarSesion } from "../../services/usuarioServicio";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import LoginForm from "../forms/LoginForm";
 import RegistroForm from "../forms/RegistroForm";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 
 /**
@@ -231,7 +232,7 @@ export default function AuthModal({
         {/* Tarjeta Modal Fluid Glass */}
         <div
           ref={panelRef}
-          className="relative w-full max-w-md max-h-[85vh] overflow-y-auto outline-none bg-[#0f1117]/95 border border-white/15 rounded-3xl p-7 md:p-8 shadow-2xl text-white backdrop-blur-xl"
+          className="relative w-full max-w-md md:max-w-3xl max-h-[85vh] overflow-hidden outline-none bg-[#0f1117]/95 border border-white/15 rounded-3xl shadow-2xl text-white backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
           aria-label="Ventana de acceso"
@@ -242,72 +243,88 @@ export default function AuthModal({
             type="button"
             onClick={alCerrar}
             aria-label="Cerrar ventana de acceso"
-            className="absolute top-5 right-5 text-white/70 hover:text-white p-1 rounded-lg transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
+            className="absolute top-4 right-4 z-10 text-white/70 hover:text-white p-1.5 rounded-lg transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          {/* Tabs de cambio */}
-          <div className="flex border-b border-white/10 mb-6 pb-2 gap-6">
-            <button
-              type="button"
-              onClick={() => setModo("login")}
-              className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
-                modo === "login"
-                  ? "border-[#1a7a5e] text-white"
-                  : "border-transparent text-white/70 hover:text-white/80"
-              }`}
-            >
-              Iniciar sesión
-            </button>
-            <button
-              type="button"
-              onClick={() => setModo("registro")}
-              className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
-                modo === "registro"
-                  ? "border-[#1a7a5e] text-white"
-                  : "border-transparent text-white/70 hover:text-white/80"
-              }`}
-            >
-              Registrarse
-            </button>
+          <div className="grid max-h-[85vh] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <aside className="hidden md:flex flex-col items-center justify-center gap-4 border-r border-white/10 bg-gradient-to-br from-[#1a7a5e]/30 via-[#0f1117]/40 to-[#0f1117]/80 p-8 text-center">
+              <img src="/logo-claro.webp" alt="FinApp" className="h-20 w-20 rounded-2xl object-contain shadow-lg" />
+              <p className="font-display text-3xl font-medium">
+                <span className="text-[#1a7a5e]">Fin</span>App
+              </p>
+              <p className="max-w-xs text-sm text-white/70">
+                Organiza tus finanzas personales con claridad y control.
+              </p>
+            </aside>
+
+            <div className="max-h-[85vh] overflow-y-auto p-7 md:p-8">
+              <div className="mb-5 flex items-center gap-3 md:hidden">
+                <img src="/logo-claro.webp" alt="FinApp" className="h-10 w-10 shrink-0 rounded-xl object-contain" />
+                <p className="font-display text-xl font-medium">
+                  <span className="text-[#1a7a5e]">Fin</span>App
+                </p>
+              </div>
+              {/* Tabs de cambio */}
+              <div className="flex border-b border-white/10 mb-6 pb-2 gap-6 pr-10">
+                <button
+                  type="button"
+                  onClick={() => setModo("login")}
+                  className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
+                    modo === "login"
+                      ? "border-[#1a7a5e] text-white"
+                      : "border-transparent text-white/70 hover:text-white/80"
+                  }`}
+                >
+                  Iniciar sesión
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModo("registro")}
+                  className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
+                    modo === "registro"
+                      ? "border-[#1a7a5e] text-white"
+                      : "border-transparent text-white/70 hover:text-white/80"
+                  }`}
+                >
+                  Registrarse
+                </button>
+              </div>
+
+              {modo === "login" ? (
+                <LoginForm
+                  idUsuario={idUsuario}
+                  contrasena={contrasena}
+                  alCambiarIdUsuario={setIdUsuario}
+                  alCambiarContrasena={setContrasena}
+                  alEnviar={manejarEnvio}
+                  cargando={cargando}
+                  mensaje={mensaje}
+                />
+              ) : (
+                <RegistroForm
+                  idUsuario={idUsuario}
+                  nombre={nombre}
+                  correo={correo}
+                  telefono={telefono}
+                  contrasena={contrasena}
+                  alCambiarIdUsuario={setIdUsuario}
+                  alCambiarNombre={setNombre}
+                  alCambiarCorreo={setCorreo}
+                  alCambiarTelefono={setTelefono}
+                  alCambiarContrasena={setContrasena}
+                  alEnviar={manejarEnvio}
+                  cargando={cargando}
+                  mensaje={mensaje}
+                />
+              )}
+
+              <AlertaGlobal tipo="error" mensaje={mensajeExterno} idBase="auth-modal-mensaje-externo" />
+            </div>
           </div>
-
-          {modo === "login" ? (
-            <LoginForm
-              idUsuario={idUsuario}
-              contrasena={contrasena}
-              alCambiarIdUsuario={setIdUsuario}
-              alCambiarContrasena={setContrasena}
-              alEnviar={manejarEnvio}
-              cargando={cargando}
-              mensaje={mensaje}
-            />
-          ) : (
-            <RegistroForm
-              idUsuario={idUsuario}
-              nombre={nombre}
-              correo={correo}
-              telefono={telefono}
-              contrasena={contrasena}
-              alCambiarIdUsuario={setIdUsuario}
-              alCambiarNombre={setNombre}
-              alCambiarCorreo={setCorreo}
-              alCambiarTelefono={setTelefono}
-              alCambiarContrasena={setContrasena}
-              alEnviar={manejarEnvio}
-              cargando={cargando}
-              mensaje={mensaje}
-            />
-          )}
-
-          {mensajeExterno && (
-            <p role="alert" className="mt-3 rounded-xl border border-red-300/30 bg-red-500/10 p-3 text-xs text-red-100">
-              {mensajeExterno}
-            </p>
-          )}
         </div>
       </FocusTrap>
     </div>

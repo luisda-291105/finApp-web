@@ -71,7 +71,7 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
   return (
     <nav
       className={clsx(
-        "fixed bottom-0 left-0 right-0 z-50 bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid",
+        "fixed bottom-0 left-0 right-0 z-[1100] bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid",
         mostrarExtra ? "grid-cols-5" : "grid-cols-4"
       )}
       role="navigation"

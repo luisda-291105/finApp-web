@@ -2,12 +2,12 @@
  * @uso        Sección de Configuración para gestionar cuentas de almacenamiento conectadas
  * @funciones  CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNextcloud, alCerrarNextcloud })
  * @datos      Obtiene y actualiza conexiones mediante almacenamientoServicio
- * @eventos    Conectar nuevas cuentas, abrir Google Drive, desconectar cuentas
- * @estados    conexiones, cargando, error, aviso, proveedorIniciando, cuentaDesconectando, modalDriveAbierto, cuentaSeleccionadaDrive
+ * @eventos    Conectar nuevas cuentas, abrir Google Drive, reconectar, desconectar cuentas
+ * @estados    conexiones, cargando, error, aviso, proveedorIniciando, cuentaDesconectando, cuentaReconectando, modalDriveAbierto, cuentaSeleccionadaDrive
  * @usadoPor   ConfiguracionPage
  */
 import { useCallback, useEffect, useState } from "react";
-import { Cloud, ExternalLink, HardDrive, Unplug } from "lucide-react";
+import { Cloud, ExternalLink, HardDrive, RefreshCcw, Unplug } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import { conectarGoogleDrive, desconectarCuenta, iniciarConexion, obtenerConexiones } from "../../../almacenamiento/services/almacenamientoServicio";
 import ModalGoogleDrive from "../../../almacenamiento/components/modals/ModalGoogleDrive";
@@ -18,6 +18,11 @@ const PROVEEDORES = [
 ];
 const ETIQUETAS_PROVEEDOR = { GOOGLE_DRIVE: "Google Drive", ONEDRIVE: "OneDrive", NEXTCLOUD: "Nextcloud" };
 const ETIQUETAS_ESTADO = { ACTIVA: "Conectada", REQUIERE_RECONEXION: "Requiere reconexión", DESCONECTADA: "Desconectada" };
+const CLASES_ESTADO = {
+  ACTIVA: "bg-emerald-primary/10 text-emerald-primary",
+  REQUIERE_RECONEXION: "bg-amber-500/10 text-amber-700",
+  DESCONECTADA: "bg-slate-500/10 text-slate-600",
+};
 
 export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNextcloud, alCerrarNextcloud }) {
   const [conexiones, setConexiones] = useState([]);
@@ -26,8 +31,9 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
   const [aviso, setAviso] = useState("");
   const [proveedorIniciando, setProveedorIniciando] = useState(null);
   const [cuentaDesconectando, setCuentaDesconectando] = useState(null);
+  const [cuentaReconectando, setCuentaReconectando] = useState(null);
   const [modalDriveAbierto, setModalDriveAbierto] = useState(false);
-  const [cuentaSeleccionadaDrive] = useState(null);
+  const [cuentaSeleccionadaDrive, setCuentaSeleccionadaDrive] = useState(null);
 
   const cargarConexiones = useCallback(async () => {
     setCargando(true);
@@ -63,9 +69,26 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
     finally { setCuentaDesconectando(null); }
   };
 
+  const alReconectar = async (cuenta) => {
+    setCuentaReconectando(cuenta.id);
+    setError("");
+    setAviso("");
+    try {
+      if (cuenta.proveedor === "GOOGLE_DRIVE") await conectarGoogleDrive();
+      else if (cuenta.proveedor === "ONEDRIVE") await iniciarConexion("ONEDRIVE");
+      else throw new Error("Reconecta esta cuenta desde su proveedor.");
+      setAviso("Cuenta reconectada. Si se actualizó el alcance, ya puedes acceder a tus archivos.");
+      await cargarConexiones();
+    } catch (errorConexion) {
+      setError(errorConexion?.message || "No se pudo reconectar la cuenta. Inténtalo de nuevo.");
+    } finally {
+      setCuentaReconectando(null);
+    }
+  };
+
   return (
     <>
-      <Card className="space-y-4 p-6">
+      <Card className="space-y-3 p-5">
         <div className="flex items-center gap-3">
           <HardDrive className="h-5 w-5 text-emerald-primary" aria-hidden="true" />
           <div>
@@ -85,19 +108,31 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
                 <div className="min-w-0">
                   <p className="font-semibold text-bg-dark">{ETIQUETAS_PROVEEDOR[cuenta.proveedor] || cuenta.proveedor}</p>
                   <p className="truncate text-sm text-slate-text">{cuenta.etiquetaCuenta || cuenta.urlServidor || "Cuenta de almacenamiento"}</p>
-                  <p className="mt-1 text-xs text-slate-text">{ETIQUETAS_ESTADO[cuenta.estado] || cuenta.estado}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${CLASES_ESTADO[cuenta.estado] || CLASES_ESTADO.DESCONECTADA}`}>
+                    {ETIQUETAS_ESTADO[cuenta.estado] || cuenta.estado}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {cuenta.proveedor === "GOOGLE_DRIVE" && (
-                    <a
-                      href="https://drive.google.com/drive/u/0/home"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => { setCuentaSeleccionadaDrive(cuenta); setModalDriveAbierto(true); }}
                       className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border-line/60 px-3 text-sm font-medium text-bg-dark hover:bg-emerald-primary/5"
                     >
-                      Abrir Drive
+                      Ver Drive
                       <ExternalLink className="h-4 w-4 text-emerald-primary" aria-hidden="true" />
-                    </a>
+                    </button>
+                  )}
+                  {cuenta.estado === "REQUIERE_RECONEXION" && (cuenta.proveedor === "GOOGLE_DRIVE" || cuenta.proveedor === "ONEDRIVE") && (
+                    <button
+                      type="button"
+                      onClick={() => alReconectar(cuenta)}
+                      disabled={cuentaReconectando === cuenta.id}
+                      className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 text-sm font-medium text-amber-800 hover:bg-amber-500/20 disabled:opacity-50"
+                    >
+                      <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+                      {cuentaReconectando === cuenta.id ? "Reconectando…" : "Reconectar"}
+                    </button>
                   )}
                   <button
                     type="button"
@@ -112,6 +147,10 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
               </li>
             ))}
           </ul>
+        )}
+
+        {!cargando && !error && (
+          <p className="text-xs text-slate-text">Si se actualizó el alcance de Google Drive, reconecta la cuenta para autorizar los nuevos permisos.</p>
         )}
 
         {!cargando && conexiones.length === 0 && !error && (

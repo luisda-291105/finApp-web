@@ -8,6 +8,8 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import logoClaro from "../../assets/logo-claro.webp";
+import logoOscuro from "../../assets/logo-oscuro.webp";
 
 /**
  * Header
@@ -15,8 +17,9 @@ import { Link } from "react-router-dom";
  * @param {Object} props
  * @param {(modo: 'login' | 'registro') => void} [props.alAbrirAuth] - Callback para abrir modal (requerido en modo landing)
  * @param {'landing' | 'dashboard'} [props.modo='landing'] - Modo de visualización
+ * @param {boolean} [props.oculto=false] - Oculta el header (p. ej. mientras el modal de acceso está abierto)
  */
-export default function Header({ alAbrirAuth, modo = "landing" }) {
+export default function Header({ alAbrirAuth, modo = "landing", oculto = false }) {
   const [desplazado, setDesplazado] = useState(false);
 
   useEffect(() => {
@@ -29,25 +32,21 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
     return () => window.removeEventListener("scroll", manejarScroll);
   }, []);
 
+  if (oculto) return null;
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-40 w-full transition-all duration-400 ease-in-out ${
+      className={`fixed top-0 left-0 right-0 z-[1100] w-full transition-all duration-400 ease-in-out ${
         desplazado
-          ? "bg-[#f7f6f2]/92 glass-surface border-b border-[#e0ddd8] py-3.5 shadow-sm"
-          : "bg-transparent border-b border-transparent py-5"
+          ? "glass-surface border-b border-border-line bg-bg-cream/95 py-3.5 shadow-sm"
+          : "border-b border-transparent bg-transparent py-5"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logotipo FinApp */}
-        <Link to="/" className="flex items-center gap-0.5 text-2xl font-bold tracking-tight">
-          <span className="text-[#1a7a5e]">Fin</span>
-          <span
-            className={`transition-colors duration-400 ${
-              desplazado ? "text-[#0f1117]" : "text-white"
-            }`}
-          >
-            App
-          </span>
+        <Link to="/" className="flex items-center" aria-label="FinApp">
+          <img src={logoClaro} alt="FinApp" className="logo-tema-claro h-8 w-auto sm:h-9" />
+          <img src={logoOscuro} alt="" aria-hidden="true" className="logo-tema-oscuro h-8 w-auto sm:h-9" />
         </Link>
 
         {/* Acciones de autenticación (solo en modo landing) */}
@@ -56,20 +55,13 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
             <button
               type="button"
               onClick={() => alAbrirAuth?.("login")}
-              className={`text-sm font-medium px-3 py-1.5 transition-colors duration-400 cursor-pointer ${
+              className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-400 cursor-pointer ${
                 desplazado
-                  ? "text-[#0f1117] hover:text-[#1a7a5e]"
-                  : "text-white/85 hover:text-white"
+                  ? "bg-bg-cream/80 text-bg-dark hover:bg-bg-cream hover:text-emerald-primary"
+                  : "bg-bg-cream/10 text-bg-cream/90 hover:bg-bg-cream/20 hover:text-bg-cream"
               }`}
             >
               Iniciar sesión
-            </button>
-            <button
-              type="button"
-              onClick={() => alAbrirAuth?.("registro")}
-              className="bg-[#1a7a5e] hover:bg-[#15634c] text-white text-sm font-medium px-5 py-2 rounded-lg transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md"
-            >
-              Registrarse
             </button>
           </div>
         )}
@@ -77,7 +69,7 @@ export default function Header({ alAbrirAuth, modo = "landing" }) {
         {/* Placeholder para menú de usuario futuro (modo dashboard) */}
         {modo === "dashboard" && (
           <div className="flex items-center gap-4">
-            <span className="text-sm text-[#6b7280]">Usuario</span>
+            <span className="text-sm text-slate-text">Usuario</span>
           </div>
         )}
       </div>

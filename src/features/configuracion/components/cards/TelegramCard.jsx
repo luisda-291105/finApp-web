@@ -3,6 +3,7 @@ import { CheckCircle2, ChevronDown, MessageCircle, RefreshCw, Settings, Unlink }
 import { Card } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { crearEnlaceTelegram, desvincularTelegram, obtenerEstadoTelegram } from "../../../../services/telegramServicio";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 function datosRespuesta(respuesta) {
   return respuesta?.datos ?? respuesta?.data ?? respuesta ?? {};
@@ -105,7 +106,7 @@ export default function TelegramCard() {
       <a href={enlace} target="_blank" rel="noreferrer" className="break-all font-semibold text-emerald-primary underline">Abrir @{estado?.nombreBot || "bot"} en Telegram</a>
     </div>}
     {estado?.errorRecepcion && <p role="alert" className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900">{estado.errorRecepcion}</p>}
-    {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+    <AlertaGlobal tipo="error" mensaje={error} idBase="TelegramCard-error" />
     {aviso && <p role="status" className="text-sm text-emerald-primary">{aviso}</p>}
       </div>
     </ModalDetalleRegistro>

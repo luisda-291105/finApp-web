@@ -58,10 +58,10 @@ export function useCorreos() {
     } finally { setCargandoMensajes(false); }
   }, [gmailConectado, cuentaSeleccionadaId, desconectarGmail]);
 
-  const consultarFuentesRegistradas = useCallback(async (fuentesParaConsultar = []) => {
-    if (!gmailConectado || !cuentaSeleccionadaId) return;
+  const consultarFuentesRegistradas = useCallback(async (fuentesParaConsultar = [], cuentaId = cuentaSeleccionadaId) => {
+    if (!gmailConectado || !cuentaId) return;
     const activas = fuentesParaConsultar.filter((fuente) => fuente.estado !== false);
-    const cuentaActual = cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaSeleccionadaId));
+    const cuentaActual = cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaId));
     const destinosPorDireccion = new Map(activas.map((fuente) => [normalizarDireccion(fuente.contenido), fuente]));
     if (cuentaActual) {
       const claveCuenta = normalizarDireccion(cuentaActual.email);
@@ -71,7 +71,10 @@ export function useCorreos() {
     if (destinos.length === 0) return;
     try {
       setCargandoMensajes(true); setError("");
-      const nuevosMensajes = Object.fromEntries(await consultarCorreosDeFuentes(cuentaSeleccionadaId, destinos));
+      const pares = await consultarCorreosDeFuentes(cuentaId, destinos);
+      const nuevosMensajes = Object.fromEntries(
+        pares.map(([idFuente, mensajes]) => [idFuente, mensajes.map((correo) => ({ ...correo, cuentaGmailId: cuentaId }))])
+      );
       setMensajesPorFuente((actuales) => ({ ...actuales, ...nuevosMensajes }));
       setUltimaConsulta(new Date());
     } catch (fallo) {
@@ -79,6 +82,14 @@ export function useCorreos() {
       if (/autorización de Gmail venció/i.test(fallo?.message || "")) desconectarGmail(false);
     } finally { setCargandoMensajes(false); }
   }, [gmailConectado, cuentasGmail, cuentaSeleccionadaId, desconectarGmail]);
+
+  const consultarTodasLasCuentas = useCallback(async (fuentesParaConsultar = []) => {
+    if (!gmailConectado || cuentasGmail.length === 0) return;
+    const cuentas = cuentasGmail.map((cuenta) => cuenta.id).filter(Boolean);
+    for (const cuentaId of cuentas) {
+      await consultarFuentesRegistradas(fuentesParaConsultar, cuentaId);
+    }
+  }, [gmailConectado, cuentasGmail, consultarFuentesRegistradas]);
 
   const seleccionarFuente = useCallback(async (fuente) => {
     setFuenteSeleccionada(fuente); setCategoria("TODOS"); setError("");
@@ -102,14 +113,14 @@ export function useCorreos() {
     if (!usuario?.idUsuario) { cargarFuentes(); return () => { vigente = false; }; }
     const sincronizar = async () => {
       const fuentesActuales = await cargarFuentes();
-      if (!vigente || !gmailConectado || !cuentaSeleccionadaId || (fuentesActuales.length === 0 && cuentasGmail.length === 0)) return;
-      await consultarFuentesRegistradas(fuentesActuales);
+      if (!vigente || !gmailConectado || cuentasGmail.length === 0) return;
+      await consultarTodasLasCuentas(fuentesActuales);
     };
     sincronizar();
-    if (!gmailConectado || !cuentaSeleccionadaId) return () => { vigente = false; };
+    if (!gmailConectado || cuentasGmail.length === 0) return () => { vigente = false; };
     const temporizador = window.setInterval(sincronizar, INTERVALO_CONSULTA_MS);
     return () => { vigente = false; window.clearInterval(temporizador); };
-  }, [gmailConectado, cuentaSeleccionadaId, usuario?.idUsuario, cuentasGmail, cargarFuentes, consultarFuentesRegistradas]);
+  }, [gmailConectado, usuario?.idUsuario, cuentasGmail, cargarFuentes, consultarTodasLasCuentas]);
 
-  return { usuario, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, conexionCargando, fuentes, tarjetasCorreo, categoria, setCategoria, fuenteSeleccionada, mensajesFuente, mensajesPorFuente, ultimaConsulta, cargandoFuentes, cargandoMensajes, error, noHayFuentes, seleccionarFuente, consultarFuentesRegistradas, cerrarBandeja };
+  return { usuario, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, conexionCargando, fuentes, tarjetasCorreo, categoria, setCategoria, fuenteSeleccionada, mensajesFuente, mensajesPorFuente, ultimaConsulta, cargandoFuentes, cargandoMensajes, error, noHayFuentes, seleccionarFuente, consultarFuentesRegistradas, consultarTodasLasCuentas, cerrarBandeja };
 }

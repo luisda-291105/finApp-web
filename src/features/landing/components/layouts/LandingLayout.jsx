@@ -19,13 +19,14 @@ import Footer from "../sections/Footer";
  * Componente de layout que ensambla todas las secciones de la landing pública.
  * @param {Object} props
  * @param {(modo: 'login' | 'registro') => void} props.alAbrirAuth - Callback para abrir modal de autenticación
+ * @param {boolean} [props.ocultarHeader=false] - Oculta el header mientras el modal de acceso está abierto
  * @param {React.ReactNode} [props.children] - Contenido extra opcional (p.ej. AuthModal, botón flotante)
  */
-export default function LandingLayout({ alAbrirAuth, children }) {
+export default function LandingLayout({ alAbrirAuth, ocultarHeader = false, children }) {
   return (
     <div data-testid="landing-theme" className="landing-theme min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body">
       {/* Header principal */}
-      <Header alAbrirAuth={alAbrirAuth} modo="landing" />
+      <Header alAbrirAuth={alAbrirAuth} modo="landing" oculto={ocultarHeader} />
 
       <main className="flex-1">
         {/* Hero editorial oscuro */}

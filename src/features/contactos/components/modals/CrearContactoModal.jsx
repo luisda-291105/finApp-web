@@ -14,6 +14,7 @@ import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import { crearContacto } from "../../services/contactosService";
 import ContactoForm from "../forms/ContactoForm";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 function opcionesTrampa(refPanel) {
   return { allowOutsideClick: true, escapeDeactivates: false, initialFocus: () => refPanel.current, returnFocusOnDeactivate: false };
@@ -44,7 +45,7 @@ export default function CrearContactoModal({ abierto, alCerrar, triggerRef, alGu
   return <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-dark/70 p-4" onClick={(evento) => evento.target === evento.currentTarget && !cargando && alCerrar()}>
     <FocusTrap focusTrapOptions={opcionesTrampa(panelRef)}><section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="crear-contacto-titulo" tabIndex={-1} className="glass-surface relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border-line/30 bg-bg-cream/95 p-6 text-bg-dark shadow-xl outline-none">
       <header className="mb-5 flex items-start justify-between gap-4"><div><h2 id="crear-contacto-titulo" className="font-display text-xl font-semibold">Registrar contacto</h2><p className="mt-1 text-sm text-slate-text">El registro quedará vinculado a {usuario?.nombre || "tu usuario activo"}.</p></div><BotonCerrar ariaLabel="Cerrar registrar contacto" alCerrar={() => !cargando && alCerrar()} /></header>
-      <form onSubmit={enviar} className="space-y-4"><ContactoForm valores={valores} alCambiar={cambiar} deshabilitado={cargando} />{error && <p role="alert" className="rounded-xl border border-red-200 bg-red-100 p-3 text-sm text-red-700">{error}</p>}<button type="submit" disabled={cargando} className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">{cargando ? "Guardando…" : "Guardar registro"}</button></form>
+      <form onSubmit={enviar} className="space-y-4"><ContactoForm valores={valores} alCambiar={cambiar} deshabilitado={cargando} /><AlertaGlobal tipo="error" mensaje={error} idBase="CrearContactoModal-error" /><button type="submit" disabled={cargando} className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-bg-cream transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">{cargando ? "Guardando…" : "Guardar registro"}</button></form>
     </section></FocusTrap>
   </div>;
 }

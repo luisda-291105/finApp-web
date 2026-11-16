@@ -20,6 +20,7 @@ import { clasificarMovimientoCorreo, extraerMovimientoSugerido } from "../../../
 import { crearMovimiento, listarCorreosImportados } from "../../../contabilidad/services/movimientosService";
 import { listarBolsillos } from "../../../contabilidad/services/bolsillosService";
 import ModalCrearMovimientoContable from "../../../contabilidad/components/modals/ModalCrearMovimientoContable";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 function textoActividad(cantidad) {
   if (cantidad == null) return "Actividad reciente no disponible";
@@ -52,10 +53,12 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
   const [importandoTodos, setImportandoTodos] = useState(false);
   const [progresoLote, setProgresoLote] = useState(null);
   const [modalContabilidadAbierto, setModalContabilidadAbierto] = useState(false);
+  const [modalMensajesAbierto, setModalMensajesAbierto] = useState(false);
   const [bolsillos, setBolsillos] = useState([]);
   const [valoresMovimiento, setValoresMovimiento] = useState(null);
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState(null);
   const triggerContabilidadRef = useRef(null);
+  const triggerMensajesRef = useRef(null);
 
   useEffect(() => {
     setConfirmando(false);
@@ -68,6 +71,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
     setAvisoImportacion("");
     setProgresoLote(null);
     setModalContabilidadAbierto(false);
+    setModalMensajesAbierto(false);
     setMovimientoSeleccionado(null);
     setValoresMovimiento(null);
   }, [suscripcion?.id, suscripcion?.cuentaGmailId]);
@@ -249,33 +253,24 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
       <section aria-labelledby="mensajes-suscripcion-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 id="mensajes-suscripcion-titulo" className="font-semibold text-bg-dark">Mensajes de este remitente</h3>
-          {!cargandoMensajes && !errorMensajes && <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">{mensajes.length}</span>}
+          {!cargandoMensajes && !errorMensajes && (
+            <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
+              {mensajes.length}
+            </span>
+          )}
         </div>
-        {!cargandoMensajes && !errorMensajes && mensajes.length > 0
-          && suscripcion.correoRemitente?.trim().toLowerCase() === REMITENTE_MOVIMIENTOS_BANCOLOMBIA
-          && <div className="space-y-3 rounded-xl border border-emerald-primary/20 bg-emerald-primary/5 p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold text-bg-dark">Agregar mensajes reconocidos</p><p className="text-xs text-slate-text">Se procesarán en segundo plano los mensajes del remitente oficial; puedes consultar el avance y los resultados por mensaje.</p></div><button type="button" disabled={importandoTodos || !mensajesPorRevisar.length} onClick={agregarTodos} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-white hover:bg-emerald-hover disabled:cursor-not-allowed disabled:opacity-60">{importandoTodos ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <PlusCircle className="h-4 w-4" aria-hidden="true" />}{importandoTodos ? "Importando…" : "Agregar todos"}</button></div>
-          <p className="text-xs text-slate-text">El backend aplica las reglas persistidas y, si no coinciden, el clasificador. Los movimientos ambiguos quedan en «Por revisar». Pagos de nómina recibidos y transferencias recibidas se clasifican como ingresos.</p>
-          {progresoLote && <p role="status" className="text-xs text-slate-text">Progreso: {progresoLote.completados}/{progresoLote.total} · {progresoLote.importados} importados · {progresoLote.porRevisar} por revisar · {progresoLote.duplicados} duplicados · {progresoLote.errores} errores</p>}
-        </div>}
         {cargandoMensajes && <p role="status" className="text-sm text-slate-text">Cargando mensajes recientes…</p>}
-        {(errorMensajes || errorImportacion) && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{errorMensajes || errorImportacion}</p>}
-        {avisoImportacion && <p role="status" className="rounded-xl border border-emerald-300/40 bg-emerald-50 p-3 text-sm text-emerald-800">{avisoImportacion}</p>}
+        <AlertaGlobal tipo="error" mensaje={errorMensajes} idBase="DetalleSuscripcionModal-errorMensajes" />
         {!cargandoMensajes && !errorMensajes && mensajes.length === 0 && <p className="text-sm text-slate-text">No hay mensajes recientes de este remitente en la cuenta seleccionada.</p>}
-        {!cargandoMensajes && mensajes.length > 0 && <ul aria-label={`Mensajes de ${suscripcion.correoRemitente}`} className="max-h-80 space-y-2 overflow-y-auto">
-          {mensajes.map((mensaje) => <li key={mensaje.id} className="rounded-xl border border-border-line/50 bg-bg-cream/70 p-3">
-            <div className="flex flex-wrap items-start justify-between gap-2"><span className="min-w-0 flex-1 break-words text-sm font-semibold text-bg-dark">{mensaje.asunto || "(Sin asunto)"}</span><time className="shrink-0 text-xs text-slate-text">{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(mensaje.fecha))}</time></div>
-            {clasificarMovimientoCorreo(mensaje) && <p className="mt-1 text-xs font-medium text-emerald-primary">{clasificarMovimientoCorreo(mensaje).categoria} · {({ GASTO: "Gasto", INGRESO: "Ingreso" })[clasificarMovimientoCorreo(mensaje).tipo]}</p>}
-            <p className="mt-1 line-clamp-2 break-words text-sm text-slate-text">{mensaje.fragmento || "Sin vista previa"}</p>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <a href={`https://mail.google.com/mail/u/?authuser=${correo}#all/${encodeURIComponent(mensaje.id)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-emerald-primary underline-offset-2 hover:underline"><ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />Abrir en Gmail</a>
-              <button type="button" disabled={Boolean(mensajesImportados[mensaje.id]) || mensajeImportando === mensaje.id} onClick={(evento) => prepararMovimiento(mensaje, evento)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-white hover:bg-emerald-hover disabled:cursor-not-allowed disabled:opacity-60">
-                {mensajeImportando === mensaje.id ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />}
-                {mensajesImportados[mensaje.id] ? "Agregado a Contabilidad" : mensajeImportando === mensaje.id ? "Preparando…" : "Agregar a Contabilidad"}
-              </button>
-            </div>
-          </li>)}
-        </ul>}
+        <button
+          ref={triggerMensajesRef}
+          type="button"
+          onClick={() => setModalMensajesAbierto(true)}
+          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-primary/30 bg-emerald-primary/10 px-4 text-sm font-semibold text-emerald-primary hover:bg-emerald-primary/15"
+        >
+          <Mail className="h-4 w-4" aria-hidden="true" />
+          Ver mensajes
+        </button>
         <p className="text-xs text-slate-text">Se muestran los mensajes de este remitente guardados en FinApp durante los últimos 90 días.</p>
       </section>
 
@@ -289,13 +284,63 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
         {!suscripcion.bajaConUnClic && suscripcion.urlBaja && <a href={suscripcion.urlBaja} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><ExternalLink className="h-4 w-4" aria-hidden="true" />Abrir página para anular</a>}
         {suscripcion.mailtoBaja && <a href={suscripcion.mailtoBaja} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-bg-dark hover:border-emerald-primary"><Mail className="h-4 w-4" aria-hidden="true" />Preparar correo de baja</a>}
         {resultadoBaja && <p role="status" className="flex gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{resultadoBaja}</p>}
-        {errorBaja && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">{errorBaja}</p>}
+        <AlertaGlobal tipo="error" mensaje={errorBaja} idBase="DetalleSuscripcionModal-errorBaja" />
       </section>
 
       <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-xs leading-relaxed text-slate-text">FinApp detecta remitentes suscritos en Gmail y muestra aquí sus mensajes de los últimos 90 días. Desde cada mensaje puedes abrir el original en Gmail.</p>
       <div className="flex justify-end border-t border-border-line/40 pt-4"><a href={urlAdministrar} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" aria-hidden="true" />Administrar en Gmail</a></div>
     </div>
     </ModalDetalleRegistro>
+
+    <ModalDetalleRegistro
+      abierto={Boolean(suscripcion) && !modalContabilidadAbierto && modalMensajesAbierto}
+      titulo="Mensajes de este remitente"
+      alCerrar={() => setModalMensajesAbierto(false)}
+      triggerRef={triggerMensajesRef}
+      ancho="max-w-lg"
+    >
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium text-bg-dark">{suscripcion.nombre || "Remitente"}</p>
+          {!cargandoMensajes && !errorMensajes && (
+            <span className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
+              {mensajes.length}
+            </span>
+          )}
+        </div>
+        {!cargandoMensajes && !errorMensajes && mensajes.length > 0
+          && suscripcion.correoRemitente?.trim().toLowerCase() === REMITENTE_MOVIMIENTOS_BANCOLOMBIA
+          && <div className="space-y-3 rounded-xl border border-emerald-primary/20 bg-emerald-primary/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold text-bg-dark">Agregar mensajes reconocidos</p><p className="text-xs text-slate-text">Se procesarán en segundo plano los mensajes del remitente oficial; puedes consultar el avance y los resultados por mensaje.</p></div><button type="button" disabled={importandoTodos || !mensajesPorRevisar.length} onClick={agregarTodos} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-white hover:bg-emerald-hover disabled:cursor-not-allowed disabled:opacity-60">{importandoTodos ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <PlusCircle className="h-4 w-4" aria-hidden="true" />}{importandoTodos ? "Importando…" : "Agregar todos"}</button></div>
+          <p className="text-xs text-slate-text">El backend aplica las reglas persistidas y, si no coinciden, el clasificador. Los movimientos ambiguos quedan en «Por revisar». Pagos de nómina recibidos y transferencias recibidas se clasifican como ingresos.</p>
+          {progresoLote && <p role="status" className="text-xs text-slate-text">Progreso: {progresoLote.completados}/{progresoLote.total} · {progresoLote.importados} importados · {progresoLote.porRevisar} por revisar · {progresoLote.duplicados} duplicados · {progresoLote.errores} errores</p>}
+        </div>}
+        {cargandoMensajes && <p role="status" className="text-sm text-slate-text">Cargando mensajes recientes…</p>}
+        {(errorMensajes || errorImportacion) && <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">{errorMensajes || errorImportacion}</p>}
+        {avisoImportacion && <p role="status" className="rounded-xl border border-emerald-300/40 bg-emerald-50 p-3 text-sm text-emerald-800">{avisoImportacion}</p>}
+        {!cargandoMensajes && !errorMensajes && mensajes.length === 0 && <p className="text-sm text-slate-text">No hay mensajes recientes de este remitente en la cuenta seleccionada.</p>}
+        {!cargandoMensajes && mensajes.length > 0 && (
+          <ul
+            aria-label={`Mensajes de ${suscripcion.correoRemitente}`}
+            className="space-y-2 pr-1"
+          >
+          {mensajes.map((mensaje) => <li key={mensaje.id} className="rounded-xl border border-border-line/50 bg-bg-cream/70 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2"><span className="min-w-0 flex-1 break-words text-sm font-semibold text-bg-dark">{mensaje.asunto || "(Sin asunto)"}</span><time className="shrink-0 text-xs text-slate-text">{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(mensaje.fecha))}</time></div>
+            {clasificarMovimientoCorreo(mensaje) && <p className="mt-1 text-xs font-medium text-emerald-primary">{clasificarMovimientoCorreo(mensaje).categoria} · {({ GASTO: "Gasto", INGRESO: "Ingreso" })[clasificarMovimientoCorreo(mensaje).tipo]}</p>}
+            <p className="mt-1 line-clamp-2 break-words text-sm text-slate-text">{mensaje.fragmento || "Sin vista previa"}</p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <a href={`https://mail.google.com/mail/u/?authuser=${correo}#all/${encodeURIComponent(mensaje.id)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-emerald-primary underline-offset-2 hover:underline"><ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />Abrir en Gmail</a>
+              <button type="button" disabled={Boolean(mensajesImportados[mensaje.id]) || mensajeImportando === mensaje.id} onClick={(evento) => prepararMovimiento(mensaje, evento)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-white hover:bg-emerald-hover disabled:cursor-not-allowed disabled:opacity-60">
+                {mensajeImportando === mensaje.id ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />}
+                {mensajesImportados[mensaje.id] ? "Agregado a Contabilidad" : mensajeImportando === mensaje.id ? "Preparando…" : "Agregar a Contabilidad"}
+              </button>
+            </div>
+          </li>)}
+        </ul>
+        )}
+      </div>
+    </ModalDetalleRegistro>
+
     <ModalCrearMovimientoContable abierto={modalContabilidadAbierto} valoresPredeterminados={valoresMovimiento} bolsillos={valoresMovimiento?.tipo ? bolsillos.filter((bolsillo) => String(bolsillo.tipo).toUpperCase() === valoresMovimiento.tipo) : bolsillos} triggerRef={triggerContabilidadRef} alCerrar={() => { setModalContabilidadAbierto(false); setMovimientoSeleccionado(null); }} alGuardar={guardarMovimiento} />
   </>;
 }

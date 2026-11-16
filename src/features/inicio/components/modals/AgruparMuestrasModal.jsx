@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
+import { AlertaGlobal } from "../../../../components/ui/alertas";
 
 /** Permite elegir entre dos y cuatro muestras para una agrupación. */
 export default function AgruparMuestrasModal({ abierto, muestras = [], agrupacion = null, guardando = false, error = "", triggerRef, alCerrar, alGuardar }) {
@@ -51,7 +52,7 @@ export default function AgruparMuestrasModal({ abierto, muestras = [], agrupacio
           </label>;
         })}</div> : <p className="rounded-xl border border-border-line/40 p-3 text-sm text-slate-text">No hay muestras sin agrupar disponibles.</p>}
       </fieldset>
-      {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>}
+      <AlertaGlobal tipo="error" mensaje={error} idBase="AgruparMuestrasModal-error" />
       <button type="submit" disabled={guardando || nombre.trim().length < 2 || idsSeleccionados.length < 2 || idsSeleccionados.length > 4} className="min-h-11 w-full rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">{guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear agrupación"}</button>
     </form>
   </ModalDetalleRegistro>;

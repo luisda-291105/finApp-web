@@ -99,6 +99,60 @@ export async function obtener(rutaRelativa, opciones = {}) {
 }
 
 /**
+ * subir
+ * Realiza petición POST con FormData sin fijar Content-Type manualmente.
+ * @param {string} rutaRelativa
+ * @param {FormData} formData
+ * @param {RequestInit} opciones
+ * @returns {Promise<any>}
+ */
+export async function subir(rutaRelativa, formData, opciones = {}) {
+  const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
+  const respuesta = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      ...(encabezadosExtra || {}),
+    },
+    body: formData,
+    ...resto,
+  });
+  return leerRespuesta(respuesta, url, "POST");
+}
+
+/**
+ * descargar
+ * Realiza petición GET y devuelve la respuesta como Blob.
+ * @param {string} rutaRelativa
+ * @param {RequestInit} opciones
+ * @returns {Promise<Blob>}
+ */
+export async function descargar(rutaRelativa, opciones = {}) {
+  const url = construirUrl(rutaRelativa);
+  const { headers: encabezadosExtra, ...resto } = opciones;
+  const respuesta = await fetch(url, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      ...(encabezadosExtra || {}),
+    },
+    ...resto,
+  });
+  if (respuesta.ok) return respuesta.blob();
+
+  const datos = await obtenerJson(respuesta);
+  if (respuesta.status === 401 && !url.includes("/usuario/login")) {
+    window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+  }
+  const mensaje =
+    datos && typeof datos === "object"
+      ? datos.mensaje || datos.message || datos.error || `Error HTTP ${respuesta.status}`
+      : datos || `Error HTTP ${respuesta.status}`;
+  throw new Error(mensaje);
+}
+
+/**
  * crear
  * Realiza petición POST con cuerpo JSON.
  * @param {string} rutaRelativa
