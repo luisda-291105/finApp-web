@@ -3,28 +3,26 @@
 ## Qué hace
 
 Administra las cuentas de almacenamiento conectadas (Google Drive, OneDrive, Nextcloud) y
-ofrece un navegador de archivos tipo Google Drive para gestionar archivos directamente desde
-la app.
+ofrece un navegador de archivos tipo Google Drive para gestionar archivos desde la app.
 
 ## Componentes
 
-- `pages/AlmacenamientoPage`: listado de cuentas conectadas y vista de gestor de archivos.
-- `components/files/AlmacenamientoSidebar`: navegación por vistas (Mi unidad, Recientes,
-  Compartidos conmigo, Papelera).
-- `components/files/AlmacenamientoToolbar`: búsqueda, alternancia de vista, crear y subir.
-- `components/files/AlmacenamientoCrumbs`: migas de pan.
-- `components/files/AlmacenamientoArchivos`: listado (cuadrícula/lista) y estados vacíos.
-- `components/files/AlmacenamientoArchivoItem`: fila/carta de archivo o carpeta.
-- `components/files/ContextoMenuArchivos`: acciones sobre selección (abrir, descargar, copiar,
-  mover, renombrar, compartir, eliminar).
-- `components/files/ModalPrevisualizacion`: previsualización y descarga de archivo.
-- `components/modals/ModalGoogleDrive`: acceso al Drive conectado.
+- `pages/AlmacenamientoPage`: selector multicuenta con estado (ACTIVA/REQUIERE_RECONEXION), reconexión, navegación de archivos y acciones en lote.
+- `components/files/AlmacenamientoSidebar`: vistas Mi unidad, Recientes, Compartidos conmigo, Destacados y Papelera.
+- `components/files/AlmacenamientoToolbar`: búsqueda, modo lista/cuadrícula, crear y subir con progreso.
+- `components/files/AlmacenamientoCrumbs`: migas de pan navegables.
+- `components/files/AlmacenamientoArchivos`: listado y estados de carga, vacío y error por vista.
+- `components/files/AlmacenamientoArchivoItem`: fila/carta con selección, apertura y renombrado.
+- `components/files/ContextoMenuArchivos`: acciones (abrir, descargar, copiar, mover, renombrar, compartir, eliminar/restaurar).
+- `components/files/ModalPrevisualizacion`: previsualización inline (imagen/PDF) o enlace externo y descarga real.
+- `components/files/ModalCompartir`: gestión de permisos, roles y enlace.
+- `components/files/ModalMover`: selección de carpeta destino para mover/copiar.
+- `components/modals/ModalGoogleDrive`: acceso al Drive y mensaje de reconexión/scope.
 
 ## Hook y servicio
 
-- `hooks/useGestorArchivos`: estado del árbol de archivos y acciones (navegar, crear, subir,
-  seleccionar, contexto, copiar/mover/eliminar).
-- `services/almacenamientoServicio`: conexiones y OAuth con proveedores.
+- `hooks/useGestorArchivos`: estado por cuenta/vista/carpeta, búsqueda, orden, selección y acciones remotas.
+- `services/almacenamientoServicio`: conexiones, archivos, contenido, permisos y operaciones por lote vía backend.
 
 ## API pública
 

@@ -1,143 +1,121 @@
 /**
  * @uso        Fila/carta de archivo o carpeta dentro del navegador de archivos
- * @funciones  AlmacenamientoArchivoItem({ item, vista, seleccion, renombrando, nombreEditando, alSeleccionar, alAbrir, alContexto, alRenombrar })
+ * @funciones  AlmacenamientoArchivoItem({ item, vista, seleccion, renombrandoId, nombreEditando, alSeleccionar, alAbrir, alContexto, alCambiarNombre, alConfirmarRenombrado, alCancelarRenombrado })
  * @datos      Presenta nombre, fecha y tamaño; emite selección, apertura, contexto y renombrado
- * @eventos    Click (selección), Ctrl/Cmd+click (alternar), doble clic (abrir), clic derecho (contexto), Enter/Escape en renombrado
+ * @eventos    Click, Ctrl/Cmd+click, doble clic, clic derecho, Enter/Escape/blur en renombrado
  * @estados    Ninguno
  * @usadoPor   AlmacenamientoArchivos
  */
-import { Check } from "lucide-react";
+import { Check, MoreVertical } from "lucide-react";
 import AlmacenamientoArchivoIcono from "./AlmacenamientoArchivoIcono";
 
-/**
- * AlmacenamientoArchivoItem
- * Representa un archivo o carpeta con icono, nombre, fecha de modificación y tamaño.
- * - Clic simple: selecciona (Ctrl/Cmd+clic alterna).
- * - Doble clic: abre carpeta (entrar) o archivo (previsualizar).
- * - Clic derecho: abre el menú contextual sobre la selección.
- * - Al confirmar renombrado muestra el input con el valor editado.
- * @param {Object} props
- * @param {Object} props.item - Item del gestor ({ nombre, tipo, mime, tamanio, fechaModificacion })
- * @param {"grid" | "lista"} props.vista - Vista activa
- * @param {Set<string>} props.seleccion - Ids seleccionados
- * @param {boolean} props.renombrando - Indica si el item está en modo renombrado
- * @param {string} props.nombreEditando - Nombre temporal en renombrado
- * @param {(id: string, evento?: Object) => void} props.alSeleccionar - Selección del ítem
- * @param {(id: string) => void} props.alAbrir - Apertura (carpeta o archivo)
- * @param {(evento: Object, ids: string[]) => void} props.alContexto - Clic derecho sobre la selección
- * @param {(id: string, nombre: string) => void} props.alRenombrar - Confirma renombrado
- * @returns {JSX.Element}
- */
 export default function AlmacenamientoArchivoItem({
   item,
-  vista,
+  vista = "grid",
   seleccion,
   renombrando = false,
+  renombrandoId = null,
   nombreEditando = "",
   alSeleccionar,
   alAbrir,
   alContexto,
   alRenombrar,
+  alCambiarNombre,
+  alConfirmarRenombrado,
+  alCancelarRenombrado,
 }) {
   const esSeleccionado = Boolean(seleccion?.has?.(item.id));
   const esCarpeta = item?.tipo === "carpeta";
+  const enRenombre = renombrandoId === item.id || (renombrando && renombrandoId === "__activo__");
   const etiqueta = esCarpeta ? `Carpeta ${item?.nombre}` : `Archivo ${item?.nombre}`;
 
-  const manejarClick = (evento) => alSeleccionar(item.id, evento);
+  const confirmar = () => (alConfirmarRenombrado ? alConfirmarRenombrado(item.id, nombreEditando) : alRenombrar?.(item.id, nombreEditando));
+  const cancelar = () => (alCancelarRenombrado ? alCancelarRenombrado() : alRenombrar?.(item.id, item?.nombre || ""));
+  const cambiar = (valor) => (alCambiarNombre ? alCambiarNombre(item.id, valor) : alRenombrar?.(item.id, valor));
 
-  const manejarDobleClick = () => alAbrir(item.id);
-
-  const manejarContexto = (evento) => alContexto(evento, [item.id]);
-
-  const manejarKey = (evento) => {
-    if (evento.key === "Enter") alAbrir(item.id);
-    if (evento.key === "Escape") alRenombrar(item.id, item?.nombre || "");
+  const idsParaAccion = esSeleccionado && seleccion?.size > 1 ? Array.from(seleccion) : [item.id];
+  const abrirAcciones = (evento) => {
+    evento.stopPropagation();
+    const rect = evento.currentTarget.getBoundingClientRect();
+    alContexto?.({ preventDefault: () => {}, stopPropagation: () => {}, clientX: rect.right, clientY: rect.bottom }, idsParaAccion);
   };
 
-  const clasesContenedor = vista === "grid"
-    ? "group flex min-h-24 w-full flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
-    : "flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent";
+  const alternarSeleccion = (evento) => {
+    evento.stopPropagation();
+    alSeleccionar?.(item.id, { alternar: true });
+  };
 
-  const clasesVista = esSeleccionado
-    ? `${clasesContenedor} border-emerald-primary bg-emerald-primary/10`
-    : `${clasesContenedor} border-transparent hover:border-emerald-primary/50 hover:bg-emerald-primary/5`;
-
-  const contenido = (
-    <>
-      <AlmacenamientoArchivoIcono item={item} />
-      {renombrando ? (
-        <input
-          type="text"
-          value={nombreEditando}
-          onChange={(evento) => alRenombrar(item.id, evento.target.value)}
-          onBlur={(evento) => alRenombrar(item.id, evento.target.value)}
-          onKeyDown={(evento) => {
-            if (evento.key === "Enter") alRenombrar(item.id, evento.target.value);
-            if (evento.key === "Escape") alRenombrar(item.id, item?.nombre || "");
-          }}
-          className="w-full min-w-0 rounded-lg border border-emerald-primary/60 bg-bg-dark px-2 py-1 text-sm text-bg-dark outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
-          aria-label="Renombrar"
-        />
-      ) : (
-        <p className="w-full truncate text-sm font-medium text-bg-dark" title={item?.nombre}>{item?.nombre}</p>
-      )}
-      <p className="text-xs text-slate-text">
-        {esCarpeta ? "Carpeta" : `${item?.mime?.split("/")[1]?.toUpperCase() || "Archivo"}${item?.tamanio ? ` · ${Math.round(item.tamanio / 1024)} KB` : ""} · ${new Date(item?.fechaModificacion || Date.now()).toLocaleDateString("es-ES")}`}
-      </p>
-    </>
+  const inputRenombre = enRenombre ? (
+    <input
+      type="text"
+      value={nombreEditando}
+      autoFocus
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onChange={(evento) => cambiar(evento.target.value)}
+      onBlur={confirmar}
+      onKeyDown={(evento) => {
+        if (evento.key === "Enter") { evento.preventDefault(); confirmar(); }
+        if (evento.key === "Escape") { evento.preventDefault(); cancelar(); }
+      }}
+      className="w-full min-w-0 rounded-lg border border-emerald-primary/60 bg-white/80 px-2 py-1 text-sm text-bg-dark outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
+      aria-label="Renombrar"
+    />
+  ) : (
+    <p className="w-full truncate text-sm font-medium text-bg-dark" title={item?.nombre}>{item?.nombre}</p>
   );
 
-  if (vista === "grid") {
+  const base = "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent";
+  const seleccionado = esSeleccionado ? "border-emerald-primary bg-emerald-primary/10" : "border-transparent hover:border-emerald-primary/50 hover:bg-emerald-primary/5";
+
+  if (vista === "lista") {
     return (
-      <div
-        role="button"
+      <li
+        role="row"
         tabIndex={0}
         aria-label={etiqueta}
-        aria-pressed={esSeleccionado}
-        onClick={manejarClick}
-        onDoubleClick={manejarDobleClick}
-        onContextMenu={manejarContexto}
-        onKeyDown={(evento) => { if (evento.key === "Enter") alAbrir(item.id); }}
-        className={clasesVista}
+        aria-selected={esSeleccionado}
+        onClick={(e) => alSeleccionar?.(item.id, e)}
+        onDoubleClick={() => !enRenombre && alAbrir?.(item.id)}
+        onContextMenu={(e) => alContexto?.(e, esSeleccionado && seleccion?.size > 1 ? Array.from(seleccion) : [item.id])}
+        onKeyDown={(e) => { if (e.key === "Enter" && !enRenombre) alAbrir?.(item.id); }}
+        className={`${base} flex w-full items-center gap-3 border-b px-3 py-2 last:border-b-0 ${seleccionado}`}
       >
-        {contenido}
-      </div>
+        <button type="button" onClick={alternarSeleccion} aria-label={esSeleccionado ? `Quitar selección de ${item?.nombre}` : `Seleccionar ${item?.nombre}`} className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${esSeleccionado ? "border-emerald-primary bg-emerald-primary text-white" : "border-border-line/60 text-slate-text hover:border-emerald-primary/50 hover:text-emerald-primary"}`}>
+          {esSeleccionado ? <Check className="h-4 w-4" aria-hidden="true" /> : <span className="h-3.5 w-3.5 rounded-sm border border-current/40" aria-hidden="true" />}
+        </button>
+        <AlmacenamientoArchivoIcono item={item} />
+        <div className="min-w-0 flex-1">{inputRenombre}</div>
+        <p className="hidden w-28 shrink-0 text-right text-xs text-slate-text sm:block">{esCarpeta ? "Carpeta" : item?.tamanio ? `${Math.round(item.tamanio / 1024)} KB` : ""}</p>
+        <p className="hidden w-32 shrink-0 text-right text-xs text-slate-text md:block">{item?.fechaModificacion ? new Date(item.fechaModificacion).toLocaleDateString("es-ES") : ""}</p>
+        <button type="button" onClick={abrirAcciones} aria-label={`Acciones de ${item?.nombre}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-text hover:bg-emerald-primary/10 hover:text-emerald-primary">
+          <MoreVertical className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </li>
     );
   }
 
   return (
-    <div
-      role="row"
+    <li
+      role="button"
       tabIndex={0}
       aria-label={etiqueta}
-      aria-selected={esSeleccionado}
-      onClick={manejarClick}
-      onDoubleClick={manejarDobleClick}
-      onContextMenu={manejarContexto}
-      onKeyDown={manejarKey}
-      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 ${clasesVista}`}
+      aria-pressed={esSeleccionado}
+      onClick={(e) => alSeleccionar?.(item.id, e)}
+      onDoubleClick={() => !enRenombre && alAbrir?.(item.id)}
+      onContextMenu={(e) => alContexto?.(e, esSeleccionado && seleccion?.size > 1 ? Array.from(seleccion) : [item.id])}
+      onKeyDown={(e) => { if (e.key === "Enter" && !enRenombre) alAbrir?.(item.id); }}
+      className={`${base} group relative flex min-h-32 w-full flex-col items-center gap-2 rounded-2xl border p-4 pt-10 text-center ${seleccionado}`}
     >
+      <button type="button" onClick={alternarSeleccion} aria-label={esSeleccionado ? `Quitar selección de ${item?.nombre}` : `Seleccionar ${item?.nombre}`} className={`absolute left-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md border ${esSeleccionado ? "border-emerald-primary bg-emerald-primary text-white" : "border-border-line/60 bg-bg-cream/80 text-slate-text hover:border-emerald-primary/50 hover:text-emerald-primary"}`}>
+        {esSeleccionado ? <Check className="h-4 w-4" aria-hidden="true" /> : <span className="h-3.5 w-3.5 rounded-sm border border-current/40" aria-hidden="true" />}
+      </button>
+      <button type="button" onClick={abrirAcciones} aria-label={`Acciones de ${item?.nombre}`} className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-text hover:bg-emerald-primary/10 hover:text-emerald-primary">
+        <MoreVertical className="h-4 w-4" aria-hidden="true" />
+      </button>
       <AlmacenamientoArchivoIcono item={item} />
-      <div className="min-w-0 flex-1">
-        {renombrando ? (
-          <input
-            type="text"
-            value={nombreEditando}
-            onChange={(evento) => alRenombrar(item.id, evento.target.value)}
-            onBlur={(evento) => alRenombrar(item.id, evento.target.value)}
-            onKeyDown={(evento) => {
-              if (evento.key === "Enter") alRenombrar(item.id, evento.target.value);
-              if (evento.key === "Escape") alRenombrar(item.id, item?.nombre || "");
-            }}
-            className="w-full min-w-0 rounded-lg border border-emerald-primary/60 bg-bg-dark px-2 py-1 text-sm text-bg-dark outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
-            aria-label="Renombrar"
-          />
-        ) : (
-          <p className="truncate text-sm font-medium text-bg-dark">{item?.nombre}</p>
-        )}
-      </div>
-      <p className="w-32 shrink-0 text-right text-xs text-slate-text">{esCarpeta ? "Carpeta" : `${item?.tamanio ? `${Math.round(item.tamanio / 1024)} KB` : ""}`}</p>
-      <p className="w-36 shrink-0 text-right text-xs text-slate-text">{new Date(item?.fechaModificacion || Date.now()).toLocaleDateString("es-ES")}</p>
-    </div>
+      {inputRenombre}
+      <p className="text-xs text-slate-text">{esCarpeta ? "Carpeta" : `${item?.tamanio ? `${Math.round(item.tamanio / 1024)} KB · ` : ""}${item?.fechaModificacion ? new Date(item.fechaModificacion).toLocaleDateString("es-ES") : ""}`}</p>
+    </li>
   );
 }

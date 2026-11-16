@@ -219,7 +219,7 @@ export default function ConfiguracionPage() {
                   onChange={(evento) => setDatosNc({ ...datosNc, credencial: evento.target.value })}
                   className="w-full rounded-lg border border-border-line/70 bg-bg-cream px-3 py-2 pr-10 text-sm text-bg-dark" />
                 <button type="button" onClick={() => setCredencialVisible(!credencialVisible)} aria-label={credencialVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-text hover:text-bg-dark">
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-text transition-colors hover:bg-emerald-primary/10 hover:text-emerald-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">
                   {credencialVisible ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                 </button>
               </div>

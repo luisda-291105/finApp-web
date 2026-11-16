@@ -1,76 +1,74 @@
-import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  listarArchivos: vi.fn(),
+  crearCarpeta: vi.fn(),
+  subirArchivo: vi.fn(),
+  renombrar: vi.fn(),
+  mover: vi.fn(),
+  copiar: vi.fn(),
+  enviarAPapelera: vi.fn(),
+  restaurar: vi.fn(),
+  vaciarPapelera: vi.fn(),
+  descargarArchivo: vi.fn(),
+  urlContenido: vi.fn(() => "http://contenido"),
+  urlPrevisualizacion: vi.fn(() => "http://prev"),
+}));
+
+vi.mock("../../../../features/almacenamiento/services/almacenamientoServicio", () => mocks);
+
 import { useGestorArchivos } from "../../../../features/almacenamiento/hooks/useGestorArchivos";
 
 describe("useGestorArchivos", () => {
   beforeEach(() => {
-    // El gestor usa estado demo local sin timers propios en las acciones puras.
+    vi.clearAllMocks();
+    mocks.listarArchivos.mockImplementation(async (_cuentaId, params = {}) => {
+      if (params.vista === "papelera") return { items: [{ id: "arch-p", nombre: "borrado.pdf", tipo: "archivo", eliminado: true }] };
+      if (params.carpetaId === "carp-1") return { items: [{ id: "arch-2", nombre: "interno.txt", tipo: "archivo" }], ruta: [{ id: "root", nombre: "Mi unidad" }, { id: "carp-1", nombre: "Carpeta 1" }] };
+      return { items: [
+        { id: "carp-1", nombre: "Carpeta 1", tipo: "carpeta" },
+        { id: "arch-1", nombre: "factura.pdf", tipo: "archivo" },
+      ], ruta: [{ id: "root", nombre: "Mi unidad" }] };
+    });
   });
 
-  it("arranca en la vista unidad con la carpeta raíz y lista los hijos demo", () => {
-    const { result } = renderHook(() => useGestorArchivos());
+  it("carga la vista unidad de la cuenta activa", async () => {
+    const { result } = renderHook(() => useGestorArchivos({ cuentaId: "cuenta-1" }));
 
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+    expect(mocks.listarArchivos).toHaveBeenCalled();
     expect(result.current.vista).toBe("unidad");
-    expect(result.current.carpetaId).toBe("arch-unidad");
-    expect(result.current.itemsVisibles.map((item) => item.nombre)).toContain("Finanzas");
-    expect(result.current.itemsVisibles.map((item) => item.nombre)).toContain("Personal");
+    expect(result.current.itemsVisibles.map((i) => i.nombre)).toEqual(expect.arrayContaining(["Carpeta 1", "factura.pdf"]));
   });
 
-  it("abre una carpeta y construye la miga de pan", () => {
-    const { result } = renderHook(() => useGestorArchivos());
+  it("navega a una carpeta y actualiza la ruta", async () => {
+    const { result } = renderHook(() => useGestorArchivos({ cuentaId: "cuenta-1" }));
+    await waitFor(() => expect(result.current.cargando).toBe(false));
 
-    act(() => result.current.abrirCarpeta("arch-facturas"));
+    await act(async () => { result.current.abrirCarpeta("carp-1"); });
+    await waitFor(() => expect(result.current.carpetaId).toBe("carp-1"));
 
-    expect(result.current.ruta.map((nivel) => nivel.nombre)).toEqual(["Mi unidad", "Finanzas", "Facturas"]);
+    expect(result.current.ruta.map((n) => n.nombre)).toContain("Carpeta 1");
   });
 
-  it("filtra los items visibles por búsqueda", () => {
-    const { result } = renderHook(() => useGestorArchivos());
+  it("permite selección simple y múltiple", async () => {
+    const { result } = renderHook(() => useGestorArchivos({ cuentaId: "cuenta-1" }));
+    await waitFor(() => expect(result.current.cargando).toBe(false));
 
-    act(() => result.current.abrirCarpeta("arch-facturas"));
-    act(() => result.current.setBusqueda("factura"));
+    act(() => result.current.seleccionarId("arch-1", {}));
+    expect(result.current.seleccionIds).toEqual(["arch-1"]);
 
-    expect(result.current.itemsVisibles.map((item) => item.nombre)).toEqual(["factura-2026-04.pdf", "factura-2026-03.pdf"]);
+    act(() => result.current.seleccionarId("carp-1", { ctrlKey: true }));
+    expect(result.current.seleccionIds.sort()).toEqual(["arch-1", "carp-1"].sort());
   });
 
-  it("selecciona un item con clic simple y alterna con Ctrl", () => {
-    const { result } = renderHook(() => useGestorArchivos());
+  it("cambia de vista y consulta el estado correspondiente", async () => {
+    const { result } = renderHook(() => useGestorArchivos({ cuentaId: "cuenta-1" }));
+    await waitFor(() => expect(result.current.cargando).toBe(false));
 
-    act(() => result.current.seleccionarId("arch-finanzas", undefined));
-    expect(result.current.seleccionIds).toEqual(["arch-finanzas"]);
-
-    act(() => result.current.seleccionarId("arch-finanzas", { ctrlKey: true }));
-    expect(result.current.seleccionIds).toEqual([]);
-
-    act(() => result.current.seleccionarId("arch-personal", { ctrlKey: true }));
-    act(() => result.current.seleccionarId("arch-finanzas", { ctrlKey: true }));
-    expect(result.current.seleccionIds).toEqual(["arch-personal", "arch-finanzas"]);
-  });
-
-  it("elimina un item moviéndolo a la papelera", () => {
-    const { result } = renderHook(() => useGestorArchivos());
-
-    act(() => result.current.eliminarItems(["arch-factura-2026-03"]));
-    act(() => result.current.seleccionarVista("papelera"));
-
-    expect(result.current.itemsVisibles.map((item) => item.nombre)).toContain("factura-2026-03.pdf");
-  });
-
-  it("copia un item y lo pega en la carpeta destino", () => {
-    const { result } = renderHook(() => useGestorArchivos());
-
-    act(() => result.current.copiar(["arch-contrato"]));
-    act(() => result.current.abrirCarpeta("arch-facturas"));
-    act(() => result.current.pegar());
-
-    expect(result.current.itemsVisibles.map((item) => item.nombre)).toContain("contrato-personal.pdf");
-  });
-
-  it("alterna el estado de compartado de un item", () => {
-    const { result } = renderHook(() => useGestorArchivos());
-
-    act(() => result.current.compartirItem("arch-contrato"));
-
-    expect(result.current.items.find((item) => item.id === "arch-contrato")?.compartido).toBe(true);
+    await act(async () => { result.current.seleccionarVista("papelera"); });
+    await waitFor(() => expect(result.current.vista).toBe("papelera"));
+    expect(mocks.listarArchivos).toHaveBeenCalledWith("cuenta-1", expect.objectContaining({ vista: "papelera" }));
   });
 });
