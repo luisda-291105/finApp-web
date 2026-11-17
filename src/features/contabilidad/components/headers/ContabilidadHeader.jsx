@@ -1,15 +1,15 @@
 /**
  * @uso        Encabezado y acciones principales de Contabilidad
- * @funciones  ContabilidadHeader({ cantidadPorRevisar, ... })
+ * @funciones  ContabilidadHeader({ cantidadPorRevisar, hayBolsillosActivos, disparadorMovimientoRef, alAbrirRevision, alAbrirMovimiento })
  * @datos      Recibe la cantidad pendiente, disponibilidad de bolsillos y refs de disparadores
- * @eventos    Abre revisión, creación de movimiento y creación de bolsillo
+ * @eventos    Abre revisión y creación de movimiento
  * @estados    Ninguno
  * @usadoPor   ContabilidadPage
  */
 import { ClipboardCheck, Plus } from "lucide-react";
 
 /** Encabezado que concentra las acciones globales de la página contable. */
-export default function ContabilidadHeader({ cantidadPorRevisar, hayBolsillosActivos, disparadorMovimientoRef, disparadorBolsilloRef, alAbrirRevision, alAbrirMovimiento, alAbrirBolsillo }) {
+export default function ContabilidadHeader({ cantidadPorRevisar, hayBolsillosActivos, disparadorMovimientoRef, alAbrirRevision, alAbrirMovimiento }) {
   return <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
       <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
@@ -27,11 +27,6 @@ export default function ContabilidadHeader({ cantidadPorRevisar, hayBolsillosAct
         <Plus className="h-4 w-4" aria-hidden="true" />
         <span className="sm:hidden">Movimiento</span>
         <span className="hidden sm:inline">Nuevo movimiento</span>
-      </button>
-      <button ref={disparadorBolsilloRef} type="button" onClick={alAbrirBolsillo} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-primary px-4 py-2.5 text-sm font-semibold text-emerald-primary transition-colors hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        <span className="sm:hidden">Bolsillo</span>
-        <span className="hidden sm:inline">Nuevo bolsillo</span>
       </button>
     </div>
   </header>;

@@ -66,8 +66,8 @@ export default function ContabilidadPage() {
   };
 
   return <section aria-labelledby="contabilidad-titulo" className="space-y-6 pt-6">
-    <ContabilidadHeader cantidadPorRevisar={cantidadPorRevisar} hayBolsillosActivos={bolsillosActivos.length > 0} disparadorMovimientoRef={disparadorMovimientoRef} disparadorBolsilloRef={disparadorBolsilloRef} alAbrirRevision={() => setBandejaRevisionAbierta(true)} alAbrirMovimiento={abrirMovimiento} alAbrirBolsillo={abrirBolsillo} />
-    <BolsillosContablesCondiciones bolsillos={bolsillos} cargandoBolsillos={cargandoBolsillos} errorBolsillos={errorBolsillos} resumenes={resumenesBolsillos} resumenMensual={resumenMensual} cargandoResumenes={cargandoResumenes} cargandoResumenMensual={cargandoResumenMensual} errorResumenes={errorResumenes} alAbrirDetalle={abrirDetalleBolsillo} />
+    <ContabilidadHeader cantidadPorRevisar={cantidadPorRevisar} hayBolsillosActivos={bolsillosActivos.length > 0} disparadorMovimientoRef={disparadorMovimientoRef} alAbrirRevision={() => setBandejaRevisionAbierta(true)} alAbrirMovimiento={abrirMovimiento} />
+    <BolsillosContablesCondiciones bolsillos={bolsillos} cargandoBolsillos={cargandoBolsillos} errorBolsillos={errorBolsillos} resumenes={resumenesBolsillos} resumenMensual={resumenMensual} cargandoResumenes={cargandoResumenes} cargandoResumenMensual={cargandoResumenMensual} errorResumenes={errorResumenes} alAbrirDetalle={abrirDetalleBolsillo} alAbrirBolsillo={abrirBolsillo} disparadorBolsilloRef={disparadorBolsilloRef} />
     <MovimientosContablesSection movimientos={movimientos} filtros={filtrosMovimiento} filtroActivo={filtroMovimiento} cargando={cargandoMovimientos} error={errorMovimientos} alCambiarFiltro={setFiltroMovimiento} alAbrirDetalle={abrirDetalleMovimiento} />
 
     <RespuestaMovimiento respuesta={respuesta} className="fixed right-4 top-20 z-40 w-[min(calc(100vw-2rem),24rem)] border-emerald-700 bg-emerald-700 px-5 py-4 text-base font-semibold text-white shadow-xl" />

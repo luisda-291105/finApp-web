@@ -50,7 +50,7 @@ describe("PaginaDashboardContabilidad", () => {
     const ahora = new Date();
     expect(obtenerResumenGlobal).toHaveBeenCalledWith(`${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`);
     await waitFor(() => expect(listarMovimientos).toHaveBeenCalledWith(null, "TODOS"));
-    expect(screen.getByRole("heading", { name: "Movimientos de todos los bolsillos" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Movimientos de todos los bolsillos")).toBeInTheDocument();
   });
 
   it("filtra todos los bolsillos por tipo de movimiento", async () => {
