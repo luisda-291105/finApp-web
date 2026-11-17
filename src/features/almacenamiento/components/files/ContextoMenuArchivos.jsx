@@ -6,7 +6,7 @@
  * @estados    Ninguno
  * @usadoPor   AlmacenamientoPage
  */
-import { Copy, Download, FolderOpen, HardDrive, Pencil, RotateCcw, Share2, Trash2 } from "lucide-react";
+import { Copy, Download, FolderOpen, HardDrive, Pencil, RotateCcw, Scissors, Share2, Trash2 } from "lucide-react";
 
 export default function ContextoMenuArchivos({
   menu,
@@ -17,6 +17,7 @@ export default function ContextoMenuArchivos({
   alDescargar,
   alCopiar,
   alMover,
+  alCortar,
   alCompartir,
   alEliminar,
   alRestaurar,
@@ -36,6 +37,7 @@ export default function ContextoMenuArchivos({
     { clave: "descargar", etiqueta: "Descargar", Icono: Download, onClick: ejecutar(() => alDescargar?.(itemActivo?.id)), disabled: esCarpeta || !itemActivo },
     { clave: "copiar", etiqueta: "Copiar", Icono: Copy, onClick: ejecutar(() => alCopiar?.(idsUnicos)), disabled: idsUnicos.length === 0 },
     { clave: "mover", etiqueta: "Mover", Icono: HardDrive, onClick: ejecutar(() => alMover?.(idsUnicos)), disabled: idsUnicos.length === 0 },
+    { clave: "cortar", etiqueta: "Cortar", Icono: Scissors, onClick: ejecutar(() => alCortar?.(idsUnicos)), disabled: idsUnicos.length === 0 },
     { clave: "renombrar", etiqueta: "Cambiar nombre", Icono: Pencil, onClick: ejecutar(() => itemActivo && alRenombrar?.(itemActivo.id)), disabled: idsUnicos.length !== 1 },
     { clave: "compartir", etiqueta: "Compartir", Icono: Share2, onClick: ejecutar(() => itemActivo && alCompartir?.(itemActivo.id)), disabled: idsUnicos.length !== 1 },
     { clave: "eliminar", etiqueta: "Mover a papelera", Icono: Trash2, onClick: ejecutar(() => alEliminar?.(idsUnicos)), disabled: idsUnicos.length === 0 },

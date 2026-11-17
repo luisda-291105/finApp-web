@@ -289,6 +289,7 @@ export function useGestorArchivos({ cuentaId = "" } = {}) {
   const cancelarModoMover = useCallback(() => setModoMover(null), []);
   const copiar = useCallback((ids) => { setModoMover(null); setPortapapeles({ ids, corte: false }); }, []);
   const mover = useCallback((ids) => { setModoMover(null); setPortapapeles({ ids, corte: true }); }, []);
+  const cortar = useCallback((ids) => { setModoMover(null); setPortapapeles({ ids, corte: true }); }, []);
 
   const pegar = useCallback(async (destinoId = carpetaId) => {
     if (!portapapeles || portapapeles.ids.length === 0 || !cuentaId) return;
@@ -404,6 +405,7 @@ export function useGestorArchivos({ cuentaId = "" } = {}) {
     portapapeles,
     copiar,
     mover,
+    cortar,
     pegar,
     crearCarpeta,
     subirArchivos,
