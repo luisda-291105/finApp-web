@@ -186,6 +186,7 @@ export default function AlmacenamientoPage() {
   };
 
   const abrirMover = (ids, accion = "mover") => setModalMover({ abierto: true, ids: Array.from(new Set(ids || [])), accion });
+  const alCortar = useCallback((ids) => { if (!ids?.length) return; gestor.cortar(ids); }, [gestor]);
   const confirmarMover = async (destinoId) => {
     setProcesandoMover(true);
     try {
@@ -313,6 +314,7 @@ export default function AlmacenamientoPage() {
           alDescargar={alDescargar}
           alCopiar={(ids) => abrirMover(ids, "copiar")}
           alMover={(ids) => abrirMover(ids, "mover")}
+          alCortar={alCortar}
           alCompartir={(id) => setItemCompartir(gestor.items.find((i) => i.id === id) || null)}
           alEliminar={async (ids) => { if (window.confirm("¿Mover los elementos seleccionados a la papelera?")) { try { await gestor.eliminarItems(ids); mostrarExito("Elementos enviados a la papelera."); } catch (e) { mostrarError(e); } } }}
           alRestaurar={alRestaurar}
