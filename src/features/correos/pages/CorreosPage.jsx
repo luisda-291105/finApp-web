@@ -51,7 +51,7 @@ export default function CorreosPage() {
               className="relative inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-line bg-bg-cream/70 px-4 py-2.5 text-sm font-medium text-bg-dark transition-colors hover:border-emerald-primary/50 hover:text-emerald-primary"
             >
               <Bell className="h-4 w-4" aria-hidden="true" />
-              <span>Notificaciones</span>
+              <span className="sm:hidden">Notificaciones</span>
               {notificaciones.noLeidas > 0 && (
                 <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white">
                   {notificaciones.noLeidas > 99 ? "99+" : notificaciones.noLeidas}
