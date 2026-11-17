@@ -140,6 +140,18 @@ export default function AlmacenamientoPage() {
     }
   }, [gestor, mostrarError, mostrarExito]);
 
+  const eliminarArchivoActivo = useCallback(async (id) => {
+    if (!id) return;
+    const enPapelera = gestor.vista === "papelera";
+    if (window.confirm(enPapelera ? "¿Eliminar definitivamente el elemento? Esta acción no se puede deshacer." : "¿Enviar el elemento a la papelera?")) {
+      try {
+        await gestor.eliminarItems([id]);
+        gestor.cerrarArchivo();
+        mostrarExito(enPapelera ? "Elemento eliminado definitivamente." : "Elemento enviado a la papelera.");
+      } catch (e) { mostrarError(e, "No se pudo eliminar el elemento"); }
+    }
+  }, [gestor, mostrarError, mostrarExito]);
+
   const alArrastrarSobre = (evento) => { if (!puedeOperar) return; evento.preventDefault(); setArrastrandoSobre(true); };
   const alArrastrarFuera = (evento) => { evento.preventDefault(); setArrastrandoSobre(false); };
   const alSoltar = async (evento) => {
@@ -330,6 +342,8 @@ export default function AlmacenamientoPage() {
         obtenerUrlContenido={gestor.obtenerUrlContenido}
         obtenerUrlPrevisualizacion={gestor.obtenerUrlPrevisualizacion}
         alDescargar={alDescargar}
+        alRenombrar={(id, nombre) => gestor.confirmarRenombrado(id, nombre)}
+        alEliminar={eliminarArchivoActivo}
         cargarContenido={gestor.descargar}
         alCerrar={gestor.cerrarArchivo}
       />
