@@ -12,6 +12,7 @@ vi.mock("../../context/UsuarioActivoContext", () => ({
 vi.mock("../../features/tarjetas/services/tarjetasService", () => ({
   obtenerTarjetasPorUsuario: vi.fn(),
   crearTarjeta: vi.fn(),
+  obtenerMovimientosTarjeta: vi.fn().mockResolvedValue([]),
 }));
 
 const TARJETA = {

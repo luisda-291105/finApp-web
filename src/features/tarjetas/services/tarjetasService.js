@@ -28,3 +28,12 @@ export function actualizarTarjeta(idTarjeta, tarjeta) {
 export function eliminarTarjeta(idTarjeta) {
   return eliminar(`${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}`);
 }
+
+/**
+ * @uso        Historial de movimientos de contabilidad vinculados a una tarjeta
+ * @param {string|number} idTarjeta
+ * @datos      Devuelve fecha, monto, tipo, categoría, concepto, origen y estado de revisión, ordenados por fecha desc
+ */
+export function obtenerMovimientosTarjeta(idTarjeta) {
+  return obtener(`${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}/movimientos`);
+}
