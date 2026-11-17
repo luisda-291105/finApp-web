@@ -73,6 +73,9 @@ export const ENDPOINTS = {
   telegram: {
     base: "/api/telegram",
   },
+  suscripcion: {
+    base: "/suscripcion",
+  },
   almacenamiento: {
     conexiones: "/api/almacenamiento/conexiones",
     desconectar: "/api/almacenamiento/conexiones",

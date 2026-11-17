@@ -1,6 +1,6 @@
 /**
  * @uso        Registrar manualmente una suscripción de cobro o importante
- * @funciones  CrearSuscripcionManualModal({ abierto, alCerrar, triggerRef, valores, alCambiar, alGuardar, categorias })
+ * @funciones  CrearSuscripcionManualModal({ abierto, alCerrar, triggerRef, valores, alCambiar, alGuardar, categorias, guardando })
  * @datos      Formulario controlado con nombre, monto, fecha de cobro, categoría e importancia
  * @eventos    Cambio de campos, submit para guardar y cierre del modal
  * @estados    Ninguno (controlado por props)
@@ -16,6 +16,7 @@ export default function CrearSuscripcionManualModal({
   alCambiar,
   alGuardar,
   categorias,
+  guardando = false,
 }) {
   return (
     <ModalDetalleRegistro
@@ -95,15 +96,17 @@ export default function CrearSuscripcionManualModal({
           <button
             type="button"
             onClick={alCerrar}
-            className="min-h-10 rounded-xl border border-border-line px-4 text-sm font-medium text-bg-dark"
+            disabled={guardando}
+            className="min-h-10 rounded-xl border border-border-line px-4 text-sm font-medium text-bg-dark disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white"
+            disabled={guardando}
+            className="min-h-10 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white disabled:opacity-60"
           >
-            Guardar suscripción
+            {guardando ? "Guardando…" : "Guardar suscripción"}
           </button>
         </div>
       </form>

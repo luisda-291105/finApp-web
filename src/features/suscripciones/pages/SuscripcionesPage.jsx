@@ -13,6 +13,7 @@ import BuscarSuscripcionesModal from "../components/modals/BuscarSuscripcionesMo
 import FiltrarSuscripcionesModal from "../components/modals/FiltrarSuscripcionesModal";
 import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModal";
 import CrearSuscripcionManualModal from "../components/modals/CrearSuscripcionManualModal";
+import { actualizarSuscripcionManual, crearSuscripcionManual, listarSuscripcionesManuales } from "../services/suscripcionesServicio";
 import { AlertaGlobal } from "../../../features/error";
 import { formatoMoneda } from "../utils/suscripcionesData";
 
@@ -37,6 +38,10 @@ export default function SuscripcionesPage() {
   const [modalManualAbierto, setModalManualAbierto] = useState(false);
   const [suscripcionManual, setSuscripcionManual] = useState(SUSCRIPCION_MANUAL_INICIAL);
   const [suscripcionesManuales, setSuscripcionesManuales] = useState([]);
+  const [cargandoSuscripcionesManuales, setCargandoSuscripcionesManuales] = useState(true);
+  const [guardandoSuscripcionManual, setGuardandoSuscripcionManual] = useState(false);
+  const [errorSuscripcionManual, setErrorSuscripcionManual] = useState("");
+  const [errorManualCerrado, setErrorManualCerrado] = useState("");
   const [colapsadoCorreo, setColapsadoCorreo] = useState(false);
   const [errorRecurrentesCerrado, setErrorRecurrentesCerrado] = useState("");
   const [errorGmailCerrado, setErrorGmailCerrado] = useState("");
@@ -48,6 +53,22 @@ export default function SuscripcionesPage() {
 
   useEffect(() => { setErrorRecurrentesCerrado(""); }, [recurrentes.error]);
   useEffect(() => { setErrorGmailCerrado(""); }, [gmail.error]);
+  useEffect(() => { setErrorManualCerrado(""); }, [errorSuscripcionManual]);
+
+  useEffect(() => {
+    let vigente = true;
+    listarSuscripcionesManuales()
+      .then((manuales) => {
+        if (vigente) setSuscripcionesManuales(manuales);
+      })
+      .catch((error) => {
+        if (vigente) setErrorSuscripcionManual(error?.message || "No se pudieron cargar las suscripciones registradas.");
+      })
+      .finally(() => {
+        if (vigente) setCargandoSuscripcionesManuales(false);
+      });
+    return () => { vigente = false; };
+  }, []);
   const textoErroresCuentas = useMemo(
     () => gmail.erroresCuentas.map((item) => `${item.correo}: ${item.mensaje}`).join(" · "),
     [gmail.erroresCuentas],
@@ -98,8 +119,9 @@ export default function SuscripcionesPage() {
     setSuscripcionManual((actual) => ({ ...actual, [campo]: valor }));
   };
 
-  const guardarSuscripcionManual = (evento) => {
+  const guardarSuscripcionManual = async (evento) => {
     evento.preventDefault();
+    setErrorSuscripcionManual("");
     const nombre = suscripcionManual.nombre.trim();
     const montoTexto = String(suscripcionManual.monto || "").trim();
     const montoNormalizado = montoTexto
@@ -109,29 +131,56 @@ export default function SuscripcionesPage() {
     const monto = Number(montoNormalizado);
     const fechaCobro = suscripcionManual.fechaCobro;
     if (!nombre || !montoTexto || !Number.isFinite(monto) || monto <= 0 || !fechaCobro) return;
-    setSuscripcionesManuales((actuales) => [
-      {
-        id: `manual-${Date.now()}`,
+
+    setGuardandoSuscripcionManual(true);
+    try {
+      const creada = await crearSuscripcionManual({
         nombre,
         monto,
         fechaCobro,
         categoria: suscripcionManual.categoria,
         importancia: suscripcionManual.importancia,
-      },
-      ...actuales,
-    ]);
-    setSuscripcionManual(SUSCRIPCION_MANUAL_INICIAL);
-    setModalManualAbierto(false);
+      });
+
+      try {
+        setSuscripcionesManuales(await listarSuscripcionesManuales());
+      } catch {
+        setSuscripcionesManuales((actuales) => [creada, ...actuales]);
+      }
+
+      setSuscripcionManual(SUSCRIPCION_MANUAL_INICIAL);
+      setModalManualAbierto(false);
+    } catch (error) {
+      setErrorSuscripcionManual(error?.message || "No se pudo registrar la suscripción. Intenta de nuevo.");
+    } finally {
+      setGuardandoSuscripcionManual(false);
+    }
   };
 
-  const alternarImportanciaManual = (id) => {
+  const alternarImportanciaManual = async (id) => {
+    const snapshot = suscripcionesManuales;
+    const objetivo = snapshot.find((item) => String(item.id) === String(id));
+    if (!objetivo) return;
+
+    const nuevaImportancia = objetivo.importancia === "Alta" ? "Baja" : "Alta";
+    setErrorSuscripcionManual("");
     setSuscripcionesManuales((actuales) =>
       actuales.map((item) =>
-        item.id === id
-          ? { ...item, importancia: item.importancia === "Alta" ? "Baja" : "Alta" }
+        String(item.id) === String(id)
+          ? { ...item, importancia: nuevaImportancia }
           : item,
       ),
     );
+
+    try {
+      const actualizada = await actualizarSuscripcionManual(id, { ...objetivo, importancia: nuevaImportancia });
+      setSuscripcionesManuales((actuales) =>
+        actuales.map((item) => (String(item.id) === String(id) ? actualizada : item)),
+      );
+    } catch (error) {
+      setSuscripcionesManuales(snapshot);
+      setErrorSuscripcionManual(error?.message || "No se pudo actualizar la importancia.");
+    }
   };
 
   // "Administrar en Gmail" se movió a Configuración (Ajustes).
@@ -156,6 +205,12 @@ export default function SuscripcionesPage() {
         mensaje={textoErroresCuentas && textoErroresCuentas !== erroresCuentasCerrados ? `Algunas cuentas Gmail no se pudieron consultar: ${textoErroresCuentas}` : ""}
         alCerrar={() => setErroresCuentasCerrados(textoErroresCuentas)}
       />
+      <AlertaGlobal
+        idBase="suscripciones-manuales-error"
+        tipo="error"
+        mensaje={errorSuscripcionManual && errorSuscripcionManual !== errorManualCerrado ? errorSuscripcionManual : ""}
+        alCerrar={() => setErrorManualCerrado(errorSuscripcionManual)}
+      />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
@@ -173,6 +228,7 @@ export default function SuscripcionesPage() {
 
       <SuscripcionesManualesSection
         suscripciones={suscripcionesManuales}
+        cargando={cargandoSuscripcionesManuales}
         alAlternarImportancia={alternarImportanciaManual}
         formatoMoneda={formatoMoneda}
         formatoFecha={formatoFechaCobro}
@@ -235,6 +291,7 @@ export default function SuscripcionesPage() {
         alCambiar={cambiarSuscripcionManual}
         alGuardar={guardarSuscripcionManual}
         categorias={CATEGORIAS_SUSCRIPCION_MANUAL}
+        guardando={guardandoSuscripcionManual}
       />
       <ModalDetalleRegistro abierto={crearCategoriaAbierto} titulo="Crear categoría" alCerrar={() => setCrearCategoriaAbierto(false)} ancho="max-w-md">
         <form className="space-y-4" onSubmit={(evento) => { evento.preventDefault(); const nombre = nombreCategoria.trim(); if (!nombre) return; const ids = suscripcionesCorreoFiltradas.map((item) => `${item.cuentaGmailId || ""}:${item.id || item.correoRemitente || ""}`); setCategoriasPersonalizadas((actuales) => { const existentes = actuales.filter((item) => item.nombre.toLocaleLowerCase() !== nombre.toLocaleLowerCase()); return [...existentes, { nombre, ids }]; }); setFiltrosCorreo((actuales) => ({ ...actuales, categorias: [nombre] })); setNombreCategoria(""); setCrearCategoriaAbierto(false); }}>

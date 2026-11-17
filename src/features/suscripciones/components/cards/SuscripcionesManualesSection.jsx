@@ -1,6 +1,6 @@
 /**
  * @uso        Mostrar y gestionar suscripciones registradas manualmente
- * @funciones  SuscripcionesManualesSection({ suscripciones, alAlternarImportancia, formatoMoneda, formatoFecha })
+ * @funciones  SuscripcionesManualesSection({ suscripciones, cargando, alAlternarImportancia, formatoMoneda, formatoFecha })
  * @datos      Lista de suscripciones manuales con nombre, categoría, fecha de cobro, monto e importancia
  * @eventos    Alternar importancia (subir/bajar) y minimizar/expandir bloque
  * @estados    colapsado (boolean)
@@ -12,6 +12,7 @@ import { Card } from "../../../../components/ui";
 
 export default function SuscripcionesManualesSection({
   suscripciones,
+  cargando = false,
   alAlternarImportancia,
   formatoMoneda,
   formatoFecha,
@@ -41,7 +42,9 @@ export default function SuscripcionesManualesSection({
         </button>
         {!colapsado && (
           <div id="suscripciones-manuales-contenido" className="space-y-4">
-            {suscripciones.length === 0 ? (
+            {cargando ? (
+              <p role="status" className="text-sm text-slate-text">Cargando suscripciones registradas…</p>
+            ) : suscripciones.length === 0 ? (
               <p className="text-sm text-slate-text">
                 Registra suscripciones de cobros o importantes para hacerles seguimiento manual.
               </p>
