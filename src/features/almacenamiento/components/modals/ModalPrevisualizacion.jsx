@@ -13,7 +13,7 @@ import { Download, ExternalLink } from "lucide-react";
 import { BotonCerrar } from "../../../../components/ui";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
-import AlmacenamientoArchivoIcono from "./AlmacenamientoArchivoIcono";
+import AlmacenamientoArchivoIcono from "../files/AlmacenamientoArchivoIcono";
 
 function esGoogleDoc(item) {
   const mime = String(item?.mime || "");
@@ -101,9 +101,9 @@ export default function ModalPrevisualizacion({ abierto, item, cuentaId, obtener
   if (!abierto || !item) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[1050] flex items-end justify-center bg-bg-dark/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={(evento) => { if (evento.target === evento.currentTarget) alCerrar(); }}>
+    <div className="modal-overlay-dashboard z-[100] flex items-end justify-center bg-bg-dark/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={(evento) => { if (evento.target === evento.currentTarget) alCerrar(); }}>
       <FocusTrap focusTrapOptions={{ allowOutsideClick: true, escapeDeactivates: false, initialFocus: () => panelRef.current, returnFocusOnDeactivate: false }}>
-        <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-previsualizacion-titulo" aria-describedby="modal-previsualizacion-descripcion" tabIndex={-1} className="glass-surface relative flex max-h-[85dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-border-line/30 bg-bg-cream/95 p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] text-bg-dark shadow-2xl outline-none sm:max-h-[85vh] sm:rounded-3xl sm:p-6 sm:pb-6">
+        <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="modal-previsualizacion-titulo" aria-describedby="modal-previsualizacion-descripcion" tabIndex={-1} className="modal-sheet-mobile glass-surface relative mb-[var(--bottom-nav-alto)] flex max-h-[85dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 p-5 pb-5 text-bg-dark shadow-2xl outline-none sm:mb-0 sm:max-h-[85vh] sm:rounded-3xl sm:p-6 sm:pb-6">
           <header className="mb-4 flex shrink-0 items-start justify-between gap-4 border-b border-border-line/30 pb-4">
             <div className="min-w-0">
               <h2 id="modal-previsualizacion-titulo" className="truncate font-display text-lg font-semibold">{item.nombre}</h2>

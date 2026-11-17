@@ -14,9 +14,9 @@ ofrece un navegador de archivos tipo Google Drive para gestionar archivos desde 
 - `components/files/AlmacenamientoArchivos`: listado y estados de carga, vacío y error por vista.
 - `components/files/AlmacenamientoArchivoItem`: fila/carta con selección, apertura y renombrado.
 - `components/files/ContextoMenuArchivos`: acciones (abrir, descargar, copiar, mover, renombrar, compartir, eliminar/restaurar).
-- `components/files/ModalPrevisualizacion`: previsualización inline (imagen/PDF) o enlace externo y descarga real.
-- `components/files/ModalCompartir`: gestión de permisos, roles y enlace.
-- `components/files/ModalMover`: selección de carpeta destino para mover/copiar.
+- `components/modals/ModalPrevisualizacion`: previsualización inline (imagen/PDF) o enlace externo y descarga real.
+- `components/modals/ModalCompartir`: gestión de permisos, roles y enlace.
+- `components/modals/ModalMover`: selección de carpeta destino para mover/copiar.
 - `components/modals/ModalGoogleDrive`: acceso al Drive y mensaje de reconexión/scope.
 
 ## Hook y servicio

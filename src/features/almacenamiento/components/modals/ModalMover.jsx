@@ -26,9 +26,9 @@ export default function ModalMover({ abierto, ids = [], accion = "mover", carpet
   const titulo = accion === "copiar" ? "Copiar a" : "Mover a";
 
   return createPortal(
-    <div className="fixed inset-0 z-[1200] flex items-end justify-center bg-bg-dark/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) alCerrar(); }}>
+    <div className="modal-overlay-dashboard z-[100] flex items-end justify-center bg-bg-dark/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) alCerrar(); }}>
       <FocusTrap focusTrapOptions={{ allowOutsideClick: true, escapeDeactivates: false, returnFocusOnDeactivate: false }}>
-        <section role="dialog" aria-modal="true" aria-labelledby="modal-mover-titulo" className="glass-surface w-full max-w-md rounded-t-3xl border border-border-line/30 bg-bg-cream/95 p-5 text-bg-dark shadow-2xl outline-none sm:rounded-3xl">
+        <section role="dialog" aria-modal="true" aria-labelledby="modal-mover-titulo" className="glass-surface modal-sheet-mobile mb-[var(--bottom-nav-alto)] max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 p-5 text-bg-dark shadow-2xl outline-none sm:mb-0 sm:rounded-3xl">
           <header className="mb-4 flex items-start justify-between gap-4 border-b border-border-line/30 pb-4">
             <div>
               <h2 id="modal-mover-titulo" className="font-display text-lg font-semibold">{titulo}</h2>

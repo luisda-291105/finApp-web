@@ -15,9 +15,9 @@ import AlmacenamientoToolbar from "../components/files/AlmacenamientoToolbar";
 import AlmacenamientoCrumbs from "../components/files/AlmacenamientoCrumbs";
 import AlmacenamientoArchivos from "../components/files/AlmacenamientoArchivos";
 import ContextoMenuArchivos from "../components/files/ContextoMenuArchivos";
-import ModalPrevisualizacion from "../components/files/ModalPrevisualizacion";
-import ModalCompartir from "../components/files/ModalCompartir";
-import ModalMover from "../components/files/ModalMover";
+import ModalPrevisualizacion from "../components/modals/ModalPrevisualizacion";
+import ModalCompartir from "../components/modals/ModalCompartir";
+import ModalMover from "../components/modals/ModalMover";
 import { useGestorArchivos } from "../hooks/useGestorArchivos";
 
 const ETIQUETAS_ESTADO = { ACTIVA: "Activa", REQUIERE_RECONEXION: "Requiere reconexión", DESCONECTADA: "Desconectada" };
