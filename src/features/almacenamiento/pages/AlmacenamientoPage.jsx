@@ -38,8 +38,12 @@ function nombreProveedor(proveedor) {
 
 export default function AlmacenamientoPage() {
   const alertas = useAlertas();
+  const STORAGE_KEY = "finapp:almacenamiento:cuentaActivaId";
   const [conexiones, setConexiones] = useState([]);
-  const [cuentaActivaId, setCuentaActivaId] = useState("");
+  const [cuentaActivaId, setCuentaActivaId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem(STORAGE_KEY) || "";
+  });
   const [cargandoCuentas, setCargandoCuentas] = useState(true);
   const [errorCuentas, setErrorCuentas] = useState("");
   const [arrastrandoSobre, setArrastrandoSobre] = useState(false);
@@ -52,6 +56,15 @@ export default function AlmacenamientoPage() {
   const cuentaActiva = useMemo(() => conexiones.find((c) => String(c.id) === String(cuentaActivaId)) || null, [conexiones, cuentaActivaId]);
   const puedeOperar = Boolean(cuentaActivaId) && cuentaActiva?.estado === "ACTIVA";
   const esPapelera = gestor.vista === "papelera";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (cuentaActivaId) {
+      localStorage.setItem(STORAGE_KEY, cuentaActivaId);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [cuentaActivaId]);
 
   const cargarConexiones = useCallback(async () => {
     setCargandoCuentas(true);
