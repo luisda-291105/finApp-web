@@ -6,7 +6,7 @@
  * @estados    Ninguno; la apertura es controlada por el módulo consumidor
  * @usadoPor   Detalles de correo, grupo, tarjeta y perfil
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import FocusTrap from "focus-trap-react";
 import { BotonCerrar } from "../../ui/BotonCerrar";
@@ -17,6 +17,7 @@ import { useRetornoDeFoco } from "../../../hooks/useRetornoDeFoco";
  *  para que el overlay `fixed inset-0` quede relativo al viewport (sin ancestros con transform). */
 export default function ModalDetalleRegistro({ abierto, titulo, alCerrar, triggerRef, children, ancho = "max-w-2xl", etiquetaCerrar, icono: Icono }) {
   const panelRef = useRef(null);
+  const idTitulo = useId();
   useCierreConEsc({ activo: abierto, zIndex: 80, alCerrar });
   useRetornoDeFoco({ activo: abierto, triggerRef });
   useEffect(() => { if (abierto) panelRef.current?.focus(); }, [abierto]);
@@ -41,7 +42,7 @@ export default function ModalDetalleRegistro({ abierto, titulo, alCerrar, trigge
           ref={panelRef}
           role="dialog"
           aria-modal="true"
-          aria-labelledby="detalle-registro-titulo"
+          aria-labelledby={idTitulo}
           tabIndex={-1}
           className={`glass-surface modal-sheet-mobile relative max-h-[92vh] w-full ${ancho} overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 p-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] text-bg-dark shadow-xl outline-none sm:max-h-[90vh] sm:rounded-3xl sm:p-7 sm:pb-7`}
         >
@@ -56,7 +57,7 @@ export default function ModalDetalleRegistro({ abierto, titulo, alCerrar, trigge
                   <Icono className="h-5 w-5" />
                 </span>
               )}
-              <h2 id="detalle-registro-titulo" className="font-display text-xl font-semibold">
+              <h2 id={idTitulo} className="font-display text-xl font-semibold">
                 {titulo}
               </h2>
             </div>

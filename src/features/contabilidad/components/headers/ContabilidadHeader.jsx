@@ -18,13 +18,20 @@ export default function ContabilidadHeader({ cantidadPorRevisar, hayBolsillosAct
     </div>
     <div className="flex flex-wrap gap-2">
       <button type="button" onClick={alAbrirRevision} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-600 px-4 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600">
-        <ClipboardCheck className="h-4 w-4" aria-hidden="true" />Por revisar <span aria-label={`${cantidadPorRevisar} movimientos pendientes`}>({cantidadPorRevisar})</span>
+        <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+        <span className="sm:hidden">Revisar</span>
+        <span className="hidden sm:inline">Por revisar</span>
+        <span aria-label={`${cantidadPorRevisar} movimientos pendientes`}>({cantidadPorRevisar})</span>
       </button>
       <button ref={disparadorMovimientoRef} type="button" disabled={!hayBolsillosActivos} onClick={alAbrirMovimiento} title={!hayBolsillosActivos ? "Crea y activa un bolsillo para registrar movimientos" : undefined} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-primary px-4 py-2.5 text-sm font-semibold text-bg-cream shadow-sm transition-colors hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:cursor-not-allowed disabled:opacity-50">
-        <Plus className="h-4 w-4" aria-hidden="true" />Nuevo movimiento
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        <span className="sm:hidden">Movimiento</span>
+        <span className="hidden sm:inline">Nuevo movimiento</span>
       </button>
       <button ref={disparadorBolsilloRef} type="button" onClick={alAbrirBolsillo} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-primary px-4 py-2.5 text-sm font-semibold text-emerald-primary transition-colors hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
-        <Plus className="h-4 w-4" aria-hidden="true" />Nuevo bolsillo
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        <span className="sm:hidden">Bolsillo</span>
+        <span className="hidden sm:inline">Nuevo bolsillo</span>
       </button>
     </div>
   </header>;

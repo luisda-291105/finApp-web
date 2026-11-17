@@ -65,7 +65,7 @@ describe("PaginaDashboardContabilidad", () => {
     const usuario = userEvent.setup();
     renderPagina();
     await screen.findByText("Gastos diarios");
-    await usuario.click(screen.getByRole("button", { name: "Nuevo movimiento" }));
+    await usuario.click(screen.getByRole("button", { name: /Nuevo movimiento/ }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByLabelText("Bolsillo")).toBeInTheDocument();
     expect(screen.getByLabelText("Fecha")).toBeInTheDocument();
@@ -88,15 +88,17 @@ describe("PaginaDashboardContabilidad", () => {
     await usuario.click(within(cardFijos).getByRole("button", { name: "Ver detalles de Gastos" }));
     const dialogo = await screen.findByRole("dialog", { name: "Gastos" });
     expect(within(dialogo).getByRole("heading", { name: "Movimientos" })).toBeInTheDocument();
-    expect(await within(dialogo).findByText("Gasolina")).toBeInTheDocument();
+    await usuario.click(within(dialogo).getByRole("button", { name: /Ver movimientos/i }));
+    const movimientos = await screen.findByRole("dialog", { name: /Movimientos de Gastos/i });
+    expect(await within(movimientos).findByText("Gasolina")).toBeInTheDocument();
   });
 
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {
     const usuario = userEvent.setup();
     renderPagina();
     await screen.findByText("Gastos diarios");
-    await usuario.click(screen.getByRole("button", { name: "Nuevo movimiento" }));
-    const dialogo = await screen.findByRole("dialog", { name: "Nuevo movimiento" });
+    await usuario.click(screen.getByRole("button", { name: /Nuevo movimiento/ }));
+    const dialogo = await screen.findByRole("dialog", { name: /Nuevo movimiento/ });
     const opciones = within(dialogo).getByLabelText("Bolsillo").querySelectorAll("option:not([disabled])");
     expect(Array.from(opciones).map((opcion) => opcion.textContent)).toEqual([
       "Ingresos · INGRESO · Fijo", "Gastos · GASTO · Fijo", "Gastos diarios · GASTO", "Nómina · INGRESO",

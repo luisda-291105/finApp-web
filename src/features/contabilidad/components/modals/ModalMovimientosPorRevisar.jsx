@@ -80,7 +80,6 @@ export default function ModalMovimientosPorRevisar({ abierto, bolsillos = [], tr
   return <ModalDetalleRegistro abierto={abierto} titulo="Movimientos por revisar" triggerRef={triggerRef}
     alCerrar={() => !ocupado && alCerrar()} ancho="max-w-2xl">
     <div className="space-y-4">
-      <p className="text-sm text-slate-text">Confirma los ingresos y gastos de Gmail como movimientos globales. Los demás movimientos pendientes pueden asignarse a un bolsillo compatible.</p>
       <AlertaGlobal tipo="error" mensaje={error} idBase="ModalMovimientosPorRevisar-error" />
       {cargando && <p role="status" className="text-sm text-slate-text">Cargando movimientos…</p>}
       {!cargando && !error && movimientos.length === 0 && <p className="rounded-xl bg-bg-cream p-4 text-sm text-slate-text">No hay movimientos pendientes de revisión.</p>}
