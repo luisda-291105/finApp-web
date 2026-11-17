@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { CLASE_ENTRADA } from "./authFormStyles";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 export default function LoginForm({ idUsuario, contrasena, alCambiarIdUsuario, alCambiarContrasena, alEnviar, cargando, mensaje }) {
   const [mostrarContrasena, setMostrarContrasena] = useState(false);

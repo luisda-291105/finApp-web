@@ -9,7 +9,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import MiTarjetaVirtual from "../../../../components/domain/dashboard/MiTarjetaVirtual";
+import MiTarjetaVirtual from "../../../../../features/tarjetas/components/cards/MiTarjetaVirtual";
 
 vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { actualizarMovimiento, confirmarMovimientoGmailGlobal, listarMovimientos } from "../../services/movimientosService";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 function listaDe(respuesta) {
   return Array.isArray(respuesta) ? respuesta : respuesta?.datos || respuesta?.data || [];

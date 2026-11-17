@@ -20,7 +20,7 @@ import { clasificarMovimientoCorreo, extraerMovimientoSugerido } from "../../../
 import { crearMovimiento, listarCorreosImportados } from "../../../contabilidad/services/movimientosService";
 import { listarBolsillos } from "../../../contabilidad/services/bolsillosService";
 import ModalCrearMovimientoContable from "../../../contabilidad/components/modals/ModalCrearMovimientoContable";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 function textoActividad(cantidad) {
   if (cantidad == null) return "Actividad reciente no disponible";

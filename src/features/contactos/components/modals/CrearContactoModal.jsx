@@ -14,7 +14,7 @@ import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import { crearContacto } from "../../services/contactosService";
 import ContactoForm from "../forms/ContactoForm";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 function opcionesTrampa(refPanel) {
   return { allowOutsideClick: true, escapeDeactivates: false, initialFocus: () => refPanel.current, returnFocusOnDeactivate: false };

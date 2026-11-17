@@ -14,7 +14,7 @@ import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import { crearFuente, obtenerFuentesPorUsuario } from "../../../../services/fuenteServicio";
 import { actualizarGrupo, eliminarGrupo, desvincularFuenteDeGrupo, vincularFuenteAGrupo } from "../../services/gruposService";
 import { crearEnlaceTelegram, desvincularTelegram, enviarMensajeTelegram, obtenerEstadoTelegram, obtenerMensajesTelegram } from "../../../../services/telegramServicio";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 const PESTANAS = ["Fuentes", "Chat grupal"];
 function fechaLocalISO() {

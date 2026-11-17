@@ -3,7 +3,7 @@ import { BotonServicioExterno } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { verificarPermisoContactosGoogle } from "../../../../services/gmailServicio";
 import EstadoFuente from "../cards/EstadoFuente";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 const claseCampo = "min-h-11 w-full min-w-0 rounded-xl border border-border-line bg-bg-cream px-3 text-sm text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary";
 

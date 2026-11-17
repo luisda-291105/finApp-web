@@ -4,7 +4,7 @@
  * @datos      Recibe datos de tarjeta; el detalle registrado no proporciona CVV
  * @eventos    Click, Enter o Espacio alternan entre frente y reverso
  * @estados    volteada (boolean); reducirMovimiento (preferencia del sistema)
- * @usadoPor   ModalTarjeta
+ * @usadoPor   DetalleTarjetaModal
  */
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";

@@ -8,7 +8,7 @@
  */
 import { Card } from "../../../../components/ui";
 import MovimientoItem from "../cards/MovimientoItem";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 /** Sección de movimientos con filtros y condiciones de carga, error o vacío. */
 export default function MovimientosContablesSection({ movimientos, filtros, filtroActivo, cargando, error, alCambiarFiltro, alAbrirDetalle }) {

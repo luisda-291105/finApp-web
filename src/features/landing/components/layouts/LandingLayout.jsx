@@ -6,7 +6,7 @@
  * @estados    Ninguno
  * @usadoPor   LandingPage
  */
-import Header from "../../../../components/layout/Header";
+import Header from "./Header";
 import Hero from "../sections/Hero";
 import StatsBar from "../sections/StatsBar";
 import Features from "../sections/Features";

@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 /** Permite elegir entre dos y cuatro muestras para una agrupación. */
 export default function AgruparMuestrasModal({ abierto, muestras = [], agrupacion = null, guardando = false, error = "", triggerRef, alCerrar, alGuardar }) {

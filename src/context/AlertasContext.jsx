@@ -7,7 +7,7 @@
  * @usadoPor   App y componentes que deben mostrar errores/notificaciones globales
  */
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import { NotificacionLateral, PilaNotificacionesLaterales } from "../components/ui/alertas";
+import { NotificacionLateral, PilaNotificacionesLaterales } from "../features/error";
 
 const alertasNoOp = Object.freeze({
   __sinProveedor: true,

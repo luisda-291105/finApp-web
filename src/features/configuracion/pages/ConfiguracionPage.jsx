@@ -25,7 +25,7 @@ import { useFuentesConfiguracion } from "../hooks/useFuentesConfiguracion";
 import { useCierreConEsc } from "../../../hooks/useCierreConEsc";
 import { GMAIL_CONFIGURADO } from "../../../services/gmailServicio";
 import { BotonCerrar } from "../../../components/ui";
-import { AlertaGlobal } from "../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../features/error";
 
 export default function ConfiguracionPage() {
   const [modalFuentesAbierto, setModalFuentesAbierto] = useState(false);

@@ -9,7 +9,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import Header from "../../../components/layout/Header";
+import Header from "../../../../../features/landing/components/layouts/Header";
 
 describe("Header", () => {
   it("renderiza logotipo FinApp y botón de acceso en modo landing", () => {

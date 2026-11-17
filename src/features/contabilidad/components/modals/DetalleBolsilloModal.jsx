@@ -3,7 +3,7 @@ import { CalendarDays, LoaderCircle, Pencil, PiggyBank, ReceiptText, Trash2, Tre
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { listarMovimientos } from "../../services/movimientosService";
 import { esBolsilloFijo, formatoFecha, formatoMoneda } from "../../utils/contabilidadHelpers";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 const iconoPorTipo = { GASTO: ReceiptText, INGRESO: TrendingUp, AHORRO: PiggyBank };
 const campoPorTipo = { GASTO: "gastos", INGRESO: "ingresos", AHORRO: "ahorros" };

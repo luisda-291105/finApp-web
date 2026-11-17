@@ -13,7 +13,7 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import { AsistenteAyudaModal } from "../features/asistenteia";
 import { useTema } from "../context/TemaContext";
-import { LimiteDeError } from "../components/ui";
+import { LimiteDeError } from "../features/error";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
 const SELECTOR_NAVEGACION_LATERAL = 'aside[role="navigation"]';

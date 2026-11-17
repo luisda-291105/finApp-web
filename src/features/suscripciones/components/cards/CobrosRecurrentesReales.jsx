@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { CalendarClock, ChevronDown, CircleDollarSign, Repeat } from "lucide-react";
 import { Card } from "../../../../components/ui";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 const moneda = new Intl.NumberFormat("es-CO", {
   style: "currency",

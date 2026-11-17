@@ -1,5 +1,5 @@
 import { FUENTES_MUESTRAS, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION } from "../../utils/inicioHelpers";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 /** Campos controlados para crear o editar una muestra. */
 export default function CrearMuestraForm({

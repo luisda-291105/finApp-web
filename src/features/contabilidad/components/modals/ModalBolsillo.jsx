@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { agruparEntradaPesos, desagruparPesos, formatearPesos, parsearPesos } from "../../../../utils/formatoPesos";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 export default function ModalBolsillo({ abierto, modo = "crear", bolsillo = null, bolsillos = [], triggerRef, alCerrar, alGuardar, alEliminar }) {
   const [nombre, setNombre] = useState("");

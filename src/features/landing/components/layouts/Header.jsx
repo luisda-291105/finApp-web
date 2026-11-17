@@ -4,12 +4,12 @@
  * @datos      Recibe alAbrirAuth y modo como props
  * @eventos    scroll en window, click en botones de login/registro
  * @estados    desplazado (boolean)
- * @usadoPor   features/landing y DashboardLayout.jsx
+ * @usadoPor   LandingLayout
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import logoClaro from "../../assets/logo-claro.webp";
-import logoOscuro from "../../assets/logo-oscuro.webp";
+import logoClaro from "../../../../assets/logo-claro.webp";
+import logoOscuro from "../../../../assets/logo-oscuro.webp";
 
 /**
  * Header

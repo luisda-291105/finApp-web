@@ -7,7 +7,7 @@ import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import MuestraVisual from "../cards/MuestraVisual";
 import { FUENTES_MUESTRAS, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION, normalizarFuente } from "../../utils/inicioHelpers";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 const opcionesTrampa = (panelRef) => ({
   allowOutsideClick: true,

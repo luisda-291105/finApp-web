@@ -13,7 +13,7 @@ import BuscarSuscripcionesModal from "../components/modals/BuscarSuscripcionesMo
 import FiltrarSuscripcionesModal from "../components/modals/FiltrarSuscripcionesModal";
 import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModal";
 import CrearSuscripcionManualModal from "../components/modals/CrearSuscripcionManualModal";
-import { AlertaGlobal } from "../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../features/error";
 import { formatoMoneda } from "../utils/suscripcionesData";
 
 const FILTROS_CORREO_INICIALES = { cuentas: [], categorias: [], baja: [] };

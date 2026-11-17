@@ -9,7 +9,7 @@
 import { Wallet } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import BolsillosContablesCards from "../cards/BolsillosContablesCards";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 /** Sección de bolsillos que decide qué estado visible presentar. */
 export default function BolsillosContablesCondiciones({ bolsillos, cargandoBolsillos, errorBolsillos, resumenes, resumenMensual, cargandoResumenes, cargandoResumenMensual, errorResumenes, alAbrirDetalle }) {

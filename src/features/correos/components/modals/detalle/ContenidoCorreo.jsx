@@ -1,5 +1,5 @@
 import CampoDetalle from "./CampoDetalle";
-import { AlertaGlobal } from "../../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../../features/error";
 
 function normalizarDestino(destino) {
   let candidato = String(destino || "");

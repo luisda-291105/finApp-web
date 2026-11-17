@@ -19,7 +19,7 @@ import ModalMovimientosPorRevisar from "../components/modals/ModalMovimientosPor
 import MovimientosContablesSection from "../components/sections/MovimientosContablesSection";
 import useContabilidad from "../hooks/useContabilidad";
 import { agregarSaldoDisponible, crearFiltrosMovimiento } from "../utils/contabilidadHelpers";
-import { AlertaGlobal } from "../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../features/error";
 
 /** Página de bolsillos persistidos y movimientos contables. */
 export default function ContabilidadPage() {

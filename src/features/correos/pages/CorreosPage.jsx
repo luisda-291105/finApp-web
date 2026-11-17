@@ -16,7 +16,7 @@ import CorreoCuentaCard from "../components/cards/CorreoCuentaCard";
 import BandejaCorreosModal from "../components/modals/BandejaCorreosModal";
 import BandejaNotificacionesModal from "../components/modals/BandejaNotificacionesModal";
 import { fechaLegible } from "../utils/correoHelpers";
-import { AlertaGlobal } from "../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../features/error";
 
 /** Renderiza las direcciones y entrega las acciones de datos a su hook. */
 export default function CorreosPage() {

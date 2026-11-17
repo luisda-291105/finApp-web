@@ -4,7 +4,7 @@
  * @datos      Recibe children; guarda hayError en el estado interno
  * @eventos    Click en «Recargar página» vuelve a cargar la aplicación
  * @estados    hayError (boolean)
- * @usadoPor   App.jsx (envoltorio de las rutas)
+ * @usadoPor   App.jsx y DashboardLayout.jsx
  */
 
 import { Component } from "react";

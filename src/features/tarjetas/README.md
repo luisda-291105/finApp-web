@@ -8,6 +8,7 @@ Consulta, registra, edita y elimina tarjetas del usuario. Los datos sensibles se
 
 - `pages/TarjetasPage`: listado principal de `/dashboard/tarjetas`.
 - `components/cards/TarjetaCard`: resumen visual con número enmascarado.
+- `components/cards/MiTarjetaVirtual`: tarjeta visual interactiva con flip 3D (la usa `DetalleTarjetaModal`).
 - `components/modals/CrearTarjetaModal`: formulario específico de registro y validación.
 - `components/modals/DetalleTarjetaModal`: detalle, edición y eliminación.
 

@@ -12,7 +12,7 @@ import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDet
 import { useGmail } from "../../../../context/GmailContext";
 import { formatearTelefonoColombia } from "../../../../utils/formatoTelefono";
 import { obtenerCorreoOrigenContacto, obtenerOrigenContacto, obtenerTipoOrigenContacto } from "../../utils/origenContacto";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 export default function ModalContacto({ contacto, onCerrar, triggerRef, onGuardar, onEliminar }) {
   const { cuentasGmail } = useGmail();

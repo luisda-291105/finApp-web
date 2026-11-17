@@ -4,7 +4,7 @@ import { Card } from "../../../../components/ui";
 import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 export default function FuentesRegistradas({ disparadorFuentesRef, abrirModalFuentes, alReconectarGmail, alAutorizarContactosGmail, gmailConfigurado, gisListo, conexionCargando, errorGmail, avisoGmail, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, seleccionarCuentaGmail, desconectarGmail, cargandoFuentes, errorFuentes, fuentes, guardarEdicionFuente, confirmarEliminacionFuente, operacionFuente, errorOperacionFuente }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);

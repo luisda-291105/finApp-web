@@ -22,7 +22,7 @@ import { crearUsuario, iniciarSesion } from "../../services/usuarioServicio";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import LoginForm from "../forms/LoginForm";
 import RegistroForm from "../forms/RegistroForm";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 
 /**

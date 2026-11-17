@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronDown, MessageCircle, RefreshCw, Settings, Unlink }
 import { Card } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { crearEnlaceTelegram, desvincularTelegram, obtenerEstadoTelegram } from "../../../../services/telegramServicio";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 function datosRespuesta(respuesta) {
   return respuesta?.datos ?? respuesta?.data ?? respuesta ?? {};

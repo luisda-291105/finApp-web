@@ -7,7 +7,7 @@
  * @usadoPor   Componentes que renderizan errores/avisos como estado y deben mostrarlos a la derecha
  */
 import { useEffect, useRef } from "react";
-import { useAlertas } from "../../../context/AlertasContext";
+import { useAlertas } from "../../../../context/AlertasContext";
 
 /** Muestra una alerta global lateral mientras exista mensaje. */
 export default function AlertaGlobal({ tipo = "error", mensaje, idBase, alCerrar, duracionMs }) {

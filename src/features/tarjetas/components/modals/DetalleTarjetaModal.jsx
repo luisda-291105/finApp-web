@@ -8,9 +8,9 @@
  */
 import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import MiTarjetaVirtual from "../../../../components/domain/dashboard/MiTarjetaVirtual";
+import MiTarjetaVirtual from "../cards/MiTarjetaVirtual";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../../features/error";
 
 function mostrarVencimiento(valor) {
   const fecha = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(valor || "");

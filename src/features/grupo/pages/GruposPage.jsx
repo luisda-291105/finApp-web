@@ -14,7 +14,7 @@ import { useGrupos } from "../hooks/useGrupos";
 import GrupoCard from "../components/cards/GrupoCard";
 import CrearGrupoModal from "../components/modals/CrearGrupoModal";
 import GrupoDetalleModal from "../components/modals/GrupoDetalleModal";
-import { AlertaGlobal } from "../../../components/ui/alertas";
+import { AlertaGlobal } from "../../../features/error";
 
 /** Renderiza el listado de grupos y conecta sus acciones. */
 export default function GruposPage() {
