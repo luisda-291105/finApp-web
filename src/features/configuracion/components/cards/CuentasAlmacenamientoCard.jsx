@@ -2,12 +2,12 @@
  * @uso        Sección de Configuración para gestionar cuentas de almacenamiento conectadas
  * @funciones  CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNextcloud, alCerrarNextcloud })
  * @datos      Obtiene y actualiza conexiones mediante almacenamientoServicio
- * @eventos    Conectar nuevas cuentas, abrir Google Drive, reconectar, desconectar cuentas
- * @estados    conexiones, cargando, error, aviso, proveedorIniciando, cuentaDesconectando, cuentaReconectando, modalDriveAbierto, cuentaSeleccionadaDrive
+ * @eventos    Conectar nuevas cuentas, abrir Google Drive, reconectar, desconectar cuentas y minimizar/expandir el bloque
+ * @estados    conexiones, cargando, error, aviso, proveedorIniciando, cuentaDesconectando, cuentaReconectando, modalDriveAbierto, cuentaSeleccionadaDrive, abierto
  * @usadoPor   ConfiguracionPage
  */
 import { useCallback, useEffect, useState } from "react";
-import { Cloud, ExternalLink, HardDrive, RefreshCcw, Unplug } from "lucide-react";
+import { Cloud, ExternalLink, HardDrive, ChevronDown, RefreshCcw, Unplug } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import { conectarGoogleDrive, desconectarCuenta, iniciarConexion, obtenerConexiones } from "../../../almacenamiento/services/almacenamientoServicio";
 import ModalGoogleDrive from "../../../almacenamiento/components/modals/ModalGoogleDrive";
@@ -34,6 +34,7 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
   const [cuentaReconectando, setCuentaReconectando] = useState(null);
   const [modalDriveAbierto, setModalDriveAbierto] = useState(false);
   const [cuentaSeleccionadaDrive, setCuentaSeleccionadaDrive] = useState(null);
+  const [abierto, setAbierto] = useState(true);
 
   const cargarConexiones = useCallback(async () => {
     setCargando(true);
@@ -90,13 +91,16 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
     <>
       <Card className="space-y-3 p-5">
         <div className="flex items-center gap-3">
-          <HardDrive className="h-5 w-5 text-emerald-primary" aria-hidden="true" />
+          <HardDrive className="h-5 w-5 shrink-0 text-emerald-primary" aria-hidden="true" />
           <div>
-            <h2 className="font-display text-lg font-semibold text-bg-dark">Cuentas de almacenamiento conectadas</h2>
-            <p className="text-sm text-slate-text">Administra las cuentas vinculadas y conecta nuevas cuentas de almacenamiento.</p>
+            <h2><button type="button" aria-expanded={abierto} aria-controls="cuentas-almacenamiento-contenido" onClick={() => setAbierto((actual) => !actual)} className="flex min-h-10 items-center gap-2 text-left font-display text-lg font-semibold text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
+              <span>Cuentas de almacenamiento conectadas</span><ChevronDown aria-hidden="true" className={`h-5 w-5 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`} />
+            </button></h2>
+            {abierto && <p className="text-sm text-slate-text">Administra las cuentas vinculadas y conecta nuevas cuentas de almacenamiento.</p>}
           </div>
         </div>
 
+        <div id="cuentas-almacenamiento-contenido" hidden={!abierto} className="space-y-3">
         {cargando && <p role="status" className="text-sm text-slate-text">Cargando cuentas…</p>}
         {!cargando && error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         {aviso && <p role="status" className="text-sm text-emerald-primary">{aviso}</p>}
@@ -179,6 +183,7 @@ export default function CuentasAlmacenamientoCard({ nextcloudAbierto, alAbrirNex
             <Cloud className="h-4 w-4" aria-hidden="true" />
             {nextcloudAbierto ? "Cerrar Nextcloud" : "Conectar Nextcloud"}
           </button>
+        </div>
         </div>
       </Card>
 
