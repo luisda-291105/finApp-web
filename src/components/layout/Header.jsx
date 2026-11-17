@@ -1,5 +1,5 @@
 /**
- * @uso        Barra de navegación con efecto transparente en Hero y transición a blur al scroll
+ * @uso        Barra de acceso de la landing con vidrio oscuro legible sobre el Hero
  * @funciones  Header({ alAbrirAuth, modo })
  * @datos      Recibe alAbrirAuth y modo como props
  * @eventos    scroll en window, click en botones de login/registro
@@ -38,15 +38,18 @@ export default function Header({ alAbrirAuth, modo = "landing", oculto = false }
     <header
       className={`fixed top-0 left-0 right-0 z-[1100] w-full transition-all duration-400 ease-in-out ${
         desplazado
-          ? "glass-surface border-b border-border-line bg-bg-cream/95 py-3.5 shadow-sm"
+          ? "glass-surface border-b border-border-line bg-bg-dark/50 py-3.5 shadow-sm"
           : "border-b border-transparent bg-transparent py-5"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 flex mt-5 items-center justify-between">
         {/* Logotipo FinApp */}
         <Link to="/" className="flex items-center" aria-label="FinApp">
           <img src={logoClaro} alt="FinApp" className="logo-tema-claro h-8 w-auto sm:h-9" />
           <img src={logoOscuro} alt="" aria-hidden="true" className="logo-tema-oscuro h-8 w-auto sm:h-9" />
+          <span className="hidden gap-0 font-display text-xl font-medium sm:inline">
+            <span className="text-mint-accent">Fin</span><span className="text-white">App</span>
+          </span>
         </Link>
 
         {/* Acciones de autenticación (solo en modo landing) */}
@@ -55,11 +58,7 @@ export default function Header({ alAbrirAuth, modo = "landing", oculto = false }
             <button
               type="button"
               onClick={() => alAbrirAuth?.("login")}
-              className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-400 cursor-pointer ${
-                desplazado
-                  ? "bg-bg-cream/80 text-bg-dark hover:bg-bg-cream hover:text-emerald-primary"
-                  : "bg-bg-cream/10 text-bg-cream/90 hover:bg-bg-cream/20 hover:text-bg-cream"
-              }`}
+              className="text-sm font-semibold px-4 py-2 rounded-lg border border-white/20 bg-emerald-primary text-white shadow-sm hover:bg-emerald-hover hover:border-emerald-primary transition-colors duration-400 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
             >
               Iniciar sesión
             </button>
