@@ -14,7 +14,7 @@ import { AlertaGlobal } from "../../../../features/error";
 export default function MovimientosContablesSection({ movimientos, filtros, filtroActivo, cargando, error, alCambiarFiltro, alAbrirDetalle }) {
   return <Card como="section" aria-labelledby="movimientos-titulo" className="overflow-hidden">
     <div className="flex flex-col gap-4 border-b border-border-line/60 px-5 py-4 lg:flex-row lg:items-end lg:justify-between">
-      <div><h2 id="movimientos-titulo" className="font-display text-xl font-semibold text-bg-dark">Movimientos de todos los bolsillos</h2><p className="mt-1 text-sm text-slate-text">Filtra por tipo para ver ingresos, gastos o ahorros sin importar el bolsillo.</p></div>
+      <div><h2 id="movimientos-titulo" className="font-display text-xl font-semibold text-bg-dark">Movimientos</h2></div>
     </div>
     <div className="flex flex-wrap gap-2 border-b border-border-line/30 px-5 py-3" role="group" aria-label="Filtrar movimientos por tipo">
       {filtros.map((filtro) => <button key={filtro.valor} type="button" aria-pressed={filtroActivo === filtro.valor} onClick={() => alCambiarFiltro(filtro.valor)} className={`min-h-9 rounded-full px-3 text-sm font-medium transition-colors ${filtroActivo === filtro.valor ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark"}`}>{filtro.valor === "TODOS" ? "Todos" : filtro.etiqueta}</button>)}
