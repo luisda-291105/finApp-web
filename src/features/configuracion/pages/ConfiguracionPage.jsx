@@ -186,7 +186,7 @@ export default function ConfiguracionPage() {
 
       {nextcloudAbierto && (
         <div
-          className="absolute inset-0 z-[110] flex items-center justify-center bg-bg-dark/70 p-4"
+          className="absolute inset-0 z-[100] flex items-end justify-center bg-bg-dark/70 px-4 pb-[var(--bottom-nav-alto)] sm:items-center sm:pb-4 sm:pt-4"
           onClick={manejarClicExterior}
         >
           <form
@@ -194,7 +194,7 @@ export default function ConfiguracionPage() {
             aria-modal="true"
             aria-labelledby="nc-titulo"
             onSubmit={(e) => { e.stopPropagation(); alConectarNextcloud(e); }}
-            className="relative z-[111] w-full max-w-md space-y-3 rounded-3xl border border-border-line/30 bg-bg-cream/95 glass-surface p-4 shadow-xl"
+            className="relative z-[101] modal-sheet-mobile w-full max-w-md space-y-3 rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 glass-surface p-4 shadow-xl sm:rounded-3xl"
           >
             <header className="flex items-start justify-between gap-4">
               <h2 id="nc-titulo" className="font-display text-lg font-semibold text-bg-dark">Conectar Nextcloud</h2>

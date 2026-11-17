@@ -214,7 +214,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
     const nav = screen.getByRole("navigation", { name: "Navegación principal móvil" });
     const scrim = obtenerScrim();
     expect(nav.compareDocumentPosition(scrim) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(scrim.className).toMatch(/\bz-50\b/);
+    expect(scrim.className).toMatch(/z-\[100\]/);
     expect(scrim.className).not.toMatch(/backdrop-(blur|filter)|glass-surface/);
   });
 

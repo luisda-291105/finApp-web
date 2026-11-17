@@ -144,7 +144,7 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg-dark/70 p-4"
+      className="modal-overlay-dashboard z-[100] flex items-end justify-center bg-bg-dark/70 p-0 sm:items-center sm:p-4"
       onClick={(evento) => evento.target === evento.currentTarget && !cargando && alCerrar()}
     >
       <FocusTrap focusTrapOptions={crearOpcionesTrampa(panelRef)}>
@@ -155,7 +155,7 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
           aria-labelledby="asistente-titulo"
           aria-describedby="asistente-aviso"
           tabIndex={-1}
-          className="asistente-modal glass-surface relative flex max-h-[85vh] w-[90vw] max-w-md flex-col overflow-hidden rounded-3xl border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none"
+          className="asistente-modal glass-surface modal-sheet-mobile relative mb-[var(--bottom-nav-alto)] flex max-h-[85dvh] w-[90vw] max-w-md flex-col overflow-hidden rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none sm:mb-0 sm:rounded-3xl"
         >
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-line/30 px-5 py-4">
             <div className="flex min-w-0 flex-col gap-1.5">

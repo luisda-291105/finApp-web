@@ -90,8 +90,8 @@ const obtenerDialogo = () => screen.getByRole("dialog");
  */
 const obtenerOverlay = () => {
   const overlay = obtenerDialogo().parentElement;
-  expect(overlay.classList.contains("fixed")).toBe(true);
-  expect(overlay.classList.contains("inset-0")).toBe(true);
+  expect(overlay.classList.contains("modal-overlay-dashboard")).toBe(true);
+  expect(overlay.classList.contains("z-[100]")).toBe(true);
   return overlay;
 };
 
@@ -153,7 +153,7 @@ describe("AuthModal", () => {
     it("el panel limita su altura, ofrece scroll interno y queda fuera del ciclo de Tab (RF-22)", () => {
       renderModal();
       const dialogo = obtenerDialogo();
-      expect(dialogo.classList.contains("max-h-[85vh]")).toBe(true);
+      expect(dialogo.classList.contains("sm:max-h-[85vh]")).toBe(true);
       expect(dialogo.classList.contains("overflow-hidden")).toBe(true);
       expect(dialogo.querySelector(".overflow-y-auto")).not.toBeNull();
       expect(dialogo.getAttribute("tabindex")).toBe("-1");

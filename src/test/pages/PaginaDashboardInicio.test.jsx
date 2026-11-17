@@ -134,7 +134,7 @@ const seleccionarFuente = async (fuente) => {
 };
 
 const obtenerOverlay = () =>
-  document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
+  document.body.querySelector(".modal-overlay-dashboard.bg-bg-dark\\/80");
 
 const obtenerPanel = () => document.body.querySelector("#modal-crear-muestra-panel");
 
@@ -491,26 +491,26 @@ describe("PaginaDashboardInicio (T2 — marco del modal)", () => {
   });
 
   describe("estilos y clases Fluid Glass", () => {
-    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-50", async () => {
+    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-[100]", async () => {
       renderPagina();
       await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
 
       const overlay = obtenerOverlay();
       expect(overlay).toBeTruthy();
       expect(overlay.classList.contains("backdrop-blur-sm")).toBe(true);
-      expect(overlay.classList.contains("z-50")).toBe(true);
+      expect(overlay.classList.contains("z-[100]")).toBe(true);
     });
 
-    it("panel usa glass-surface, borde, radios, sombra y z-60", async () => {
+    it("panel usa glass-surface, borde, radios, sombra y z-[101]", async () => {
       renderPagina();
       await userEvent.click(screen.getByRole("button", { name: "crear muestra" }));
 
       const panel = screen.getByRole("dialog");
       expect(panel.classList.contains("glass-surface")).toBe(true);
       expect(panel.classList.contains("border-border-line/30")).toBe(true);
-      expect(panel.classList.contains("rounded-2xl")).toBe(true);
+      expect(panel.classList.contains("sm:rounded-2xl")).toBe(true);
       expect(panel.classList.contains("shadow-xl")).toBe(true);
-      expect(panel.classList.contains("z-60")).toBe(true);
+      expect(panel.classList.contains("z-[101]")).toBe(true);
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
     });
   });

@@ -128,9 +128,9 @@ export default function ModalCrearMovimientoContable({ abierto, modo = "crear", 
   });
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-bg-dark/70 p-4" onClick={(evento) => evento.target === evento.currentTarget && cerrar()}>
+    <div className="modal-overlay-dashboard z-[100] flex items-end justify-center bg-bg-dark/70 p-0 sm:items-center sm:p-4" onClick={(evento) => evento.target === evento.currentTarget && cerrar()}>
       <FocusTrap focusTrapOptions={opcionesTrampa(panelRef)}>
-        <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="crear-movimiento-titulo" tabIndex={-1} className="glass-surface relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-border-line/30 bg-bg-cream/95 p-6 text-bg-dark shadow-xl outline-none">
+        <section ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="crear-movimiento-titulo" tabIndex={-1} className="glass-surface modal-sheet-mobile relative mb-[var(--bottom-nav-alto)] max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 p-6 text-bg-dark shadow-xl outline-none sm:mb-0 sm:max-h-[90vh] sm:rounded-3xl">
           <header className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-emerald-primary">Registro contable</p>

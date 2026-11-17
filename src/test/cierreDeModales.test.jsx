@@ -213,7 +213,7 @@ const SUPERFICIES = [
       );
       return {
         panel: document.body.querySelector("#dashboard-user-modal-panel"),
-        capaExterior: document.body.querySelector("div.fixed.inset-0.bg-bg-dark\\/80"),
+        capaExterior: document.body.querySelector("div.modal-overlay-dashboard.bg-bg-dark\\/80"),
       };
     },
   },
@@ -248,7 +248,7 @@ const SUPERFICIES = [
   {
     nombre: "ModalTarjeta (detalle de tarjeta)",
     botonCerrar: "Cerrar Tarjeta de Ana Pérez",
-    gesto: false,
+    gesto: true,
     montar: (alCerrar) => {
       render(<ModalTarjeta tarjeta={TARJETA_REGISTRADA} onCerrar={alCerrar} />);
       const panel = screen.getByRole("dialog");

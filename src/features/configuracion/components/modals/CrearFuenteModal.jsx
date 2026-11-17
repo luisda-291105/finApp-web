@@ -172,7 +172,7 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-bg-dark/70"
+      className="absolute inset-0 z-50 flex items-end justify-center bg-bg-dark/70 px-4 pb-[var(--bottom-nav-alto)] sm:items-center sm:pb-4 sm:pt-4"
       onClick={manejarClicExterior}
     >
       <FocusTrap focusTrapOptions={crearOpcionesTrampa(panelRef)}>
@@ -183,7 +183,7 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
           aria-labelledby="fuentes-titulo"
           aria-describedby="fuentes-descripcion"
           tabIndex={-1}
-          className="relative z-60 w-[90vw] max-w-md max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-3xl shadow-xl inset-shadow-[0_1px_1px_0_rgba(255,255,255,0.25)]"
+          className="relative z-60 modal-sheet-mobile w-[90vw] max-w-md max-h-[85dvh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-t-[1.75rem] shadow-xl inset-shadow-[0_1px_1px_0_rgba(255,255,255,0.25)] sm:max-h-[85vh] sm:rounded-3xl"
         >
           <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-border-line/30">
             <div className="flex flex-col gap-1">

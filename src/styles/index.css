@@ -41,6 +41,24 @@
   padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
 
+/* Altura real de la barra de navegación inferior (BottomNav), publicada por el
+   componente en :root. Fallback 0px: sin barra (p. ej. landing) la hoja del
+   modal llega al borde inferior del viewport. */
+:root {
+  --bottom-nav-alto: 0px;
+}
+
+/* Overlay de modal que encuadra solo el contenido del dashboard: parte del borde derecho
+   de la navegación lateral (expuesta como --dashboard-sidebar-width) hasta el final. */
+.modal-overlay-dashboard {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--dashboard-sidebar-width, 0px);
+  transition: left 300ms;
+}
+
 /* Etiquetas de la barra de navegación inferior (BottomNav): visibles en
    vertical y ocultas en landscape, donde el espacio vertical es escaso.
    Reglas migradas desde el <style jsx> del componente (styled-jsx no está

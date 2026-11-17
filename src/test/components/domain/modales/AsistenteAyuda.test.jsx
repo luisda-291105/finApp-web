@@ -127,26 +127,25 @@ describe("AsistenteAyuda — panel, scrim y cabecera (T2)", () => {
           "relative",
           "w-[90vw]",
           "max-w-md",
-          "max-h-[85vh]",
+          "max-h-[85dvh]",
           "overflow-hidden",
           "outline-none",
           "bg-bg-cream/95",
           "glass-surface",
           "border",
           "border-border-line/30",
-          "rounded-3xl",
+          "rounded-t-[1.75rem]",
           "shadow-xl",
           "flex",
           "flex-col"
         );
     expect(scrim).toHaveClass(
-      "fixed",
-      "inset-0",
-      "z-50",
+      "modal-overlay-dashboard",
+      "z-[100]",
       "flex",
-      "items-center",
+      "items-end",
       "justify-center",
-      "p-4",
+      "p-0",
       "bg-bg-dark/70"
     );
   });

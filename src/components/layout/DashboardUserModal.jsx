@@ -112,7 +112,8 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         aria-modal="true"
         aria-labelledby="user-modal-title"
         tabIndex={-1}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-2xl shadow-xl z-[1110]"
+        className="modal-sheet-mobile fixed inset-x-0 bottom-[var(--bottom-nav-alto)] -translate-x-1/2 w-[90vw] max-w-sm max-h-[85dvh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-t-[1.75rem] shadow-xl z-[101] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:max-h-[85vh] sm:rounded-2xl"
+        style={{ left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)" }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -170,7 +171,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
     <>
       {/* Overlay: cierra el modal al tocar/clicar fuera (allowOutsideClick deja pasar el evento) */}
       <div
-        className="fixed inset-0 bg-bg-dark/80 backdrop-blur-sm z-[1105]"
+        className="modal-overlay-dashboard z-[100] bg-bg-dark/80 backdrop-blur-sm"
         onClick={handleOverlayClick}
         aria-hidden="true"
       />

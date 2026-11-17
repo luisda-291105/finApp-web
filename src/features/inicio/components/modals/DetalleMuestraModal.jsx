@@ -40,7 +40,7 @@ export default function DetalleMuestraModal({
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-50 bg-bg-dark/80 backdrop-blur-sm" onClick={cerrarDesdeFondo} aria-hidden="true" />
+      <div className="modal-overlay-dashboard z-[100] bg-bg-dark/80 backdrop-blur-sm" onClick={cerrarDesdeFondo} aria-hidden="true" />
       <AnimatePresence>
         <FocusTrap focusTrapOptions={focoTrap}>
           <motion.div
@@ -50,7 +50,8 @@ export default function DetalleMuestraModal({
             aria-modal="true"
             aria-labelledby="modal-detalle-muestra-titulo"
             tabIndex={-1}
-            className="fixed left-1/2 top-1/2 z-60 max-h-[85vh] w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border-line/30 bg-bg-cream/95 outline-none glass-surface shadow-xl"
+            className="modal-sheet-mobile fixed bottom-[var(--bottom-nav-alto)] z-[101] max-h-[85dvh] w-[90vw] max-w-md -translate-x-1/2 overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 outline-none glass-surface shadow-xl sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:max-h-[85vh] sm:rounded-2xl"
+            style={{ left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)" }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}

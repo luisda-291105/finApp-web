@@ -222,7 +222,7 @@ export default function AuthModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="modal-overlay-dashboard z-[100] flex items-end justify-center p-0 bg-black/70 backdrop-blur-sm sm:items-center sm:p-4"
       onPointerDown={registrarInicioPuntero}
       onPointerUp={registrarFinPuntero}
       onPointerCancel={() => { punteroFondoRef.current = { inicioEnFondo: false, finEnFondo: false }; }}
@@ -232,7 +232,7 @@ export default function AuthModal({
         {/* Tarjeta Modal Fluid Glass */}
         <div
           ref={panelRef}
-          className="relative w-full max-w-md md:max-w-3xl max-h-[85vh] overflow-hidden outline-none bg-[#0f1117]/95 border border-white/15 rounded-3xl shadow-2xl text-white backdrop-blur-xl"
+          className="modal-sheet-mobile relative mb-[var(--bottom-nav-alto)] w-full max-w-md md:max-w-3xl max-h-[85dvh] overflow-hidden outline-none bg-[#0f1117]/95 border border-white/15 rounded-t-[1.75rem] shadow-2xl text-white backdrop-blur-xl sm:mb-0 sm:max-h-[85vh] sm:rounded-3xl"
           role="dialog"
           aria-modal="true"
           aria-label="Ventana de acceso"

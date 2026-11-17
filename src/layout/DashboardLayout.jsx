@@ -196,6 +196,14 @@ export default function DashboardLayout() {
     trasladarFocoDeCruce(isMobile);
   }, [isMobile, mobileMenuAbierto]);
 
+  // Los modales montados vía portal deben encuadrar solo el contenido del dashboard; el overlay deja
+  // visible la navegación lateral (expandida o colapsada) y ocupa desde su borde derecho hasta el final.
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.style.setProperty("--dashboard-sidebar-width", isDesktop ? (sidebarColapsada ? "72px" : "256px") : "0px");
+    return () => raiz.style.removeProperty("--dashboard-sidebar-width");
+  }, [isDesktop, sidebarColapsada]);
+
   return (
     <>
       
@@ -233,6 +241,8 @@ export default function DashboardLayout() {
           itemActivo={location.pathname}
           alNavegar={(ruta) => navigate(ruta)}
           alAbrirMenu={() => setMobileMenuAbierto(true)}
+          alCerrarMenu={() => setMobileMenuAbierto(false)}
+          menuAbierto={mobileMenuAbierto}
           menuTriggerRef={bottomNavMenuRef}
         />
       )}
