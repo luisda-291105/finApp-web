@@ -1,13 +1,15 @@
 /**
  * @uso        Barra de herramientas del navegador de archivos (búsqueda, vista, crear y subir)
  * @funciones  AlmacenamientoToolbar({ busqueda, alCambiarBusqueda, modoVista, alCambiarModoVista, subiendo, progreso, alCrearCarpeta, alSubirArchivos, deshabilitado })
- * @datos      Estado local del menú «+ Nuevo»; recibe acciones del gestor de archivos
+ * @datos      Estado local del menú «+ Nuevo» y del aviso de vista móvil; recibe acciones del gestor de archivos
  * @eventos    Cambio de búsqueda, cambio de modo de vista, crear carpeta, subir archivos, cerrar menú
- * @estados    menuNuevoAbierto
+ * @estados    menuNuevoAbierto, avisoVista (en móvil, la vista queda forzada a lista y al intentarlo se muestra un aviso temporal)
  * @usadoPor   AlmacenamientoPage
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LayoutGrid, List, Plus, Search, Upload } from "lucide-react";
+import { useBreakpoint } from "../../../../hooks/useBreakpoint";
+import AlertaVistaMovil from "../alert/AlertaVistaMovil";
 
 export default function AlmacenamientoToolbar({
   busqueda = "",
@@ -23,9 +25,21 @@ export default function AlmacenamientoToolbar({
   deshabilitado = false,
 }) {
   const inputRef = useRef(null);
+  const gridRef = useRef(null);
+  const listaRef = useRef(null);
   const [menuNuevoAbierto, setMenuNuevoAbierto] = useState(false);
+  const [avisoVista, setAvisoVista] = useState("");
+  const { isMobile } = useBreakpoint();
   const modo = modoVista || (vista === "lista" || vista === "grid" ? vista : "grid");
   const cambiarModo = alCambiarModoVista || alCambiarVista || (() => {});
+  // En móvil el listado queda forzado a «lista»; el interruptor refleja ese estado
+  // y el foco pasa al botón de lista (control activo) al cruzar a móvil.
+  const modoEfectivo = isMobile ? "lista" : modo;
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (document.activeElement === gridRef.current) listaRef.current?.focus();
+  }, [isMobile]);
 
   const manejarSubida = (evento) => {
     const archivos = Array.from(evento.target.files || []);
@@ -49,10 +63,10 @@ export default function AlmacenamientoToolbar({
           />
         </div>
         <div className="inline-flex items-center gap-1 rounded-xl border border-border-line/60 bg-bg-cream/70 p-1">
-          <button type="button" onClick={() => cambiarModo("grid")} aria-pressed={modo === "grid"} aria-label="Vista de cuadrícula" disabled={deshabilitado} className={`inline-flex min-h-9 items-center rounded-lg px-2.5 ${modo === "grid" ? "bg-emerald-primary text-white" : "text-slate-text hover:bg-emerald-primary/5"} disabled:opacity-50`}>
+          <button ref={gridRef} type="button" onClick={() => { if (isMobile) { setAvisoVista("En móvil solo está disponible la vista de lista."); return; } cambiarModo("grid"); }} aria-pressed={modoEfectivo === "grid"} aria-label="Vista de cuadrícula" disabled={deshabilitado} className={`inline-flex min-h-9 items-center rounded-lg px-2.5 ${modoEfectivo === "grid" ? "bg-emerald-primary text-white" : "text-slate-text hover:bg-emerald-primary/5"} disabled:opacity-50`}>
             <LayoutGrid className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" onClick={() => cambiarModo("lista")} aria-pressed={modo === "lista"} aria-label="Vista de lista" disabled={deshabilitado} className={`inline-flex min-h-9 items-center rounded-lg px-2.5 ${modo === "lista" ? "bg-emerald-primary text-white" : "text-slate-text hover:bg-emerald-primary/5"} disabled:opacity-50`}>
+          <button ref={listaRef} type="button" onClick={() => cambiarModo("lista")} aria-pressed={modoEfectivo === "lista"} aria-label="Vista de lista" disabled={deshabilitado} className={`inline-flex min-h-9 items-center rounded-lg px-2.5 ${modoEfectivo === "lista" ? "bg-emerald-primary text-white" : "text-slate-text hover:bg-emerald-primary/5"} disabled:opacity-50`}>
             <List className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -77,6 +91,7 @@ export default function AlmacenamientoToolbar({
         </button>
         <input ref={inputRef} type="file" multiple className="hidden" onChange={manejarSubida} aria-hidden="true" tabIndex={-1} />
       </div>
+      <AlertaVistaMovil mensaje={avisoVista} alCerrar={() => setAvisoVista("")} />
       {subiendo && (
         <div className="rounded-xl border border-border-line/60 bg-bg-cream/70 p-3" role="status" aria-live="polite">
           <div className="flex items-center justify-between gap-3 text-sm text-bg-dark">
