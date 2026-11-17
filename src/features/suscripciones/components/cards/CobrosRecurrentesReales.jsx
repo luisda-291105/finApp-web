@@ -53,10 +53,6 @@ export default function CobrosRecurrentesReales({ datos, cargando, error }) {
           >
             Cobros recurrentes detectados
           </h2>
-          <p className="mt-1 text-sm text-slate-text">
-            Estimación basada en tus gastos registrados; confirma los servicios y
-            montos.
-          </p>
         </div>
         <ChevronDown
           aria-hidden="true"
