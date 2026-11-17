@@ -1,6 +1,6 @@
 /**
  * @uso        Contenido del listado de archivos y estados de carga, vacío, aviso y error
- * @funciones  AlmacenamientoArchivos({ items, modoVista, vistaActual, busqueda, cargando, error, aviso, onReintentar, seleccion, renombrandoId, nombreEditando, alSeleccionar, alAbrir, alContexto, alCambiarNombre, alConfirmarRenombrado, alCancelarRenombrado })
+ * @funciones  AlmacenamientoArchivos({ items, modoVista, vistaActual, busqueda, cargando, error, aviso, onReintentar, seleccion, renombrandoId, nombreEditando, alSeleccionar, alAbrir, alContexto, alCambiarNombre, alConfirmarRenombrado, alCancelarRenombrado, arrastrandoId, carpetaSobreId, alArrastrarInicio, alCancelarArrastre, alSoltarEnCarpeta, alArrastrarSobreCarpeta })
  * @datos      Items filtrados por vista/carpeta/búsqueda; mensajes vacíos o informativos por vista
  * @eventos    Reintento de carga
  * @estados    Ninguno
@@ -39,6 +39,13 @@ export default function AlmacenamientoArchivos({
   alCambiarNombre,
   alConfirmarRenombrado,
   alCancelarRenombrado,
+  arrastrandoId = null,
+  carpetaSobreId = null,
+  portapapeles = null,
+  alArrastrarInicio,
+  alCancelarArrastre,
+  alSoltarEnCarpeta,
+  alArrastrarSobreCarpeta,
 }) {
   const { isMobile } = useBreakpoint();
   const modo = modoVista || (vista === "lista" || vista === "grid" ? vista : "grid");
@@ -81,6 +88,13 @@ export default function AlmacenamientoArchivos({
     alCambiarNombre: alCambiarNombre || alRenombrar,
     alConfirmarRenombrado,
     alCancelarRenombrado,
+    arrastrandoId,
+    carpetaSobreId,
+    portapapeles,
+    alArrastrarInicio,
+    alCancelarArrastre,
+    alSoltarEnCarpeta,
+    alArrastrarSobreCarpeta,
   });
 
   if (modoEfectivo === "lista") {

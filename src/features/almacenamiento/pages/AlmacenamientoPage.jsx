@@ -154,12 +154,56 @@ export default function AlmacenamientoPage() {
 
   const alArrastrarSobre = (evento) => { if (!puedeOperar) return; evento.preventDefault(); setArrastrandoSobre(true); };
   const alArrastrarFuera = (evento) => { evento.preventDefault(); setArrastrandoSobre(false); };
+
+  const [arrastreItem, setArrastreItem] = useState({ ids: [] });
+  const [carpetaSobreId, setCarpetaSobreId] = useState(null);
+
   const alSoltar = async (evento) => {
     evento.preventDefault();
     setArrastrandoSobre(false);
     if (!puedeOperar) return;
-    await gestor.subirArchivos(Array.from(evento.dataTransfer?.files || []));
+    // Si hay un arrastre interno pendiente, no es una subida
+    if (arrastreItem.ids.length > 0) {
+      setArrastreItem({ ids: [] });
+      return;
+    }
+    const dataTransfer = evento.dataTransfer;
+    const archivos = Array.from(dataTransfer?.files || []);
+    const esArrastreInterno = dataTransfer?.types?.includes("text/plain");
+    if (!archivos.length || esArrastreInterno) return;
+    await gestor.subirArchivos(archivos);
   };
+
+  const iniciarArrastre = useCallback((item) => { setArrastreItem({ ids: item?.id ? [item.id] : [] }); }, []);
+  const alArrastrarSobreCarpeta = useCallback((evento, destinoId) => { if (!puedeOperar) return; evento.preventDefault(); evento.stopPropagation(); try { evento.dataTransfer.dropEffect = "move"; } catch {} setCarpetaSobreId(destinoId); }, [puedeOperar]);
+  const alCancelarArrastre = useCallback(() => { setCarpetaSobreId(null); setArrastreItem({ ids: [] }); }, []);
+
+  const alSoltarEnCarpeta = useCallback(async (evento, destinoId) => {
+    evento.preventDefault();
+    evento.stopPropagation();
+    setCarpetaSobreId(null);
+    const ids = arrastreItem?.ids || [];
+    setArrastreItem({ ids: [] });
+    if (!puedeOperar || !ids.length || !destinoId) return;
+    const esSujetoDeArrastre = (id) => {
+      let actual = items.find((itemActual) => String(itemActual.id) === String(id));
+      const visitados = new Set();
+      while (actual && actual.padreId && actual.padreId !== "root") {
+        const clave = String(actual.id);
+        if (visitados.has(clave)) return false;
+        visitados.add(clave);
+        if (String(actual.padreId) === String(destinoId)) return true;
+        actual = items.find((itemActual) => String(itemActual.id) === String(actual.padreId)) || null;
+      }
+      return false;
+    };
+    if (ids.some((id) => String(id) === String(destinoId) || esSujetoDeArrastre(id))) return;
+    try {
+      await gestor.mover(ids);
+      await gestor.pegar(destinoId);
+      mostrarExito("Elementos movidos.");
+    } catch (error) { mostrarError(error, "No se pudo completar la operación"); }
+  }, [arrastreItem, gestor, gestor.items, puedeOperar, mostrarError, mostrarExito]);
 
   const alReconectar = async () => {
     setReconectando(true);
@@ -302,6 +346,13 @@ export default function AlmacenamientoPage() {
             alCambiarNombre={gestor.renombrarItem}
             alConfirmarRenombrado={gestor.confirmarRenombrado}
             alCancelarRenombrado={gestor.cancelarRenombrado}
+            arrastrandoId={arrastreItem?.ids?.[0] || null}
+            carpetaSobreId={carpetaSobreId}
+            portapapeles={gestor.portapapeles}
+            alArrastrarInicio={iniciarArrastre}
+            alCancelarArrastre={alCancelarArrastre}
+            alSoltarEnCarpeta={alSoltarEnCarpeta}
+            alArrastrarSobreCarpeta={alArrastrarSobreCarpeta}
           />
         </div>
       </div>
