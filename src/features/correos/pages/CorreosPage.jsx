@@ -15,7 +15,6 @@ import { useNotificacionesCorreos } from "../hooks/useNotificacionesCorreos";
 import CorreoCuentaCard from "../components/cards/CorreoCuentaCard";
 import BandejaCorreosModal from "../components/modals/BandejaCorreosModal";
 import BandejaNotificacionesModal from "../components/modals/BandejaNotificacionesModal";
-import { fechaLegible } from "../utils/correoHelpers";
 import { AlertaGlobal } from "../../../features/error";
 
 /** Renderiza las direcciones y entrega las acciones de datos a su hook. */
@@ -91,12 +90,11 @@ export default function CorreosPage() {
         {!estado.cargandoFuentes && estado.tarjetasCorreo.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {estado.tarjetasCorreo.map((fuente) => (
-              <CorreoCuentaCard key={fuente.idFuente} fuente={fuente} gmailConectado={estado.gmailConectado} cuentaSeleccionadaId={estado.cuentaSeleccionadaId} conexionCargando={estado.conexionCargando} seleccionada={estado.fuenteSeleccionada?.idFuente === fuente.idFuente} cantidadMensajes={estado.mensajesPorFuente[fuente.idFuente]?.length || 0} alAbrir={(evento) => { disparadorFuenteRef.current = evento.currentTarget; estado.seleccionarFuente(fuente); }} />
+              <CorreoCuentaCard key={fuente.idFuente} fuente={fuente} seleccionada={estado.fuenteSeleccionada?.idFuente === fuente.idFuente} cantidadMensajes={estado.mensajesPorFuente[fuente.idFuente]?.length || 0} alAbrir={(evento) => { disparadorFuenteRef.current = evento.currentTarget; estado.seleccionarFuente(fuente); }} />
             ))}
           </div>
         )}
         {estado.fuentes.length > 0 && !estado.gmailConectado && <p className="text-xs text-slate-text">Al conectar Gmail, Google solicitará permiso de solo lectura para toda la bandeja. FinApp limitará sus búsquedas a mensajes recibidos en estas direcciones y no guardará los mensajes.</p>}
-        {estado.ultimaConsulta && <p className="text-xs text-slate-text">Última consulta: {fechaLegible(estado.ultimaConsulta.toISOString())} · actualización cada 5 minutos mientras esta página esté abierta.</p>}
       </Card>
 
       <AlertaGlobal tipo="error" mensaje={estado.error} idBase="CorreosPage-estado-error" />
@@ -111,6 +109,7 @@ export default function CorreosPage() {
         alLimpiar={notificaciones.limpiarBandeja}
         sincronizando={notificaciones.sincronizando}
         errorSincronizacion={notificaciones.errorSincronizacion}
+        estadoCorreos={estado.gmailConectado ? estado.estadoCorreos : null}
       />
     </section>
   );

@@ -125,7 +125,6 @@ describe("PaginaDashboardCorreos", () => {
     renderPagina();
     const card = await screen.findByRole("button", { name: `Ver correos de ${FUENTE.contenido}` });
     expect(card).toBeEnabled();
-    expect(screen.getByText("Inactiva · deshabilitada")).toBeInTheDocument();
     await userEvent.click(card);
     expect(await screen.findByText(/Esta dirección está registrada, pero inactiva/)).toBeInTheDocument();
     expect(consultarCorreosDeFuente).not.toHaveBeenCalled();

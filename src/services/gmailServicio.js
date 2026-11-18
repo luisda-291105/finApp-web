@@ -1,6 +1,6 @@
 /**
  * @uso        Autoriza Google y consulta Gmail/Contacts por medio del backend
- * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail
+ * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail, obtenerEstadoCorreosGmail
  * @datos      El backend conserva y usa las credenciales; el navegador solo recibe datos de consulta
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
@@ -198,6 +198,17 @@ export async function confirmarNotificacionesMovimientosGmail(ids) {
 
 export async function obtenerConexionCuentaGmail(accountId) {
   return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/conexion`);
+}
+
+/** Estado de sincronización y de la cola de correos entrantes de una cuenta Gmail. */
+export async function obtenerEstadoCorreosGmail(accountId) {
+  if (!accountId) throw new Error("Selecciona una cuenta Gmail para consultar su estado.");
+  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/estado`);
+}
+
+/** Invalida la caché de mensajes para volver a pedirlos cuando llega correo nuevo. */
+export function invalidarCacheConsultasGmail() {
+  cacheConsultas.clear();
 }
 
 export async function eliminarCuentaGmail(accountId) {

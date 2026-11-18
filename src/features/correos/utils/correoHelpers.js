@@ -1,6 +1,6 @@
 /**
  * @uso        Transformaciones y filtros puros de los datos de correo
- * @funciones  extraerLista, normalizarDireccion, quitarFuentesDuplicadas, fechaLegible, coincideCategoria, coincideTipoMovimiento, tipoMovimientoCorreo, coincideDestino, combinarTarjetasCorreo
+ * @funciones  extraerLista, normalizarDireccion, quitarFuentesDuplicadas, fechaLegible, coincideCategoria, coincideTipoMovimiento, tipoMovimientoCorreo, coincideDestino, combinarTarjetasCorreo, agruparFuentesPorCuenta
  * @datos      Respuestas de fuente, cuentas Gmail y mensajes
  * @eventos    Ninguno
  * @estados    Ninguno
@@ -123,4 +123,32 @@ export function combinarTarjetasCorreo(fuentes, cuentasGmail, cuentaSeleccionada
     tarjetasPorDireccion.set(clave, { idFuente: `gmail-${cuenta.id}`, contenido: cuenta.email, tipo: "CORREO", estado: true, tipoTarjeta: "CUENTA_GMAIL", cuentaGmailId: cuenta.id });
   });
   return [...tarjetasPorDireccion.values()];
+}
+
+/**
+ * Agrupa las fuentes por la cuenta Gmail a la que pertenecen.
+ * Evita consultar una cuenta con fuentes de otra: el backend devuelve los mensajes
+ * cacheados de la cuenta y, al repartirlos con las mismas claves `idFuente`, la
+ * última cuenta sobrescribía los mensajes de las anteriores.
+ * Orden: respeta el orden de `cuentasGmail`; cada grupo incluye la cuenta aunque no
+ * tenga fuentes propias, para consultar también su bandeja.
+ */
+export function agruparFuentesPorCuenta(fuentes, cuentasGmail, cuentaSeleccionadaId) {
+  const cuentas = (cuentasGmail || []).filter((cuenta) => cuenta?.id);
+  if (cuentas.length === 0) return [];
+  const grupos = new Map(cuentas.map((cuenta) => [String(cuenta.id), { cuentaId: cuenta.id, fuentes: [] }]));
+  const idPorDireccion = new Map();
+  cuentas.forEach((cuenta) => {
+    const direccion = normalizarDireccion(cuenta.email);
+    if (direccion) idPorDireccion.set(direccion, String(cuenta.id));
+  });
+  const idRespaldo = grupos.has(String(cuentaSeleccionadaId)) ? String(cuentaSeleccionadaId) : String(cuentas[0].id);
+  (fuentes || []).forEach((fuente) => {
+    if (!fuente) return;
+    const idDeclarado = fuente.cuentaGmailId ? String(fuente.cuentaGmailId) : "";
+    const idPorCorreo = idPorDireccion.get(normalizarDireccion(fuente.contenido)) || "";
+    const cuentaId = grupos.has(idDeclarado) ? idDeclarado : (idPorCorreo || idRespaldo);
+    grupos.get(cuentaId)?.fuentes.push(fuente);
+  });
+  return [...grupos.values()];
 }

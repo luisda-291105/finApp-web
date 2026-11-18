@@ -1,19 +1,21 @@
 /**
  * @uso        Estado y acciones de la bandeja por fuentes/cuentas Gmail
  * @funciones  useCorreos()
- * @datos      Carga fuentes y mensajes; refresca cada cinco minutos con sesión activa
+ * @datos      Carga fuentes y mensajes; refresca cada cinco minutos y consulta el estado de la cola cada 15 s
  * @eventos    Selección de dirección, cambio de cuenta, actualización y cierre de bandeja
- * @estados    fuentes, tarjetasCorreo, mensajes, categoría, errores y estados de carga
+ * @estados    fuentes, tarjetasCorreo, mensajes, categoría, estadoCorreos, errores y estados de carga
  * @usadoPor   CorreosPage
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { useGmail } from "../../../context/GmailContext";
 import { obtenerFuentesPorUsuario } from "../../../services/fuenteServicio";
-import { consultarCorreosDeFuente, consultarCorreosDeFuentes } from "../services/correosService";
-import { combinarTarjetasCorreo, extraerLista, normalizarDireccion, quitarFuentesDuplicadas } from "../utils/correoHelpers";
+import { invalidarCacheConsultasGmail } from "../../../services/gmailServicio";
+import { consultarCorreosDeFuente, consultarCorreosDeFuentes, consultarEstadoCorreos } from "../services/correosService";
+import { agruparFuentesPorCuenta, combinarTarjetasCorreo, extraerLista, normalizarDireccion, quitarFuentesDuplicadas } from "../utils/correoHelpers";
 
 const INTERVALO_CONSULTA_MS = 5 * 60 * 1000;
+const INTERVALO_ESTADO_MS = 15 * 1000;
 
 /** Encapsula la sincronización de fuentes, cuentas conectadas y mensajes recibidos. */
 export function useCorreos() {
@@ -28,8 +30,20 @@ export function useCorreos() {
   const [cargandoFuentes, setCargandoFuentes] = useState(false);
   const [cargandoMensajes, setCargandoMensajes] = useState(false);
   const [error, setError] = useState("");
+  const [estadosCuenta, setEstadosCuenta] = useState({});
+  const referenciaColaRef = useRef(null);
+  const consultandoEstadoRef = useRef(false);
   const tarjetasCorreo = useMemo(() => combinarTarjetasCorreo(fuentes, cuentasGmail, cuentaSeleccionadaId), [fuentes, cuentasGmail, cuentaSeleccionadaId]);
   const noHayFuentes = !cargandoFuentes && fuentes.length === 0 && cuentasGmail.length === 0;
+  const estadoCorreos = useMemo(() => {
+    const valores = Object.values(estadosCuenta).filter(Boolean);
+    const enEspera = valores.reduce((total, actual) => total + (Number(actual.en_espera) || 0), 0);
+    const procesando = valores.reduce((total, actual) => total + (Number(actual.procesando) || 0), 0);
+    const errores = valores.reduce((total, actual) => total + (Number(actual.errores) || 0), 0);
+    const ultimaSincronizacion = valores.map((actual) => actual.ultima_sincronizacion).filter(Boolean).sort().pop() || "";
+    const ultimoError = valores.map((actual) => actual.ultimo_error).filter(Boolean).pop() || "";
+    return { enEspera, procesando, errores, actualizando: enEspera + procesando > 0, ultimaSincronizacion, ultimoError };
+  }, [estadosCuenta]);
 
   const cargarFuentes = useCallback(async () => {
     if (!usuario?.idUsuario) { setFuentes([]); setCargandoFuentes(false); return []; }
@@ -83,23 +97,85 @@ export function useCorreos() {
     } finally { setCargandoMensajes(false); }
   }, [gmailConectado, cuentasGmail, cuentaSeleccionadaId, desconectarGmail]);
 
+  /**
+   * Consulta cada cuenta Gmail solo con las fuentes que le pertenecen. Evita que el
+   * resultado de una cuenta sobrescriba `mensajesPorFuente` de las demás con listas
+   * vacías (el backend devuelve los mensajes cacheados de la cuenta consultada).
+   */
   const consultarTodasLasCuentas = useCallback(async (fuentesParaConsultar = []) => {
     if (!gmailConectado || cuentasGmail.length === 0) return;
-    const cuentas = cuentasGmail.map((cuenta) => cuenta.id).filter(Boolean);
-    for (const cuentaId of cuentas) {
-      await consultarFuentesRegistradas(fuentesParaConsultar, cuentaId);
+    const grupos = agruparFuentesPorCuenta(fuentesParaConsultar, cuentasGmail, cuentaSeleccionadaId);
+    for (const grupo of grupos) {
+      await consultarFuentesRegistradas(grupo.fuentes, grupo.cuentaId);
     }
-  }, [gmailConectado, cuentasGmail, consultarFuentesRegistradas]);
+  }, [gmailConectado, cuentasGmail, cuentaSeleccionadaId, consultarFuentesRegistradas]);
+
+  /**
+   * Consulta el estado de la cola de cada cuenta. Cuando la cola drena o cambia la
+   * última sincronización, invalida la caché y recarga los mensajes de inmediato.
+   */
+  const consultarEstadosCorreos = useCallback(async () => {
+    if (consultandoEstadoRef.current) return;
+    consultandoEstadoRef.current = true;
+    try {
+      if (!gmailConectado || cuentasGmail.length === 0) {
+        setEstadosCuenta({});
+        referenciaColaRef.current = null;
+        return;
+      }
+      const pares = await Promise.all(cuentasGmail.map(async (cuenta) => {
+        if (!cuenta?.id) return null;
+        try {
+          return [cuenta.id, await consultarEstadoCorreos(cuenta.id)];
+        } catch {
+          return null;
+        }
+      }));
+      const porCuenta = Object.fromEntries(pares.filter(Boolean));
+      setEstadosCuenta(porCuenta);
+      const valores = Object.values(porCuenta);
+      const pendientes = valores.reduce((total, actual) =>
+        total + (Number(actual?.en_espera) || 0) + (Number(actual?.procesando) || 0), 0);
+      const sincronizaciones = Object.fromEntries(Object.entries(porCuenta)
+        .map(([id, actual]) => [id, actual?.ultima_sincronizacion || ""]));
+      const previa = referenciaColaRef.current;
+      referenciaColaRef.current = { pendientes, sincronizaciones };
+      if (!previa) return;
+      const drenó = previa.pendientes > 0 && pendientes === 0;
+      const sincronizó = Object.entries(sincronizaciones).some(([id, valor]) =>
+        Boolean(valor) && valor !== (previa.sincronizaciones?.[id] || ""));
+      if (!drenó && !sincronizó) return;
+      invalidarCacheConsultasGmail();
+      const fuentesActuales = await cargarFuentes();
+      await consultarTodasLasCuentas(fuentesActuales);
+    } finally {
+      consultandoEstadoRef.current = false;
+    }
+  }, [gmailConectado, cuentasGmail, cargarFuentes, consultarTodasLasCuentas]);
+
+  useEffect(() => {
+    if (!gmailConectado || cuentasGmail.length === 0) {
+      setEstadosCuenta({});
+      referenciaColaRef.current = null;
+      return undefined;
+    }
+    const consultar = () => { consultarEstadosCorreos(); };
+    consultar();
+    const temporizador = window.setInterval(consultar, INTERVALO_ESTADO_MS);
+    return () => window.clearInterval(temporizador);
+  }, [gmailConectado, cuentasGmail, consultarEstadosCorreos]);
 
   const seleccionarFuente = useCallback(async (fuente) => {
     setFuenteSeleccionada(fuente); setCategoria("TODOS"); setError("");
     const mensajesEnCache = mensajesPorFuente[fuente.idFuente];
     setMensajesFuente(mensajesEnCache || []);
+    const cuentaDestino = fuente.cuentaGmailId || cuentaSeleccionadaId;
     if (fuente.cuentaGmailId && String(fuente.cuentaGmailId) !== String(cuentaSeleccionadaId)) {
       seleccionarCuentaGmail(fuente.cuentaGmailId);
-      return;
     }
-    if (!mensajesEnCache && gmailConectado && fuente.estado !== false) await cargarMensajesFuente(fuente, cuentaSeleccionadaId);
+    if (!mensajesEnCache && gmailConectado && fuente.estado !== false && cuentaDestino) {
+      await cargarMensajesFuente(fuente, cuentaDestino);
+    }
   }, [mensajesPorFuente, cuentaSeleccionadaId, seleccionarCuentaGmail, gmailConectado, cargarMensajesFuente]);
 
   const cerrarBandeja = useCallback(() => { setFuenteSeleccionada(null); setMensajesFuente([]); }, []);
@@ -122,5 +198,5 @@ export function useCorreos() {
     return () => { vigente = false; window.clearInterval(temporizador); };
   }, [gmailConectado, usuario?.idUsuario, cuentasGmail, cargarFuentes, consultarTodasLasCuentas]);
 
-  return { usuario, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, conexionCargando, fuentes, tarjetasCorreo, categoria, setCategoria, fuenteSeleccionada, mensajesFuente, mensajesPorFuente, ultimaConsulta, cargandoFuentes, cargandoMensajes, error, noHayFuentes, seleccionarFuente, consultarFuentesRegistradas, consultarTodasLasCuentas, cerrarBandeja };
+  return { usuario, gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, conexionCargando, fuentes, tarjetasCorreo, categoria, setCategoria, fuenteSeleccionada, mensajesFuente, mensajesPorFuente, ultimaConsulta, estadoCorreos, cargandoFuentes, cargandoMensajes, error, noHayFuentes, seleccionarFuente, consultarFuentesRegistradas, consultarTodasLasCuentas, cerrarBandeja };
 }
