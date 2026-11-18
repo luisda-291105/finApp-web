@@ -90,8 +90,25 @@ describe("BottomNav", () => {
     expect(botonMenu).toHaveClass("text-bg-cream");
   });
 
-  it("click en items 1-3 llama alNavegar con la ruta correcta", () => {
+  it("click en el ítem de la página actual vuelve arriba y no llama alNavegar", () => {
+    // `itemActivo="/dashboard"` y la pestaña está en Inicio por defecto
+    const scrollTo = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => {});
     render(<BottomNav {...propsBase} />);
+
+    fireEvent.click(screen.getByText("Inicio"));
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: expect.any(String),
+    });
+    expect(propsBase.alNavegar).not.toHaveBeenCalled();
+
+    scrollTo.mockRestore();
+  });
+
+  it("click en items 1-3 llama alNavegar con la ruta correcta", () => {
+    render(<BottomNav {...propsBase} itemActivo="/dashboard/tarjetas" />);
 
     fireEvent.click(screen.getByText("Inicio"));
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard");
@@ -100,7 +117,8 @@ describe("BottomNav", () => {
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/contabilidad");
 
     fireEvent.click(screen.getByText("Tarjetas"));
-    expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/tarjetas");
+    // Página actual: vuelve arriba en lugar de navegar
+    expect(propsBase.alNavegar).not.toHaveBeenCalledWith("/dashboard/tarjetas");
   });
 
   it("click en el botón Menú llama alAbrirMenu", () => {

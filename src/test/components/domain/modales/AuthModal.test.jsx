@@ -189,7 +189,7 @@ describe("AuthModal", () => {
     it("el panel limita su altura, ofrece scroll interno y queda fuera del ciclo de Tab (RF-22)", () => {
       renderModal();
       const dialogo = obtenerDialogo();
-      expect(dialogo.classList.contains("sm:max-h-[85vh]")).toBe(true);
+      expect(dialogo.classList.contains("max-h-[85dvh]")).toBe(true);
       expect(dialogo.classList.contains("overflow-hidden")).toBe(true);
       expect(dialogo.querySelector(".overflow-y-auto")).not.toBeNull();
       expect(dialogo.getAttribute("tabindex")).toBe("-1");

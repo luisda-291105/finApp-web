@@ -178,15 +178,15 @@ describe("PaginaDashboardContabilidad", () => {
     expect(
       within(dialogo).getByRole("heading", { name: "Movimientos" }),
     ).toBeInTheDocument();
-    await usuario.click(
-      within(dialogo).getByRole("button", { name: /Ver movimientos/i }),
+    // Los movimientos de Gastos están ya en la card; buscaríamos "Gasolina" en la sección asociada
+    const movimientosRegion = within(dialogo).getByText(
+      /Total por año y mes/i,
+    ).parentElement;
+    expect(movimientosRegion).toBeInTheDocument();
+    // El detalle muestra el listado de movimientos del bolsillo
+    await waitFor(() =>
+      expect(within(dialogo).getByText("Gasolina")).toBeInTheDocument(),
     );
-    const movimientos = await screen.findByRole("dialog", {
-      name: /Movimientos de Gastos/i,
-    });
-    expect(
-      await within(movimientos).findByText("Gasolina"),
-    ).toBeInTheDocument();
   });
 
   it("muestra el balance del mes como gastos negativos cuando superan a los ingresos", async () => {

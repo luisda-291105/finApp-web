@@ -359,7 +359,7 @@ describe("DashboardDrawer", () => {
       expect(focusables[9].getAttribute("aria-label")).toContain("Cuenta de");
     });
 
-    it("mantiene el avatar después de los ocho enlaces y dentro del flujo del menú", () => {
+    it("ancla el avatar al fondo del menú, tras los ocho enlaces, dentro del nav", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
@@ -372,9 +372,7 @@ describe("DashboardDrawer", () => {
       expect(links).toHaveLength(8);
       expect(nav.lastElementChild).toBe(avatar);
       expect(avatar).toBeTruthy();
-      expect(avatar.className).not.toMatch(
-        /\b(?:fixed|sticky|absolute|bottom-0|mt-auto)\b/,
-      );
+      expect(avatar.className).toMatch(/\bmt-auto\b/);
       expect(nav.className).not.toMatch(/\b(?:min-h-full|h-full)\b/);
     });
 

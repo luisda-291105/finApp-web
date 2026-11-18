@@ -16,6 +16,7 @@ const obtenerMensajesSuscripcionGmail = vi.hoisted(() =>
   vi.fn().mockResolvedValue([]),
 );
 const listarSuscripcionesManuales = vi.hoisted(() => vi.fn());
+const listarCobrosRecurrentes = vi.hoisted(() => vi.fn());
 const crearSuscripcionManual = vi.hoisted(() => vi.fn());
 const actualizarSuscripcionManual = vi.hoisted(() => vi.fn());
 const actualizarAjustesSuscripcion = vi.hoisted(() => vi.fn());
@@ -28,11 +29,24 @@ vi.mock("../../services/gmailServicio", () => ({
 }));
 vi.mock("../../features/suscripciones/services/suscripcionesServicio", () => ({
   listarSuscripcionesManuales,
+  listarCobrosRecurrentes,
   crearSuscripcionManual,
   actualizarSuscripcionManual,
   actualizarAjustesSuscripcion,
   cambiarEstadoSuscripcionManual,
   eliminarSuscripcionManual,
+  normalizarCobroRecurrente: (cobro = {}) => ({
+    id: String(cobro.id ?? ""),
+    nombre: String(cobro.nombre ?? ""),
+    categoria: String(cobro.categoria ?? ""),
+    monto: Number(cobro.monto ?? 0),
+    frecuencia: String(cobro.frecuencia ?? ""),
+    intervaloDias: Number(cobro.intervaloDias ?? 30),
+    ultimoCobro: String(cobro.ultimoCobro ?? ""),
+    proximoCobro: String(cobro.proximoCobro ?? ""),
+    cobrosDetectados: Number(cobro.cobrosDetectados ?? 0),
+    origen: String(cobro.origen ?? ""),
+  }),
   normalizarNivelUi: (valor, porDefecto = "Media") => {
     const normalizado = String(valor ?? "")
       .trim()
@@ -77,6 +91,7 @@ beforeEach(() => {
     cuentasConsultadas: 1,
   });
   listarSuscripcionesManuales.mockReset().mockResolvedValue([]);
+  listarCobrosRecurrentes.mockReset().mockResolvedValue([]);
   crearSuscripcionManual.mockReset();
   actualizarSuscripcionManual.mockReset();
   actualizarAjustesSuscripcion.mockReset();
@@ -350,6 +365,32 @@ describe("PaginaDashboardSuscripciones", () => {
     expect(
       within(detalle).getAllByRole("option", { name: "No definido" }),
     ).toHaveLength(2);
+  });
+
+  it("resume los cobros recurrentes con los datos de las suscripciones registradas", async () => {
+    listarCobrosRecurrentes.mockResolvedValue([
+      {
+        id: "3088276f-c599-4374-ad5a-28cbf5f51aa6",
+        nombre: "claro",
+        categoria: "Comunicación",
+        monto: 47067.11,
+        frecuencia: "Mensual",
+        intervaloDias: 30,
+        ultimoCobro: "",
+        proximoCobro: "2026-12-03",
+        cobrosDetectados: 1,
+        origen: "MANUAL",
+      },
+    ]);
+
+    renderPagina();
+
+    const resumen = await screen.findByRole("region", {
+      name: "Resumen de cobros recurrentes",
+    });
+    await waitFor(() => expect(resumen.textContent).toContain("47.067"));
+    expect(resumen.textContent).toContain("claro");
+    expect(listarCobrosRecurrentes).toHaveBeenCalledTimes(1);
   });
 
   it("abre el detalle desde la tarjeta completa y guarda la prioridad en el backend", async () => {

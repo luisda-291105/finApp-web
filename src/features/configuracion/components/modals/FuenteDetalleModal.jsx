@@ -49,10 +49,12 @@ export default function FuenteDetalleModal({
     }
   }, [abierto, fuente]);
 
+  // El estado de conexión global (gmailConectado / cuentaSeleccionadaId) solo
+  // describe la cuenta activa en la UI. Una fuente puede estar vinculada a otra
+  // cuenta que ya está conectada y recibiendo correos, así que se consulta el
+  // backend por la cuenta de esta fuente para decidir si aún hay que conectarla.
   useEffect(() => {
-    const esCuentaSeleccionada =
-      cuenta?.id && String(cuentaSeleccionadaId) === String(cuenta.id);
-    if (!abierto || !cuenta?.id || !gmailConectado || !esCuentaSeleccionada) {
+    if (!abierto || !cuenta?.id) {
       setPermisoContactos(null);
       setPermisoContactosCuentaId("");
       setVerificandoPermiso(false);
@@ -71,9 +73,12 @@ export default function FuenteDetalleModal({
       .catch((fallo) => {
         if (!vigente) return;
         setPermisoContactos(false);
-        setErrorPermisos(
-          fallo?.message || "No se pudo verificar el permiso de Contactos.",
-        );
+        // Un 404 indica que la cuenta todavía no tiene conexión de Gmail; es
+        // el estado normal que motiva el botón, no un error que debamos mostrar.
+        if (fallo?.status !== 404)
+          setErrorPermisos(
+            fallo?.message || "No se pudo verificar el permiso de Contactos.",
+          );
       })
       .finally(() => {
         if (vigente) setVerificandoPermiso(false);
@@ -81,7 +86,7 @@ export default function FuenteDetalleModal({
     return () => {
       vigente = false;
     };
-  }, [abierto, cuenta?.id, gmailConectado, cuentaSeleccionadaId]);
+  }, [abierto, cuenta?.id]);
 
   if (!fuente) return null;
 
@@ -130,6 +135,7 @@ export default function FuenteDetalleModal({
   const permisoActualVerificado = Boolean(
     cuenta && String(permisoContactosCuentaId) === String(cuenta.id),
   );
+  const permisoObtenido = permisoActualVerificado && permisoContactos === true;
 
   return (
     <ModalDetalleRegistro
@@ -304,12 +310,12 @@ export default function FuenteDetalleModal({
                   Permisos
                 </h3>
                 <p className="mt-1 text-xs text-slate-text">
-                  {cuentaConectada
-                    ? "Servicios de Google vinculados a esta fuente."
+                  {cuentaConectada || permisoObtenido
+                    ? "Servicios de Google vinculados a esta fuente. La sesión se mantiene activa y sigue recibiendo correos."
                     : "Esta cuenta no está conectada con Google. Conéctala para usar Gmail y sus servicios."}
                 </p>
               </div>
-              {cuentaConectada ? (
+              {cuentaConectada || permisoObtenido ? (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
                     <div>

@@ -112,7 +112,7 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         aria-modal="true"
         aria-labelledby="user-modal-title"
         tabIndex={-1}
-        className="modal-sheet-mobile fixed inset-x-0 bottom-[var(--bottom-nav-alto)] -translate-x-1/2 w-[90vw] max-w-sm max-h-[85dvh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-t-[1.75rem] shadow-xl z-[101] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:max-h-[85vh] sm:rounded-2xl"
+        className="fixed top-1/2 -translate-y-1/2 -translate-x-1/2 w-[90vw] max-w-sm max-h-[85dvh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-2xl shadow-xl z-[101]"
         style={{
           left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)",
         }}

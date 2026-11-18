@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import {
   agruparEntradaPesos,
@@ -7,12 +7,15 @@ import {
   parsearPesos,
 } from "../../../../utils/formatoPesos";
 import { AlertaGlobal } from "../../../../features/error";
+import { obtenerOrigenes } from "../../utils/contabilidadHelpers";
 
 export default function ModalBolsillo({
   abierto,
   modo = "crear",
   bolsillo = null,
   bolsillos = [],
+  movimientos = [],
+  alAlternarMovimiento,
   triggerRef,
   alCerrar,
   alGuardar,
@@ -21,6 +24,9 @@ export default function ModalBolsillo({
   const [nombre, setNombre] = useState("");
   const [montoObjetivo, setMontoObjetivo] = useState("0");
   const [estado, setEstado] = useState(true);
+  const [descripcion, setDescripcion] = useState("");
+  const [origenes, setOrigenes] = useState([]);
+  const [nuevoOrigen, setNuevoOrigen] = useState("");
   const [confirmarConversion, setConfirmarConversion] = useState(false);
   const [editandoObjetivo, setEditandoObjetivo] = useState(false);
   const [error, setError] = useState("");
@@ -33,8 +39,26 @@ export default function ModalBolsillo({
     setConfirmarConversion(false);
     setEditandoObjetivo(false);
     setEstado(bolsillo?.estado !== false);
+    setDescripcion(bolsillo?.descripcion ?? "");
+    setOrigenes(obtenerOrigenes(bolsillo));
+    setNuevoOrigen("");
     setError("");
   }, [abierto, bolsillo, modo]);
+
+  const movimientosCandidatos = useMemo(
+    () =>
+      [...movimientos]
+        .sort((a, b) => String(b?.fecha || "").localeCompare(String(a?.fecha || "")))
+        .slice(0, 200),
+    [movimientos],
+  );
+  const movimientosAsociados = useMemo(
+    () =>
+      movimientosCandidatos.filter(
+        (movimiento) => String(movimiento?.idBolsillo) === String(bolsillo?.idBolsillo),
+      ),
+    [movimientosCandidatos, bolsillo?.idBolsillo],
+  );
 
   const guardar = async (evento) => {
     evento.preventDefault();
@@ -64,7 +88,13 @@ export default function ModalBolsillo({
         nombre: nombre.trim(),
         tipo: "AHORRO",
         montoObjetivo: objetivo,
-        ...(modo === "editar" ? { estado } : {}),
+        ...(modo === "editar"
+          ? {
+              estado,
+              descripcion: descripcion.trim() || null,
+              origenes,
+            }
+          : {}),
       });
       alCerrar();
     } catch (fallo) {
@@ -202,6 +232,170 @@ export default function ModalBolsillo({
               className="mt-1.5 min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3.5 text-sm text-bg-dark outline-none placeholder:text-slate-text focus:border-emerald-primary focus:ring-2 focus:ring-emerald-primary/20 disabled:opacity-50"
             />
           </label>
+          {modo === "editar" && (
+            <>
+              <label className="block text-sm font-medium text-bg-dark">
+                Descripción del bolsillo
+                <textarea
+                  rows={2}
+                  value={descripcion}
+                  onChange={(evento) => setDescripcion(evento.target.value)}
+                  disabled={ocupado}
+                  placeholder="Opcional. Qué representa este bolsillo para ti."
+                  className="mt-1.5 min-h-11 w-full resize-y rounded-xl border border-border-line bg-bg-cream px-3.5 py-3 text-sm text-bg-dark outline-none placeholder:text-slate-text focus:border-emerald-primary focus:ring-2 focus:ring-emerald-primary/20 disabled:opacity-50"
+                />
+              </label>
+              <fieldset className="rounded-xl border border-border-line/50 p-3">
+                <legend className="px-1 text-sm font-medium text-bg-dark">
+                  Orígenes
+                </legend>
+                <p className="text-xs text-slate-text">
+                  Etiquetas que describen de dónde sale el dinero del bolsillo.
+                </p>
+                {origenes.length > 0 && (
+                  <ul className="mt-2 flex flex-wrap gap-2" aria-label="Orígenes del bolsillo">
+                    {origenes.map((origen, indice) => (
+                      <li
+                        key={`${origen}-${indice}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary"
+                      >
+                        {origen}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOrigenes((actuales) =>
+                              actuales.filter((item, i) => i !== indice),
+                            )
+                          }
+                          aria-label={`Quitar origen ${origen}`}
+                          className="rounded-full p-0.5 text-emerald-primary hover:bg-emerald-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={nuevoOrigen}
+                    onChange={(evento) => setNuevoOrigen(evento.target.value)}
+                    onKeyDown={(evento) => {
+                      if (evento.key === "Enter" || evento.key === ",") {
+                        evento.preventDefault();
+                        const limpio = nuevoOrigen.trim();
+                        if (limpio && !origenes.includes(limpio)) {
+                          setOrigenes((actuales) => [...actuales, limpio]);
+                        }
+                        setNuevoOrigen("");
+                      }
+                    }}
+                    disabled={ocupado}
+                    placeholder="Ej. Bancolombia"
+                    aria-label="Añadir un origen"
+                    className="min-h-10 flex-1 rounded-lg border border-border-line bg-bg-cream px-3 text-sm text-bg-dark outline-none placeholder:text-slate-text focus:border-emerald-primary disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const limpio = nuevoOrigen.trim();
+                      if (!limpio) return;
+                      setOrigenes((actuales) =>
+                        actuales.includes(limpio)
+                          ? actuales
+                          : [...actuales, limpio],
+                      );
+                      setNuevoOrigen("");
+                    }}
+                    disabled={ocupado || !nuevoOrigen.trim()}
+                    className="min-h-10 rounded-lg border border-emerald-primary/40 px-3 text-xs font-semibold text-emerald-primary hover:bg-emerald-primary/10 disabled:opacity-50"
+                  >
+                    Añadir
+                  </button>
+                </div>
+              </fieldset>
+              <section
+                aria-labelledby="editar-bolsillo-movimientos-titulo"
+                className="rounded-xl border border-border-line/50 p-3"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3
+                    id="editar-bolsillo-movimientos-titulo"
+                    className="text-sm font-medium text-bg-dark"
+                  >
+                    Movimientos que pertenecen a este bolsillo
+                  </h3>
+                  <span className="text-xs text-slate-text tabular-nums">
+                    {movimientosAsociados.length} seleccionados
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-text">
+                  Marca los gastos e ingresos que quieres que se asocien a este
+                  bolsillo. Desmarca para sacarlos.
+                </p>
+                <ul
+                  className="mt-2 max-h-48 space-y-1.5 overflow-y-auto"
+                  aria-label="Movimientos asignados o asignables"
+                >
+                  {movimientosCandidatos.length === 0 && (
+                    <li className="py-3 text-center text-xs text-slate-text">
+                      No hay movimientos cargados.
+                    </li>
+                  )}
+                  {movimientosCandidatos.map((movimiento) => {
+                    const asignado =
+                      String(movimiento?.idBolsillo) ===
+                      String(bolsillo?.idBolsillo);
+                    const tituloMovimiento =
+                      movimiento?.concepto?.trim() ||
+                      movimiento?.categoria ||
+                      "Movimiento";
+                    return (
+                      <li
+                        key={movimiento.idMovimiento}
+                        className="flex items-center gap-3 rounded-lg border border-border-line/40 bg-bg-cream/50 p-2"
+                      >
+                        <label className="flex flex-1 items-center gap-2 text-left">
+                          <input
+                            type="checkbox"
+                            checked={asignado}
+                            disabled={ocupado}
+                            onChange={() =>
+                              alAlternarMovimiento?.(movimiento, bolsillo)
+                            }
+                            aria-label={`${asignado ? "Sacar" : "Asignar"} el movimiento ${tituloMovimiento} del bolsillo`}
+                            className="h-4 w-4 accent-emerald-600"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-medium text-bg-dark">
+                              {tituloMovimiento}
+                            </span>
+                            <span className="block text-[11px] text-slate-text tabular-nums">
+                              {
+                                new Date(
+                                  `${movimiento.fecha}T00:00:00Z`,
+                                ).toISOString().slice(0, 10)
+                              }
+                              {" · "}
+                              {Number(movimiento.monto).toLocaleString(
+                                "es-CO",
+                                {
+                                  style: "currency",
+                                  currency: "COP",
+                                  maximumFractionDigits: 0,
+                                },
+                              )}
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </>
+          )}
           {modo === "editar" && (
             <label className="flex items-center gap-3 rounded-xl border border-border-line/50 p-3 text-sm">
               <input

@@ -107,31 +107,50 @@ export default function BottomNav({
       role="navigation"
       aria-label="Navegación principal móvil"
     >
-      {itemsVisibles.map(({ ruta, etiqueta, icono: Icono }) => (
-        <button
-          key={ruta}
-          type="button"
-          onClick={() => alNavegar(ruta)}
-          className={clsx(
-            "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
-            ruta === itemActivo
-              ? "text-mint-accent"
-              : "text-bg-cream hover:text-mint-accent",
-          )}
-          aria-current={ruta === itemActivo ? "page" : undefined}
-        >
-          <Icono className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-          <span className="text-xs font-medium truncate bottom-nav-label">
-            {etiqueta}
-          </span>
-          {ruta === itemActivo && (
-            <span
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-mint-accent rounded-full"
-              aria-hidden="true"
-            />
-          )}
-        </button>
-      ))}
+      {itemsVisibles.map(({ ruta, etiqueta, icono: Icono }) => {
+        const esPaginaActual = ruta === itemActivo;
+        return (
+          <button
+            key={ruta}
+            type="button"
+            onClick={() => {
+              if (esPaginaActual) {
+                // Ítem de la página actual: al tocarlo, vuelve arriba de la página
+                const reducirMovimiento = window.matchMedia(
+                  "(prefers-reduced-motion: reduce)",
+                ).matches;
+                window.scrollTo({
+                  top: 0,
+                  behavior: reducirMovimiento ? "auto" : "smooth",
+                });
+                return;
+              }
+              alNavegar(ruta);
+            }}
+            className={clsx(
+              "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
+              esPaginaActual
+                ? "text-mint-accent"
+                : "text-bg-cream hover:text-mint-accent",
+            )}
+            aria-current={esPaginaActual ? "page" : undefined}
+            aria-label={
+              esPaginaActual ? `${etiqueta} (volver arriba)` : etiqueta
+            }
+          >
+            <Icono className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+            <span className="text-xs font-medium truncate bottom-nav-label">
+              {etiqueta}
+            </span>
+            {esPaginaActual && (
+              <span
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-mint-accent rounded-full"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        );
+      })}
 
       {/* Control: Menú */}
       <button

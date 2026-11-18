@@ -499,7 +499,7 @@ describe("DashboardUserModal", () => {
     it("el panel limita su altura y ofrece scroll interno", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
-      expect(panel.classList.contains("sm:max-h-[85vh]")).toBe(true);
+      expect(panel.classList.contains("max-h-[85dvh]")).toBe(true);
       expect(panel.classList.contains("overflow-y-auto")).toBe(true);
       expect(panel.getAttribute("tabindex")).toBe("-1");
     });
@@ -575,7 +575,7 @@ describe("DashboardUserModal", () => {
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
       expect(panel.classList.contains("glass-surface")).toBe(true);
       expect(panel.classList.contains("border-border-line/30")).toBe(true);
-      expect(panel.classList.contains("sm:rounded-2xl")).toBe(true);
+      expect(panel.classList.contains("rounded-2xl")).toBe(true);
       expect(panel.classList.contains("shadow-xl")).toBe(true);
       expect(panel.classList.contains("z-[101]")).toBe(true);
       expect(panel.classList.contains("w-[90vw]")).toBe(true);

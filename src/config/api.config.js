@@ -75,6 +75,7 @@ export const ENDPOINTS = {
   },
   suscripcion: {
     base: "/suscripcion",
+    recurrentes: "/suscripcion/recurrentes",
   },
   almacenamiento: {
     conexiones: "/api/almacenamiento/conexiones",

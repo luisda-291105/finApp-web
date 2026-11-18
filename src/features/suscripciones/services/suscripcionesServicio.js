@@ -16,6 +16,18 @@ import {
 } from "../../../services/httpServicio";
 import { listarSuscripcionesGmail } from "../../../services/gmailServicio";
 import { listarMovimientos, actualizarMovimiento } from "../../contabilidad/services/movimientosService";
+import {
+  obtenerCorreosGmail,
+  obtenerContenidoCorreosFinancierosGmail,
+} from "../../../services/gmailServicio";
+import {
+  esCandidatoFinanciero,
+  extraerMovimientoSugerido,
+} from "../../correos/utils/correoFinancieroHelpers";
+import {
+  guardarCorreoPorRevisar,
+  listarCorreosImportados,
+} from "../../contabilidad/services/movimientosService";
 
 const ruta = getEndpoint("suscripcion.base");
 const rutaRecurrentes = getEndpoint("suscripcion.recurrentes");
@@ -281,4 +293,75 @@ export async function sincronizarOrigenesMovimientosGmail() {
     }
   }
   return { total: movimientos.length, actualizados, errores, detalles };
+}
+
+/** Importa como pendientes desde Gmail los movimientos financieros no detectados aún. */
+export async function importarMovimientosGmailPendientes(cuentasGmail = []) {
+  const activos = (cuentasGmail || [])
+    .map((cuenta) => ({
+      id: String(cuenta?.id ?? ""),
+      email: String(cuenta?.email ?? "").trim(),
+    }))
+    .filter((cuenta) => cuenta.id && cuenta.email);
+  if (!activos.length) return { total: 0, creados: 0 };
+
+  let total = 0;
+  let creados = 0;
+  for (const cuenta of activos) {
+    try {
+      const respuestaCorreos = await obtenerCorreosGmail(cuenta.id, [
+        {
+          idFuente: `gmail-${cuenta.id}`,
+          contenido: cuenta.email,
+          estado: true,
+        },
+      ]);
+      const correos = (Array.isArray(respuestaCorreos) ? respuestaCorreos : [])
+        .filter(esCandidatoFinanciero)
+        .slice(0, 5)
+        .map((correo) => ({ ...correo, cuentaGmailId: cuenta.id }));
+      total += correos.length;
+      if (!correos.length) continue;
+
+      const conContenido = await obtenerContenidoCorreosFinancierosGmail(
+        cuenta.id,
+        correos,
+      );
+      const sugerencias = (conContenido || [])
+        .map(extraerMovimientoSugerido)
+        .filter(Boolean);
+      if (!sugerencias.length) continue;
+
+      const importadosRespuesta = await listarCorreosImportados(
+        sugerencias.map((item) => item.origenId),
+      );
+      const yaImportados = new Set(
+        Array.isArray(importadosRespuesta)
+          ? importadosRespuesta
+          : importadosRespuesta?.data || [],
+      );
+      for (const item of sugerencias) {
+        if (yaImportados.has(String(item.origenId))) continue;
+        try {
+          await guardarCorreoPorRevisar({
+            idBolsillo: null,
+            tipo: item.tipo,
+            fecha: item.fecha,
+            monto: item.monto,
+            categoria: item.categoria,
+            concepto: item.concepto,
+            origenTipo: "GMAIL",
+            origenId: item.origenId,
+            origenNombre: item.remitente,
+          });
+          creados += 1;
+        } catch {
+          // Continúa con el resto de candidatos.
+        }
+      }
+    } catch {
+      // La cuenta falló; no cancela el resto.
+    }
+  }
+  return { total, creados };
 }

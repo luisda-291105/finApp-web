@@ -19,6 +19,7 @@ import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { crearUsuario, iniciarSesion } from "../../services/usuarioServicio";
+import { consumirMensajeSesion } from "../../../../services/httpServicio";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import LoginForm from "../forms/LoginForm";
 import RegistroForm from "../forms/RegistroForm";
@@ -91,7 +92,8 @@ export default function AuthModal({
 
   useEffect(() => {
     setModo(modoInicial);
-    setMensaje("");
+    // Si la sesión expiró por inactividad, mostramos el aviso al reabrir el acceso.
+    setMensaje(abierto ? consumirMensajeSesion() : "");
   }, [modoInicial, abierto]);
 
   if (!abierto) return null;
@@ -235,7 +237,7 @@ export default function AuthModal({
 
   return (
     <div
-      className="modal-overlay-dashboard z-[100] flex items-end justify-center p-0 bg-black/70 backdrop-blur-sm sm:items-center sm:p-4"
+      className="modal-overlay-dashboard z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onPointerDown={registrarInicioPuntero}
       onPointerUp={registrarFinPuntero}
       onPointerCancel={() => {
@@ -247,7 +249,7 @@ export default function AuthModal({
         {/* Tarjeta Modal Fluid Glass */}
         <div
           ref={panelRef}
-          className="modal-sheet-mobile relative mb-[var(--bottom-nav-alto)] w-full max-w-md md:max-w-3xl max-h-[85dvh] overflow-hidden outline-none bg-[#0f1117]/95 border border-white/15 rounded-t-[1.75rem] shadow-2xl text-white backdrop-blur-xl sm:mb-0 sm:max-h-[85vh] sm:rounded-3xl"
+          className="relative w-full max-w-md md:max-w-3xl max-h-[85dvh] overflow-hidden outline-none bg-[#0f1117]/95 border border-white/15 rounded-3xl shadow-2xl text-white backdrop-blur-xl"
           role="dialog"
           aria-modal="true"
           aria-label="Ventana de acceso"

@@ -1,15 +1,15 @@
 /**
  * @uso        Pruebas de la sección «Permisos» del detalle de fuente Gmail: estado real de conexión
- *             y botón único para conectar con todos los permisos de Gmail
+ *             y ocultación del botón de conexión una vez obtenidos los permisos
  * @funciones  render, screen, waitFor, userEvent
  * @datos      Fuente CORREO y cuenta Gmail vinculada simuladas
  * @eventos    Click en «Conectar Gmail y Contactos»
- * @estados    gmailConectado controla si la cuenta aparece conectada o pendiente
+ * @estados    El permiso se verifica en el backend por cuenta, no por la selección global
  * @usadoPor   Vitest
  */
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FuenteDetalleModal from "../../../../../features/configuracion/components/modals/FuenteDetalleModal";
 import { verificarPermisoContactosGoogle } from "../../../../../services/gmailServicio";
 
@@ -59,6 +59,10 @@ function renderModal(props = {}) {
   return acciones;
 }
 
+beforeEach(() => {
+  vi.mocked(verificarPermisoContactosGoogle).mockResolvedValue(true);
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -66,7 +70,7 @@ afterEach(() => {
 
 describe("FuenteDetalleModal — sección Permisos", () => {
   it("sin conexión: no muestra «Conectado» y ofrece un único botón con todos los permisos", async () => {
-    const usuario = userEvent.setup();
+    verificarPermisoContactosGoogle.mockResolvedValue(false);
     const acciones = renderModal({ gmailConectado: false });
 
     expect(screen.queryByText("Conectado")).not.toBeInTheDocument();
@@ -78,9 +82,10 @@ describe("FuenteDetalleModal — sección Permisos", () => {
     const boton = screen.getByRole("button", {
       name: "Conectar Gmail y Contactos",
     });
-    await usuario.click(boton);
+    await userEvent.setup().click(boton);
 
     expect(acciones.alAutorizarContactos).toHaveBeenCalledWith("c1");
+    expect(verificarPermisoContactosGoogle).toHaveBeenCalledWith("c1");
   });
 
   it("con conexión: muestra los servicios vinculados y no el botón de conectar", async () => {
@@ -94,5 +99,40 @@ describe("FuenteDetalleModal — sección Permisos", () => {
     expect(
       screen.queryByRole("button", { name: "Conectar Gmail y Contactos" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("oculta el botón cuando la cuenta ya tiene permisos aunque no sea la seleccionada", async () => {
+    renderModal({ gmailConectado: false, cuentaSeleccionadaId: "otra" });
+
+    await waitFor(() =>
+      expect(screen.getByText("Autorizado")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Conectar Gmail y Contactos" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("oculta el botón en cuanto se obtienen los permisos", async () => {
+    const usuario = userEvent.setup();
+    verificarPermisoContactosGoogle
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+    const acciones = renderModal({
+      gmailConectado: false,
+      cuentaSeleccionadaId: "otra",
+    });
+
+    const boton = await screen.findByRole("button", {
+      name: "Conectar Gmail y Contactos",
+    });
+    await usuario.click(boton);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "Conectar Gmail y Contactos" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(acciones.alAutorizarContactos).toHaveBeenCalledWith("c1");
+    expect(screen.getByText("Autorizado")).toBeInTheDocument();
   });
 });

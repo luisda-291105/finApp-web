@@ -182,26 +182,31 @@ function CuerpoManual({ item, formatoMoneda, formatoFecha }) {
 }
 
 function CuerpoRecurrente({ item }) {
+  const esMovimiento = item.origen === "MOVIMIENTOS";
   return (
     <div className="space-y-2 border-t border-border-line/40 pt-3">
       <div className="flex items-center justify-between gap-2">
         <p className="font-semibold tabular-nums text-bg-dark">
-          {monedaRecurrente.format(Number(item.montoPromedio || 0))}{" "}
-          <span className="text-xs font-normal text-slate-text">promedio</span>
+          {monedaRecurrente.format(Number(item.monto || 0))}{" "}
+          <span className="text-xs font-normal text-slate-text">
+            {esMovimiento ? "promedio" : "por cobro"}
+          </span>
         </p>
         <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
           {item.frecuencia}
         </span>
       </div>
       <div className="space-y-1 text-xs text-slate-text">
+        {item.ultimoCobro ? (
+          <p>
+            {item.cobrosDetectados} cobros registrados · último:{" "}
+            {fechaRecurrente.format(new Date(`${item.ultimoCobro}T00:00:00Z`))}
+          </p>
+        ) : (
+          <p>Cobro programado desde tu suscripción</p>
+        )}
         <p>
-          {item.cobrosDetectados} cobros registrados · último:{" "}
-          {item.ultimoCobro
-            ? fechaRecurrente.format(new Date(`${item.ultimoCobro}T00:00:00Z`))
-            : "sin datos"}
-        </p>
-        <p>
-          Próximo estimado:{" "}
+          Próximo cobro:{" "}
           {item.proximoCobro
             ? fechaRecurrente.format(new Date(`${item.proximoCobro}T00:00:00Z`))
             : "sin fecha prevista"}

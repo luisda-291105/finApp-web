@@ -123,7 +123,14 @@ export default function useContabilidad() {
     listarMovimientos(null, filtroMovimiento)
       .then((data) => {
         if (vigente) {
-          setMovimientos(listaDe(data));
+          // "Por revisar" va a su propia bandeja; nunca se incluye en las pestañas normales
+          setMovimientos(
+            listaDe(data).filter(
+              (item) =>
+                String(item?.estadoRevision ?? "").toUpperCase() !==
+                "POR_REVISAR",
+            ),
+          );
           setErrorMovimientos("");
         }
       })

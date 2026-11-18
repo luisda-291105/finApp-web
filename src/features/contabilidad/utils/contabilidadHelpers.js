@@ -104,3 +104,97 @@ export function esBolsilloFijo(bolsillo) {
     (nombre === "gastos" && tipo === "GASTO")
   );
 }
+
+/** Lee los orígenes del bolsillo: acepta array, JSON serializado o texto plano separado por comas. */
+export function obtenerOrigenes(bolsillo) {
+  const raw = bolsillo?.origenes;
+  if (Array.isArray(raw)) {
+    return raw.map((valor) => String(valor || "").trim()).filter(Boolean);
+  }
+  if (raw == null) return [];
+  const texto = String(raw).trim();
+  if (!texto) return [];
+  if (texto.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(texto);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((valor) => String(valor || "").trim())
+          .filter(Boolean);
+      }
+    } catch {
+      // Ponte en fallback de texto plano si el JSON es inválido
+    }
+  }
+  return texto
+    .split(/[,\n]/)
+    .map((valor) => valor.trim())
+    .filter(Boolean);
+}
+
+/** Normaliza una fecha en "YYYY-MM"; inválida o vacía → "sin-fecha". */
+export function claveMesMovimiento(fecha) {
+  const texto = String(fecha || "");
+  if (/^\d{4}-\d{2}/.test(texto)) return texto.slice(0, 7);
+  const valor = new Date(texto);
+  if (Number.isNaN(valor.getTime())) return "sin-fecha";
+  const mes = String(valor.getUTCMonth() + 1).padStart(2, "0");
+  return `${valor.getUTCFullYear()}-${mes}`;
+}
+
+/** Etiqueta larga es-CO para "YYYY-MM"; "sin-fecha" como fallback. */
+export function etiquetaMesMovimiento(clave) {
+  if (clave === "sin-fecha") return "Sin fecha";
+  const [anio, mes] = clave.split("-").map(Number);
+  const valor = new Date(Date.UTC(anio || 0, (mes || 1) - 1, 1));
+  if (Number.isNaN(valor.getTime())) return clave;
+  return new Intl.DateTimeFormat("es-CO", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(valor);
+}
+
+/** Etiqueta corta "MM/AAAA". */
+export function etiquetaMesMovimientoCorta(clave) {
+  const [anio, mes] = String(clave || "").split("-");
+  return anio && mes ? `${mes}/${anio}` : clave;
+}
+
+/** Agrupa movimientos por año y mes (más recientes primero). */
+export function agruparPorAnioYMes(movimientos) {
+  const porAnio = new Map();
+  if (!Array.isArray(movimientos)) return [];
+  for (const movimiento of movimientos) {
+    const clave = claveMesMovimiento(movimiento.fecha);
+    const anio = clave === "sin-fecha" ? "sin-fecha" : clave.slice(0, 4);
+    if (!porAnio.has(anio)) {
+      porAnio.set(anio, { anio, total: 0, meses: [] });
+    }
+    const grupoAnio = porAnio.get(anio);
+    let grupoMes = grupoAnio.meses.find((m) => m.clave === clave);
+    if (!grupoMes) {
+      grupoMes = {
+        clave,
+        etiqueta: etiquetaMesMovimiento(clave),
+        total: 0,
+        movimientos: [],
+      };
+      grupoAnio.meses.push(grupoMes);
+    }
+    const monto = Number(movimiento.monto) || 0;
+    grupoMes.total += monto;
+    grupoMes.movimientos.push(movimiento);
+  }
+  return [...porAnio.values()]
+    .map((grupoAnio) => {
+      grupoAnio.total = grupoAnio.meses.reduce(
+        (total, mes) => total + mes.total,
+        0,
+      );
+      grupoAnio.meses.sort((a, b) => b.clave.localeCompare(a.clave));
+      grupoAnio.mesMasReciente = grupoAnio.meses[0]?.clave || "";
+      return grupoAnio;
+    })
+    .sort((a, b) => b.anio.localeCompare(a.anio));
+}

@@ -1,7 +1,7 @@
 /**
- * @uso        Mostrar el resumen de cobros recurrentes detectados desde gastos reales
+ * @uso        Mostrar el resumen de cobros recurrentes (suscripciones con monto y fecha de cobro y pagos repetidos de Contabilidad)
  * @funciones  MetricasCobrosRecurrentes({ datos, cargando })
- * @datos      DTOs del endpoint movimiento/recurrentes
+ * @datos      DTOs de cobros recurrentes de /suscripcion/recurrentes y /movimiento/recurrentes
  * @eventos    Ninguno
  * @estados    Ninguno
  * @usadoPor   SuscripcionesPage
@@ -26,7 +26,7 @@ export default function MetricasCobrosRecurrentes({ datos, cargando }) {
   const mensualEstimado = datos.reduce(
     (total, item) =>
       total +
-      (Number(item.montoPromedio || 0) * 30) /
+      (Number(item.monto || 0) * 30) /
         Math.max(1, Number(item.intervaloDias || 30)),
     0,
   );
@@ -36,7 +36,7 @@ export default function MetricasCobrosRecurrentes({ datos, cargando }) {
 
   return (
     <section
-      aria-label="Resumen de cobros recurrentes detectados"
+      aria-label="Resumen de cobros recurrentes"
       className="grid gap-3 sm:grid-cols-3"
     >
       <Card className="p-4">
@@ -78,13 +78,13 @@ export default function MetricasCobrosRecurrentes({ datos, cargando }) {
       </Card>
       {cargando && (
         <p role="status" className="text-sm text-slate-text sm:col-span-3">
-          Analizando tus gastos registrados…
+          Revisando tus suscripciones y gastos registrados…
         </p>
       )}
       {!cargando && datos.length === 0 && (
         <p className="text-xs leading-relaxed text-slate-text sm:col-span-3">
-          Los cobros recurrentes se detectan cuando registras al menos dos pagos
-          del mismo servicio con una frecuencia regular.
+          Los cobros recurrentes salen de tus suscripciones con monto y fecha de
+          cobro y de los pagos repetidos del mismo servicio en Contabilidad.
         </p>
       )}
     </section>

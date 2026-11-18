@@ -18,11 +18,17 @@ import ModalCrearMovimientoContable from "../components/modals/ModalCrearMovimie
 import ModalMovimientosPorRevisar from "../components/modals/ModalMovimientosPorRevisar";
 import MovimientosContablesSection from "../components/sections/MovimientosContablesSection";
 import useContabilidad from "../hooks/useContabilidad";
+import { actualizarMovimiento } from "../services/movimientosService";
+import { useGmail } from "../../../context/GmailContext";
 import {
   agregarSaldoDisponible,
   crearFiltrosMovimiento,
+  esBolsilloFijo,
 } from "../utils/contabilidadHelpers";
-import { sincronizarOrigenesMovimientosGmail } from "../../suscripciones/services/suscripcionesServicio";
+import {
+  importarMovimientosGmailPendientes,
+  sincronizarOrigenesMovimientosGmail,
+} from "../../suscripciones/services/suscripcionesServicio";
 import { AlertaGlobal } from "../../../features/error";
 
 /** Página de bolsillos persistidos y movimientos contables. */
@@ -75,16 +81,13 @@ export default function ContabilidadPage() {
   const recargarMovimientosRef = useRef(recargarMovimientos);
   recargarMovimientosRef.current = recargarMovimientos;
   const [sincronizandoApodos, setSincronizandoApodos] = useState(false);
+  const [sincronizandoMovimientos, setSincronizandoMovimientos] = useState(false);
+  const importacionHechaRef = useRef(false);
+  const { gmailConectado, cuentasGmail } = useGmail();
 
   useEffect(() => {
     let vigente = true;
-    const yaSincronizado = sessionStorage.getItem("finapp:suscripciones-apodo-sincronizado");
-    if (
-      sincronizacionHechaRef.current ||
-      yaSincronizado === "1" ||
-      !usuario?.idUsuario ||
-      cargandoMovimientos
-    )
+    if (sincronizacionHechaRef.current || !usuario?.idUsuario || cargandoMovimientos)
       return () => {
         vigente = false;
       };
@@ -98,7 +101,6 @@ export default function ContabilidadPage() {
             tipo: "exito",
             mensaje: `${resultado.actualizados} movimiento(s) actualizado(s) con el apodo de la suscripción como origen.`,
           });
-          sessionStorage.setItem("finapp:suscripciones-apodo-sincronizado", "1");
           recargarMovimientosRef.current();
         }
       } catch {
@@ -117,9 +119,47 @@ export default function ContabilidadPage() {
     };
   }, [usuario?.idUsuario, cargandoMovimientos]);
 
+  // Importa los movimientos financieros de Gmail todavía no cargados a Contabilidad.
+  useEffect(() => {
+    let vigente = true;
+    if (!usuario?.idUsuario || !gmailConectado || cuentasGmail.length === 0) return () => { vigente = false; };
+    if (importacionHechaRef.current) return () => { vigente = false; };
+    const ejecutar = async () => {
+      importacionHechaRef.current = true;
+      setSincronizandoMovimientos(true);
+      try {
+        const resultado = await importarMovimientosGmailPendientes(cuentasGmail);
+        if (vigente && resultado?.creados > 0) {
+          recargarMovimientosRef.current();
+        }
+      } catch {
+        // Importación de Gmails silenciosa en este paso
+      } finally {
+        if (vigente) setSincronizandoMovimientos(false);
+      }
+    };
+    ejecutar();
+    return () => {
+      vigente = false;
+    };
+  }, [usuario?.idUsuario, gmailConectado, cuentasGmail]);
+
   const bolsillosActivos = bolsillos.filter(
     (bolsillo) => bolsillo.estado !== false,
   );
+  /** Devuelve el bolsillo fijo compatible para devolver un movimiento (Ingresos/Gastos según tipo). */
+  const bolsilloPorDefecto = (movimiento) => {
+    const tipo = String(movimiento?.tipo || "").toUpperCase();
+    const esIngreso = tipo === "INGRESO";
+    const fijo = bolsillos.find(
+      (bolsillo) =>
+        esBolsilloFijo(bolsillo) &&
+        (esIngreso
+          ? String(bolsillo.tipo || "").toUpperCase() === "INGRESO"
+          : String(bolsillo.tipo || "").toUpperCase() === "GASTO"),
+    );
+    return fijo?.idBolsillo ?? null;
+  };
   const bolsillosConSaldo = agregarSaldoDisponible(
     bolsillos,
     resumenesBolsillos,
@@ -200,12 +240,47 @@ export default function ContabilidadPage() {
         modo={modalBolsillo.modo}
         bolsillo={modalBolsillo.bolsillo}
         bolsillos={bolsillos}
+        movimientos={movimientos}
         triggerRef={disparadorBolsilloRef}
         alCerrar={() =>
           setModalBolsillo({ abierto: false, modo: "crear", bolsillo: null })
         }
         alGuardar={guardarBolsillo}
         alEliminar={borrarBolsillo}
+        alAlternarMovimiento={async (movimiento, bolsillo) => {
+          if (!bolsillo?.idBolsillo) return;
+          const estabaAsignado =
+            String(movimiento?.idBolsillo) === String(bolsillo.idBolsillo);
+          try {
+            const destino = estabaAsignado
+              ? bolsilloPorDefecto(movimiento)
+              : bolsillo.idBolsillo;
+            if (!destino) {
+              setRespuesta({
+                tipo: "error",
+                mensaje: "No hay un bolsillo fijo compatible para devolver este movimiento.",
+              });
+              return;
+            }
+            await actualizarMovimiento(movimiento.idMovimiento, {
+              idBolsillo: destino,
+              tipo: movimiento.tipo,
+              fecha: movimiento.fecha,
+              monto: movimiento.monto,
+              categoria: movimiento.categoria,
+              concepto: movimiento.concepto,
+              origenTipo: movimiento.origenTipo,
+              origenId: movimiento.origenId,
+              origenNombre: movimiento.origenNombre,
+            });
+            recargarMovimientosRef.current?.();
+          } catch {
+            setRespuesta({
+              tipo: "error",
+              mensaje: "No se pudo mover el movimiento. Revisa qué bolsillos están disponibles.",
+            });
+          }
+        }}
       />
       <DetalleBolsilloModal
         abierto={Boolean(bolsilloDetalle)}

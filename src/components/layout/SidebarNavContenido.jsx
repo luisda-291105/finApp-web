@@ -8,7 +8,7 @@
  * @usadoPor   SidebarResponsive (avatar al pie), DashboardDrawer (avatar tras los enlaces)
  */
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Home,
   CreditCard,
@@ -69,6 +69,19 @@ export default function SidebarNavContenido({
   temaClaro = false,
 }) {
   const { usuario } = useUsuarioActivo();
+  const location = useLocation();
+  const esEnlaceActivo = (ruta, exacto) =>
+    exacto ? location.pathname === ruta : location.pathname.startsWith(ruta);
+  const volverArribaSiPaginaActual = (ruta, exacto) => {
+    if (!esEnlaceActivo(ruta, exacto)) return;
+    const reducirMovimiento = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    )?.matches;
+    window.scrollTo({
+      top: 0,
+      behavior: reducirMovimiento ? "auto" : "smooth",
+    });
+  };
   const nombreUsuario = String(usuario?.nombre || "").trim();
   const nombre = nombreUsuario || NOMBRE_RESPALDO;
   const iniciales = nombreUsuario ? calcularIniciales(nombreUsuario) : "UD";
@@ -106,6 +119,7 @@ export default function SidebarNavContenido({
         end={Boolean(exacto)}
         aria-label={etiqueta}
         onClick={() => {
+          volverArribaSiPaginaActual(ruta, exacto);
           if (alCerrarSidebar) alCerrarSidebar();
         }}
         className={({ isActive }) =>
@@ -132,7 +146,7 @@ export default function SidebarNavContenido({
     <button
       type="button"
       onClick={alAbrirUserModal}
-      className={`flex items-center ${colapsada ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5`}
+      className={`mt-auto flex items-center ${colapsada ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5`}
       aria-label={nombreUsuario ? `Cuenta de ${nombre}` : nombre}
     >
       <div

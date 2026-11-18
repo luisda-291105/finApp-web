@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
   CalendarDays,
+  ChevronDown,
   LoaderCircle,
   Pencil,
   PiggyBank,
@@ -11,12 +11,14 @@ import {
   Wallet,
 } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
-import MovimientosBolsilloModal from "./MovimientosBolsilloModal";
 import { listarMovimientos } from "../../services/movimientosService";
 import {
   esBolsilloFijo,
   formatoFecha,
   formatoMoneda,
+  obtenerOrigenes,
+  agruparPorAnioYMes,
+  etiquetaMesMovimientoCorta,
 } from "../../utils/contabilidadHelpers";
 import { AlertaGlobal } from "../../../../features/error";
 
@@ -41,33 +43,6 @@ function fechaLegible(fecha) {
   return Number.isNaN(valor.getTime()) ? fecha : formatoFecha.format(valor);
 }
 
-function claveMes(fecha) {
-  const texto = String(fecha || "");
-  if (/^\d{4}-\d{2}/.test(texto)) return texto.slice(0, 7);
-  const valor = new Date(texto);
-  if (Number.isNaN(valor.getTime())) return "sin-fecha";
-  const mes = String(valor.getUTCMonth() + 1).padStart(2, "0");
-  return `${valor.getUTCFullYear()}-${mes}`;
-}
-
-function etiquetaMes(clave) {
-  if (clave === "sin-fecha") return "Sin fecha";
-  const [anio, mes] = clave.split("-").map(Number);
-  const valor = new Date(Date.UTC(anio || 0, (mes || 1) - 1, 1));
-  if (Number.isNaN(valor.getTime())) return clave;
-  return new Intl.DateTimeFormat("es-CO", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(valor);
-}
-
-function etiquetaMesCorta(clave) {
-  if (clave === "sin-fecha") return "Sin fecha";
-  const [anio, mes] = String(clave || "").split("-");
-  return mes && anio ? `${mes}/${anio}` : clave;
-}
-
 function perteneceAlBolsillo(movimiento, bolsillo) {
   const bolsilloDestino = movimiento.idBolsillo === bolsillo.idBolsillo;
   const bolsilloOrigen =
@@ -89,7 +64,6 @@ export default function DetalleBolsilloModal({
   const [movimientos, setMovimientos] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
-  const [movimientosModalAbierto, setMovimientosModalAbierto] = useState(false);
   const tipo = String(bolsillo?.tipo || "")
     .trim()
     .toUpperCase();
@@ -136,23 +110,43 @@ export default function DetalleBolsilloModal({
       ),
     [movimientos],
   );
-  const gruposPorMes = useMemo(() => {
-    const mapa = new Map();
-    movimientos.forEach((movimiento) => {
-      const clave = claveMes(movimiento.fecha);
-      if (!mapa.has(clave))
-        mapa.set(clave, {
-          clave,
-          etiqueta: etiquetaMes(clave),
-          total: 0,
-          movimientos: [],
-        });
-      const grupo = mapa.get(clave);
-      grupo.total += Number(movimiento.monto) || 0;
-      grupo.movimientos.push(movimiento);
+  const gruposPorAnioYMes = useMemo(
+    () => agruparPorAnioYMes(movimientos),
+    [movimientos],
+  );
+  const [aniosAbiertos, setAniosAbiertos] = useState(() => new Set());
+  const [mesesAbiertos, setMesesAbiertos] = useState(() => new Set());
+
+  // Abre por defecto el año más reciente y su primer mes
+  useEffect(() => {
+    setAniosAbiertos((actuales) => {
+      if (actuales.size > 0) return actuales;
+      return new Set(
+        gruposPorAnioYMes[0]?.anio ? [gruposPorAnioYMes[0].anio] : [],
+      );
     });
-    return [...mapa.values()].sort((a, b) => b.clave.localeCompare(a.clave));
-  }, [movimientos]);
+    setMesesAbiertos((actuales) => {
+      if (actuales.size > 0) return actuales;
+      const primerMes = gruposPorAnioYMes[0]?.meses?.[0]?.clave;
+      return new Set(primerMes ? [primerMes] : []);
+    });
+  }, [gruposPorAnioYMes]);
+
+  const alternarAnio = (anio) =>
+    setAniosAbiertos((actuales) => {
+      const siguiente = new Set(actuales);
+      if (siguiente.has(anio)) siguiente.delete(anio);
+      else siguiente.add(anio);
+      return siguiente;
+    });
+
+  const alternarMes = (clave) =>
+    setMesesAbiertos((actuales) => {
+      const siguiente = new Set(actuales);
+      if (siguiente.has(clave)) siguiente.delete(clave);
+      else siguiente.add(clave);
+      return siguiente;
+    });
 
   return (
     <>
@@ -184,6 +178,26 @@ export default function DetalleBolsilloModal({
                     </span>
                   </div>
                 </div>
+                {bolsillo.descripcion?.trim() && (
+                  <p className="mt-4 break-words text-sm text-slate-text">
+                    {bolsillo.descripcion}
+                  </p>
+                )}
+                {obtenerOrigenes(bolsillo).length > 0 && (
+                  <ul
+                    className="mt-3 flex flex-wrap gap-2"
+                    aria-label="Orígenes del bolsillo"
+                  >
+                    {obtenerOrigenes(bolsillo).map((origen, indice) => (
+                      <li
+                        key={`${origen}-${indice}`}
+                        className="rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-semibold text-emerald-primary"
+                      >
+                        {origen}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="mt-5">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-text">
                     Monto del bolsillo
@@ -235,40 +249,6 @@ export default function DetalleBolsilloModal({
                       {movimientos.length === 1 ? "" : "s"}
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-text">
-                      Por año y mes
-                    </p>
-                    {gruposPorMes.length === 0 ? (
-                      <p className="text-sm text-slate-text">
-                        Sin movimientos registrados.
-                      </p>
-                    ) : (
-                      <ul
-                        className="max-h-48 space-y-2 overflow-y-auto pr-1"
-                        aria-label="Totales por año y mes"
-                      >
-                        {gruposPorMes.map((grupo) => (
-                          <li
-                            key={grupo.clave}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/70 px-3 py-2"
-                          >
-                            <span className="text-sm text-bg-dark">
-                              <span className="hidden sm:inline">
-                                {grupo.etiqueta}
-                              </span>
-                              <span className="sm:hidden">
-                                {etiquetaMesCorta(grupo.clave)}
-                              </span>
-                            </span>
-                            <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-bg-dark">
-                              {formatoMoneda.format(grupo.total)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
                 </div>
               </section>
 
@@ -285,18 +265,9 @@ export default function DetalleBolsilloModal({
                       Movimientos
                     </h3>
                     <p className="text-xs text-slate-text">
-                      Total de movimientos por año y mes
+                      Total por año y mes
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setMovimientosModalAbierto(true)}
-                    className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary ${esGasto ? "border-red-300/60 text-red-700 hover:bg-red-50" : "border-emerald-primary/40 text-emerald-primary hover:bg-emerald-primary/5"}`}
-                  >
-                    Ver movimientos
-                    {movimientos.length > 0 ? ` (${movimientos.length})` : ""}
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </button>
                 </div>
                 {cargando && (
                   <p
@@ -309,6 +280,146 @@ export default function DetalleBolsilloModal({
                     />
                     Cargando movimientos…
                   </p>
+                )}
+                {!cargando && (
+                  <div className="max-h-96 space-y-2 overflow-y-auto" aria-label="Movimientos agrupados por año y mes">
+                    {gruposPorAnioYMes.length === 0 ? (
+                      <p className="rounded-xl border border-border-line/40 p-4 text-sm text-slate-text">
+                        Sin movimientos registrados.
+                      </p>
+                    ) : (
+                      gruposPorAnioYMes.map((grupoAnio) => {
+                        const anioAbierto = aniosAbiertos.has(grupoAnio.anio);
+                        const cantidadAnio = grupoAnio.meses.reduce(
+                          (total, mes) => total + mes.movimientos.length,
+                          0,
+                        );
+                        return (
+                          <div
+                            key={grupoAnio.anio}
+                            className="overflow-hidden rounded-xl border border-border-line/40 bg-bg-cream/60"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => alternarAnio(grupoAnio.anio)}
+                              aria-expanded={anioAbierto}
+                              className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-bg-cream/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                            >
+                              <span className="flex items-center gap-2 text-sm font-semibold text-bg-dark">
+                                <ChevronDown
+                                  aria-hidden="true"
+                                  className={`h-4 w-4 text-slate-text transition-transform ${anioAbierto ? "" : "-rotate-90"}`}
+                                />
+                                <span>
+                                  {grupoAnio.anio === "sin-fecha"
+                                    ? "Sin fecha"
+                                    : grupoAnio.anio}{" "}
+                                  <span className="font-normal text-slate-text">
+                                    · {cantidadAnio} movimiento
+                                    {cantidadAnio === 1 ? "" : "s"}
+                                  </span>
+                                </span>
+                              </span>
+                              <span className="text-sm font-semibold tabular-nums text-bg-dark">
+                                {formatoMoneda.format(grupoAnio.total)}
+                              </span>
+                            </button>
+                            <div
+                              className={
+                                anioAbierto
+                                  ? "divide-y divide-border-line/40 border-t border-border-line/40"
+                                  : "hidden"
+                              }
+                            >
+                              {grupoAnio.meses.map((grupo) => {
+                                const mesAbierto = mesesAbiertos.has(
+                                  grupo.clave,
+                                );
+                                return (
+                                  <section key={grupo.clave}>
+                                    <button
+                                      type="button"
+                                      onClick={() => alternarMes(grupo.clave)}
+                                      aria-expanded={mesAbierto}
+                                      className="flex w-full items-center justify-between gap-3 bg-bg-cream/40 px-3 py-2 text-left transition-colors hover:bg-bg-cream/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                                    >
+                                      <span className="flex items-center gap-2 text-sm font-medium text-bg-dark">
+                                        <ChevronDown
+                                          aria-hidden="true"
+                                          className={`h-4 w-4 text-slate-text transition-transform ${mesAbierto ? "" : "-rotate-90"}`}
+                                        />
+                                        <span className="hidden sm:inline">
+                                          {grupo.etiqueta}
+                                        </span>
+                                        <span className="sm:hidden">
+                                          {etiquetaMesMovimientoCorta(
+                                            grupo.clave,
+                                          )}
+                                        </span>
+                                        <span className="font-normal text-slate-text">
+                                          · {grupo.movimientos.length}mov
+                                        </span>
+                                      </span>
+                                      <span className="text-xs font-semibold tabular-nums text-slate-text">
+                                        Total: {formatoMoneda.format(grupo.total)}
+                                      </span>
+                                    </button>
+                                    <ul
+                                      className={
+                                        mesAbierto
+                                          ? "divide-y divide-border-line/40 border-t border-border-line/40 bg-white/60"
+                                          : "hidden"
+                                      }
+                                    >
+                                      {grupo.movimientos.map((movimiento) => (
+                                        <li
+                                          key={movimiento.idMovimiento}
+                                          className="flex items-center gap-3 py-2 pl-11 pr-3"
+                                        >
+                                          <span
+                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${esGasto ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
+                                          >
+                                            <Wallet
+                                              className="h-4 w-4"
+                                              aria-hidden="true"
+                                            />
+                                          </span>
+                                          <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-bg-dark">
+                                              {movimiento.concepto?.trim() ||
+                                                movimiento.categoria ||
+                                                "Movimiento"}
+                                            </p>
+                                            <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-text">
+                                              <span className="truncate">
+                                                {movimiento.origenNombre ||
+                                                  "Movimiento del bolsillo"}
+                                              </span>
+                                              <time
+                                                className="shrink-0 whitespace-nowrap"
+                                                dateTime={movimiento.fecha}
+                                              >
+                                                · {fechaLegible(movimiento.fecha)}
+                                              </time>
+                                            </div>
+                                          </div>
+                                          <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-bg-dark">
+                                            {formatoMoneda.format(
+                                              Number(movimiento.monto) || 0,
+                                            )}
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </section>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 )}
                 <AlertaGlobal
                   tipo="error"
@@ -346,13 +457,6 @@ export default function DetalleBolsilloModal({
           </div>
         )}
       </ModalDetalleRegistro>
-      <MovimientosBolsilloModal
-        abierto={movimientosModalAbierto}
-        nombre={bolsillo?.nombre}
-        tipo={tipo}
-        gruposPorMes={gruposPorMes}
-        alCerrar={() => setMovimientosModalAbierto(false)}
-      />
     </>
   );
 }

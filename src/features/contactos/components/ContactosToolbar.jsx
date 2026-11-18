@@ -65,8 +65,8 @@ export default function ContactosToolbar({
           Organiza tus contactos relacionados con finanzas.
         </p>
       </div>
-      <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-        <label className="relative hidden min-w-0 sm:block">
+      <div className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto sm:w-auto sm:flex-none">
+        <label className="relative hidden min-w-0 sm:flex sm:items-center">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-text"
             aria-hidden="true"
@@ -77,7 +77,7 @@ export default function ContactosToolbar({
             onChange={(evento) => alCambiarBusqueda(evento.target.value)}
             placeholder="Buscar contactos"
             aria-label="Buscar contactos por nombre, correo, teléfono, cargo o empresa"
-            className="min-h-10 w-56 rounded-lg border border-border-line bg-bg-cream pl-9 pr-3 text-sm text-bg-dark placeholder:text-slate-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            className="min-h-10 w-full rounded-lg border border-border-line bg-bg-cream pl-9 pr-3 text-sm text-bg-dark placeholder:text-slate-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary sm:w-40 lg:w-56"
           />
         </label>
         <button

@@ -163,8 +163,12 @@ export default function DashboardDrawer({
             />
           </div>
 
-          {/* Contenido desplazable: ocupa el resto de la altura completa del panel (RF-22) */}
-          <div className="min-h-0 flex-1 overflow-y-auto pb-4">{children}</div>
+          {/* Contenido desplazable: ocupa el resto de la altura completa del panel (RF-22);
+              columna flex para que el nav crezca y el avatar quede anclado al fondo del menú
+              (por encima del alto de la barra inferior móvil, publicado como --bottom-nav-alto) */}
+          <div className="min-h-0 flex-1 flex flex-col overflow-y-auto pb-[max(1rem,var(--bottom-nav-alto,0px))]">
+            {children}
+          </div>
         </motion.div>
       </FocusTrap>
     </AnimatePresence>

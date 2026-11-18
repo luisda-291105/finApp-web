@@ -64,12 +64,21 @@ export default function TodasSuscripcionesSection({
   formatoMoneda,
   formatoFecha,
 }) {
-  const total =
-    suscripcionesGmail.length + manuales.length + recurrentes.length;
   const cargando = cargandoGmail || cargandoManuales || cargandoRecurrentes;
   const [bloquesColapsados, setBloquesColapsados] = useState(
     leerBloquesColapsados,
   );
+
+  // Un cobro tomados de una suscripción ya se muestra en su propia tarjeta.
+  const cobrosSinDuplicar = useMemo(() => {
+    const yaListadas = new Set([
+      ...manuales.map((item) => String(item.id || "")),
+      ...suscripcionesGmail.map((item) =>
+        String(item.idSuscripcion || item.id || ""),
+      ),
+    ]);
+    return recurrentes.filter((item) => !yaListadas.has(String(item.id || "")));
+  }, [manuales, suscripcionesGmail, recurrentes]);
 
   const alternarBloque = (valor) => {
     setBloquesColapsados((actuales) => {
@@ -102,7 +111,7 @@ export default function TodasSuscripcionesSection({
         _prioridad: item.prioridad || "",
         _importancia: item.importancia || "",
       })),
-      ...recurrentes.map((item) => ({
+      ...cobrosSinDuplicar.map((item) => ({
         ...item,
         fuente: "recurrente",
         prioridad: item.prioridad || "",
@@ -119,7 +128,10 @@ export default function TodasSuscripcionesSection({
           (a, b) => rangoNivel(a._importancia) - rangoNivel(b._importancia),
         ),
     })).filter((grupo) => grupo.items.length > 0);
-  }, [manuales, suscripcionesGmail, recurrentes]);
+  }, [manuales, suscripcionesGmail, cobrosSinDuplicar]);
+
+  const total =
+    suscripcionesGmail.length + manuales.length + cobrosSinDuplicar.length;
 
   return (
     <section aria-labelledby="todas-suscripciones-titulo" className="space-y-4">

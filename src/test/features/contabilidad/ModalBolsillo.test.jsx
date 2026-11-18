@@ -68,6 +68,8 @@ describe("ModalBolsillo", () => {
       tipo: "AHORRO",
       montoObjetivo: 0,
       estado: true,
+      descripcion: null,
+      origenes: [],
     });
   });
 });
