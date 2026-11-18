@@ -167,6 +167,8 @@ describe("PaginaDashboardContabilidad", () => {
     expect(within(cardFijos).getByText("Gastos")).toBeInTheDocument();
     expect(within(cardFijos).getByText(/12\.000/)).toBeInTheDocument();
     expect(within(cardFijos).getByText(/5\.000/)).toBeInTheDocument();
+    expect(within(cardFijos).getByText("Balance del mes")).toBeInTheDocument();
+    expect(within(cardFijos).getByText(/7\.000/)).toBeInTheDocument();
     expect(within(rejilla).queryAllByText("Fijo")).toHaveLength(0);
 
     await usuario.click(
@@ -185,6 +187,28 @@ describe("PaginaDashboardContabilidad", () => {
     expect(
       await within(movimientos).findByText("Gasolina"),
     ).toBeInTheDocument();
+  });
+
+  it("muestra el balance del mes como gastos negativos cuando superan a los ingresos", async () => {
+    obtenerResumenGlobal.mockResolvedValue({
+      ingresos: 4000,
+      gastos: 9500,
+      ahorros: 0,
+      transferencias: 0,
+      saldoAhorros: 0,
+      porRevisar: 0,
+    });
+    renderPagina();
+    const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
+    const cardFijos = within(rejilla).getByRole("article", {
+      name: "Bolsillos fijos",
+    });
+    expect(within(cardFijos).getByText("Balance del mes")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(cardFijos).getByTestId("balance-mes")).toHaveTextContent(
+        "-$ 5.500",
+      ),
+    );
   });
 
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {

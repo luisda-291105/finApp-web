@@ -1,7 +1,7 @@
 /**
  * @uso        Card única dividida de los bolsillos fijos «Ingresos» y «Gastos» del feature contabilidad
  * @funciones  BolsillosFijosCard({ fijos, resumenMensual, cargando, alDetalle })
- * @datos      Recibe los bolsillos fijos y el resumen mensual; no consulta servicios
+ * @datos      Recibe los bolsillos fijos y el resumen mensual; calcula el balance del mes
  * @eventos    alDetalle(bolsillo): cada mitad abre el detalle del bolsillo correspondiente
  * @estados    Ninguno
  * @usadoPor   ContabilidadPage
@@ -36,6 +36,10 @@ export default function BolsillosFijosCard({
   cargando = false,
   alDetalle,
 }) {
+  const ingresos = Number((resumenMensual || {}).ingresos) || 0;
+  const gastos = Number((resumenMensual || {}).gastos) || 0;
+  const balance = ingresos - gastos;
+  const balanceNegativo = balance < 0;
   return (
     <Card
       como="article"
@@ -85,6 +89,18 @@ export default function BolsillosFijosCard({
             </button>
           );
         })}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/60 px-3 py-2">
+        <span className="text-sm font-medium text-slate-text">
+          Balance del mes
+        </span>
+        <span
+          className={`font-display text-base font-semibold tabular-nums sm:text-lg ${balanceNegativo ? "text-cat-expense" : "text-emerald-primary"}`}
+          data-testid="balance-mes"
+          aria-label={`Balance del mes: ${formatoMoneda.format(balance)}`}
+        >
+          {cargando ? "—" : formatoMoneda.format(balance)}
+        </span>
       </div>
     </Card>
   );
