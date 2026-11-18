@@ -38,6 +38,14 @@ vi.mock("../../features/contabilidad/services/movimientosService", () => ({
 vi.mock("../../features/tarjetas/services/tarjetasService", () => ({
   obtenerTarjetasPorUsuario: vi.fn().mockResolvedValue([]),
 }));
+vi.mock("../../features/suscripciones/services/suscripcionesServicio", () => ({
+  sincronizarOrigenesMovimientosGmail: vi.fn().mockResolvedValue({
+    total: 0,
+    actualizados: 0,
+    errores: 0,
+    detalles: [],
+  }),
+}));
 
 const BOLSILLOS = [
   {

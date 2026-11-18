@@ -6,7 +6,7 @@
  * @estados    Selecciones de detalle, revisión y refs de foco
  * @usadoPor   App.jsx mediante la API pública de features/contabilidad
  */
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
 import RespuestaMovimiento from "../components/feedback/RespuestaMovimiento";
 import ContabilidadHeader from "../components/headers/ContabilidadHeader";
@@ -22,6 +22,7 @@ import {
   agregarSaldoDisponible,
   crearFiltrosMovimiento,
 } from "../utils/contabilidadHelpers";
+import { sincronizarOrigenesMovimientosGmail } from "../../suscripciones/services/suscripcionesServicio";
 import { AlertaGlobal } from "../../../features/error";
 
 /** Página de bolsillos persistidos y movimientos contables. */
@@ -69,6 +70,48 @@ export default function ContabilidadPage() {
     confirmarEliminarMovimiento,
     recargarMovimientos,
   } = useContabilidad();
+
+  const sincronizacionHechaRef = useRef(false);
+  const [sincronizandoApodos, setSincronizandoApodos] = useState(false);
+
+  useEffect(() => {
+    let vigente = true;
+    if (
+      sincronizacionHechaRef.current ||
+      !usuario?.idUsuario ||
+      cargandoMovimientos ||
+      movimientos.length === 0
+    )
+      return () => {
+        vigente = false;
+      };
+    const ejecutar = async () => {
+      sincronizacionHechaRef.current = true;
+      setSincronizandoApodos(true);
+      try {
+        const resultado = await sincronizarOrigenesMovimientosGmail();
+        if (vigente && resultado.actualizados > 0) {
+          setRespuesta({
+            tipo: "exito",
+            mensaje: `${resultado.actualizados} movimiento(s) actualizado(s) con el apodo de la suscripción como origen.`,
+          });
+          recargarMovimientos();
+        }
+      } catch {
+        if (vigente)
+          setRespuesta({
+            tipo: "error",
+            mensaje: "No se pudieron sincronizar los orígenes de las suscripciones.",
+          });
+      } finally {
+        if (vigente) setSincronizandoApodos(false);
+      }
+    };
+    ejecutar();
+    return () => {
+      vigente = false;
+    };
+  }, [usuario?.idUsuario, cargandoMovimientos, movimientos.length, recargarMovimientos]);
 
   const bolsillosActivos = bolsillos.filter(
     (bolsillo) => bolsillo.estado !== false,

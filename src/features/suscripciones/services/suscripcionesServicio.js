@@ -1,10 +1,10 @@
 /**
  * @uso        Acceso al CRUD de suscripciones del usuario activo y a sus ajustes de organización
- * @funciones  listarSuscripcionesManuales, crearSuscripcionManual, actualizarSuscripcionManual, cambiarEstadoSuscripcionManual, eliminarSuscripcionManual, actualizarAjustesSuscripcion
+ * @funciones  listarSuscripcionesManuales, crearSuscripcionManual, actualizarSuscripcionManual, cambiarEstadoSuscripcionManual, eliminarSuscripcionManual, actualizarAjustesSuscripcion, listarCobrosRecurrentes
  * @datos      Envía nombre, monto, fecha de cobro, categoría, importancia, prioridad, apodo y activa; normaliza la respuesta del backend
  * @eventos    Ninguno
  * @estados    Ninguno
- * @usadoPor   SuscripcionesPage, DetalleSuscripcionModal
+ * @usadoPor   SuscripcionesPage, DetalleSuscripcionModal, useSuscripcionesRecurrentes
  */
 import { getEndpoint } from "../../../config/api.config";
 import {
@@ -14,8 +14,16 @@ import {
   obtener,
   patch,
 } from "../../../services/httpServicio";
+import { listarSuscripcionesGmail } from "../../../services/gmailServicio";
+import { listarMovimientos, actualizarMovimiento } from "../../contabilidad/services/movimientosService";
 
 const ruta = getEndpoint("suscripcion.base");
+const rutaRecurrentes = getEndpoint("suscripcion.recurrentes");
+
+const listaDeMovimientos = (respuesta) => {
+  if (Array.isArray(respuesta)) return respuesta;
+  return respuesta?.datos || respuesta?.data || respuesta?.content || [];
+};
 
 const extraerLista = (respuesta) => {
   if (Array.isArray(respuesta)) return respuesta;
@@ -161,4 +169,92 @@ export async function cambiarEstadoSuscripcionManual(id, activa) {
 /** Elimina una suscripción manual del usuario activo. */
 export function eliminarSuscripcionManual(id) {
   return eliminar(`${ruta}/${encodeURIComponent(String(id))}`);
+}
+
+/** Normaliza un cobro recurrente (de una suscripción o de un movimiento) al modelo de la interfaz. */
+export function normalizarCobroRecurrente(cobro = {}) {
+  const intervalo = Number(cobro.intervaloDias);
+  return {
+    id: String(cobro.id ?? ""),
+    nombre: String(cobro.nombre ?? ""),
+    categoria: String(cobro.categoria ?? ""),
+    monto: numeroSeguro(cobro.monto),
+    frecuencia: String(cobro.frecuencia ?? ""),
+    intervaloDias: Number.isFinite(intervalo) && intervalo > 0 ? intervalo : 30,
+    ultimoCobro: fechaSeguro(cobro.ultimoCobro),
+    proximoCobro: fechaSeguro(cobro.proximoCobro),
+    cobrosDetectados: Number(cobro.cobrosDetectados) || 0,
+    origen: String(cobro.origen ?? ""),
+  };
+}
+
+/**
+ * Lista los cobros recurrentes del usuario: los de sus suscripciones activas
+ * que tienen monto y fecha de cobro.
+ */
+export async function listarCobrosRecurrentes() {
+  const respuesta = await obtener(rutaRecurrentes);
+  return extraerLista(respuesta).map(normalizarCobroRecurrente);
+}
+
+/**
+ * Sincroniza el origen (origenNombre) de los movimientos GMAIL ya registrados
+ * en Contabilidad usando el apodo de cada suscripción.
+ * Solo actualiza los movimientos que todavía usan el remitente/correo en lugar
+ * del apodo (ej. "Alertas y Notificaciones" -> "bamcolombia").
+ * @returns {Promise<{total:number,actualizados:number,errores:number,detalles:Array}>}
+ */
+export async function sincronizarOrigenesMovimientosGmail() {
+  // 1. Suscripciones Gmail con apodo, cuenta y remitente.
+  const respuesta = await listarSuscripcionesGmail();
+  const suscripciones = (Array.isArray(respuesta?.suscripciones)
+    ? respuesta.suscripciones
+    : []
+  ).map((s) => ({
+    idSuscripcion: s.idSuscripcion ?? s.id ?? "",
+    cuentaGmailId: String(s.cuentaGmailId ?? ""),
+    correoRemitente: String(s.correoRemitente ?? ""),
+    apodo: String(s.apodo ?? "").trim(),
+  }));
+
+  const indiceApodo = new Map();
+  for (const s of suscripciones) {
+    if (!s.apodo) continue;
+    const clave = `${s.cuentaGmailId}|${s.correoRemitente}`;
+    if (!indiceApodo.has(clave)) indiceApodo.set(clave, s.apodo);
+  }
+
+  // 2. Movimientos GMAIL existentes en Contabilidad.
+  const respuestaMovimientos = await listarMovimientos(null, "TODOS");
+  const movimientos = listaDeMovimientos(respuestaMovimientos).filter(
+    (m) => String(m.origenTipo || "").toUpperCase() === "GMAIL",
+  );
+
+  // 3. Actualizar los que coincidan con una suscripción y tengan apodo distinto.
+  let actualizados = 0;
+  let errores = 0;
+  const detalles = [];
+  for (const movimiento of movimientos) {
+    const cuentaGmailId = String(movimiento.origenId || "").split(":")[0];
+    const correoRemitente =
+      movimiento.origenNombre || movimiento.remitente || "";
+    const clave = `${cuentaGmailId}|${correoRemitente}`;
+    const apodo = indiceApodo.get(clave);
+    if (!apodo || apodo === correoRemitente) continue;
+    try {
+      await actualizarMovimiento(movimiento.idMovimiento, {
+        origenNombre: apodo,
+      });
+      actualizados++;
+      detalles.push({
+        idMovimiento: movimiento.idMovimiento,
+        concepto: movimiento.concepto || movimiento.categoria,
+        origenAnterior: correoRemitente,
+        apodo,
+      });
+    } catch {
+      errores++;
+    }
+  }
+  return { total: movimientos.length, actualizados, errores, detalles };
 }
