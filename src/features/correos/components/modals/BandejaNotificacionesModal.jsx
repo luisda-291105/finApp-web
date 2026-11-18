@@ -1,14 +1,15 @@
 /**
  * @uso        Bandeja modal de notificaciones de movimientos y sincronización Gmail
- * @funciones  BandejaNotificacionesModal({ abierto, alCerrar, triggerRef, notificaciones, alMarcarTodasLeidas, alLimpiar, sincronizando, errorSincronizacion })
+ * @funciones  BandejaNotificacionesModal({ abierto, alCerrar, triggerRef, notificaciones, alMarcarTodasLeidas, alLimpiar, sincronizando, errorSincronizacion, estadoCorreos })
  * @datos      Lista de notificaciones persistidas con asunto, fecha, origen, cuenta y estado de lectura
  * @eventos    Cerrar modal, marcar todas como leídas, limpiar bandeja y abrir detalle de notificación
  * @estados    notificacionSeleccionada (notificación abierta en detalle)
  * @usadoPor   CorreosPage
  */
 import { useRef, useState } from "react";
-import { Bell, CheckCheck, Trash2 } from "lucide-react";
+import { Bell, CheckCheck, RefreshCw, Trash2 } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
+import { fechaLegible } from "../../utils/correoHelpers";
 
 function formatearFecha(valor) {
   if (!valor) return "";
@@ -32,6 +33,7 @@ export default function BandejaNotificacionesModal({
   alLimpiar,
   sincronizando,
   errorSincronizacion,
+  estadoCorreos,
 }) {
   const [notificacionSeleccionada, setNotificacionSeleccionada] = useState(null);
   const triggerDetalleRef = useRef(null);
@@ -78,6 +80,30 @@ export default function BandejaNotificacionesModal({
               </button>
             </div>
           </div>
+
+          {estadoCorreos && (
+            <div className="rounded-xl border border-border-line/70 bg-bg-cream/60 px-4 py-3" aria-live="polite">
+              {estadoCorreos.actualizando ? (
+                <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-primary">
+                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Actualizando correos… {estadoCorreos.enEspera + estadoCorreos.procesando} en espera
+                </p>
+              ) : (
+                <p className="text-sm font-medium text-bg-dark">Correos al día.</p>
+              )}
+              {estadoCorreos.errores > 0 && (
+                <p className="mt-1 text-sm text-red-700">
+                  {estadoCorreos.errores} correo{estadoCorreos.errores === 1 ? "" : "s"} con error de sincronización.
+                  {estadoCorreos.ultimoError ? ` ${estadoCorreos.ultimoError}` : ""}
+                </p>
+              )}
+              {estadoCorreos.ultimaSincronizacion && (
+                <p className="mt-1 text-xs text-slate-text">
+                  Última sincronización Gmail: {fechaLegible(estadoCorreos.ultimaSincronizacion)}
+                </p>
+              )}
+            </div>
+          )}
 
           {sincronizando && (
             <p role="status" className="text-sm text-slate-text">Analizando correos financieros…</p>
