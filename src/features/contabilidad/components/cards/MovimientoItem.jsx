@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, PiggyBank } from "lucide-react";
 import {
   entidadMovimiento,
   fechaMovimiento,
@@ -10,7 +10,11 @@ import {
 export default function MovimientoItem({ movimiento, onDetalle }) {
   const tipo = String(movimiento.tipo || "").toUpperCase();
   const ingreso = tipo === "INGRESO";
-  const IconoMovimiento = ingreso ? ArrowUpRight : ArrowDownRight;
+  const IconoMovimiento = ingreso
+    ? ArrowUpRight
+    : tipo === "AHORRO"
+      ? PiggyBank
+      : ArrowDownRight;
   const tono = ingreso
     ? "text-cat-income"
     : tipo === "AHORRO"

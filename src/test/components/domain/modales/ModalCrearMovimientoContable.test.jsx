@@ -1,5 +1,6 @@
 import {
   cleanup,
+  fireEvent,
   render,
   screen,
   waitFor,
@@ -205,5 +206,33 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
     expect(
       within(destino).getByRole("option", { name: /Gastos diarios/ }),
     ).toBeInTheDocument();
+  });
+
+  it("abre el calendario personalizado al pulsar el campo de fecha", async () => {
+    const usuario = userEvent.setup();
+    renderModal();
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    const fecha = within(dialogo).getByLabelText("Fecha");
+    await usuario.click(fecha);
+    expect(
+      within(dialogo).getByRole("dialog", { name: "Elegir fecha" }),
+    ).toBeInTheDocument();
+  });
+
+  it("Escape en el calendario lo cierra sin cerrar el modal y devuelve el foco al campo", async () => {
+    const usuario = userEvent.setup();
+    renderModal();
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    const fecha = within(dialogo).getByLabelText("Fecha");
+    await usuario.click(fecha);
+    const dia = within(dialogo).getByRole("button", {
+      name: /Miércoles, 18 de noviembre de 2026/i,
+    });
+    fireEvent.keyDown(dia, { key: "Escape" });
+    expect(
+      within(dialogo).queryByRole("dialog", { name: "Elegir fecha" }),
+    ).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Nuevo movimiento" })).toBeInTheDocument();
+    expect(fecha).toHaveFocus();
   });
 });

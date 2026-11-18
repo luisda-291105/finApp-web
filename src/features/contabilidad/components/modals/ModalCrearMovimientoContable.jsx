@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import FocusTrap from "focus-trap-react";
-import { BotonCerrar } from "../../../../components/ui";
+import { BotonCerrar, SelectorFecha } from "../../../../components/ui";
 import RespuestaMovimiento from "../feedback/RespuestaMovimiento";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
@@ -289,20 +289,19 @@ export default function ModalCrearMovimientoContable({
                   </p>
                 )}
               </div>
-              <label
-                className="block text-sm font-medium"
-                htmlFor="nuevo-movimiento-fecha"
-              >
-                Fecha
-                <input
+              <div>
+                <label
+                  className="block text-sm font-medium"
+                  htmlFor="nuevo-movimiento-fecha"
+                >
+                  Fecha
+                </label>
+                <SelectorFecha
                   id="nuevo-movimiento-fecha"
-                  required
-                  type="date"
                   value={valores.fecha}
-                  onChange={(evento) => cambiar("fecha", evento.target.value)}
-                  className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3"
+                  onChange={(valor) => cambiar("fecha", valor)}
                 />
-              </label>
+              </div>
               <label
                 className="block text-sm font-medium"
                 htmlFor="nuevo-movimiento-monto"
