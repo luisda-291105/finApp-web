@@ -42,8 +42,12 @@ export default function DetalleMovimientoModal({
       ? "text-emerald-primary"
       : "text-cat-expense";
   const Icono = ingreso ? ArrowUpRight : ArrowDownRight;
+  const esGmail = String(movimiento?.origenTipo || "").toUpperCase() === "GMAIL";
   const nombre =
-    movimiento?.concepto?.trim() || movimiento?.categoria || "Movimiento";
+    (esGmail && movimiento?.origenNombre?.trim()) ||
+    movimiento?.concepto?.trim() ||
+    movimiento?.categoria ||
+    "Movimiento";
 
   return (
     <ModalDetalleRegistro
@@ -140,6 +144,45 @@ export default function DetalleMovimientoModal({
               </dd>
             </div>
           </dl>
+          {/* Datos completos: parámetros del registro sin truncar (texto completo) */}
+          <details className="rounded-xl border border-border-line/40 p-3" open>
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-text">
+              Datos completos
+            </summary>
+            <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                ["Id movimiento", movimiento.idMovimiento, true],
+                ["Id bolsillo", movimiento.idBolsillo, true],
+                ["Bolsillo", movimiento.nombreBolsillo ||
+                  movimiento.bolsillo?.nombre],
+                ["Tipo", tipo],
+                ["Categoría", movimiento.categoria],
+                ["Concepto", movimiento.concepto],
+                [
+                  "Monto",
+                  `${movimiento.monto ? formatoMoneda.format(Number(movimiento.monto)) : "Sin monto"}`,
+                ],
+                ["Fecha", fechaLegible(movimiento.fecha)],
+                ["Origen tipo", movimiento.origenTipo],
+                ["Origen id", movimiento.origenId, true],
+                ["Origen nombre", movimiento.origenNombre],
+                ["Estado de revisión", movimiento.estadoRevision],
+              ].map(([etiqueta, valor, mono]) => (
+                <div key={etiqueta} className="min-w-0 rounded-lg bg-bg-cream/60 p-2">
+                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-text">
+                    {etiqueta}
+                  </dt>
+                  <dd
+                    className={`mt-0.5 break-words whitespace-pre-wrap text-xs leading-snug text-bg-dark ${
+                      mono ? "break-all font-mono" : ""
+                    }`}
+                  >
+                    {valor || "No especificado"}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </details>
           {movimiento.descripcion && (
             <p className="rounded-xl border border-border-line/40 p-3 text-sm text-slate-text">
               <span className="font-medium text-bg-dark">Descripción: </span>
