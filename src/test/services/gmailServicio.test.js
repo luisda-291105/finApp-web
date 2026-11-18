@@ -94,10 +94,12 @@ describe("gmailServicio", () => {
 
   it("limpia la sesión de la pestaña cuando el backend rechaza una consulta Gmail con 401", async () => {
     const notificarSesion = vi.spyOn(window, "dispatchEvent");
+    const cuerpo = { message: "No hay una sesión activa." };
     fetchMock.mockResolvedValue({
       ok: false,
       status: 401,
-      json: async () => ({ message: "No hay una sesión activa." }),
+      json: async () => cuerpo,
+      text: async () => JSON.stringify(cuerpo),
     });
 
     await expect(obtenerCorreosGmail("cuenta-1", [])).rejects.toThrow(
@@ -112,19 +114,52 @@ describe("gmailServicio", () => {
 
   it("no cierra la sesión si el 401 indica que Gmail necesita reconectarse", async () => {
     const notificarSesion = vi.spyOn(window, "dispatchEvent");
+    const cuerpo = {
+      message: "Google revocó o venció esta autorización. Conecta de nuevo la cuenta.",
+      requires_reconnect: true,
+    };
     fetchMock.mockResolvedValue({
       ok: false,
       status: 401,
-      json: async () => ({
-        message: "Google revocó o venció esta autorización. Conecta de nuevo la cuenta.",
-        requires_reconnect: true,
-      }),
+      json: async () => cuerpo,
+      text: async () => JSON.stringify(cuerpo),
     });
 
     await expect(obtenerCorreosGmail("cuenta-1", [])).rejects.toThrow(
       "Google revocó o venció esta autorización.",
     );
 
+    expect(notificarSesion).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "finapp:sesion-requerida" }),
+    );
+    notificarSesion.mockRestore();
+  });
+
+  it("renueva la sesión y reintenta una sola vez cuando el access de FinApp venció", async () => {
+    const notificarSesion = vi.spyOn(window, "dispatchEvent");
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ message: "No hay una sesión activa." }),
+        text: async () =>
+          JSON.stringify({ message: "No hay una sesión activa." }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 200 })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => [],
+        text: async () => "[]",
+      });
+
+    await expect(obtenerCorreosGmail("cuenta-1", [])).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[1][0]).toContain("/usuario/refresh");
+    expect(fetchMock.mock.calls[2][0]).toContain(
+      "/api/gmail/cuentas/cuenta-1/mensajes",
+    );
     expect(notificarSesion).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "finapp:sesion-requerida" }),
     );

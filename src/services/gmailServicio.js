@@ -7,6 +7,7 @@
  * @usadoPor   GmailContext y features/configuracion, features/contactos, features/correos
  */
 import { getEndpoint } from "../config/api.config";
+import { renovarSesion } from "./httpServicio";
 
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const ALCANCE_GMAIL_LECTURA = "https://www.googleapis.com/auth/gmail.readonly";
@@ -134,15 +135,28 @@ export async function iniciarCodigoAutorizacionGmail({
   });
 }
 
-async function solicitarBackend(url, opciones = {}) {
+async function solicitarBackend(url, opciones = {}, reintentada = false) {
   const respuesta = await fetch(url, { credentials: "include", ...opciones });
   const datos = await respuesta.json().catch(() => ({}));
+  let renovacionFallida = false;
+  // El access de FinApp dura 15 min: si venció, se renueva una sola vez y se
+  // reintenta. Un 401 con requires_reconnect viene de Google, no de la sesión,
+  // así que no se intenta renovar.
+  if (respuesta.status === 401 && !datos?.requires_reconnect && !reintentada) {
+    try {
+      await renovarSesion();
+      return await solicitarBackend(url, opciones, true);
+    } catch {
+      // `renovarSesion` ya avisó a la UI; aquí solo se limpia la caché.
+      renovacionFallida = true;
+    }
+  }
   if (respuesta.status === 401) {
     cacheConsultas.clear();
     cacheContenido.clear();
     // Un 401 con requires_reconnect viene de Google, no de la sesión FinApp:
     // se limpia la caché, pero no se cierra la sesión del usuario.
-    if (!datos?.requires_reconnect) {
+    if (!datos?.requires_reconnect && !renovacionFallida) {
       window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
     }
   }
