@@ -1,7 +1,7 @@
 /**
  * @uso        Organismo que compone la landing pública completa (Header + Regla + Hero + StatsBar + Features + HowItWorks + CtaSection + Footer)
- * @funciones  LandingLayout({ alAbrirAuth, children })
- * @datos      Recibe callback alAbrirAuth para propagar a Header, Hero, CtaSection; children para contenido flotante (AuthModal, botón ayuda); comparte seccionActiva entre Regla y Header
+ * @funciones  LandingLayout({ alAbrirAuth, ocultarRegla, children })
+ * @datos      Recibe callback alAbrirAuth para propagar a Header, Hero, CtaSection; ocultarRegla desmonta Regla con el modal abierto; children para contenido flotante (AuthModal, botón ayuda); comparte seccionActiva entre Regla y Header
  * @eventos    alCambiarSeccion desde Regla (scroll-spy)
  * @estados    seccionActiva (string, título de la sección posicionada)
  * @usadoPor   LandingPage
@@ -23,11 +23,13 @@ import Footer from "../sections/Footer";
  * @param {Object} props
  * @param {(modo: 'login' | 'registro') => void} props.alAbrirAuth - Callback para abrir modal de autenticación
  * @param {boolean} [props.ocultarHeader=false] - Oculta el header mientras el modal de acceso está abierto
+ * @param {boolean} [props.ocultarRegla=false] - Oculta la regla mientras un modal de la landing está abierto (su capa es superior a la de los modales)
  * @param {React.ReactNode} [props.children] - Contenido extra opcional (p.ej. AuthModal, botón flotante)
  */
 export default function LandingLayout({
   alAbrirAuth,
   ocultarHeader = false,
+  ocultarRegla = false,
   children,
 }) {
   const [seccionActiva, setSeccionActiva] = useState("Inicio");
@@ -46,7 +48,7 @@ export default function LandingLayout({
       />
 
       {/* Regla de medición al borde derecho, centrada verticalmente */}
-      <Regla alCambiarSeccion={setSeccionActiva} />
+      <Regla alCambiarSeccion={setSeccionActiva} oculta={ocultarRegla} />
 
       <main className="flex-1">
         {/* Hero editorial oscuro */}

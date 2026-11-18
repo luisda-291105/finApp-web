@@ -1,7 +1,7 @@
 /**
- * @uso        Riel de medición de la landing: nombres de sección a la derecha, centrados verticalmente, sin fondo; resalta la sección próxima y oculta la posicionada
- * @funciones  Regla({ alCambiarSeccion })
- * @datos      SECCIONES (id, titulo, tono); una entrada (botón) por sección, espaciadas de forma pareja
+ * @uso        Riel de medición de la landing: nombres de sección a la derecha, centrados verticalmente, sin fondo; resalta la sección próxima, oculta la posicionada y se desmonta mientras hay un modal abierto
+ * @funciones  Regla({ alCambiarSeccion, oculta })
+ * @datos      SECCIONES (id, titulo, tono); una entrada (botón) por sección, espaciadas de forma pareja; oculta (boolean) desmonta el riel sin perder el scroll-spy al volver
  * @eventos    scroll/resize/load en window (opacidad por geometría gaussiana); click en una marca (scrollIntoView); alCambiarSeccion(titulo) al cambiar la sección posicionada
  * @estados    data-tone del nav vía ref (light/dark según la sección); activo (number, índice posicionado, oculto del riel); refs a etiquetas y botones — opacidad vía refs en scroll
  * @usadoPor   LandingLayout
@@ -32,8 +32,15 @@ const S = SECCIONES.length;
  * Riel fijo en el borde derecho, centrado verticalmente y sin fondo. Lista los nombres de las
  * secciones: la entrada de la sección posicionada se oculta del riel (se muestra en el header) y
  * el resto aparece atenuada, con la proximidad a la posición de lectura como resalte. Click navega.
+ * Con `oculta` el riel se desmonta (mismo criterio que el header) para no flotar sobre los modales
+ * de acceso o de ayuda, cuya capa es inferior a la del riel.
+ * @param {Object} props
+ * @param {(titulo: string) => void} [props.alCambiarSeccion] - Avisa del título de la sección posicionada
+ * @param {boolean} [props.oculta=false] - Desmonta el riel mientras un modal de la landing está abierto
  */
-export default function Regla({ alCambiarSeccion }) {
+export default function Regla({ alCambiarSeccion, oculta = false }) {
+  if (oculta) return null;
+
   const navRef = useRef(null);
   const etiquetasRef = useRef([]);
   const botonesRef = useRef([]);

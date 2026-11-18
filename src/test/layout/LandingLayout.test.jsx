@@ -105,4 +105,30 @@ describe("LandingLayout", () => {
     // El registro se maneja desde el modal de autenticación
     expect(screen.queryByText("Registrarse")).not.toBeInTheDocument();
   });
+
+  it("muestra la regla de secciones por defecto", () => {
+    renderLayout();
+
+    expect(
+      screen.getByRole("navigation", { name: "Secciones de la landing" }),
+    ).toBeDefined();
+    // La sección posicionada se oculta del riel; el resto sigue como botones de navegación
+    expect(
+      screen.getAllByRole("button", { name: /^Ir a / }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("oculta la regla mientras un modal de la landing está abierto", () => {
+    renderLayout({ ocultarRegla: true });
+
+    expect(
+      screen.queryByRole("navigation", { name: "Secciones de la landing" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryAllByRole("button", { name: /^Ir a / }).length,
+    ).toBe(0);
+
+    // El resto de la landing permanece montado
+    expect(screen.getByText(/Controla tu dinero/i)).toBeDefined();
+  });
 });

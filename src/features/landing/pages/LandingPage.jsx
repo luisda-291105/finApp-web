@@ -68,6 +68,7 @@ export default function LandingPage() {
     <LandingLayout
       alAbrirAuth={manejarAbrirAuth}
       ocultarHeader={modalAbierto || ayudaAbierta}
+      ocultarRegla={modalAbierto || ayudaAbierta}
     >
       {/* Modal flotante de autenticación: se descarga al abrirse por primera vez */}
       {authMontado && (
