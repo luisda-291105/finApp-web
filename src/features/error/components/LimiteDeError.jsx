@@ -33,12 +33,19 @@ export default class LimiteDeError extends Component {
           className="grid min-h-[55vh] w-full place-items-center rounded-2xl bg-bg-cream p-6"
         >
           <div className="max-w-md text-center">
-            <AlertTriangle className="mx-auto h-10 w-10 text-cat-expense" aria-hidden="true" />
-            <h1 id="error-carga-titulo" className="mt-4 font-display text-2xl font-semibold text-bg-dark">
+            <AlertTriangle
+              className="mx-auto h-10 w-10 text-cat-expense"
+              aria-hidden="true"
+            />
+            <h1
+              id="error-carga-titulo"
+              className="mt-4 font-display text-2xl font-semibold text-bg-dark"
+            >
               No se pudo cargar la página
             </h1>
             <p className="mt-2 text-sm text-slate-text">
-              Esta sección no pudo cargarse. Puedes volver a intentarlo o continuar usando la navegación.
+              Esta sección no pudo cargarse. Puedes volver a intentarlo o
+              continuar usando la navegación.
             </p>
             <button
               type="button"

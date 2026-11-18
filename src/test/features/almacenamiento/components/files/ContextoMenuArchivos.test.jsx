@@ -64,8 +64,12 @@ describe("ContextoMenuArchivos", () => {
       />,
     );
 
-    expect(screen.getByRole("menuitem", { name: "Copiar" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Copiar" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Mover" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Cortar" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Cortar" }),
+    ).toBeInTheDocument();
   });
 });

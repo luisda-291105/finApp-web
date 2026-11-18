@@ -18,14 +18,34 @@ const ETIQUETAS_GMAIL = {
 };
 
 function obtenerEtiqueta(etiqueta) {
-  const clave = String(etiqueta || "").toUpperCase().replace(/[\s-]+/g, "_");
-  const [nombre, tono] = ETIQUETAS_GMAIL[clave] || [String(etiqueta).replace(/^CATEGORY_/, ""), "correo-tono-otros"];
+  const clave = String(etiqueta || "")
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  const [nombre, tono] = ETIQUETAS_GMAIL[clave] || [
+    String(etiqueta).replace(/^CATEGORY_/, ""),
+    "correo-tono-otros",
+  ];
   return { clave, nombre, tono };
 }
 
 export default function EtiquetasCorreo({ etiquetas }) {
   const lista = (etiquetas || []).map(obtenerEtiqueta);
-  return <CampoDetalle titulo="Etiquetas">
-    {lista.length ? <div className="flex flex-wrap gap-2">{lista.map((etiqueta, indice) => <span key={`${etiqueta.clave}-${indice}`} className={`correo-etiqueta ${etiqueta.tono}`}>{etiqueta.nombre}</span>)}</div> : "Sin etiquetas"}
-  </CampoDetalle>;
+  return (
+    <CampoDetalle titulo="Etiquetas">
+      {lista.length ? (
+        <div className="flex flex-wrap gap-2">
+          {lista.map((etiqueta, indice) => (
+            <span
+              key={`${etiqueta.clave}-${indice}`}
+              className={`correo-etiqueta ${etiqueta.tono}`}
+            >
+              {etiqueta.nombre}
+            </span>
+          ))}
+        </div>
+      ) : (
+        "Sin etiquetas"
+      )}
+    </CampoDetalle>
+  );
 }

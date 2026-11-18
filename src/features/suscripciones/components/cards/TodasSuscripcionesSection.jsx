@@ -14,8 +14,11 @@ import SuscripcionUnificadaCard from "./SuscripcionUnificadaCard";
 
 /** Rango de orden por nivel (prioridad o importancia); sin valor reconocido («No definido»), queda al final. */
 function rangoNivel(valor) {
-  const normal = String(valor ?? "").trim().toLocaleLowerCase();
-  if (normal === "alta" || normal === "alto" || normal === "importante") return 0;
+  const normal = String(valor ?? "")
+    .trim()
+    .toLocaleLowerCase();
+  if (normal === "alta" || normal === "alto" || normal === "importante")
+    return 0;
   if (normal === "media" || normal === "medio") return 1;
   if (normal === "baja" || normal === "bajo") return 2;
   return 3;
@@ -36,7 +39,11 @@ function leerBloquesColapsados() {
   try {
     const crudo = window.localStorage.getItem(CLAVE_BLOQUES_COLAPSADOS);
     const datos = crudo ? JSON.parse(crudo) : [];
-    return new Set(Array.isArray(datos) ? datos.filter((valor) => VALORES_PRIORIDAD.includes(valor)) : []);
+    return new Set(
+      Array.isArray(datos)
+        ? datos.filter((valor) => VALORES_PRIORIDAD.includes(valor))
+        : [],
+    );
   } catch {
     return new Set();
   }
@@ -57,16 +64,23 @@ export default function TodasSuscripcionesSection({
   formatoMoneda,
   formatoFecha,
 }) {
-  const total = suscripcionesGmail.length + manuales.length + recurrentes.length;
+  const total =
+    suscripcionesGmail.length + manuales.length + recurrentes.length;
   const cargando = cargandoGmail || cargandoManuales || cargandoRecurrentes;
-  const [bloquesColapsados, setBloquesColapsados] = useState(leerBloquesColapsados);
+  const [bloquesColapsados, setBloquesColapsados] = useState(
+    leerBloquesColapsados,
+  );
 
   const alternarBloque = (valor) => {
     setBloquesColapsados((actuales) => {
       const siguientes = new Set(actuales);
-      if (siguientes.has(valor)) siguientes.delete(valor); else siguientes.add(valor);
+      if (siguientes.has(valor)) siguientes.delete(valor);
+      else siguientes.add(valor);
       try {
-        window.localStorage.setItem(CLAVE_BLOQUES_COLAPSADOS, JSON.stringify([...siguientes]));
+        window.localStorage.setItem(
+          CLAVE_BLOQUES_COLAPSADOS,
+          JSON.stringify([...siguientes]),
+        );
       } catch {
         // La preferencia no se pudo guardar; el estado en memoria se mantiene igual.
       }
@@ -76,26 +90,45 @@ export default function TodasSuscripcionesSection({
   // `fuente` distingue el origen sin pisar el campo `origen` del backend (p. ej. "MANUAL").
   const grupos = useMemo(() => {
     const todos = [
-      ...manuales.map((item) => ({ ...item, fuente: "manual", _prioridad: item.prioridad || "", _importancia: item.importancia || "" })),
-      ...suscripcionesGmail.map((item) => ({ ...item, fuente: "gmail", _prioridad: item.prioridad || "", _importancia: item.importancia || "" })),
-      ...recurrentes.map((item) => ({ ...item, fuente: "recurrente", prioridad: item.prioridad || "", _prioridad: item.prioridad || "", _importancia: item.importancia || "" })),
+      ...manuales.map((item) => ({
+        ...item,
+        fuente: "manual",
+        _prioridad: item.prioridad || "",
+        _importancia: item.importancia || "",
+      })),
+      ...suscripcionesGmail.map((item) => ({
+        ...item,
+        fuente: "gmail",
+        _prioridad: item.prioridad || "",
+        _importancia: item.importancia || "",
+      })),
+      ...recurrentes.map((item) => ({
+        ...item,
+        fuente: "recurrente",
+        prioridad: item.prioridad || "",
+        _prioridad: item.prioridad || "",
+        _importancia: item.importancia || "",
+      })),
     ];
     // Bloques por prioridad; dentro de cada bloque, orden estable por importancia (Alta primero).
-    return GRUPOS_PRIORIDAD
-      .map((grupo) => ({
-        ...grupo,
-        items: todos
-          .filter((item) => rangoNivel(item._prioridad) === grupo.rango)
-          .sort((a, b) => rangoNivel(a._importancia) - rangoNivel(b._importancia)),
-      }))
-      .filter((grupo) => grupo.items.length > 0);
+    return GRUPOS_PRIORIDAD.map((grupo) => ({
+      ...grupo,
+      items: todos
+        .filter((item) => rangoNivel(item._prioridad) === grupo.rango)
+        .sort(
+          (a, b) => rangoNivel(a._importancia) - rangoNivel(b._importancia),
+        ),
+    })).filter((grupo) => grupo.items.length > 0);
   }, [manuales, suscripcionesGmail, recurrentes]);
 
   return (
     <section aria-labelledby="todas-suscripciones-titulo" className="space-y-4">
       <Card className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="todas-suscripciones-titulo" className="font-display text-xl font-semibold text-bg-dark">
+          <h2
+            id="todas-suscripciones-titulo"
+            className="font-display text-xl font-semibold text-bg-dark"
+          >
             Todas las suscripciones
           </h2>
           <span className="inline-flex items-center gap-2 text-sm text-slate-text">
@@ -105,22 +138,40 @@ export default function TodasSuscripcionesSection({
 
         {cantidadCuentas === 0 && (
           <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-sm text-slate-text">
-            Conecta Gmail desde <Link to="/dashboard/configuracion" className="font-semibold text-emerald-primary underline">Configuración → Fuentes</Link> para consultar las suscripciones.
+            Conecta Gmail desde{" "}
+            <Link
+              to="/dashboard/configuracion"
+              className="font-semibold text-emerald-primary underline"
+            >
+              Configuración → Fuentes
+            </Link>{" "}
+            para consultar las suscripciones.
           </p>
         )}
         {cargandoGmail && (
-          <p role="status" className="text-sm text-slate-text">Consultando las suscripciones recientes por cuenta Gmail…</p>
+          <p role="status" className="text-sm text-slate-text">
+            Consultando las suscripciones recientes por cuenta Gmail…
+          </p>
         )}
         {cargandoManuales && (
-          <p role="status" className="text-sm text-slate-text">Cargando suscripciones registradas…</p>
+          <p role="status" className="text-sm text-slate-text">
+            Cargando suscripciones registradas…
+          </p>
         )}
 
         {total > 0 && (
-          <ul aria-label="Todas las suscripciones" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <ul
+            aria-label="Todas las suscripciones"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          >
             {grupos.flatMap((grupo) => {
               const colapsado = bloquesColapsados.has(grupo.valor);
               return [
-                <li key={`divisor-${grupo.valor}`} role="presentation" className="col-span-full pt-2 first:pt-0">
+                <li
+                  key={`divisor-${grupo.valor}`}
+                  role="presentation"
+                  className="col-span-full pt-2 first:pt-0"
+                >
                   <button
                     type="button"
                     onClick={() => alternarBloque(grupo.valor)}
@@ -128,40 +179,64 @@ export default function TodasSuscripcionesSection({
                     aria-label={`${colapsado ? "Expandir" : "Minimizar"} bloque ${grupo.etiqueta}`}
                     className="flex w-full items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary rounded-lg"
                   >
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-text">{grupo.etiqueta}</span>
-                    <span className="rounded-full bg-border-line/40 px-2 py-0.5 text-[10px] font-semibold text-slate-text">{grupo.items.length}</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-text">
+                      {grupo.etiqueta}
+                    </span>
+                    <span className="rounded-full bg-border-line/40 px-2 py-0.5 text-[10px] font-semibold text-slate-text">
+                      {grupo.items.length}
+                    </span>
                     <span className="h-px flex-1 bg-border-line/50" />
-                    <ChevronDown aria-hidden="true" className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${colapsado ? "-rotate-90" : ""}`} />
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${colapsado ? "-rotate-90" : ""}`}
+                    />
                   </button>
                 </li>,
-                ...(!colapsado ? grupo.items.map((item) => (
-                  <SuscripcionUnificadaCard
-                    key={`${item.fuente}:${item.cuentaGmailId || ""}:${item.id || item.fechaCobro || ""}:${item.correoRemitente || ""}`}
-                    item={item}
-                    alAbrir={(evento) => alAbrirDetalle?.(item, evento)}
-                    formatoMoneda={formatoMoneda}
-                    formatoFecha={formatoFecha}
-                  />
-                )) : []),
+                ...(!colapsado
+                  ? grupo.items.map((item) => (
+                      <SuscripcionUnificadaCard
+                        key={`${item.fuente}:${item.cuentaGmailId || ""}:${item.id || item.fechaCobro || ""}:${item.correoRemitente || ""}`}
+                        item={item}
+                        alAbrir={(evento) => alAbrirDetalle?.(item, evento)}
+                        formatoMoneda={formatoMoneda}
+                        formatoFecha={formatoFecha}
+                      />
+                    ))
+                  : []),
               ];
             })}
           </ul>
         )}
 
-        {total === 0 && !cargando && (
-          filtrosActivos ? (
+        {total === 0 &&
+          !cargando &&
+          (filtrosActivos ? (
             <div className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text">
-              <p>No hay suscripciones que coincidan con la búsqueda y los filtros seleccionados.</p>
-              <button type="button" onClick={alLimpiarFiltros} className="mt-2 font-semibold text-emerald-primary underline">Limpiar filtros y búsqueda</button>
+              <p>
+                No hay suscripciones que coincidan con la búsqueda y los filtros
+                seleccionados.
+              </p>
+              <button
+                type="button"
+                onClick={alLimpiarFiltros}
+                className="mt-2 font-semibold text-emerald-primary underline"
+              >
+                Limpiar filtros y búsqueda
+              </button>
             </div>
           ) : (
             <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text">
-              Aún no hay suscripciones por mostrar. Conecta Gmail para detectarlas o regístralas manualmente con el botón «Registrar suscripción».
+              Aún no hay suscripciones por mostrar. Conecta Gmail para
+              detectarlas o regístralas manualmente con el botón «Registrar
+              suscripción».
             </p>
-          )
-        )}
+          ))}
         {cantidadCuentas > 0 && (
-          <p className="text-xs leading-relaxed text-slate-text">Las suscripciones de Gmail se detectan en mensajes de Promociones y Actualizaciones. Para exactitud y administrar bajas, Gmail mantiene su administrador de suscripciones.</p>
+          <p className="text-xs leading-relaxed text-slate-text">
+            Las suscripciones de Gmail se detectan en mensajes de Promociones y
+            Actualizaciones. Para exactitud y administrar bajas, Gmail mantiene
+            su administrador de suscripciones.
+          </p>
         )}
       </Card>
     </section>

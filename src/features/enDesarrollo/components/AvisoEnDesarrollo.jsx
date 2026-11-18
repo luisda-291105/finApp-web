@@ -18,7 +18,10 @@ export default function AvisoEnDesarrollo({
       role="status"
       className={`flex items-start gap-3 rounded-2xl border border-emerald-primary/20 bg-emerald-primary/5 px-4 py-3 text-sm text-bg-dark ${className}`.trim()}
     >
-      <Construction className="mt-0.5 h-4 w-4 shrink-0 text-emerald-primary" aria-hidden="true" />
+      <Construction
+        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-primary"
+        aria-hidden="true"
+      />
       <div>
         <p className="font-medium">{titulo}</p>
         <p className="mt-0.5 text-slate-text">{mensaje}</p>

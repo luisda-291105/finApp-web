@@ -23,17 +23,33 @@ describe("useBreakpoint", () => {
   beforeEach(() => {
     originalMatchMedia = window.matchMedia;
     originalLocalStorage = global.localStorage;
-    originalInnerWidthDescriptor = Object.getOwnPropertyDescriptor(window, "innerWidth");
+    originalInnerWidthDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "innerWidth",
+    );
 
     matchMediaMocks = {
-      pantallasGrandes: { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() },
-      anchoGrande: { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() },
+      pantallasGrandes: {
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+      anchoGrande: {
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
     };
 
     window.matchMedia = vi.fn((query) => {
-      if (query === QUERY_PANTALLAS_GRANDES) return matchMediaMocks.pantallasGrandes;
+      if (query === QUERY_PANTALLAS_GRANDES)
+        return matchMediaMocks.pantallasGrandes;
       if (query === QUERY_ANCHO_GRANDE) return matchMediaMocks.anchoGrande;
-      return { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+      return {
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
     });
 
     global.localStorage = {
@@ -116,14 +132,19 @@ describe("useBreakpoint", () => {
       esDesktop: width >= 768,
     }));
 
-    it.each(casos)("en $width px exactamente uno de isMobile/isDesktop está activo", ({ width, esDesktop }) => {
-      configurarAncho(width);
-      const { result } = renderHook(() => useBreakpoint());
+    it.each(casos)(
+      "en $width px exactamente uno de isMobile/isDesktop está activo",
+      ({ width, esDesktop }) => {
+        configurarAncho(width);
+        const { result } = renderHook(() => useBreakpoint());
 
-      expect(result.current.isDesktop).toBe(esDesktop);
-      expect(result.current.isMobile).toBe(!esDesktop);
-      expect(Number(result.current.isMobile) + Number(result.current.isDesktop)).toBe(1);
-    });
+        expect(result.current.isDesktop).toBe(esDesktop);
+        expect(result.current.isMobile).toBe(!esDesktop);
+        expect(
+          Number(result.current.isMobile) + Number(result.current.isDesktop),
+        ).toBe(1);
+      },
+    );
 
     it("responde al change de la query de 768px", () => {
       configurarAncho(375);
@@ -193,14 +214,17 @@ describe("useBreakpoint", () => {
       ["número serializado", "1"],
       ["string serializado", '"false"'],
       ["JSON corrupto", "invalid-json"],
-    ])("sin preferencia válida (%s) aplica el default de banda colapsada en 800px", (_caso, valor) => {
-      global.localStorage.getItem.mockReturnValue(valor);
-      configurarAncho(800);
+    ])(
+      "sin preferencia válida (%s) aplica el default de banda colapsada en 800px",
+      (_caso, valor) => {
+        global.localStorage.getItem.mockReturnValue(valor);
+        configurarAncho(800);
 
-      const { result } = renderHook(() => useBreakpoint());
+        const { result } = renderHook(() => useBreakpoint());
 
-      expect(result.current.sidebarColapsada).toBe(true);
-    });
+        expect(result.current.sidebarColapsada).toBe(true);
+      },
+    );
   });
 
   describe("persistencia solo al alternar", () => {
@@ -224,13 +248,19 @@ describe("useBreakpoint", () => {
         result.current.toggleSidebar();
       });
       expect(result.current.sidebarColapsada).toBe(false);
-      expect(global.localStorage.setItem).toHaveBeenCalledWith(CLAVE_PREFERENCIA, "false");
+      expect(global.localStorage.setItem).toHaveBeenCalledWith(
+        CLAVE_PREFERENCIA,
+        "false",
+      );
 
       act(() => {
         result.current.toggleSidebar();
       });
       expect(result.current.sidebarColapsada).toBe(true);
-      expect(global.localStorage.setItem).toHaveBeenLastCalledWith(CLAVE_PREFERENCIA, "true");
+      expect(global.localStorage.setItem).toHaveBeenLastCalledWith(
+        CLAVE_PREFERENCIA,
+        "true",
+      );
     });
 
     it("cruzar 1200px→800px por change sin preferencia colapsa y no escribe", () => {
@@ -256,8 +286,13 @@ describe("useBreakpoint", () => {
     it("registra addEventListener de ambas queries en mount", () => {
       renderHook(() => useBreakpoint());
 
-      expect(matchMediaMocks.pantallasGrandes.addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
-      expect(matchMediaMocks.anchoGrande.addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+      expect(
+        matchMediaMocks.pantallasGrandes.addEventListener,
+      ).toHaveBeenCalledWith("change", expect.any(Function));
+      expect(matchMediaMocks.anchoGrande.addEventListener).toHaveBeenCalledWith(
+        "change",
+        expect.any(Function),
+      );
     });
 
     it("llama removeEventListener de ambas queries en unmount", () => {
@@ -265,8 +300,12 @@ describe("useBreakpoint", () => {
 
       unmount();
 
-      expect(matchMediaMocks.pantallasGrandes.removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
-      expect(matchMediaMocks.anchoGrande.removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
+      expect(
+        matchMediaMocks.pantallasGrandes.removeEventListener,
+      ).toHaveBeenCalledWith("change", expect.any(Function));
+      expect(
+        matchMediaMocks.anchoGrande.removeEventListener,
+      ).toHaveBeenCalledWith("change", expect.any(Function));
     });
   });
 
@@ -326,9 +365,15 @@ describe("useBreakpoint", () => {
       expect(registros).toHaveLength(1);
 
       registros.forEach((registro) => {
-        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
-        expect(registro.isMobile).toBe(!matchMediaMocks.pantallasGrandes.matches);
-        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+        expect(registro.isDesktop).toBe(
+          matchMediaMocks.pantallasGrandes.matches,
+        );
+        expect(registro.isMobile).toBe(
+          !matchMediaMocks.pantallasGrandes.matches,
+        );
+        expect(registro.sidebarColapsada).toBe(
+          !matchMediaMocks.anchoGrande.matches,
+        );
       });
     });
 
@@ -340,8 +385,12 @@ describe("useBreakpoint", () => {
         sidebarColapsada: true,
       });
       enMovil.forEach((registro) => {
-        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
-        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+        expect(registro.isDesktop).toBe(
+          matchMediaMocks.pantallasGrandes.matches,
+        );
+        expect(registro.sidebarColapsada).toBe(
+          !matchMediaMocks.anchoGrande.matches,
+        );
       });
 
       const enMediano = medirComposiciones(800);
@@ -351,8 +400,12 @@ describe("useBreakpoint", () => {
         sidebarColapsada: true,
       });
       enMediano.forEach((registro) => {
-        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
-        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+        expect(registro.isDesktop).toBe(
+          matchMediaMocks.pantallasGrandes.matches,
+        );
+        expect(registro.sidebarColapsada).toBe(
+          !matchMediaMocks.anchoGrande.matches,
+        );
       });
 
       const enGrande = medirComposiciones(1200);
@@ -362,8 +415,12 @@ describe("useBreakpoint", () => {
         sidebarColapsada: false,
       });
       enGrande.forEach((registro) => {
-        expect(registro.isDesktop).toBe(matchMediaMocks.pantallasGrandes.matches);
-        expect(registro.sidebarColapsada).toBe(!matchMediaMocks.anchoGrande.matches);
+        expect(registro.isDesktop).toBe(
+          matchMediaMocks.pantallasGrandes.matches,
+        );
+        expect(registro.sidebarColapsada).toBe(
+          !matchMediaMocks.anchoGrande.matches,
+        );
       });
     });
   });

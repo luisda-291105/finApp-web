@@ -16,9 +16,17 @@ let estadoScrollBloqueado = null;
 
 /** Bloquea el documento conservando la posición: el scroll solo se recorta, nunca se reposiciona. */
 function bloquearScrollPagina() {
-  if (typeof document === "undefined" || typeof window === "undefined" || estadoScrollBloqueado) return;
+  if (
+    typeof document === "undefined" ||
+    typeof window === "undefined" ||
+    estadoScrollBloqueado
+  )
+    return;
   const { body, documentElement } = document;
-  const anchoBarra = Math.max(0, window.innerWidth - documentElement.clientWidth);
+  const anchoBarra = Math.max(
+    0,
+    window.innerWidth - documentElement.clientWidth,
+  );
   estadoScrollBloqueado = {
     htmlOverflow: documentElement.style.overflow,
     bodyOverflow: body.style.overflow,
@@ -30,7 +38,8 @@ function bloquearScrollPagina() {
   documentElement.style.overflow = "hidden";
   body.style.overflow = "hidden";
   if (anchoBarra > 0) {
-    const paddingActual = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
+    const paddingActual =
+      Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
     body.style.paddingRight = `${paddingActual + anchoBarra}px`;
   }
 }

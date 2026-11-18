@@ -44,7 +44,11 @@ const configurarViewport = (ancho) => {
   }));
 };
 
-const crearBoton = ({ etiquetaAria, texto = "botón", disabled = false } = {}) => {
+const crearBoton = ({
+  etiquetaAria,
+  texto = "botón",
+  disabled = false,
+} = {}) => {
   const boton = document.createElement("button");
   boton.type = "button";
   boton.textContent = texto;
@@ -89,10 +93,9 @@ const VistaDestinoConNavegacion = () => {
     {
       type: "button",
       "data-navegar": "true",
-      onClick: () =>
-        navigate("/destino-2", { state: { focoEnDestino: true } }),
+      onClick: () => navigate("/destino-2", { state: { focoEnDestino: true } }),
     },
-    "Empujar entrada con marca"
+    "Empujar entrada con marca",
   );
 };
 
@@ -113,19 +116,23 @@ const montarDestino = ({
   const arbol = createElement(
     MemoryRouter,
     { initialEntries: entradas },
-    createElement(componente)
+    createElement(componente),
   );
   return render(envoltorio ? createElement(envoltorio, null, arbol) : arbol);
 };
 
 beforeEach(() => {
   originalMatchMedia = window.matchMedia;
-  originalInnerWidthDescriptor = Object.getOwnPropertyDescriptor(window, "innerWidth");
+  originalInnerWidthDescriptor = Object.getOwnPropertyDescriptor(
+    window,
+    "innerWidth",
+  );
   escena = document.createElement("div");
   escena.id = "escena-011-t8";
   document.body.appendChild(escena);
   // Punto de partida estable: nada enfocado antes de cada caso.
-  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  if (document.activeElement instanceof HTMLElement)
+    document.activeElement.blur();
   configurarViewport(375);
 });
 
@@ -170,7 +177,7 @@ describe("useFocoEnVistaDestino — colocación con la marca (RF-15)", () => {
     expect(document.activeElement).toBe(boton);
   });
 
-  it("AC-22 (destino sin dashboard): primer control enfocable, excluyendo [role=\"dialog\"] (CL-18)", () => {
+  it('AC-22 (destino sin dashboard): primer control enfocable, excluyendo [role="dialog"] (CL-18)', () => {
     // Vista de destino tipo landing: un diálogo (superficie que se cierra), un disabled y el logotipo.
     const dialogo = document.createElement("div");
     dialogo.setAttribute("role", "dialog");
@@ -192,10 +199,12 @@ describe("useFocoEnVistaDestino — colocación con la marca (RF-15)", () => {
     expect(document.activeElement).not.toBe(document.body);
   });
 
-  it("AC-22/CL-18: el candidato nunca pertenece a un subárbol [role=\"dialog\"]", () => {
+  it('AC-22/CL-18: el candidato nunca pertenece a un subárbol [role="dialog"]', () => {
     const dialogo = document.createElement("div");
     dialogo.setAttribute("role", "dialog");
-    const botonDeLaSuperficie = crearBoton({ texto: "Dentro de la superficie" });
+    const botonDeLaSuperficie = crearBoton({
+      texto: "Dentro de la superficie",
+    });
     dialogo.appendChild(botonDeLaSuperficie);
     montar(dialogo);
     const espiaDialogo = vi.spyOn(botonDeLaSuperficie, "focus");
@@ -251,9 +260,9 @@ describe("useFocoEnVistaDestino — límites de la colocación (RF-15/AC-23/AC-2
         createElement(
           MemoryRouter,
           { initialEntries: [ENTRADA_CON_MARCA] },
-          createElement(VistaDestino)
-        )
-      )
+          createElement(VistaDestino),
+        ),
+      ),
     );
 
     expect(espiaMenu).toHaveBeenCalledTimes(1);
@@ -265,7 +274,9 @@ describe("useFocoEnVistaDestino — límites de la colocación (RF-15/AC-23/AC-2
     montar(menu);
     const espiaMenu = vi.spyOn(menu, "focus");
 
-    const { container } = montarDestino({ componente: VistaDestinoConNavegacion });
+    const { container } = montarDestino({
+      componente: VistaDestinoConNavegacion,
+    });
     expect(espiaMenu).toHaveBeenCalledTimes(1);
 
     const botonNavegar = container.querySelector("[data-navegar='true']");

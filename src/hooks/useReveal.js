@@ -8,7 +8,9 @@
  */
 import { useEffect, useRef, useState } from "react";
 
-export function useReveal(options = { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }) {
+export function useReveal(
+  options = { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
+) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
 

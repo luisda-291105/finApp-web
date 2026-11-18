@@ -7,7 +7,13 @@
  * @usadoPor   SuscripcionesPage, DetalleSuscripcionModal
  */
 import { getEndpoint } from "../../../config/api.config";
-import { actualizar, crear, eliminar, obtener, patch } from "../../../services/httpServicio";
+import {
+  actualizar,
+  crear,
+  eliminar,
+  obtener,
+  patch,
+} from "../../../services/httpServicio";
 
 const ruta = getEndpoint("suscripcion.base");
 
@@ -18,8 +24,15 @@ const extraerLista = (respuesta) => {
 
 /** Normaliza un nivel (importancia o prioridad) a Alta, Media, Baja o "" («No definido») para la interfaz. */
 export const normalizarNivelUi = (valor, porDefecto = "") => {
-  const normalizado = String(valor ?? "").trim().toUpperCase();
-  if (normalizado === "ALTA" || normalizado === "ALTO" || normalizado === "IMPORTANTE") return "Alta";
+  const normalizado = String(valor ?? "")
+    .trim()
+    .toUpperCase();
+  if (
+    normalizado === "ALTA" ||
+    normalizado === "ALTO" ||
+    normalizado === "IMPORTANTE"
+  )
+    return "Alta";
   if (normalizado === "MEDIA" || normalizado === "MEDIO") return "Media";
   if (normalizado === "BAJA" || normalizado === "BAJO") return "Baja";
   return porDefecto;
@@ -27,8 +40,15 @@ export const normalizarNivelUi = (valor, porDefecto = "") => {
 
 /** Normaliza un nivel (importancia o prioridad) a ALTA, MEDIA o BAJA para el backend. */
 export const normalizarNivelApi = (valor, porDefecto = "MEDIA") => {
-  const normalizado = String(valor ?? "").trim().toUpperCase();
-  if (normalizado === "ALTA" || normalizado === "ALTO" || normalizado === "IMPORTANTE") return "ALTA";
+  const normalizado = String(valor ?? "")
+    .trim()
+    .toUpperCase();
+  if (
+    normalizado === "ALTA" ||
+    normalizado === "ALTO" ||
+    normalizado === "IMPORTANTE"
+  )
+    return "ALTA";
   if (normalizado === "MEDIA" || normalizado === "MEDIO") return "MEDIA";
   if (normalizado === "BAJA" || normalizado === "BAJO") return "BAJA";
   return porDefecto;
@@ -40,11 +60,14 @@ const normalizarApodo = (valor) => String(valor ?? "").trim();
 
 const numeroSeguro = (valor) => {
   if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
-  const texto = String(valor ?? "").trim().replace(/\s/g, "");
+  const texto = String(valor ?? "")
+    .trim()
+    .replace(/\s/g, "");
   if (!texto) return 0;
-  const normalizado = texto.includes(",") && texto.includes(".")
-    ? texto.replace(/\./g, "").replace(/,/g, ".")
-    : texto.replace(/,/g, ".");
+  const normalizado =
+    texto.includes(",") && texto.includes(".")
+      ? texto.replace(/\./g, "").replace(/,/g, ".")
+      : texto.replace(/,/g, ".");
   const numero = Number(normalizado);
   return Number.isFinite(numero) ? numero : 0;
 };
@@ -76,7 +99,9 @@ const prepararPayload = (suscripcion) => ({
   importancia: normalizarImportanciaApi(suscripcion.importancia),
   prioridad: normalizarNivelApi(suscripcion.prioridad, "MEDIA"),
   apodo: normalizarApodo(suscripcion.apodo) || null,
-  ...(typeof suscripcion.activa === "boolean" ? { activa: suscripcion.activa } : {}),
+  ...(typeof suscripcion.activa === "boolean"
+    ? { activa: suscripcion.activa }
+    : {}),
 });
 
 /** Consulta las suscripciones manuales, ordenadas en el backend por fecha de cobro. */
@@ -96,23 +121,40 @@ export async function crearSuscripcionManual(suscripcion) {
  * suscripción del usuario, manual o detectada en Gmail. "" en importancia/prioridad
  * guarda NULL en el backend (opción «No definido» del detalle).
  */
-export function actualizarAjustesSuscripcion(id, { importancia, prioridad, apodo } = {}) {
+export function actualizarAjustesSuscripcion(
+  id,
+  { importancia, prioridad, apodo } = {},
+) {
   const cuerpo = {};
-  if (importancia !== undefined) cuerpo.importancia = String(importancia).trim() === "" ? "" : normalizarNivelApi(importancia, "ALTA");
-  if (prioridad !== undefined) cuerpo.prioridad = String(prioridad).trim() === "" ? "" : normalizarNivelApi(prioridad, "MEDIA");
+  if (importancia !== undefined)
+    cuerpo.importancia =
+      String(importancia).trim() === ""
+        ? ""
+        : normalizarNivelApi(importancia, "ALTA");
+  if (prioridad !== undefined)
+    cuerpo.prioridad =
+      String(prioridad).trim() === ""
+        ? ""
+        : normalizarNivelApi(prioridad, "MEDIA");
   if (apodo !== undefined) cuerpo.apodo = normalizarApodo(apodo) || null;
   return patch(`${ruta}/${encodeURIComponent(String(id))}/ajustes`, cuerpo);
 }
 
 /** Reemplaza los datos editables de una suscripción manual. */
 export async function actualizarSuscripcionManual(id, suscripcion) {
-  const actualizada = await actualizar(`${ruta}/${encodeURIComponent(String(id))}`, prepararPayload(suscripcion));
+  const actualizada = await actualizar(
+    `${ruta}/${encodeURIComponent(String(id))}`,
+    prepararPayload(suscripcion),
+  );
   return normalizarSuscripcionManual(actualizada);
 }
 
 /** Activa o pausa una suscripción manual. */
 export async function cambiarEstadoSuscripcionManual(id, activa) {
-  const actualizada = await patch(`${ruta}/${encodeURIComponent(String(id))}/estado`, { activa: Boolean(activa) });
+  const actualizada = await patch(
+    `${ruta}/${encodeURIComponent(String(id))}/estado`,
+    { activa: Boolean(activa) },
+  );
   return normalizarSuscripcionManual(actualizada);
 }
 

@@ -52,7 +52,14 @@ function verificarRangoPantalla() {
  * @param {boolean} [props.menuAbierto] - Indica si el menú superpuesto está abierto
  * @param {() => void} [props.alCerrarMenu] - Callback para cerrar el menú cuando está abierto
  */
-export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef, menuAbierto = false, alCerrarMenu }) {
+export default function BottomNav({
+  itemActivo,
+  alNavegar,
+  alAbrirMenu,
+  menuTriggerRef,
+  menuAbierto = false,
+  alCerrarMenu,
+}) {
   const [mostrarExtra, setMostrarExtra] = useState(verificarRangoPantalla);
   const navRef = useRef(null);
 
@@ -86,14 +93,16 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
     };
   }, []);
 
-  const itemsVisibles = mostrarExtra ? [...itemsBase, itemSidebarExtra] : itemsBase;
+  const itemsVisibles = mostrarExtra
+    ? [...itemsBase, itemSidebarExtra]
+    : itemsBase;
 
   return (
     <nav
       ref={navRef}
       className={clsx(
         "fixed bottom-0 left-0 right-0 z-[2100] bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid",
-        mostrarExtra ? "grid-cols-5" : "grid-cols-4"
+        mostrarExtra ? "grid-cols-5" : "grid-cols-4",
       )}
       role="navigation"
       aria-label="Navegación principal móvil"
@@ -107,7 +116,7 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
             "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
             ruta === itemActivo
               ? "text-mint-accent"
-              : "text-bg-cream hover:text-mint-accent"
+              : "text-bg-cream hover:text-mint-accent",
           )}
           aria-current={ruta === itemActivo ? "page" : undefined}
         >
@@ -131,13 +140,15 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
         onClick={menuAbierto ? (alCerrarMenu ?? alAbrirMenu) : alAbrirMenu}
         className={clsx(
           "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
-          "text-bg-cream hover:text-mint-accent"
+          "text-bg-cream hover:text-mint-accent",
         )}
         aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
         aria-expanded={menuAbierto}
       >
         <MoreHorizontal className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        <span className="text-xs font-medium truncate bottom-nav-label">{menuAbierto ? "Cerrar" : "Menú"}</span>
+        <span className="text-xs font-medium truncate bottom-nav-label">
+          {menuAbierto ? "Cerrar" : "Menú"}
+        </span>
       </button>
     </nav>
   );

@@ -16,8 +16,14 @@ import { useFocoEnVistaDestino } from "../../../hooks/useFocoEnVistaDestino";
 
 // Los modales no forman parte de la primera pintura: se descargan al abrirse por primera vez
 // y permanecen montados después para conservar el foco y los campos (AC-22).
-const AuthModal = lazy(() => import("../../auth").then(({ AuthModal }) => ({ default: AuthModal })));
-const AsistenteAyuda = lazy(() => import("../../asistenteia").then(({ AsistenteAyudaModal }) => ({ default: AsistenteAyudaModal })));
+const AuthModal = lazy(() =>
+  import("../../auth").then(({ AuthModal }) => ({ default: AuthModal })),
+);
+const AsistenteAyuda = lazy(() =>
+  import("../../asistenteia").then(({ AsistenteAyudaModal }) => ({
+    default: AsistenteAyudaModal,
+  })),
+);
 
 /**
  * LandingPage
@@ -59,7 +65,10 @@ export default function LandingPage() {
   };
 
   return (
-    <LandingLayout alAbrirAuth={manejarAbrirAuth} ocultarHeader={modalAbierto || ayudaAbierta}>
+    <LandingLayout
+      alAbrirAuth={manejarAbrirAuth}
+      ocultarHeader={modalAbierto || ayudaAbierta}
+    >
       {/* Modal flotante de autenticación: se descarga al abrirse por primera vez */}
       {authMontado && (
         <Suspense fallback={null}>

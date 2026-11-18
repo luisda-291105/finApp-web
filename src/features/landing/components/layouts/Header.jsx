@@ -19,7 +19,11 @@ import logoOscuro from "../../../../assets/logo-oscuro.webp";
  * @param {'landing' | 'dashboard'} [props.modo='landing'] - Modo de visualización
  * @param {boolean} [props.oculto=false] - Oculta el header (p. ej. mientras el modal de acceso está abierto)
  */
-export default function Header({ alAbrirAuth, modo = "landing", oculto = false }) {
+export default function Header({
+  alAbrirAuth,
+  modo = "landing",
+  oculto = false,
+}) {
   const [desplazado, setDesplazado] = useState(false);
 
   useEffect(() => {
@@ -45,10 +49,20 @@ export default function Header({ alAbrirAuth, modo = "landing", oculto = false }
       <div className="max-w-7xl mx-auto px-6 flex mt-5 items-center justify-between">
         {/* Logotipo FinApp */}
         <Link to="/" className="flex items-center" aria-label="FinApp">
-          <img src={logoClaro} alt="FinApp" className="logo-tema-claro h-8 w-auto sm:h-9" />
-          <img src={logoOscuro} alt="" aria-hidden="true" className="logo-tema-oscuro h-8 w-auto sm:h-9" />
+          <img
+            src={logoClaro}
+            alt="FinApp"
+            className="logo-tema-claro h-8 w-auto sm:h-9"
+          />
+          <img
+            src={logoOscuro}
+            alt=""
+            aria-hidden="true"
+            className="logo-tema-oscuro h-8 w-auto sm:h-9"
+          />
           <span className="hidden gap-0 font-display text-xl font-medium sm:inline">
-            <span className="text-mint-accent">Fin</span><span className="text-white">App</span>
+            <span className="text-mint-accent">Fin</span>
+            <span className="text-white">App</span>
           </span>
         </Link>
 

@@ -10,7 +10,9 @@ export default function RespuestaMovimiento({ respuesta, className = "" }) {
       data-campo={respuesta.campo || undefined}
       className={clsx(
         "rounded-xl border px-3 py-2.5 text-sm",
-        esError ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-primary/20 bg-emerald-primary/10 text-emerald-900",
+        esError
+          ? "border-red-200 bg-red-50 text-red-800"
+          : "border-emerald-primary/20 bg-emerald-primary/10 text-emerald-900",
         className,
       )}
     >

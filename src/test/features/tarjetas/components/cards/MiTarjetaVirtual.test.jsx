@@ -14,21 +14,49 @@ import MiTarjetaVirtual from "../../../../../features/tarjetas/components/cards/
 vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   const PROPS_DE_ANIMACION = new Set([
-    "initial", "animate", "exit", "transition", "variants", "custom",
-    "whileHover", "whileTap", "whileFocus", "whileDrag", "whileInView",
-    "layout", "layoutId", "layoutDependency", "layoutScroll",
-    "drag", "dragConstraints", "dragElastic", "dragMomentum", "dragPropagation",
-    "dragDirectionLock", "dragControls",
-    "onDragStart", "onDrag", "onDragEnd", "onAnimationStart", "onAnimationComplete",
-    "onUpdate", "transformTemplate", "viewport", "inherit",
+    "initial",
+    "animate",
+    "exit",
+    "transition",
+    "variants",
+    "custom",
+    "whileHover",
+    "whileTap",
+    "whileFocus",
+    "whileDrag",
+    "whileInView",
+    "layout",
+    "layoutId",
+    "layoutDependency",
+    "layoutScroll",
+    "drag",
+    "dragConstraints",
+    "dragElastic",
+    "dragMomentum",
+    "dragPropagation",
+    "dragDirectionLock",
+    "dragControls",
+    "onDragStart",
+    "onDrag",
+    "onDragEnd",
+    "onAnimationStart",
+    "onAnimationComplete",
+    "onUpdate",
+    "transformTemplate",
+    "viewport",
+    "inherit",
   ]);
   const propsDom = (props) =>
-    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
+    Object.fromEntries(
+      Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)),
+    );
   return {
     ...actual,
     useReducedMotion: vi.fn(() => false),
     motion: {
-      div: ({ children, ...props }) => <div {...propsDom(props)}>{children}</div>,
+      div: ({ children, ...props }) => (
+        <div {...propsDom(props)}>{children}</div>
+      ),
     },
   };
 });
@@ -58,10 +86,16 @@ describe("MiTarjetaVirtual", () => {
     expect(screen.getByText("EXPIRA")).toBeDefined();
     expect(screen.getByText("12/28")).toBeDefined();
     // Entidad (en el frente)
-    const frenteContainer = container.querySelector("[data-testid='tarjeta-frente']");
-    expect(frenteContainer && within(frenteContainer).getByText("FinApp")).toBeDefined();
+    const frenteContainer = container.querySelector(
+      "[data-testid='tarjeta-frente']",
+    );
+    expect(
+      frenteContainer && within(frenteContainer).getByText("FinApp"),
+    ).toBeDefined();
     // Acento mint (svg shield)
-    expect(container.querySelector("[data-testid='acento-mint']")).toBeDefined();
+    expect(
+      container.querySelector("[data-testid='acento-mint']"),
+    ).toBeDefined();
   });
 
   it("hace flip al hacer click y muestra que el código de seguridad no se almacena", async () => {
@@ -73,7 +107,9 @@ describe("MiTarjetaVirtual", () => {
 
     // Debe mostrar reverso
     expect(screen.getByText("Código de seguridad no almacenado")).toBeDefined();
-    expect(screen.getByText(/el código de seguridad no se almacena/i)).toBeDefined();
+    expect(
+      screen.getByText(/el código de seguridad no se almacena/i),
+    ).toBeDefined();
     expect(screen.queryByText("847")).toBeNull();
   });
 
@@ -98,7 +134,9 @@ describe("MiTarjetaVirtual", () => {
     const tarjeta = screen.getByRole("button", { name: /ver reverso/i });
     expect(tarjeta.getAttribute("tabIndex")).toBe("0");
     expect(tarjeta.getAttribute("aria-pressed")).toBe("false");
-    expect(tarjeta.getAttribute("aria-label")).toBe("Ver reverso de la tarjeta virtual");
+    expect(tarjeta.getAttribute("aria-label")).toBe(
+      "Ver reverso de la tarjeta virtual",
+    );
 
     // Foco visible: la clase glass-card tiene focus-visible en index.css
     expect(tarjeta.classList.contains("glass-card")).toBe(true);
@@ -107,7 +145,9 @@ describe("MiTarjetaVirtual", () => {
   it("muestra etiqueta de estado para lectores de pantalla", () => {
     render(<MiTarjetaVirtual {...propsDefault} />);
 
-    const estadoInicial = screen.getByText("Mostrando frente de la tarjeta virtual");
+    const estadoInicial = screen.getByText(
+      "Mostrando frente de la tarjeta virtual",
+    );
     expect(estadoInicial).toBeDefined();
   });
 
@@ -123,5 +163,4 @@ describe("MiTarjetaVirtual", () => {
       expect(cara.classList.contains("rounded-2xl")).toBe(false);
     });
   });
-
 });

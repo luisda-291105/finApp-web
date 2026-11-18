@@ -15,45 +15,75 @@ beforeEach(() => {
 
 describe("PublicRoute", () => {
   it("muestra children cuando no hay sesión", () => {
-    mockUseUsuarioActivo.mockReturnValue({ usuario: null, estadoSesion: "sin-sesion" });
+    mockUseUsuarioActivo.mockReturnValue({
+      usuario: null,
+      estadoSesion: "sin-sesion",
+    });
 
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
-          <Route path="/" element={<PublicRoute><div>landing</div></PublicRoute>} />
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <div>landing</div>
+              </PublicRoute>
+            }
+          />
           <Route path="/dashboard" element={<div>dashboard</div>} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("landing")).toBeInTheDocument();
   });
 
   it("redirige a dashboard cuando la sesión está autenticada", () => {
-    mockUseUsuarioActivo.mockReturnValue({ usuario: { idUsuario: 1 }, estadoSesion: "autenticado" });
+    mockUseUsuarioActivo.mockReturnValue({
+      usuario: { idUsuario: 1 },
+      estadoSesion: "autenticado",
+    });
 
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
-          <Route path="/" element={<PublicRoute><div>landing</div></PublicRoute>} />
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <div>landing</div>
+              </PublicRoute>
+            }
+          />
           <Route path="/dashboard" element={<div>dashboard</div>} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("dashboard")).toBeInTheDocument();
   });
 
   it("muestra loading mientras verifica la sesión", () => {
-    mockUseUsuarioActivo.mockReturnValue({ usuario: null, estadoSesion: "verificando" });
+    mockUseUsuarioActivo.mockReturnValue({
+      usuario: null,
+      estadoSesion: "verificando",
+    });
 
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
-          <Route path="/" element={<PublicRoute><div>landing</div></PublicRoute>} />
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <div>landing</div>
+              </PublicRoute>
+            }
+          />
           <Route path="/dashboard" element={<div>dashboard</div>} />
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole("status")).toHaveTextContent("Verificando sesión…");

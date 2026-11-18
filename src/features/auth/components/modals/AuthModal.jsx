@@ -24,7 +24,6 @@ import LoginForm from "../forms/LoginForm";
 import RegistroForm from "../forms/RegistroForm";
 import { AlertaGlobal } from "../../../../features/error";
 
-
 /**
  * Opciones REALES de `focus-trap` (spec 010 §2.2). `allowOutsideClick: true` hace efectivo el
  * clic exterior (la trampa no cancela ni consume el evento) SIN desactivarse; `escapeDeactivates:
@@ -139,7 +138,10 @@ export default function AuthModal({
         }
 
         try {
-          const respuestaLogin = await iniciarSesion({ identificador: identificadorLimpio, contrasena });
+          const respuestaLogin = await iniciarSesion({
+            identificador: identificadorLimpio,
+            contrasena,
+          });
           const usuario = respuestaLogin?.datos || respuestaLogin;
           if (usuario?.idUsuario) {
             guardarUsuario(usuario);
@@ -155,7 +157,9 @@ export default function AuthModal({
           return;
         }
 
-        setMensaje("No se encontró una cuenta con esa identificación o correo.");
+        setMensaje(
+          "No se encontró una cuenta con esa identificación o correo.",
+        );
         setCargando(false);
         return;
       }
@@ -180,7 +184,11 @@ export default function AuthModal({
         setCargando(false);
         return;
       }
-      if (telefonoLimpio && (!/^\+?[\d\s().-]{7,20}$/.test(telefonoLimpio) || telefonoLimpio.replace(/\D/g, "").length < 7)) {
+      if (
+        telefonoLimpio &&
+        (!/^\+?[\d\s().-]{7,20}$/.test(telefonoLimpio) ||
+          telefonoLimpio.replace(/\D/g, "").length < 7)
+      ) {
         setMensaje("Ingresa un teléfono válido con al menos 7 dígitos.");
         setCargando(false);
         return;
@@ -202,7 +210,10 @@ export default function AuthModal({
         fechaCreacion,
       });
 
-      const respuestaLogin = await iniciarSesion({ identificador: idUsuarioLimpio, contrasena });
+      const respuestaLogin = await iniciarSesion({
+        identificador: idUsuarioLimpio,
+        contrasena,
+      });
       const usuarioAutenticado = respuestaLogin?.datos || respuestaLogin;
 
       if (usuarioAutenticado?.idUsuario) {
@@ -214,7 +225,9 @@ export default function AuthModal({
       alCerrar();
       navigate("/dashboard");
     } catch (error) {
-      setMensaje(error?.message || "Error al crear la cuenta. Intenta de nuevo.");
+      setMensaje(
+        error?.message || "Error al crear la cuenta. Intenta de nuevo.",
+      );
     } finally {
       setCargando(false);
     }
@@ -225,7 +238,9 @@ export default function AuthModal({
       className="modal-overlay-dashboard z-[100] flex items-end justify-center p-0 bg-black/70 backdrop-blur-sm sm:items-center sm:p-4"
       onPointerDown={registrarInicioPuntero}
       onPointerUp={registrarFinPuntero}
-      onPointerCancel={() => { punteroFondoRef.current = { inicioEnFondo: false, finEnFondo: false }; }}
+      onPointerCancel={() => {
+        punteroFondoRef.current = { inicioEnFondo: false, finEnFondo: false };
+      }}
       onClick={manejarClicExterior}
     >
       <FocusTrap focusTrapOptions={crearOpcionesTrampa(panelRef)}>
@@ -245,14 +260,28 @@ export default function AuthModal({
             aria-label="Cerrar ventana de acceso"
             className="absolute top-4 right-4 z-10 text-white/70 hover:text-white p-1.5 rounded-lg transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
 
           <div className="grid max-h-[85vh] md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
             <aside className="hidden md:flex flex-col items-center justify-center gap-4 border-r border-white/10 bg-gradient-to-br from-[#1a7a5e]/30 via-[#0f1117]/40 to-[#0f1117]/80 p-8 text-center">
-              <img src="/logo-oscuro.webp" alt="FinApp" className="h-20 w-20 rounded-2xl object-contain shadow-lg" />
+              <img
+                src="/logo-oscuro.webp"
+                alt="FinApp"
+                className="h-20 w-20 rounded-2xl object-contain shadow-lg"
+              />
               <p className="font-display text-3xl font-medium">
                 <span className="text-[#1a7a5e]">Fin</span>App
               </p>
@@ -263,7 +292,11 @@ export default function AuthModal({
 
             <div className="max-h-[85vh] overflow-y-auto p-7 md:p-8">
               <div className="mb-5 flex items-center gap-3 md:hidden">
-                <img src="/logo-oscuro.webp" alt="FinApp" className="h-10 w-10 shrink-0 rounded-xl object-contain" />
+                <img
+                  src="/logo-oscuro.webp"
+                  alt="FinApp"
+                  className="h-10 w-10 shrink-0 rounded-xl object-contain"
+                />
                 <p className="font-display text-xl font-medium">
                   <span className="text-[#1a7a5e]">Fin</span>App
                 </p>
@@ -322,7 +355,11 @@ export default function AuthModal({
                 />
               )}
 
-              <AlertaGlobal tipo="error" mensaje={mensajeExterno} idBase="auth-modal-mensaje-externo" />
+              <AlertaGlobal
+                tipo="error"
+                mensaje={mensajeExterno}
+                idBase="auth-modal-mensaje-externo"
+              />
             </div>
           </div>
         </div>

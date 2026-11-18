@@ -23,7 +23,10 @@ export default function Hero({ alAbrirAuth }) {
       className="relative overflow-hidden bg-gradient-to-b from-[#0f1117] via-[#142820] to-[#12362b] pt-28 md:pt-32 pb-24 px-6 text-center"
     >
       {/* Capa de grilla técnica de fondo */}
-      <div className="hero-grid absolute inset-0 pointer-events-none opacity-40" aria-hidden="true" />
+      <div
+        className="hero-grid absolute inset-0 pointer-events-none opacity-40"
+        aria-hidden="true"
+      />
 
       {/* Sutil halo orgánico de color esmeralda */}
       <div
@@ -44,13 +47,18 @@ export default function Hero({ alAbrirAuth }) {
 
         {/* Titular principal en Fraunces */}
         <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-white tracking-tight leading-[1.08] max-w-4xl mx-auto mb-6">
-          Controla tu dinero,<br />
-          <span className="italic text-[#6ee7c0] font-light">decide tu futuro</span>
+          Controla tu dinero,
+          <br />
+          <span className="italic text-[#6ee7c0] font-light">
+            decide tu futuro
+          </span>
         </h1>
 
         {/* Subtítulo ligero */}
         <p className="text-white/75 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-10 font-normal">
-          Registra ahorros, gastos, ingresos y movimientos varios en un solo lugar.<br className="hidden sm:inline" />
+          Registra ahorros, gastos, ingresos y movimientos varios en un solo
+          lugar.
+          <br className="hidden sm:inline" />
           Sin complicaciones, sin costos ocultos.
         </p>
 
@@ -79,26 +87,40 @@ export default function Hero({ alAbrirAuth }) {
           <div className="grid grid-cols-2 gap-3.5">
             {/* Ingresos */}
             <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 transition-colors hover:bg-white/[0.08]">
-              <div className="text-xs text-white/60 font-medium mb-1">Ingresos</div>
-              <div className="text-xl md:text-2xl font-bold text-[#60a5fa]">$ 3,200</div>
+              <div className="text-xs text-white/60 font-medium mb-1">
+                Ingresos
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-[#60a5fa]">
+                $ 3,200
+              </div>
             </div>
 
             {/* Gastos */}
             <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 transition-colors hover:bg-white/[0.08]">
-              <div className="text-xs text-white/60 font-medium mb-1">Gastos</div>
-              <div className="text-xl md:text-2xl font-bold text-[#f87171]">$ 1,480</div>
+              <div className="text-xs text-white/60 font-medium mb-1">
+                Gastos
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-[#f87171]">
+                $ 1,480
+              </div>
             </div>
 
             {/* Ahorro */}
             <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 transition-colors hover:bg-white/[0.08]">
-              <div className="text-xs text-white/60 font-medium mb-1">Ahorro</div>
-              <div className="text-xl md:text-2xl font-bold text-[#6ee7c0]">$ 900</div>
+              <div className="text-xs text-white/60 font-medium mb-1">
+                Ahorro
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-[#6ee7c0]">
+                $ 900
+              </div>
             </div>
 
             {/* Otro */}
             <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 transition-colors hover:bg-white/[0.08]">
               <div className="text-xs text-white/60 font-medium mb-1">Otro</div>
-              <div className="text-xl md:text-2xl font-bold text-[#c084fc]">$ 120</div>
+              <div className="text-xl md:text-2xl font-bold text-[#c084fc]">
+                $ 120
+              </div>
             </div>
           </div>
         </div>

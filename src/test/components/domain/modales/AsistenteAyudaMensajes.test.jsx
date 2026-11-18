@@ -6,7 +6,10 @@ vi.mock("../../../../features/asistenteia/hooks/useAsistenteHistorial", () => ({
   useAsistenteHistorial: () => ({
     mensajes: [
       { rol: "user", contenido: "¿Cuánto gasté este mes?" },
-      { rol: "assistant", contenido: "Todavía no tienes movimientos registrados." },
+      {
+        rol: "assistant",
+        contenido: "Todavía no tienes movimientos registrados.",
+      },
     ],
     setMensajes: vi.fn(),
     limpiar: vi.fn(),
@@ -19,7 +22,9 @@ describe("AsistenteAyuda — distinción visual de mensajes", () => {
   it("distingue la burbuja del asistente del fondo del panel y la etiqueta como tal", () => {
     render(<AsistenteAyuda abierto alCerrar={vi.fn()} />);
 
-    const respuesta = screen.getByText("Todavía no tienes movimientos registrados.");
+    const respuesta = screen.getByText(
+      "Todavía no tienes movimientos registrados.",
+    );
     const burbujaAsistente = respuesta.closest("div");
 
     expect(burbujaAsistente).toHaveClass("bg-white");

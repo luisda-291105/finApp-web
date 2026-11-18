@@ -31,26 +31,53 @@ export default function useSuscripcionesGmail({ cuentasGmail }) {
     setError("");
     try {
       const respuesta = await listarSuscripcionesGmail();
-      setSuscripcionesCorreo((Array.isArray(respuesta?.suscripciones) ? respuesta.suscripciones : []).map(normalizarSuscripcionGmail));
-      setErroresCuentas(Array.isArray(respuesta?.erroresCuentas) ? respuesta.erroresCuentas : []);
-      if (respuesta?.erroresCuentas?.length) setError("Algunas cuentas Gmail no se pudieron consultar.");
+      setSuscripcionesCorreo(
+        (Array.isArray(respuesta?.suscripciones)
+          ? respuesta.suscripciones
+          : []
+        ).map(normalizarSuscripcionGmail),
+      );
+      setErroresCuentas(
+        Array.isArray(respuesta?.erroresCuentas)
+          ? respuesta.erroresCuentas
+          : [],
+      );
+      if (respuesta?.erroresCuentas?.length)
+        setError("Algunas cuentas Gmail no se pudieron consultar.");
     } catch (fallo) {
       setSuscripcionesCorreo([]);
       setErroresCuentas([]);
-      setError(fallo?.message || "No se pudieron cargar las suscripciones Gmail.");
+      setError(
+        fallo?.message || "No se pudieron cargar las suscripciones Gmail.",
+      );
     } finally {
       setCargando(false);
       setConsultaRealizada(true);
     }
   }, []);
 
-  useEffect(() => { cargarSuscripciones(); }, [cargarSuscripciones, cuentasGmail.length]);
+  useEffect(() => {
+    cargarSuscripciones();
+  }, [cargarSuscripciones, cuentasGmail.length]);
 
   /** Refleja en la lista los ajustes guardados de una suscripción sin recargar Gmail. */
   const actualizarSuscripcionLocal = useCallback((idSuscripcion, cambios) => {
-    setSuscripcionesCorreo((actuales) => actuales.map((item) =>
-      String(item.idSuscripcion || "") === String(idSuscripcion) ? { ...item, ...cambios } : item));
+    setSuscripcionesCorreo((actuales) =>
+      actuales.map((item) =>
+        String(item.idSuscripcion || "") === String(idSuscripcion)
+          ? { ...item, ...cambios }
+          : item,
+      ),
+    );
   }, []);
 
-  return { suscripcionesCorreo, cargando, erroresCuentas, error, actualizarSuscripcionLocal, consultaRealizada, actualizarSuscripciones: cargarSuscripciones };
+  return {
+    suscripcionesCorreo,
+    cargando,
+    erroresCuentas,
+    error,
+    actualizarSuscripcionLocal,
+    consultaRealizada,
+    actualizarSuscripciones: cargarSuscripciones,
+  };
 }

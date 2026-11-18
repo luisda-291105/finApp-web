@@ -17,7 +17,9 @@ const CATEGORIAS_BASE = [
 function GrupoCasillas({ titulo, campo, opciones, seleccionadas, alCambiar }) {
   return (
     <fieldset className="rounded-xl border border-border-line/60 p-3">
-      <legend className="px-1 text-sm font-semibold text-bg-dark">{titulo}</legend>
+      <legend className="px-1 text-sm font-semibold text-bg-dark">
+        {titulo}
+      </legend>
       <div className="mt-1 space-y-1">
         {opciones.map(({ id, texto, cantidad }) => (
           <label
@@ -61,8 +63,16 @@ export default function FiltrarSuscripcionesModal({
     cantidad: cantidades.cuenta[String(cuenta.id)] || 0,
   }));
   const opcionesBaja = [
-    { id: "SI", texto: "Con opción de baja", cantidad: cantidades.baja.SI || 0 },
-    { id: "NO", texto: "Sin opción de baja", cantidad: cantidades.baja.NO || 0 },
+    {
+      id: "SI",
+      texto: "Con opción de baja",
+      cantidad: cantidades.baja.SI || 0,
+    },
+    {
+      id: "NO",
+      texto: "Sin opción de baja",
+      cantidad: cantidades.baja.NO || 0,
+    },
   ];
   const todasActivas = filtros.categorias.length === 0;
 
@@ -76,10 +86,14 @@ export default function FiltrarSuscripcionesModal({
     >
       <div className="space-y-4">
         <p className="text-sm text-slate-text">
-          Marca una o varias opciones. Si dejas un grupo sin marcar, se incluyen todas sus opciones.
+          Marca una o varias opciones. Si dejas un grupo sin marcar, se incluyen
+          todas sus opciones.
         </p>
 
-        <section aria-label="Categorías" className="rounded-xl border border-border-line/60 p-3">
+        <section
+          aria-label="Categorías"
+          className="rounded-xl border border-border-line/60 p-3"
+        >
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-bg-dark">Categorías</h3>
             <button
@@ -91,7 +105,11 @@ export default function FiltrarSuscripcionesModal({
               Crear categoría
             </button>
           </div>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar suscripciones por categoría">
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label="Filtrar suscripciones por categoría"
+          >
             <button
               type="button"
               aria-pressed={todasActivas}
@@ -100,7 +118,9 @@ export default function FiltrarSuscripcionesModal({
             >
               <Layers3 className="h-4 w-4" aria-hidden="true" />
               Todas
-              <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs tabular-nums">{totalCategorias}</span>
+              <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs tabular-nums">
+                {totalCategorias}
+              </span>
             </button>
             {CATEGORIAS_BASE.map(({ id, nombre }) => {
               const activa = filtros.categorias.includes(id);
@@ -114,7 +134,9 @@ export default function FiltrarSuscripcionesModal({
                 >
                   <Tag className="h-4 w-4" aria-hidden="true" />
                   {nombre}
-                  <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${activa ? "bg-white/20 text-white" : "bg-bg-cream/70 text-slate-text"}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${activa ? "bg-white/20 text-white" : "bg-bg-cream/70 text-slate-text"}`}
+                  >
                     {cantidades.categoria[id] || 0}
                   </span>
                 </button>
@@ -132,7 +154,9 @@ export default function FiltrarSuscripcionesModal({
                 >
                   <Tag className="h-4 w-4" aria-hidden="true" />
                   {nombre}
-                  <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${activa ? "bg-white/20 text-white" : "bg-bg-cream/70 text-slate-text"}`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${activa ? "bg-white/20 text-white" : "bg-bg-cream/70 text-slate-text"}`}
+                  >
                     {cantidad}
                   </span>
                 </button>

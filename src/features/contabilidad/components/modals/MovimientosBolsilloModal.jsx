@@ -22,7 +22,13 @@ function etiquetaCorta(clave) {
 }
 
 /** Modal con el listado completo de movimientos de un bolsillo, agrupado por mes. */
-export default function MovimientosBolsilloModal({ abierto, nombre, tipo, gruposPorMes, alCerrar }) {
+export default function MovimientosBolsilloModal({
+  abierto,
+  nombre,
+  tipo,
+  gruposPorMes,
+  alCerrar,
+}) {
   const esGasto = String(tipo || "").toUpperCase() === "GASTO";
   const hayMovimientos = Array.isArray(gruposPorMes) && gruposPorMes.length > 0;
 
@@ -40,11 +46,17 @@ export default function MovimientosBolsilloModal({ abierto, nombre, tipo, grupos
       ) : (
         <div className="max-h-[65vh] space-y-4 overflow-y-auto rounded-xl border border-border-line/40 p-3">
           {gruposPorMes.map((grupo) => (
-            <section key={grupo.clave} aria-label={grupo.etiqueta} className="space-y-2">
+            <section
+              key={grupo.clave}
+              aria-label={grupo.etiqueta}
+              className="space-y-2"
+            >
               <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-lg bg-bg-cream/95 px-2 py-1 backdrop-blur-sm">
                 <h4 className="text-sm font-semibold text-bg-dark">
                   <span className="hidden sm:inline">{grupo.etiqueta}</span>
-                  <span className="sm:hidden">{etiquetaCorta(grupo.clave)}</span>
+                  <span className="sm:hidden">
+                    {etiquetaCorta(grupo.clave)}
+                  </span>
                 </h4>
                 <span className="text-xs font-semibold tabular-nums text-slate-text">
                   Total: {formatoMoneda.format(grupo.total)}
@@ -52,17 +64,29 @@ export default function MovimientosBolsilloModal({ abierto, nombre, tipo, grupos
               </div>
               <ul className="divide-y divide-border-line/40">
                 {grupo.movimientos.map((movimiento) => (
-                  <li key={movimiento.idMovimiento} className="flex items-center gap-3 py-3">
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${esGasto ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                  <li
+                    key={movimiento.idMovimiento}
+                    className="flex items-center gap-3 py-3"
+                  >
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${esGasto ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
+                    >
                       <Wallet className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-bg-dark">
-                        {movimiento.concepto?.trim() || movimiento.categoria || "Movimiento"}
+                        {movimiento.concepto?.trim() ||
+                          movimiento.categoria ||
+                          "Movimiento"}
                       </p>
                       <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-text">
-                        <span className="truncate">{movimiento.origenNombre || "Movimiento del bolsillo"}</span>
-                        <time className="shrink-0 whitespace-nowrap" dateTime={movimiento.fecha}>
+                        <span className="truncate">
+                          {movimiento.origenNombre || "Movimiento del bolsillo"}
+                        </span>
+                        <time
+                          className="shrink-0 whitespace-nowrap"
+                          dateTime={movimiento.fecha}
+                        >
                           · {fechaLegible(movimiento.fecha)}
                         </time>
                       </div>

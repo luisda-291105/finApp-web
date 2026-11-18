@@ -28,22 +28,55 @@ function SondaPanel({ activo = true, alCerrar = () => {} }) {
     createElement("textarea", { "aria-label": "Área de texto" }),
     createElement("label", null, "Etiqueta"),
     createElement("div", { role: "button", tabIndex: 0 }, "Rol botón"),
-    createElement("p", { "data-contenido": "true" }, "Contenido no interactivo")
+    createElement(
+      "p",
+      { "data-contenido": "true" },
+      "Contenido no interactivo",
+    ),
   );
 }
 
 /** Evento de puntero nativo sintético (jsdom no implementa PointerEvent con coords). */
-function eventoPuntero(tipo, { x = 0, y = 0, pointerId = 1, isPrimary = true } = {}) {
+function eventoPuntero(
+  tipo,
+  { x = 0, y = 0, pointerId = 1, isPrimary = true } = {},
+) {
   const evento = new Event(tipo, { bubbles: true, cancelable: true });
   Object.assign(evento, { clientX: x, clientY: y, pointerId, isPrimary });
   return evento;
 }
 
 /** Dispara un deslizamiento completo (down → move → up) sobre el objetivo. */
-function deslizar(objetivo, { desdeX = 0, desdeY = 0, hastaX = 0, hastaY = 0, pointerId = 1, isPrimary = true } = {}) {
-  objetivo.dispatchEvent(eventoPuntero("pointerdown", { x: desdeX, y: desdeY, pointerId, isPrimary }));
-  objetivo.dispatchEvent(eventoPuntero("pointermove", { x: hastaX, y: hastaY, pointerId, isPrimary }));
-  objetivo.dispatchEvent(eventoPuntero("pointerup", { x: hastaX, y: hastaY, pointerId, isPrimary }));
+function deslizar(
+  objetivo,
+  {
+    desdeX = 0,
+    desdeY = 0,
+    hastaX = 0,
+    hastaY = 0,
+    pointerId = 1,
+    isPrimary = true,
+  } = {},
+) {
+  objetivo.dispatchEvent(
+    eventoPuntero("pointerdown", {
+      x: desdeX,
+      y: desdeY,
+      pointerId,
+      isPrimary,
+    }),
+  );
+  objetivo.dispatchEvent(
+    eventoPuntero("pointermove", {
+      x: hastaX,
+      y: hastaY,
+      pointerId,
+      isPrimary,
+    }),
+  );
+  objetivo.dispatchEvent(
+    eventoPuntero("pointerup", { x: hastaX, y: hastaY, pointerId, isPrimary }),
+  );
 }
 
 describe("useDeslizarParaCerrar", () => {
@@ -57,10 +90,16 @@ describe("useDeslizarParaCerrar", () => {
   let retirados;
 
   const esPunteroDePanel = (nodo, tipo) =>
-    typeof tipo === "string" && tipo.startsWith("pointer") && nodo?.dataset?.panel === "true";
+    typeof tipo === "string" &&
+    tipo.startsWith("pointer") &&
+    nodo?.dataset?.panel === "true";
 
   const configurarAncho = (width) => {
-    Object.defineProperty(window, "innerWidth", { value: width, writable: true, configurable: true });
+    Object.defineProperty(window, "innerWidth", {
+      value: width,
+      writable: true,
+      configurable: true,
+    });
     mqPantallas.matches = width >= 768;
     mqAncho.matches = width >= 1024;
   };
@@ -85,12 +124,24 @@ describe("useDeslizarParaCerrar", () => {
 
     originalMatchMedia = window.matchMedia;
     originalInnerWidth = Object.getOwnPropertyDescriptor(window, "innerWidth");
-    mqPantallas = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
-    mqAncho = { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+    mqPantallas = {
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    mqAncho = {
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
     window.matchMedia = vi.fn((query) => {
       if (query === QUERY_PANTALLAS_GRANDES) return mqPantallas;
       if (query === QUERY_ANCHO_GRANDE) return mqAncho;
-      return { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() };
+      return {
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
     });
     configurarAncho(375);
   });
@@ -99,7 +150,8 @@ describe("useDeslizarParaCerrar", () => {
     Element.prototype.addEventListener = originalAddElement;
     Element.prototype.removeEventListener = originalRemoveElement;
     window.matchMedia = originalMatchMedia;
-    if (originalInnerWidth) Object.defineProperty(window, "innerWidth", originalInnerWidth);
+    if (originalInnerWidth)
+      Object.defineProperty(window, "innerWidth", originalInnerWidth);
     vi.restoreAllMocks();
   });
 
@@ -187,14 +239,18 @@ describe("useDeslizarParaCerrar", () => {
         deslizar(control, { hastaY: 200 });
 
         expect(alCerrar).not.toHaveBeenCalled();
-      }
+      },
     );
 
     it("no arranca si el panel ya tiene scroll interno desplazado (scrollTop > 0)", () => {
       const alCerrar = vi.fn();
       const { container } = montar({ alCerrar });
       const panel = panelDe(container);
-      Object.defineProperty(panel, "scrollTop", { value: 40, writable: true, configurable: true });
+      Object.defineProperty(panel, "scrollTop", {
+        value: 40,
+        writable: true,
+        configurable: true,
+      });
 
       deslizar(panel, { hastaY: 200 });
 

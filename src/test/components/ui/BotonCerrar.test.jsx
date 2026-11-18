@@ -20,7 +20,9 @@ describe("BotonCerrar", () => {
   });
 
   it("expone el icono de aspa como decorativo (aria-hidden)", () => {
-    const { container } = render(<BotonCerrar ariaLabel="Cerrar menú" alCerrar={() => {}} />);
+    const { container } = render(
+      <BotonCerrar ariaLabel="Cerrar menú" alCerrar={() => {}} />,
+    );
 
     const aspa = container.querySelector("svg");
     expect(aspa).toBeDefined();
@@ -29,17 +31,26 @@ describe("BotonCerrar", () => {
 
   it("una sola pulsación llama exactamente una vez al callback de cierre", () => {
     const alCerrar = vi.fn();
-    render(<BotonCerrar ariaLabel="Cerrar ventana de acceso" alCerrar={alCerrar} />);
+    render(
+      <BotonCerrar ariaLabel="Cerrar ventana de acceso" alCerrar={alCerrar} />,
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: "Cerrar ventana de acceso" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cerrar ventana de acceso" }),
+    );
 
     expect(alCerrar).toHaveBeenCalledTimes(1);
   });
 
   it("aplica las clases base del patrón de cierre", () => {
-    render(<BotonCerrar ariaLabel="Cerrar detalle de tarjeta" alCerrar={() => {}} />);
+    render(
+      <BotonCerrar ariaLabel="Cerrar detalle de tarjeta" alCerrar={() => {}} />,
+    );
 
-    const clases = screen.getByRole("button", { name: "Cerrar detalle de tarjeta" }).getAttribute("class") || "";
+    const clases =
+      screen
+        .getByRole("button", { name: "Cerrar detalle de tarjeta" })
+        .getAttribute("class") || "";
     expect(clases).toContain("rounded-full");
     expect(clases).toContain("p-2");
     expect(clases).toContain("focus-visible:ring-2");
@@ -52,10 +63,13 @@ describe("BotonCerrar", () => {
         ariaLabel="Cerrar ventana de acceso"
         alCerrar={() => {}}
         className="text-slate-text hover:text-bg-dark focus-visible:ring-emerald-primary"
-      />
+      />,
     );
 
-    const clases = screen.getByRole("button", { name: "Cerrar ventana de acceso" }).getAttribute("class") || "";
+    const clases =
+      screen
+        .getByRole("button", { name: "Cerrar ventana de acceso" })
+        .getAttribute("class") || "";
     expect(clases).toContain("text-slate-text");
     expect(clases).toContain("hover:text-bg-dark");
     expect(clases).toContain("focus-visible:ring-emerald-primary");

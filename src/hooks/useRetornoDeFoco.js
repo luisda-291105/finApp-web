@@ -41,7 +41,11 @@ function esCandidatoDeLaCadena(nodo) {
  * `[role="dialog"]` (la superficie que se cierra y el contenedor del diálogo).
  */
 function esControlDeRespaldo(nodo) {
-  return esCandidatoDeLaCadena(nodo) && !nodo.disabled && !nodo.closest(SELECTOR_DIALOGO);
+  return (
+    esCandidatoDeLaCadena(nodo) &&
+    !nodo.disabled &&
+    !nodo.closest(SELECTOR_DIALOGO)
+  );
 }
 
 /** Devuelve el primer nodo de la lista que supera la validación de respaldo (o `null`). */

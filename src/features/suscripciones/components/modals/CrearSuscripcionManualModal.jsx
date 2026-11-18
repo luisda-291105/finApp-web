@@ -28,7 +28,8 @@ export default function CrearSuscripcionManualModal({
     >
       <form className="space-y-4" onSubmit={alGuardar}>
         <p className="text-sm text-slate-text">
-          Registra manualmente una suscripción de cobro o importante y ajústale importancia, prioridad y apodo.
+          Registra manualmente una suscripción de cobro o importante y ajústale
+          importancia, prioridad y apodo.
         </p>
         <label className="block space-y-2 text-sm font-medium text-bg-dark">
           Nombre

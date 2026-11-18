@@ -10,10 +10,18 @@ import { useEffect, useRef } from "react";
 import { useAlertas } from "../../../../context/AlertasContext";
 
 /** Muestra una alerta global lateral mientras exista mensaje. */
-export default function AlertaGlobal({ tipo = "error", mensaje, idBase, alCerrar, duracionMs }) {
+export default function AlertaGlobal({
+  tipo = "error",
+  mensaje,
+  idBase,
+  alCerrar,
+  duracionMs,
+}) {
   const contextoAlertas = useAlertas();
   const { mostrarAlerta, cerrarAlerta, __sinProveedor } = contextoAlertas;
-  const idRef = useRef(idBase || `alerta-global-${Math.random().toString(36).slice(2)}`);
+  const idRef = useRef(
+    idBase || `alerta-global-${Math.random().toString(36).slice(2)}`,
+  );
 
   useEffect(() => {
     const id = idRef.current;

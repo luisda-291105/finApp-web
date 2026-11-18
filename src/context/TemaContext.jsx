@@ -29,7 +29,8 @@ export function TemaProvider({ children }) {
     }
   }, [tema]);
 
-  const alternarTema = () => setTema((actual) => actual === "claro" ? "oscuro" : "claro");
+  const alternarTema = () =>
+    setTema((actual) => (actual === "claro" ? "oscuro" : "claro"));
 
   return (
     <TemaContext.Provider value={{ tema, alternarTema }}>

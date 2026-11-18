@@ -13,7 +13,11 @@ export const formatoFecha = new Intl.DateTimeFormat("es-CO", {
   timeZone: "UTC",
 });
 
-const ETIQUETAS_TIPO = { INGRESO: "Ingresos", GASTO: "Gastos", AHORRO: "Ahorros" };
+const ETIQUETAS_TIPO = {
+  INGRESO: "Ingresos",
+  GASTO: "Gastos",
+  AHORRO: "Ahorros",
+};
 
 export function etiquetaTipo(tipo) {
   return ETIQUETAS_TIPO[tipo] || tipo;
@@ -22,8 +26,12 @@ export function etiquetaTipo(tipo) {
 export function crearFiltrosMovimiento(bolsillos = []) {
   return [
     { valor: "TODOS", etiqueta: "Todos" },
-    ...Array.from(new Set([...TIPOS_BASE, ...bolsillos.map((bolsillo) => bolsillo.tipo).filter(Boolean)]))
-      .map((tipo) => ({ valor: tipo, etiqueta: etiquetaTipo(tipo) })),
+    ...Array.from(
+      new Set([
+        ...TIPOS_BASE,
+        ...bolsillos.map((bolsillo) => bolsillo.tipo).filter(Boolean),
+      ]),
+    ).map((tipo) => ({ valor: tipo, etiqueta: etiquetaTipo(tipo) })),
   ];
 }
 
@@ -36,7 +44,14 @@ export function agregarSaldoDisponible(bolsillos = [], resumenes = {}) {
 
 /** Regla compartida con el backend: «Ingresos»/INGRESO y «Gastos»/GASTO son bolsillos fijos del usuario. */
 export function esBolsilloFijo(bolsillo) {
-  const nombre = String(bolsillo?.nombre || "").trim().toLowerCase();
-  const tipo = String(bolsillo?.tipo || "").trim().toUpperCase();
-  return (nombre === "ingresos" && tipo === "INGRESO") || (nombre === "gastos" && tipo === "GASTO");
+  const nombre = String(bolsillo?.nombre || "")
+    .trim()
+    .toLowerCase();
+  const tipo = String(bolsillo?.tipo || "")
+    .trim()
+    .toUpperCase();
+  return (
+    (nombre === "ingresos" && tipo === "INGRESO") ||
+    (nombre === "gastos" && tipo === "GASTO")
+  );
 }

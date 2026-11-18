@@ -54,7 +54,7 @@ describe("BottomNav", () => {
 
     // Verificar indicador (span absoluto con bg-mint-accent)
     const indicador = botonActivo.querySelector(
-      "span.absolute.top-0.left-1\\/2.-translate-x-1\\/2.w-8.h-0\\.5.bg-mint-accent.rounded-full"
+      "span.absolute.top-0.left-1\\/2.-translate-x-1\\/2.w-8.h-0\\.5.bg-mint-accent.rounded-full",
     );
     expect(indicador).not.toBeNull();
     expect(indicador).toHaveAttribute("aria-hidden", "true");

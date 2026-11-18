@@ -23,10 +23,12 @@ describe("useReveal", () => {
 
   it("usa threshold 0.15 y rootMargin 0px 0px -8% 0px por defecto", () => {
     let opcionesRecibidas;
-    global.IntersectionObserver = vi.fn().mockImplementation(function (cb, opts) {
-      opcionesRecibidas = opts;
-      return { observe: vi.fn(), disconnect: vi.fn() };
-    });
+    global.IntersectionObserver = vi
+      .fn()
+      .mockImplementation(function (cb, opts) {
+        opcionesRecibidas = opts;
+        return { observe: vi.fn(), disconnect: vi.fn() };
+      });
     function Sonda() {
       const { ref } = useReveal();
       return createElement("div", { ref });

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { crearId, esCarpeta, esArchivo, extensionDe, iconoArchivo, formatearBytes, esRecienteArchivo } from "../../../../features/almacenamiento/utils/archivos";
+import {
+  crearId,
+  esCarpeta,
+  esArchivo,
+  extensionDe,
+  iconoArchivo,
+  formatearBytes,
+  esRecienteArchivo,
+} from "../../../../features/almacenamiento/utils/archivos";
 
 describe("utils/archivos", () => {
   it("detecta si un item es carpeta o archivo", () => {
@@ -31,8 +39,14 @@ describe("utils/archivos", () => {
   });
 
   it("detecta si un archivo está dentro de los últimos días", () => {
-    expect(esRecienteArchivo(new Date(Date.now() - 1000).toISOString())).toBe(true);
-    expect(esRecienteArchivo(new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString())).toBe(false);
+    expect(esRecienteArchivo(new Date(Date.now() - 1000).toISOString())).toBe(
+      true,
+    );
+    expect(
+      esRecienteArchivo(
+        new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
+      ),
+    ).toBe(false);
     expect(esRecienteArchivo("fecha-invalida")).toBe(false);
   });
 

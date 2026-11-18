@@ -22,9 +22,16 @@ import Footer from "../sections/Footer";
  * @param {boolean} [props.ocultarHeader=false] - Oculta el header mientras el modal de acceso está abierto
  * @param {React.ReactNode} [props.children] - Contenido extra opcional (p.ej. AuthModal, botón flotante)
  */
-export default function LandingLayout({ alAbrirAuth, ocultarHeader = false, children }) {
+export default function LandingLayout({
+  alAbrirAuth,
+  ocultarHeader = false,
+  children,
+}) {
   return (
-    <div data-testid="landing-theme" className="landing-theme min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body">
+    <div
+      data-testid="landing-theme"
+      className="landing-theme min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body"
+    >
       {/* Header principal */}
       <Header alAbrirAuth={alAbrirAuth} modo="landing" oculto={ocultarHeader} />
 

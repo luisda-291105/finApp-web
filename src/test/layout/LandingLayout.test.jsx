@@ -18,7 +18,7 @@ function renderLayout(props = {}) {
       <TemaProvider>
         <LandingLayout alAbrirAuth={vi.fn()} {...props} />
       </TemaProvider>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -50,7 +50,9 @@ describe("LandingLayout", () => {
     expect(screen.getByText(/Para empezar/i)).toBeDefined();
 
     // Features - busca los 5 títulos de funcionalidades (usando role heading para ser específico)
-    expect(screen.getByRole("heading", { name: "Registro personal" })).toBeDefined();
+    expect(
+      screen.getByRole("heading", { name: "Registro personal" }),
+    ).toBeDefined();
     expect(screen.getByRole("heading", { name: "Ahorro" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Gastos" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Ingresos" })).toBeDefined();
@@ -74,7 +76,7 @@ describe("LandingLayout", () => {
         <LandingLayout alAbrirAuth={mockAbrirAuth}>
           <div data-testid="contenido-extra">Contenido extra</div>
         </LandingLayout>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("contenido-extra")).toBeDefined();

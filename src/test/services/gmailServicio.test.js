@@ -22,10 +22,18 @@ describe("gmailServicio", () => {
   it("consulta mensajes en el backend sin enviar tokens de Google", async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => [{
-        id: "mensaje-1", remitente: "Tienda <tienda@ejemplo.test>", destinatario: "compras@ejemplo.test",
-        asunto: "Factura", fecha: "2026-11-08", fragmento: "Pago", etiquetas: ["IMPORTANT"], nombresEtiquetas: ["Important"],
-      }],
+      json: async () => [
+        {
+          id: "mensaje-1",
+          remitente: "Tienda <tienda@ejemplo.test>",
+          destinatario: "compras@ejemplo.test",
+          asunto: "Factura",
+          fecha: "2026-11-08",
+          fragmento: "Pago",
+          etiquetas: ["IMPORTANT"],
+          nombresEtiquetas: ["Important"],
+        },
+      ],
     });
 
     const mensajes = await obtenerCorreosGmail("cuenta/uno", [
@@ -42,12 +50,17 @@ describe("gmailServicio", () => {
   });
 
   it("consulta Google Contacts por medio del backend", async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => [{ googleResourceName: "people/1", nombre: "Ana" }] });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => [{ googleResourceName: "people/1", nombre: "Ana" }],
+    });
 
     await expect(obtenerContactosGoogle("cuenta-1")).resolves.toEqual([
       { googleResourceName: "people/1", nombre: "Ana" },
     ]);
-    expect(fetchMock.mock.calls[0][0]).toContain("/api/gmail/cuentas/cuenta-1/contactos");
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      "/api/gmail/cuentas/cuenta-1/contactos",
+    );
   });
 
   it("consulta y confirma las alertas de movimientos automáticos desde Gmail", async () => {
@@ -56,16 +69,27 @@ describe("gmailServicio", () => {
     await listarNotificacionesMovimientosGmail();
     await confirmarNotificacionesMovimientosGmail(["alerta-1"]);
 
-    expect(fetchMock.mock.calls[0][0]).toContain("/api/gmail/movimientos/notificaciones");
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      "/api/gmail/movimientos/notificaciones",
+    );
     expect(fetchMock.mock.calls[1][1].method).toBe("POST");
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ ids: ["alerta-1"] });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      ids: ["alerta-1"],
+    });
   });
 
   it("devuelve el estado del permiso de contactos consultado por el backend", async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ autorizado: false }) });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ autorizado: false }),
+    });
 
-    await expect(verificarPermisoContactosGoogle("cuenta-1")).resolves.toBe(false);
-    expect(fetchMock.mock.calls[0][0]).toContain("/api/gmail/cuentas/cuenta-1/contactos/permiso");
+    await expect(verificarPermisoContactosGoogle("cuenta-1")).resolves.toBe(
+      false,
+    );
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      "/api/gmail/cuentas/cuenta-1/contactos/permiso",
+    );
   });
 
   it("limpia la sesión de la pestaña cuando el backend rechaza una consulta Gmail con 401", async () => {
@@ -76,7 +100,9 @@ describe("gmailServicio", () => {
       json: async () => ({ message: "No hay una sesión activa." }),
     });
 
-    await expect(obtenerCorreosGmail("cuenta-1", [])).rejects.toThrow("No hay una sesión activa.");
+    await expect(obtenerCorreosGmail("cuenta-1", [])).rejects.toThrow(
+      "No hay una sesión activa.",
+    );
 
     expect(notificarSesion).toHaveBeenCalledWith(
       expect.objectContaining({ type: "finapp:sesion-requerida" }),

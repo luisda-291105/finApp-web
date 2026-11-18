@@ -24,7 +24,10 @@ export default function AlertaVistaMovil({ mensaje, alCerrar }) {
       role="alert"
       className="fixed right-4 top-20 z-[1150] flex w-[min(calc(100vw-2rem),20rem)] items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-900 shadow-lg"
     >
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
+      <AlertTriangle
+        className="mt-0.5 h-4 w-4 shrink-0 text-amber-700"
+        aria-hidden="true"
+      />
       <p className="min-w-0 flex-1 break-words">{mensaje}</p>
       <button
         type="button"

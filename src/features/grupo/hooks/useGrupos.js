@@ -36,7 +36,9 @@ export function useGrupos() {
       setCargando(true);
       setError("");
       const respuesta = await obtenerGruposPorUsuario(usuario.idUsuario);
-      const lista = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
+      const lista = Array.isArray(respuesta)
+        ? respuesta
+        : respuesta?.data || respuesta?.content || [];
       setGrupos(lista.map(normalizarGrupo));
     } catch (fallo) {
       setError(fallo?.message || "No se pudieron cargar tus grupos.");
@@ -46,7 +48,9 @@ export function useGrupos() {
     }
   }, [usuario?.idUsuario]);
 
-  useEffect(() => { cargarGrupos(); }, [cargarGrupos]);
+  useEffect(() => {
+    cargarGrupos();
+  }, [cargarGrupos]);
 
   const actualizarGrupoEnLista = useCallback((actualizado) => {
     const id = actualizado.idGrupo || actualizado.id;
@@ -54,10 +58,28 @@ export function useGrupos() {
       setGrupos((actuales) => actuales.filter((grupo) => grupo.id !== id));
       return;
     }
-    setGrupos((actuales) => actuales.map((grupo, index) => grupo.id === id
-      ? normalizarGrupo({ ...grupo, ...actualizado, fuentes: actualizado.fuentes ?? grupo.fuentes }, index)
-      : grupo));
+    setGrupos((actuales) =>
+      actuales.map((grupo, index) =>
+        grupo.id === id
+          ? normalizarGrupo(
+              {
+                ...grupo,
+                ...actualizado,
+                fuentes: actualizado.fuentes ?? grupo.fuentes,
+              },
+              index,
+            )
+          : grupo,
+      ),
+    );
   }, []);
 
-  return { usuario, grupos, cargando, error, cargarGrupos, actualizarGrupoEnLista };
+  return {
+    usuario,
+    grupos,
+    cargando,
+    error,
+    cargarGrupos,
+    actualizarGrupoEnLista,
+  };
 }

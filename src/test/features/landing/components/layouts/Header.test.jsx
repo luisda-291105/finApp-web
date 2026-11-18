@@ -16,10 +16,13 @@ describe("Header", () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Header alAbrirAuth={vi.fn()} modo="landing" />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: "FinApp" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "FinApp" })).toHaveAttribute(
+      "href",
+      "/",
+    );
     expect(screen.getByAltText("FinApp")).toBeDefined();
     expect(screen.getByText("Iniciar sesión")).toBeDefined();
     expect(screen.queryByText("Registrarse")).toBeNull();
@@ -30,7 +33,7 @@ describe("Header", () => {
     render(
       <MemoryRouter>
         <Header alAbrirAuth={mockAbrir} modo="landing" />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     fireEvent.click(screen.getByText("Iniciar sesión"));
@@ -41,7 +44,7 @@ describe("Header", () => {
     render(
       <MemoryRouter>
         <Header alAbrirAuth={vi.fn()} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("Iniciar sesión")).toBeDefined();

@@ -10,7 +10,10 @@ import { API_BASE_URL } from "../config/api.config";
 
 function construirUrl(rutaRelativa) {
   if (!rutaRelativa) return API_BASE_URL;
-  if (rutaRelativa.startsWith("http://") || rutaRelativa.startsWith("https://")) {
+  if (
+    rutaRelativa.startsWith("http://") ||
+    rutaRelativa.startsWith("https://")
+  ) {
     return rutaRelativa;
   }
   if (API_BASE_URL.endsWith("/") && rutaRelativa.startsWith("/")) {
@@ -47,10 +50,12 @@ async function leerRespuesta(respuesta, url, metodo) {
 
   const ruta = new URL(url, window.location.origin).pathname;
   const rutaNormalizada = ruta.replace(/\/$/, "");
-  const solicitudAutenticacion = rutaNormalizada.endsWith("/usuario/login")
-    || (metodo === "POST" && rutaNormalizada.endsWith("/usuario"))
-    || rutaNormalizada.includes("/api/auth/");
-  const consultaSesionSinSesion = respuesta.status === 401 && ruta === "/usuario/activo";
+  const solicitudAutenticacion =
+    rutaNormalizada.endsWith("/usuario/login") ||
+    (metodo === "POST" && rutaNormalizada.endsWith("/usuario")) ||
+    rutaNormalizada.includes("/api/auth/");
+  const consultaSesionSinSesion =
+    respuesta.status === 401 && ruta === "/usuario/activo";
   if (respuesta.status === 401 && !url.includes("/usuario/login")) {
     window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
   }
@@ -70,7 +75,10 @@ async function leerRespuesta(respuesta, url, metodo) {
 
   const mensaje =
     datos && typeof datos === "object"
-      ? datos.mensaje || datos.message || datos.error || `Error HTTP ${respuesta.status}`
+      ? datos.mensaje ||
+        datos.message ||
+        datos.error ||
+        `Error HTTP ${respuesta.status}`
       : datos || `Error HTTP ${respuesta.status}`;
 
   throw new Error(mensaje);
@@ -147,7 +155,10 @@ export async function descargar(rutaRelativa, opciones = {}) {
   }
   const mensaje =
     datos && typeof datos === "object"
-      ? datos.mensaje || datos.message || datos.error || `Error HTTP ${respuesta.status}`
+      ? datos.mensaje ||
+        datos.message ||
+        datos.error ||
+        `Error HTTP ${respuesta.status}`
       : datos || `Error HTTP ${respuesta.status}`;
   throw new Error(mensaje);
 }

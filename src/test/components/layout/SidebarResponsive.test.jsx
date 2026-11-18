@@ -18,11 +18,14 @@ afterEach(cleanup);
 beforeEach(() => {
   // Mock localStorage para tema oscuro
   window.localStorage.getItem.mockImplementation((key) =>
-    key === "finapp_tema" ? "oscuro" : null
+    key === "finapp_tema" ? "oscuro" : null,
   );
 });
 
-const renderSidebarResponsive = (props = {}, initialEntries = ["/dashboard"]) => {
+const renderSidebarResponsive = (
+  props = {},
+  initialEntries = ["/dashboard"],
+) => {
   const defaultProps = {
     colapsada: false,
     alToggleColapso: vi.fn(),
@@ -35,13 +38,15 @@ const renderSidebarResponsive = (props = {}, initialEntries = ["/dashboard"]) =>
       <MemoryRouter initialEntries={initialEntries}>
         <SidebarResponsive {...defaultProps} />
       </MemoryRouter>
-    </TemaProvider>
+    </TemaProvider>,
   );
 };
 
 // Helper para obtener el aside principal (no el nav interno)
 const getSidebarAside = () => {
-  return document.querySelector('aside[role="navigation"][aria-label="Navegación principal del dashboard"]');
+  return document.querySelector(
+    'aside[role="navigation"][aria-label="Navegación principal del dashboard"]',
+  );
 };
 
 describe("SidebarResponsive", () => {
@@ -89,7 +94,9 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: false });
 
       const aside = getSidebarAside();
-      const navegacion = aside.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const navegacion = aside.querySelector(
+        "nav[aria-label='Navegación principal del dashboard']",
+      );
       const pieAvatar = navegacion?.nextElementSibling;
       const distribucion = navegacion?.parentElement;
 
@@ -102,7 +109,9 @@ describe("SidebarResponsive", () => {
       expect(pieAvatar).toBeTruthy();
       expect(pieAvatar).toHaveClass("shrink-0");
       expect(pieAvatar.querySelector("hr[role='separator']")).toBeTruthy();
-      expect(pieAvatar.querySelector("button[aria-label^='Cuenta de']")).toBeTruthy();
+      expect(
+        pieAvatar.querySelector("button[aria-label^='Cuenta de']"),
+      ).toBeTruthy();
     });
 
     it("tiene ancho 256px (w-64) cuando expandida", () => {
@@ -116,17 +125,25 @@ describe("SidebarResponsive", () => {
     it("renderiza logo 'FinApp' como botón de toggle, sin enlace", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
       expect(toggleButton).toHaveTextContent("FinApp");
       expect(toggleButton.querySelector("img")).toBeTruthy();
-      expect(screen.queryByRole("link", { name: /FinApp - Inicio/i })).toBeNull();
+      expect(
+        screen.queryByRole("link", { name: /FinApp - Inicio/i }),
+      ).toBeNull();
     });
 
     it("logo muestra imagen y texto FinApp cuando expandida", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
-      expect(toggleButton.querySelectorAll("img").length).toBeGreaterThanOrEqual(1);
+      const toggleButton = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
+      expect(
+        toggleButton.querySelectorAll("img").length,
+      ).toBeGreaterThanOrEqual(1);
       expect(toggleButton).toHaveTextContent("FinApp");
     });
 
@@ -140,7 +157,9 @@ describe("SidebarResponsive", () => {
     it("botón toggle tiene aria-expanded=true cuando expandida", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
       expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
@@ -159,8 +178,12 @@ describe("SidebarResponsive", () => {
       expect(tarjetasLink.getAttribute("href")).toBe("/dashboard/tarjetas");
       expect(tarjetasLink.querySelector("svg.lucide-credit-card")).toBeTruthy();
 
-      const contabilidadLink = screen.getByRole("link", { name: /Contabilidad/i });
-      expect(contabilidadLink.getAttribute("href")).toBe("/dashboard/contabilidad");
+      const contabilidadLink = screen.getByRole("link", {
+        name: /Contabilidad/i,
+      });
+      expect(contabilidadLink.getAttribute("href")).toBe(
+        "/dashboard/contabilidad",
+      );
       expect(contabilidadLink.querySelector("svg.lucide-wallet")).toBeTruthy();
     });
 
@@ -180,7 +203,9 @@ describe("SidebarResponsive", () => {
     it("renderiza el avatar de usuario con el respaldo del contexto al final", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       expect(avatarButton).toBeTruthy();
       expect(avatarButton.textContent).toContain("UD");
       expect(avatarButton.textContent).toContain("Cuenta de Usuario Demo");
@@ -191,7 +216,9 @@ describe("SidebarResponsive", () => {
     it("avatar tiene clases correctas: w-10 h-10 rounded-full bg-emerald-primary", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const avatarCircle = document.querySelector(".w-10.h-10.rounded-full.bg-emerald-primary.flex.items-center.justify-center.text-bg-cream.font-medium");
+      const avatarCircle = document.querySelector(
+        ".w-10.h-10.rounded-full.bg-emerald-primary.flex.items-center.justify-center.text-bg-cream.font-medium",
+      );
       expect(avatarCircle).toBeTruthy();
     });
   });
@@ -201,10 +228,14 @@ describe("SidebarResponsive", () => {
       renderSidebarResponsive({ colapsada: true });
 
       const aside = getSidebarAside();
-      const navegacion = aside.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const navegacion = aside.querySelector(
+        "nav[aria-label='Navegación principal del dashboard']",
+      );
       const pieAvatar = navegacion?.nextElementSibling;
       const distribucion = navegacion?.parentElement;
-      const botonAvatar = pieAvatar?.querySelector("button[aria-label^='Cuenta de']");
+      const botonAvatar = pieAvatar?.querySelector(
+        "button[aria-label^='Cuenta de']",
+      );
 
       expect(aside).toHaveClass("flex", "flex-col");
       expect(distribucion).toHaveClass("flex-1", "min-h-0", "flex", "flex-col");
@@ -228,15 +259,21 @@ describe("SidebarResponsive", () => {
     it("renderiza imagen de logo cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
-      expect(toggleButton.querySelectorAll("img").length).toBeGreaterThanOrEqual(1);
+      const toggleButton = screen.getByRole("button", {
+        name: /Expandir navegación/i,
+      });
+      expect(
+        toggleButton.querySelectorAll("img").length,
+      ).toBeGreaterThanOrEqual(1);
       expect(toggleButton.querySelector("svg.lucide-house")).toBeNull();
     });
 
     it("NO renderiza texto 'FinApp' cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Expandir navegación/i,
+      });
       expect(toggleButton).not.toHaveTextContent("FinApp");
     });
 
@@ -250,7 +287,9 @@ describe("SidebarResponsive", () => {
     it("botón toggle tiene aria-expanded=false cuando colapsada", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Expandir navegación/i,
+      });
       expect(toggleButton).toHaveAttribute("aria-expanded", "false");
     });
 
@@ -268,7 +307,9 @@ describe("SidebarResponsive", () => {
     it("mantiene avatar visible pero oculta nombre/email cuando colapsada - verifica clase hidden", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       expect(avatarButton).toBeTruthy();
       expect(avatarButton.textContent).toContain("UD");
 
@@ -283,7 +324,9 @@ describe("SidebarResponsive", () => {
       const alToggleColapso = vi.fn();
       renderSidebarResponsive({ colapsada: false, alToggleColapso });
 
-      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
       await userEvent.click(toggleButton);
 
       expect(alToggleColapso).toHaveBeenCalledTimes(1);
@@ -293,7 +336,9 @@ describe("SidebarResponsive", () => {
       const alToggleColapso = vi.fn();
       renderSidebarResponsive({ colapsada: true, alToggleColapso });
 
-      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Expandir navegación/i,
+      });
       await userEvent.click(toggleButton);
 
       expect(alToggleColapso).toHaveBeenCalledTimes(1);
@@ -302,7 +347,9 @@ describe("SidebarResponsive", () => {
     it("click en la F colapsada no renderiza enlace a /dashboard", () => {
       renderSidebarResponsive({ colapsada: true });
 
-      const toggleButton = screen.getByRole("button", { name: /Expandir navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Expandir navegación/i,
+      });
       expect(toggleButton.querySelector("a")).toBeNull();
     });
   });
@@ -312,7 +359,9 @@ describe("SidebarResponsive", () => {
       const alAbrirUserModal = vi.fn();
       renderSidebarResponsive({ alAbrirUserModal });
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       await userEvent.click(avatarButton);
 
       expect(alAbrirUserModal).toHaveBeenCalledTimes(1);
@@ -322,7 +371,9 @@ describe("SidebarResponsive", () => {
       const alAbrirUserModal = vi.fn();
       renderSidebarResponsive({ alAbrirUserModal });
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       await userEvent.click(avatarButton);
       await userEvent.click(avatarButton);
 
@@ -348,7 +399,9 @@ describe("SidebarResponsive", () => {
     });
 
     it("enlaces activos tienen clases de estado activo", () => {
-      renderSidebarResponsive({ colapsada: false }, ["/dashboard/contabilidad"]);
+      renderSidebarResponsive({ colapsada: false }, [
+        "/dashboard/contabilidad",
+      ]);
 
       const activeLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(activeLink).toHaveClass("bg-emerald-primary/10");
@@ -357,19 +410,21 @@ describe("SidebarResponsive", () => {
     });
 
     it("enlaces inactivos tienen clases base y hover", () => {
-          renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
+      renderSidebarResponsive({ colapsada: false }, ["/dashboard"]);
 
-          const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
-          expect(inactiveLink).toHaveClass("text-bg-cream");
-          expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
-        });
+      const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
+      expect(inactiveLink).toHaveClass("text-bg-cream");
+      expect(inactiveLink).toHaveClass("hover:bg-emerald-primary/5");
+    });
   });
 
   describe("estados de foco visible", () => {
     it("botón toggle tiene clases de focus-visible con tokens mint-accent en className", () => {
       renderSidebarResponsive({ colapsada: false });
 
-      const toggleButton = screen.getByRole("button", { name: /Colapsar navegación/i });
+      const toggleButton = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
       const className = toggleButton.className;
       // Verificar que las clases de focus-visible están en el className
       expect(className).toContain("focus-visible:outline-none");
@@ -381,41 +436,56 @@ describe("SidebarResponsive", () => {
   });
 
   describe("cambio de estado controlado (props)", () => {
-      it("re-renderiza correctamente al cambiar prop colapsada de false a true", () => {
-        const { rerender } = renderSidebarResponsive({ colapsada: false });
+    it("re-renderiza correctamente al cambiar prop colapsada de false a true", () => {
+      const { rerender } = renderSidebarResponsive({ colapsada: false });
 
-        const aside = getSidebarAside();
-        expect(aside).toHaveClass("w-64");
+      const aside = getSidebarAside();
+      expect(aside).toHaveClass("w-64");
 
-        rerender(
-          <TemaProvider temaInicial="oscuro">
-            <MemoryRouter initialEntries={["/dashboard"]}>
-              <SidebarResponsive colapsada={true} alToggleColapso={vi.fn()} alAbrirUserModal={vi.fn()} />
-            </MemoryRouter>
-          </TemaProvider>
-        );
+      rerender(
+        <TemaProvider temaInicial="oscuro">
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <SidebarResponsive
+              colapsada={true}
+              alToggleColapso={vi.fn()}
+              alAbrirUserModal={vi.fn()}
+            />
+          </MemoryRouter>
+        </TemaProvider>,
+      );
 
-        const newAside = getSidebarAside();
-        expect(newAside).toHaveClass("w-[72px]");
-      });
-
-      it("mantiene callback alToggleColapso referencialmente estable entre renders", () => {
-        const alToggleColapso = vi.fn();
-        const { rerender } = renderSidebarResponsive({ colapsada: false, alToggleColapso });
-
-        const button1 = screen.getByRole("button", { name: /Colapsar navegación/i });
-
-        rerender(
-          <TemaProvider temaInicial="oscuro">
-            <MemoryRouter initialEntries={["/dashboard"]}>
-              <SidebarResponsive colapsada={false} alToggleColapso={alToggleColapso} alAbrirUserModal={vi.fn()} />
-            </MemoryRouter>
-          </TemaProvider>
-        );
-
-        const button2 = screen.getByRole("button", { name: /Colapsar navegación/i });
-        // El botón se re-renderiza pero la función callback es la misma
-        expect(button2).toBeTruthy();
-      });
+      const newAside = getSidebarAside();
+      expect(newAside).toHaveClass("w-[72px]");
     });
+
+    it("mantiene callback alToggleColapso referencialmente estable entre renders", () => {
+      const alToggleColapso = vi.fn();
+      const { rerender } = renderSidebarResponsive({
+        colapsada: false,
+        alToggleColapso,
+      });
+
+      const button1 = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
+
+      rerender(
+        <TemaProvider temaInicial="oscuro">
+          <MemoryRouter initialEntries={["/dashboard"]}>
+            <SidebarResponsive
+              colapsada={false}
+              alToggleColapso={alToggleColapso}
+              alAbrirUserModal={vi.fn()}
+            />
+          </MemoryRouter>
+        </TemaProvider>,
+      );
+
+      const button2 = screen.getByRole("button", {
+        name: /Colapsar navegación/i,
+      });
+      // El botón se re-renderiza pero la función callback es la misma
+      expect(button2).toBeTruthy();
+    });
+  });
 });

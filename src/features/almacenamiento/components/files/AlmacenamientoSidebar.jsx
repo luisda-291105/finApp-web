@@ -26,7 +26,10 @@ const OPCIONES_VISTA = [
  */
 export default function AlmacenamientoSidebar({ vista, alSeleccionarVista }) {
   return (
-    <nav aria-label="Navegación de archivos" className="w-full shrink-0 space-y-1">
+    <nav
+      aria-label="Navegación de archivos"
+      className="w-full shrink-0 space-y-1"
+    >
       {OPCIONES_VISTA.map((opcion) => {
         const Icono = opcion.icono;
         const activo = vista === opcion.clave;

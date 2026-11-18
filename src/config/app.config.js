@@ -8,7 +8,8 @@
 // mientras el backend no esté listo. Si no se define, se mantiene el comportamiento histórico
 // de trial activo para no bloquear el flujo de desarrollo.
 const valorTrialMode = import.meta.env.VITE_TRIAL_MODE;
-export const TRIAL_MODE = valorTrialMode === undefined ? true : valorTrialMode === "true";
+export const TRIAL_MODE =
+  valorTrialMode === undefined ? true : valorTrialMode === "true";
 
 // Alias mantenido por compatibilidad con el código previo y los tests existentes.
 export const TRIAL_ACTIVO = TRIAL_MODE;

@@ -6,20 +6,28 @@
  * @estados    Ninguno
  * @usadoPor   useCorreos
  */
-import { obtenerCorreosGmail, obtenerEstadoCorreosGmail } from "../../../services/gmailServicio";
+import {
+  obtenerCorreosGmail,
+  obtenerEstadoCorreosGmail,
+} from "../../../services/gmailServicio";
 import { coincideDestino } from "../utils/correoHelpers";
 
 /** Recupera y filtra los mensajes destinados a una fuente específica. */
 export async function consultarCorreosDeFuente(cuentaId, fuente) {
   const respuesta = await obtenerCorreosGmail(cuentaId, [fuente]);
-  return respuesta.filter((correo) => coincideDestino(correo, fuente.contenido));
+  return respuesta.filter((correo) =>
+    coincideDestino(correo, fuente.contenido),
+  );
 }
 
 /** Consulta una vez y reparte los mensajes encontrados entre sus fuentes. */
 export async function consultarCorreosDeFuentes(cuentaId, fuentes) {
   if (!fuentes?.length) return [];
   const correos = await obtenerCorreosGmail(cuentaId, fuentes);
-  return fuentes.map((fuente) => [fuente.idFuente, correos.filter((correo) => coincideDestino(correo, fuente.contenido))]);
+  return fuentes.map((fuente) => [
+    fuente.idFuente,
+    correos.filter((correo) => coincideDestino(correo, fuente.contenido)),
+  ]);
 }
 
 /** Consulta el estado de la cola de correos entrantes de una cuenta. */

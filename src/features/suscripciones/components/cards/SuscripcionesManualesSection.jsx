@@ -21,7 +21,10 @@ export default function SuscripcionesManualesSection({
   const [colapsado, setColapsado] = useState(false);
 
   return (
-    <section aria-labelledby="suscripciones-manuales-titulo" className="space-y-4">
+    <section
+      aria-labelledby="suscripciones-manuales-titulo"
+      className="space-y-4"
+    >
       <Card className="space-y-4 p-5">
         <button
           type="button"
@@ -30,7 +33,10 @@ export default function SuscripcionesManualesSection({
           aria-controls="suscripciones-manuales-contenido"
           className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
         >
-          <h2 id="suscripciones-manuales-titulo" className="font-display text-xl font-semibold text-bg-dark">
+          <h2
+            id="suscripciones-manuales-titulo"
+            className="font-display text-xl font-semibold text-bg-dark"
+          >
             Suscripciones registradas
           </h2>
           <span className="inline-flex items-center gap-2 text-sm text-slate-text">
@@ -44,13 +50,19 @@ export default function SuscripcionesManualesSection({
         {!colapsado && (
           <div id="suscripciones-manuales-contenido" className="space-y-4">
             {cargando ? (
-              <p role="status" className="text-sm text-slate-text">Cargando suscripciones registradas…</p>
+              <p role="status" className="text-sm text-slate-text">
+                Cargando suscripciones registradas…
+              </p>
             ) : suscripciones.length === 0 ? (
               <p className="text-sm text-slate-text">
-                Registra suscripciones de cobros o importantes para hacerles seguimiento manual.
+                Registra suscripciones de cobros o importantes para hacerles
+                seguimiento manual.
               </p>
             ) : (
-              <ul className="space-y-3" aria-label="Suscripciones registradas manualmente">
+              <ul
+                className="space-y-3"
+                aria-label="Suscripciones registradas manualmente"
+              >
                 {suscripciones.map((item) => (
                   <li
                     key={item.id}
@@ -59,7 +71,12 @@ export default function SuscripcionesManualesSection({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate font-semibold text-bg-dark" title={item.apodo ? item.nombre : undefined}>{item.apodo || item.nombre}</p>
+                        <p
+                          className="truncate font-semibold text-bg-dark"
+                          title={item.apodo ? item.nombre : undefined}
+                        >
+                          {item.apodo || item.nombre}
+                        </p>
                         <span
                           className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
                             item.importancia === "Alta"
@@ -69,7 +86,11 @@ export default function SuscripcionesManualesSection({
                                 : "bg-border-line/40 text-slate-text"
                           }`}
                         >
-                          {item.importancia === "Alta" ? "Importante" : item.importancia === "Media" ? "Media importancia" : "Baja importancia"}
+                          {item.importancia === "Alta"
+                            ? "Importante"
+                            : item.importancia === "Media"
+                              ? "Media importancia"
+                              : "Baja importancia"}
                         </span>
                         {item.prioridad && item.prioridad !== "Media" && (
                           <span className="shrink-0 rounded-full bg-border-line/40 px-2.5 py-1 text-xs font-semibold text-slate-text">
@@ -78,13 +99,21 @@ export default function SuscripcionesManualesSection({
                         )}
                       </div>
                       <p className="mt-1 text-sm text-slate-text">
-                        {item.categoria} · Cobro: {formatoFecha.format(new Date(`${item.fechaCobro}T00:00:00`))}
+                        {item.categoria} · Cobro:{" "}
+                        {formatoFecha.format(
+                          new Date(`${item.fechaCobro}T00:00:00`),
+                        )}
                       </p>
-                      <p className="mt-1 font-semibold tabular-nums text-bg-dark">{formatoMoneda.format(item.monto)}</p>
+                      <p className="mt-1 font-semibold tabular-nums text-bg-dark">
+                        {formatoMoneda.format(item.monto)}
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={(evento) => { evento.stopPropagation(); alAlternarImportancia(item.id); }}
+                      onClick={(evento) => {
+                        evento.stopPropagation();
+                        alAlternarImportancia(item.id);
+                      }}
                       className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-line px-3 text-xs font-medium text-bg-dark hover:border-emerald-primary/50 hover:text-emerald-primary"
                     >
                       {item.importancia === "Baja" ? (
@@ -92,7 +121,9 @@ export default function SuscripcionesManualesSection({
                       ) : (
                         <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
                       )}
-                      {item.importancia === "Baja" ? "Subir importancia" : "Bajar importancia"}
+                      {item.importancia === "Baja"
+                        ? "Subir importancia"
+                        : "Bajar importancia"}
                     </button>
                   </li>
                 ))}

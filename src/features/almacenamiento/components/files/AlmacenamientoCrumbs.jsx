@@ -18,10 +18,21 @@ import { ChevronRight } from "lucide-react";
  */
 export default function AlmacenamientoCrumbs({ ruta = [], alNavegar }) {
   return (
-    <nav aria-label="Migas de pan" className="flex min-w-0 flex-wrap items-center gap-1 text-sm">
+    <nav
+      aria-label="Migas de pan"
+      className="flex min-w-0 flex-wrap items-center gap-1 text-sm"
+    >
       {ruta.map((nivel, indice) => (
-        <span key={`${nivel.id}-${indice}`} className="flex min-w-0 items-center gap-1">
-          {indice > 0 && <ChevronRight className="h-4 w-4 shrink-0 text-slate-text" aria-hidden="true" />}
+        <span
+          key={`${nivel.id}-${indice}`}
+          className="flex min-w-0 items-center gap-1"
+        >
+          {indice > 0 && (
+            <ChevronRight
+              className="h-4 w-4 shrink-0 text-slate-text"
+              aria-hidden="true"
+            />
+          )}
           <button
             type="button"
             onClick={() => alNavegar(nivel.id)}

@@ -17,10 +17,22 @@ export default function useSuscripcionesRecurrentes() {
   useEffect(() => {
     let vigente = true;
     listarSuscripcionesRecurrentes()
-      .then((datos) => { if (vigente) setSuscripciones(Array.isArray(datos) ? datos : []); })
-      .catch((fallo) => { if (vigente) setError(fallo?.message || "No se pudieron consultar los cobros recurrentes."); })
-      .finally(() => { if (vigente) setCargando(false); });
-    return () => { vigente = false; };
+      .then((datos) => {
+        if (vigente) setSuscripciones(Array.isArray(datos) ? datos : []);
+      })
+      .catch((fallo) => {
+        if (vigente)
+          setError(
+            fallo?.message ||
+              "No se pudieron consultar los cobros recurrentes.",
+          );
+      })
+      .finally(() => {
+        if (vigente) setCargando(false);
+      });
+    return () => {
+      vigente = false;
+    };
   }, []);
 
   return { suscripciones, cargando, error };

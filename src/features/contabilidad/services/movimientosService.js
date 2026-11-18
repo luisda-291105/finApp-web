@@ -7,7 +7,12 @@
  * @usadoPor   PaginaDashboardContabilidad
  */
 import { getEndpoint } from "../../../config/api.config";
-import { crear, obtener, actualizar, eliminar } from "../../../services/httpServicio";
+import {
+  crear,
+  obtener,
+  actualizar,
+  eliminar,
+} from "../../../services/httpServicio";
 
 const rutaBase = getEndpoint("movimiento.base");
 const rutaResumen = getEndpoint("movimiento.resumen");
@@ -15,7 +20,11 @@ const rutaResumenGlobal = getEndpoint("movimiento.resumenGlobal");
 const rutaRecurrentes = getEndpoint("movimiento.recurrentes");
 
 /** Consulta todos los movimientos o los de un bolsillo opcional y aplica el filtro de tipo. */
-export function listarMovimientos(idBolsillo, tipo = "TODOS", estadoRevision = "") {
+export function listarMovimientos(
+  idBolsillo,
+  tipo = "TODOS",
+  estadoRevision = "",
+) {
   const parametros = new URLSearchParams({ tipo });
   if (idBolsillo) parametros.set("idBolsillo", idBolsillo);
   if (estadoRevision) parametros.set("estadoRevision", estadoRevision);
@@ -34,7 +43,10 @@ export function guardarCorreoPorRevisar(movimiento) {
 
 /** Confirma un movimiento Gmail revisado como ingreso o gasto global. */
 export function confirmarMovimientoGmailGlobal(idMovimiento) {
-  return crear(`${rutaBase}/${encodeURIComponent(idMovimiento)}/confirmar-global`, {});
+  return crear(
+    `${rutaBase}/${encodeURIComponent(idMovimiento)}/confirmar-global`,
+    {},
+  );
 }
 
 /** Consulta cuáles referencias Gmail ya se registraron para el usuario activo. */
@@ -47,7 +59,10 @@ export function listarCorreosImportados(ids) {
 
 /** Actualiza un movimiento propio del usuario activo. */
 export function actualizarMovimiento(idMovimiento, movimiento) {
-  return actualizar(`${rutaBase}/${encodeURIComponent(idMovimiento)}`, movimiento);
+  return actualizar(
+    `${rutaBase}/${encodeURIComponent(idMovimiento)}`,
+    movimiento,
+  );
 }
 
 /** Elimina un movimiento propio del usuario activo. */

@@ -113,7 +113,9 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         aria-labelledby="user-modal-title"
         tabIndex={-1}
         className="modal-sheet-mobile fixed inset-x-0 bottom-[var(--bottom-nav-alto)] -translate-x-1/2 w-[90vw] max-w-sm max-h-[85dvh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-t-[1.75rem] shadow-xl z-[101] sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:max-h-[85vh] sm:rounded-2xl"
-        style={{ left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)" }}
+        style={{
+          left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)",
+        }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -121,7 +123,10 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
       >
         {/* Header con el único control visible de cierre */}
         <header className="flex items-center justify-between px-5 py-4 border-b border-border-line/30">
-          <h2 id="user-modal-title" className="font-display text-lg font-semibold text-bg-dark">
+          <h2
+            id="user-modal-title"
+            className="font-display text-lg font-semibold text-bg-dark"
+          >
             {usuario?.nombre || "Cuenta de Usuario Demo"}
           </h2>
           <BotonCerrar
@@ -133,7 +138,9 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
 
         {/* Correo de solo lectura (se gestionará con el registro de fuentes) */}
         <div className="px-5 py-3 border-b border-border-line/30">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-text">Correo</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-text">
+            Correo
+          </p>
           <p className="text-sm text-bg-dark">{correo || "No registrado"}</p>
         </div>
 
@@ -144,7 +151,10 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
             onClick={handleConfiguracion}
             className="flex items-center gap-3 w-full px-4 py-3 text-left text-bg-dark hover:bg-emerald-primary/10 rounded-xl transition-colors"
           >
-            <Settings className="flex-shrink-0 w-6 h-6 text-emerald-primary" aria-hidden="true" />
+            <Settings
+              className="flex-shrink-0 w-6 h-6 text-emerald-primary"
+              aria-hidden="true"
+            />
             <span className="font-medium">Configuración</span>
           </button>
         </div>
@@ -159,7 +169,10 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
             onClick={handleSalirDemo}
             className="flex items-center gap-3 w-full px-4 py-3 text-left text-bg-dark hover:bg-emerald-primary/10 rounded-xl transition-colors"
           >
-            <LogOut className="flex-shrink-0 w-6 h-6 text-emerald-primary" aria-hidden="true" />
+            <LogOut
+              className="flex-shrink-0 w-6 h-6 text-emerald-primary"
+              aria-hidden="true"
+            />
             <span className="font-medium">Salir del demo</span>
           </button>
         </div>
@@ -176,10 +189,8 @@ export default function DashboardUserModal({ abierto, alCerrar, triggerRef }) {
         aria-hidden="true"
       />
       {/* Panel con AnimatePresence para animación de salida */}
-      <AnimatePresence>
-        {modalContent}
-      </AnimatePresence>
+      <AnimatePresence>{modalContent}</AnimatePresence>
     </>,
-    document.body
+    document.body,
   );
 }

@@ -29,17 +29,23 @@ vi.mock("../../hooks/useBreakpoint", () => ({
 // Mock de la navegación lateral: aside con role de navegación + el control de colapso real
 // (permite verificar el traslado de foco al cruzar el corte).
 vi.mock("../../components/layout/SidebarResponsive", () => ({
-  default: vi.fn(({ colapsada, alToggleColapso, alAbrirUserModal, ...rest }) => (
-    <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
-      <button type="button" data-testid="sidebar-toggle" onClick={alToggleColapso} />
-    </aside>
-  )),
+  default: vi.fn(
+    ({ colapsada, alToggleColapso, alAbrirUserModal, ...rest }) => (
+      <aside data-testid="sidebar-responsive" role="navigation" {...rest}>
+        <button
+          type="button"
+          data-testid="sidebar-toggle"
+          onClick={alToggleColapso}
+        />
+      </aside>
+    ),
+  ),
 }));
 
 // Drawer exclusivo de móvil: solo monta el panel cuando está abierto
 vi.mock("../../components/layout/DashboardDrawer", () => ({
   default: vi.fn(({ abierto, children }) =>
-    abierto ? <div data-testid="dashboard-drawer">{children}</div> : null
+    abierto ? <div data-testid="dashboard-drawer">{children}</div> : null,
   ),
 }));
 
@@ -74,7 +80,9 @@ vi.mock("../../components/layout/SidebarNavContenido", () => ({
 }));
 
 vi.mock("../../components/layout/Container", () => ({
-  default: vi.fn(({ children }) => <div data-testid="container">{children}</div>),
+  default: vi.fn(({ children }) => (
+    <div data-testid="container">{children}</div>
+  )),
 }));
 
 // Estados del hook mock. Partición complementaria: isMobile === !isDesktop.
@@ -114,9 +122,11 @@ const renderLayout = (breakpoint, initialPath = "/dashboard") => {
   return render(<LayoutTree initialPath={initialPath} />);
 };
 
-const wrapperPrincipal = (container) => container.querySelector('[class*="min-h-screen"]');
+const wrapperPrincipal = (container) =>
+  container.querySelector('[class*="min-h-screen"]');
 
-const propsDe = (ComponenteMock, indice = 0) => ComponenteMock.mock.calls[indice]?.[0];
+const propsDe = (ComponenteMock, indice = 0) =>
+  ComponenteMock.mock.calls[indice]?.[0];
 
 describe("DashboardLayout — dos versiones de vista", () => {
   beforeEach(() => {
@@ -133,32 +143,38 @@ describe("DashboardLayout — dos versiones de vista", () => {
       ["768px", true],
       ["800px", true],
       ["1023px", true],
-    ])("en %s: navegación lateral colapsada, margen ml-[72px] y sin BottomNav", (_ancho, colapsada) => {
-      const { container } = renderLayout(pantallasGrandes(colapsada));
+    ])(
+      "en %s: navegación lateral colapsada, margen ml-[72px] y sin BottomNav",
+      (_ancho, colapsada) => {
+        const { container } = renderLayout(pantallasGrandes(colapsada));
 
-      const sidebarProps = propsDe(SidebarResponsive);
-      expect(sidebarProps.colapsada).toBe(true);
-      expect(sidebarProps.alToggleColapso).toBeTypeOf("function");
-      expect(sidebarProps.alAbrirUserModal).toBeTypeOf("function");
+        const sidebarProps = propsDe(SidebarResponsive);
+        expect(sidebarProps.colapsada).toBe(true);
+        expect(sidebarProps.alToggleColapso).toBeTypeOf("function");
+        expect(sidebarProps.alAbrirUserModal).toBeTypeOf("function");
 
-      expect(BottomNav).not.toHaveBeenCalled();
-      expect(DashboardDrawer).not.toHaveBeenCalled();
+        expect(BottomNav).not.toHaveBeenCalled();
+        expect(DashboardDrawer).not.toHaveBeenCalled();
 
-      const wrapper = wrapperPrincipal(container);
-      expect(wrapper).toHaveClass("ml-[72px]");
-      expect(wrapper).not.toHaveClass("ml-64");
-    });
+        const wrapper = wrapperPrincipal(container);
+        expect(wrapper).toHaveClass("ml-[72px]");
+        expect(wrapper).not.toHaveClass("ml-64");
+      },
+    );
 
     it.each([
       ["1024px", false],
       ["1440px", false],
-    ])("en %s: navegación lateral expandida y margen ml-64", (_ancho, colapsada) => {
-      const { container } = renderLayout(pantallasGrandes(colapsada));
+    ])(
+      "en %s: navegación lateral expandida y margen ml-64",
+      (_ancho, colapsada) => {
+        const { container } = renderLayout(pantallasGrandes(colapsada));
 
-      expect(propsDe(SidebarResponsive).colapsada).toBe(false);
-      expect(wrapperPrincipal(container)).toHaveClass("ml-64");
-      expect(wrapperPrincipal(container)).not.toHaveClass("ml-[72px]");
-    });
+        expect(propsDe(SidebarResponsive).colapsada).toBe(false);
+        expect(wrapperPrincipal(container)).toHaveClass("ml-64");
+        expect(wrapperPrincipal(container)).not.toHaveClass("ml-[72px]");
+      },
+    );
 
     it("no reserva la navegación con prefijos lg: (espacio desde 768px)", () => {
       const { container } = renderLayout(pantallasGrandes(true));
@@ -185,7 +201,7 @@ describe("DashboardLayout — dos versiones de vista", () => {
         expect(SidebarResponsive).not.toHaveBeenCalled();
         expect(wrapperPrincipal(container)).toHaveClass("ml-0");
         expect(wrapperPrincipal(container).className).not.toMatch(/lg:ml-/);
-      }
+      },
     );
 
     it("pasa al drawer solo abierto/alCerrar/children/triggerRef y no esMobile", () => {
@@ -289,17 +305,22 @@ describe("DashboardLayout — dos versiones de vista", () => {
 
       const modalProps = propsDe(DashboardUserModal);
       expect(modalProps.triggerRef).toBeDefined();
-      expect(modalProps.triggerRef.current).toBe(screen.getByTestId("bottom-nav-menu"));
-      expect(modalProps.triggerRef.current).toHaveAttribute("aria-label", "Abrir menú");
+      expect(modalProps.triggerRef.current).toBe(
+        screen.getByTestId("bottom-nav-menu"),
+      );
+      expect(modalProps.triggerRef.current).toHaveAttribute(
+        "aria-label",
+        "Abrir menú",
+      );
       // Firmas intactas: el modal no recibe props nuevas
       expect(Object.keys(modalProps).sort()).toEqual(
-        ["abierto", "alCerrar", "triggerRef"].sort()
+        ["abierto", "alCerrar", "triggerRef"].sort(),
       );
 
       // El drawer conserva exactamente su contrato (sin props nuevas en sidebars)
       const drawerProps = propsDe(DashboardDrawer);
       expect(Object.keys(drawerProps).sort()).toEqual(
-        ["abierto", "alCerrar", "children", "triggerRef", "temaClaro"].sort()
+        ["abierto", "alCerrar", "children", "triggerRef", "temaClaro"].sort(),
       );
       expect(drawerProps).not.toHaveProperty("esMobile");
     });
@@ -388,7 +409,9 @@ describe("DashboardLayout — dos versiones de vista", () => {
       configurarVersión(versionMovil());
       rerender(<LayoutTree initialPath="/dashboard" />);
 
-      expect(document.activeElement).toBe(screen.getByTestId("bottom-nav-menu"));
+      expect(document.activeElement).toBe(
+        screen.getByTestId("bottom-nav-menu"),
+      );
     });
 
     it.each([
@@ -397,8 +420,12 @@ describe("DashboardLayout — dos versiones de vista", () => {
     ])(
       "cruce %s con el foco en el contenido principal: no mueve el foco (AC-14)",
       (_nombre, cruzaAMovil) => {
-        const versionOrigen = cruzaAMovil ? pantallasGrandes(true) : versionMovil();
-        const versionDestino = cruzaAMovil ? versionMovil() : pantallasGrandes(true);
+        const versionOrigen = cruzaAMovil
+          ? pantallasGrandes(true)
+          : versionMovil();
+        const versionDestino = cruzaAMovil
+          ? versionMovil()
+          : pantallasGrandes(true);
         const { rerender } = renderLayout(versionOrigen);
 
         // Contenido principal fuera de toda navegación: sobrevive al cruce
@@ -413,7 +440,7 @@ describe("DashboardLayout — dos versiones de vista", () => {
         rerender(<LayoutTree initialPath="/dashboard" />);
 
         expect(document.activeElement).toBe(contenido);
-      }
+      },
     );
 
     it("cruce sin el control estable de destino: cae al primer control enfocable (AC-15 variante)", () => {

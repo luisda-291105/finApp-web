@@ -17,9 +17,18 @@ const opcionesTrampa = (panelRef) => ({
 
 /** Marco modal accesible para el formulario de creación/edición de muestras. */
 export default function CrearMuestraModal({
-  abierto, borrador, indiceEditando, guardando, error, triggerRef,
-  cuentasCorreo, cargandoCuentasCorreo, errorCuentasCorreo,
-  alCambiar, alGuardar, alCerrar,
+  abierto,
+  borrador,
+  indiceEditando,
+  guardando,
+  error,
+  triggerRef,
+  cuentasCorreo,
+  cargandoCuentasCorreo,
+  errorCuentasCorreo,
+  alCambiar,
+  alGuardar,
+  alCerrar,
 }) {
   const panelRef = useRef(null);
   useCierreConEsc({ activo: abierto, zIndex: 60, alCerrar });
@@ -33,7 +42,11 @@ export default function CrearMuestraModal({
 
   return createPortal(
     <>
-      <div className="modal-overlay-dashboard z-[100] bg-bg-dark/80 backdrop-blur-sm" onClick={cerrarDesdeFondo} aria-hidden="true" />
+      <div
+        className="modal-overlay-dashboard z-[100] bg-bg-dark/80 backdrop-blur-sm"
+        onClick={cerrarDesdeFondo}
+        aria-hidden="true"
+      />
       <AnimatePresence>
         <FocusTrap focusTrapOptions={opcionesTrampa(panelRef)}>
           <motion.div
@@ -44,20 +57,43 @@ export default function CrearMuestraModal({
             aria-labelledby="modal-crear-muestra-titulo"
             tabIndex={-1}
             className="modal-sheet-mobile fixed bottom-[var(--bottom-nav-alto)] z-[101] max-h-[85dvh] w-[90vw] max-w-sm -translate-x-1/2 overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 outline-none glass-surface shadow-xl sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:max-h-[85vh] sm:rounded-2xl"
-            style={{ left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)" }}
+            style={{
+              left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)",
+            }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
           >
             <header className="flex items-center justify-between border-b border-border-line/30 px-5 py-4">
-              <h2 id="modal-crear-muestra-titulo" className="font-display text-lg font-semibold text-bg-dark">
+              <h2
+                id="modal-crear-muestra-titulo"
+                className="font-display text-lg font-semibold text-bg-dark"
+              >
                 {indiceEditando === null ? "Crear muestra" : "Editar muestra"}
               </h2>
-              <BotonCerrar ariaLabel={indiceEditando === null ? "Cerrar creación de muestra" : "Cerrar edición de muestra"} alCerrar={alCerrar} className="text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark focus-visible:ring-emerald-primary" />
+              <BotonCerrar
+                ariaLabel={
+                  indiceEditando === null
+                    ? "Cerrar creación de muestra"
+                    : "Cerrar edición de muestra"
+                }
+                alCerrar={alCerrar}
+                className="text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark focus-visible:ring-emerald-primary"
+              />
             </header>
 
-            <CrearMuestraForm borrador={borrador} indiceEditando={indiceEditando} guardando={guardando} error={error} cuentasCorreo={cuentasCorreo} cargandoCuentasCorreo={cargandoCuentasCorreo} errorCuentasCorreo={errorCuentasCorreo} alCambiar={alCambiar} alGuardar={alGuardar} />
+            <CrearMuestraForm
+              borrador={borrador}
+              indiceEditando={indiceEditando}
+              guardando={guardando}
+              error={error}
+              cuentasCorreo={cuentasCorreo}
+              cargandoCuentasCorreo={cargandoCuentasCorreo}
+              errorCuentasCorreo={errorCuentasCorreo}
+              alCambiar={alCambiar}
+              alGuardar={alGuardar}
+            />
           </motion.div>
         </FocusTrap>
       </AnimatePresence>

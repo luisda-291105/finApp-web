@@ -35,7 +35,8 @@ export default function ModalGoogleDrive({
     if (evento.target === evento.currentTarget) alCerrar();
   };
 
-  const correoCuenta = cuenta?.etiquetaCuenta || cuenta?.identificadorExterno || "";
+  const correoCuenta =
+    cuenta?.etiquetaCuenta || cuenta?.identificadorExterno || "";
   const urlDrive = correoCuenta
     ? `https://drive.google.com/drive/u/${encodeURIComponent(correoCuenta)}`
     : "https://drive.google.com";
@@ -109,7 +110,9 @@ export default function ModalGoogleDrive({
                 >
                   Google Drive
                 </h2>
-                <p className="text-xs text-slate-text">Almacenamiento en la nube</p>
+                <p className="text-xs text-slate-text">
+                  Almacenamiento en la nube
+                </p>
               </div>
             </div>
             <BotonCerrar
@@ -132,28 +135,47 @@ export default function ModalGoogleDrive({
               <div className="rounded-2xl border border-border-line/40 bg-white/70 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-text">Cuenta vinculada</p>
-                    <p className="truncate font-semibold text-bg-dark">{correoCuenta}</p>
+                    <p className="text-xs font-medium text-slate-text">
+                      Cuenta vinculada
+                    </p>
+                    <p className="truncate font-semibold text-bg-dark">
+                      {correoCuenta}
+                    </p>
                   </div>
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${requiereReconexion ? "bg-amber-500/10 text-amber-700" : "bg-emerald-primary/10 text-emerald-primary"}`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${requiereReconexion ? "bg-amber-500/10 text-amber-700" : "bg-emerald-primary/10 text-emerald-primary"}`}
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                     {requiereReconexion ? "Requiere reconexión" : "Conectada"}
                   </span>
                 </div>
-                {requiereReconexion && <p className="mt-3 text-xs text-amber-700">Reconecta esta cuenta para autorizar el alcance actualizado y recuperar el acceso a tus archivos.</p>}
+                {requiereReconexion && (
+                  <p className="mt-3 text-xs text-amber-700">
+                    Reconecta esta cuenta para autorizar el alcance actualizado
+                    y recuperar el acceso a tus archivos.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="rounded-2xl border border-border-line/40 bg-white/70 p-4">
                 <div className="flex items-center gap-3 text-slate-text">
-                  <HardDrive className="h-5 w-5 shrink-0 text-emerald-primary" aria-hidden="true" />
+                  <HardDrive
+                    className="h-5 w-5 shrink-0 text-emerald-primary"
+                    aria-hidden="true"
+                  />
                   <p className="text-xs">
-                    Se abrirá la aplicación web de Google Drive en una nueva pestaña.
+                    Se abrirá la aplicación web de Google Drive en una nueva
+                    pestaña.
                   </p>
                 </div>
               </div>
             )}
 
-            <p className="text-xs text-slate-text">Si se cambió el alcance de acceso de Google Drive, vuelve a conectar la cuenta desde Configuración o el selector de almacenamiento.</p>
+            <p className="text-xs text-slate-text">
+              Si se cambió el alcance de acceso de Google Drive, vuelve a
+              conectar la cuenta desde Configuración o el selector de
+              almacenamiento.
+            </p>
           </div>
 
           {/* Acciones */}
@@ -179,6 +201,6 @@ export default function ModalGoogleDrive({
         </section>
       </FocusTrap>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -6,8 +6,18 @@
  * @estados    alertas (lista de notificaciones activas)
  * @usadoPor   App y componentes que deben mostrar errores/notificaciones globales
  */
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import { NotificacionLateral, PilaNotificacionesLaterales } from "../features/error";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  NotificacionLateral,
+  PilaNotificacionesLaterales,
+} from "../features/error";
 
 const alertasNoOp = Object.freeze({
   __sinProveedor: true,
@@ -38,39 +48,55 @@ export function AlertasProvider({ children }) {
     }
   }, []);
 
-  const cerrarAlerta = useCallback((id) => {
-    limpiarTemporizador(id);
-    setAlertas((actuales) => {
-      const alerta = actuales.find((item) => item.id === id);
-      alerta?.alCerrar?.();
-      return actuales.filter((item) => item.id !== id);
-    });
-  }, [limpiarTemporizador]);
+  const cerrarAlerta = useCallback(
+    (id) => {
+      limpiarTemporizador(id);
+      setAlertas((actuales) => {
+        const alerta = actuales.find((item) => item.id === id);
+        alerta?.alCerrar?.();
+        return actuales.filter((item) => item.id !== id);
+      });
+    },
+    [limpiarTemporizador],
+  );
 
-  const mostrarAlerta = useCallback((mensaje, opciones = {}) => {
-    const texto = typeof mensaje === "string" ? mensaje : mensaje?.message || String(mensaje || "");
-    if (!texto) return null;
-    const id = opciones.id || crearId();
-    const alerta = {
-      id,
-      tipo: opciones.tipo || "error",
-      mensaje: texto,
-      alCerrar: opciones.alCerrar,
-    };
-    setAlertas((actuales) => {
-      const sinDuplicada = opciones.id ? actuales.filter((item) => item.id !== opciones.id) : actuales;
-      return [...sinDuplicada, alerta];
-    });
-    limpiarTemporizador(id);
-    if (Number.isFinite(opciones.duracionMs) && opciones.duracionMs > 0) {
-      const temporizador = window.setTimeout(() => cerrarAlerta(id), opciones.duracionMs);
-      temporizadoresRef.current.set(id, temporizador);
-    }
-    return id;
-  }, [cerrarAlerta, limpiarTemporizador]);
+  const mostrarAlerta = useCallback(
+    (mensaje, opciones = {}) => {
+      const texto =
+        typeof mensaje === "string"
+          ? mensaje
+          : mensaje?.message || String(mensaje || "");
+      if (!texto) return null;
+      const id = opciones.id || crearId();
+      const alerta = {
+        id,
+        tipo: opciones.tipo || "error",
+        mensaje: texto,
+        alCerrar: opciones.alCerrar,
+      };
+      setAlertas((actuales) => {
+        const sinDuplicada = opciones.id
+          ? actuales.filter((item) => item.id !== opciones.id)
+          : actuales;
+        return [...sinDuplicada, alerta];
+      });
+      limpiarTemporizador(id);
+      if (Number.isFinite(opciones.duracionMs) && opciones.duracionMs > 0) {
+        const temporizador = window.setTimeout(
+          () => cerrarAlerta(id),
+          opciones.duracionMs,
+        );
+        temporizadoresRef.current.set(id, temporizador);
+      }
+      return id;
+    },
+    [cerrarAlerta, limpiarTemporizador],
+  );
 
   const limpiarAlertas = useCallback(() => {
-    temporizadoresRef.current.forEach((temporizador) => window.clearTimeout(temporizador));
+    temporizadoresRef.current.forEach((temporizador) =>
+      window.clearTimeout(temporizador),
+    );
     temporizadoresRef.current.clear();
     setAlertas([]);
   }, []);

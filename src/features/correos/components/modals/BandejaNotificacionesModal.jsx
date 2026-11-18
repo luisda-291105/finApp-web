@@ -15,7 +15,10 @@ function formatearFecha(valor) {
   if (!valor) return "";
   const fecha = new Date(valor);
   if (Number.isNaN(fecha.getTime())) return "";
-  return new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" }).format(fecha);
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(fecha);
 }
 
 function textoOrigen(origen) {
@@ -35,7 +38,8 @@ export default function BandejaNotificacionesModal({
   errorSincronizacion,
   estadoCorreos,
 }) {
-  const [notificacionSeleccionada, setNotificacionSeleccionada] = useState(null);
+  const [notificacionSeleccionada, setNotificacionSeleccionada] =
+    useState(null);
   const triggerDetalleRef = useRef(null);
 
   const cerrarBandeja = () => {
@@ -82,34 +86,56 @@ export default function BandejaNotificacionesModal({
           </div>
 
           {estadoCorreos && (
-            <div className="rounded-xl border border-border-line/70 bg-bg-cream/60 px-4 py-3" aria-live="polite">
+            <div
+              className="rounded-xl border border-border-line/70 bg-bg-cream/60 px-4 py-3"
+              aria-live="polite"
+            >
               {estadoCorreos.actualizando ? (
-                <p role="status" className="flex items-center gap-2 text-sm font-medium text-emerald-primary">
-                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Actualizando correos… {estadoCorreos.enEspera + estadoCorreos.procesando} en espera
+                <p
+                  role="status"
+                  className="flex items-center gap-2 text-sm font-medium text-emerald-primary"
+                >
+                  <RefreshCw
+                    className="h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
+                  Actualizando correos…{" "}
+                  {estadoCorreos.enEspera + estadoCorreos.procesando} en espera
                 </p>
               ) : (
-                <p className="text-sm font-medium text-bg-dark">Correos al día.</p>
+                <p className="text-sm font-medium text-bg-dark">
+                  Correos al día.
+                </p>
               )}
               {estadoCorreos.errores > 0 && (
                 <p className="mt-1 text-sm text-red-700">
-                  {estadoCorreos.errores} correo{estadoCorreos.errores === 1 ? "" : "s"} con error de sincronización.
-                  {estadoCorreos.ultimoError ? ` ${estadoCorreos.ultimoError}` : ""}
+                  {estadoCorreos.errores} correo
+                  {estadoCorreos.errores === 1 ? "" : "s"} con error de
+                  sincronización.
+                  {estadoCorreos.ultimoError
+                    ? ` ${estadoCorreos.ultimoError}`
+                    : ""}
                 </p>
               )}
               {estadoCorreos.ultimaSincronizacion && (
                 <p className="mt-1 text-xs text-slate-text">
-                  Última sincronización Gmail: {fechaLegible(estadoCorreos.ultimaSincronizacion)}
+                  Última sincronización Gmail:{" "}
+                  {fechaLegible(estadoCorreos.ultimaSincronizacion)}
                 </p>
               )}
             </div>
           )}
 
           {sincronizando && (
-            <p role="status" className="text-sm text-slate-text">Analizando correos financieros…</p>
+            <p role="status" className="text-sm text-slate-text">
+              Analizando correos financieros…
+            </p>
           )}
           {errorSincronizacion && (
-            <p role="alert" className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700">
+            <p
+              role="alert"
+              className="rounded-xl border border-red-300/40 bg-red-50 p-3 text-sm text-red-700"
+            >
               {errorSincronizacion}
             </p>
           )}
@@ -132,16 +158,23 @@ export default function BandejaNotificacionesModal({
                     aria-label={`Ver detalle de notificación: ${notificacion.asunto}`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className={`min-w-0 break-words text-sm ${notificacion.leida ? "text-slate-text" : "font-medium text-bg-dark"}`}>
+                      <p
+                        className={`min-w-0 break-words text-sm ${notificacion.leida ? "text-slate-text" : "font-medium text-bg-dark"}`}
+                      >
                         {notificacion.asunto}
                       </p>
                       {!notificacion.leida && (
-                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-primary" aria-label="No leída" />
+                        <span
+                          className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-primary"
+                          aria-label="No leída"
+                        />
                       )}
                     </div>
                     <p className="mt-1 text-xs text-slate-text">
                       {formatearFecha(notificacion.fecha)}
-                      {notificacion.cuentaGmail ? ` · ${notificacion.cuentaGmail}` : ""}
+                      {notificacion.cuentaGmail
+                        ? ` · ${notificacion.cuentaGmail}`
+                        : ""}
                     </p>
                   </button>
                 </li>
@@ -163,31 +196,56 @@ export default function BandejaNotificacionesModal({
         {notificacionSeleccionada && (
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-text">Asunto</p>
-              <p className="mt-1 text-sm font-medium text-bg-dark break-words">{notificacionSeleccionada.asunto}</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-text">
+                Asunto
+              </p>
+              <p className="mt-1 text-sm font-medium text-bg-dark break-words">
+                {notificacionSeleccionada.asunto}
+              </p>
             </div>
             {notificacionSeleccionada.mensaje ? (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-text">Mensaje</p>
-                <p className="mt-1 text-sm text-bg-dark break-words">{notificacionSeleccionada.mensaje}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-text">
+                  Mensaje
+                </p>
+                <p className="mt-1 text-sm text-bg-dark break-words">
+                  {notificacionSeleccionada.mensaje}
+                </p>
               </div>
             ) : null}
             <dl className="grid gap-3 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">Fecha</dt>
-                <dd className="mt-1 text-sm text-bg-dark">{formatearFecha(notificacionSeleccionada.fecha) || "Sin fecha"}</dd>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">
+                  Fecha
+                </dt>
+                <dd className="mt-1 text-sm text-bg-dark">
+                  {formatearFecha(notificacionSeleccionada.fecha) ||
+                    "Sin fecha"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">Estado</dt>
-                <dd className="mt-1 text-sm text-bg-dark">{notificacionSeleccionada.leida ? "Leída" : "No leída"}</dd>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">
+                  Estado
+                </dt>
+                <dd className="mt-1 text-sm text-bg-dark">
+                  {notificacionSeleccionada.leida ? "Leída" : "No leída"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">Origen</dt>
-                <dd className="mt-1 text-sm text-bg-dark">{textoOrigen(notificacionSeleccionada.origen)}</dd>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">
+                  Origen
+                </dt>
+                <dd className="mt-1 text-sm text-bg-dark">
+                  {textoOrigen(notificacionSeleccionada.origen)}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">Cuenta</dt>
-                <dd className="mt-1 text-sm text-bg-dark break-all">{notificacionSeleccionada.cuentaGmail || "No disponible"}</dd>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-text">
+                  Cuenta
+                </dt>
+                <dd className="mt-1 text-sm text-bg-dark break-all">
+                  {notificacionSeleccionada.cuentaGmail || "No disponible"}
+                </dd>
               </div>
             </dl>
           </div>

@@ -24,14 +24,20 @@ const ESTILOS = {
   },
   exito: {
     contenedor: "border-emerald-300/60 bg-emerald-50 text-emerald-800",
-    boton: "text-emerald-700 hover:bg-emerald-100 focus-visible:ring-emerald-400",
+    boton:
+      "text-emerald-700 hover:bg-emerald-100 focus-visible:ring-emerald-400",
     Icono: CheckCircle2,
     etiquetaCerrar: "Cerrar alerta de éxito",
   },
 };
 
 /** Muestra una notificación apilable en el lado derecho con métodos de cierre. */
-export default function NotificacionLateral({ tipo = "error", mensaje, alCerrar, cerrarConEsc = true }) {
+export default function NotificacionLateral({
+  tipo = "error",
+  mensaje,
+  alCerrar,
+  cerrarConEsc = true,
+}) {
   useEffect(() => {
     if (!mensaje || !cerrarConEsc) return undefined;
     const manejarTecla = (evento) => {

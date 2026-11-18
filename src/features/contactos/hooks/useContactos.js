@@ -8,7 +8,11 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
-import { actualizarContacto, eliminarContacto, obtenerContactosPorUsuario } from "../services/contactosService";
+import {
+  actualizarContacto,
+  eliminarContacto,
+  obtenerContactosPorUsuario,
+} from "../services/contactosService";
 
 function extraerLista(respuesta) {
   if (Array.isArray(respuesta)) return respuesta;
@@ -22,22 +26,50 @@ export function useContactos() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const cargarContactos = useCallback(async () => {
-    if (!usuario?.idUsuario) { setContactos([]); setCargando(false); return; }
+    if (!usuario?.idUsuario) {
+      setContactos([]);
+      setCargando(false);
+      return;
+    }
     try {
-      setCargando(true); setError("");
-      setContactos(extraerLista(await obtenerContactosPorUsuario(usuario.idUsuario)));
+      setCargando(true);
+      setError("");
+      setContactos(
+        extraerLista(await obtenerContactosPorUsuario(usuario.idUsuario)),
+      );
     } catch (fallo) {
-      setContactos([]); setError(fallo?.message || "No se pudieron cargar tus contactos.");
-    } finally { setCargando(false); }
+      setContactos([]);
+      setError(fallo?.message || "No se pudieron cargar tus contactos.");
+    } finally {
+      setCargando(false);
+    }
   }, [usuario?.idUsuario]);
-  useEffect(() => { cargarContactos(); }, [cargarContactos]);
+  useEffect(() => {
+    cargarContactos();
+  }, [cargarContactos]);
   const guardarContacto = useCallback(async (idContacto, cambios) => {
     await actualizarContacto(idContacto, cambios);
-    setContactos((actuales) => actuales.map((contacto) => contacto.idContacto === idContacto ? { ...contacto, ...cambios } : contacto));
+    setContactos((actuales) =>
+      actuales.map((contacto) =>
+        contacto.idContacto === idContacto
+          ? { ...contacto, ...cambios }
+          : contacto,
+      ),
+    );
   }, []);
   const borrarContacto = useCallback(async (idContacto) => {
     await eliminarContacto(idContacto);
-    setContactos((actuales) => actuales.filter((contacto) => contacto.idContacto !== idContacto));
+    setContactos((actuales) =>
+      actuales.filter((contacto) => contacto.idContacto !== idContacto),
+    );
   }, []);
-  return { usuario, contactos, cargando, error, cargarContactos, guardarContacto, borrarContacto };
+  return {
+    usuario,
+    contactos,
+    cargando,
+    error,
+    cargarContactos,
+    guardarContacto,
+    borrarContacto,
+  };
 }

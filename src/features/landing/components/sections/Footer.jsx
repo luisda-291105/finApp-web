@@ -16,8 +16,13 @@ import { ArrowUp } from "lucide-react";
  */
 export default function Footer() {
   const volverAlInicio = () => {
-    const reducirMovimiento = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reducirMovimiento ? "auto" : "smooth" });
+    const reducirMovimiento = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    window.scrollTo({
+      top: 0,
+      behavior: reducirMovimiento ? "auto" : "smooth",
+    });
   };
 
   return (
@@ -30,17 +35,23 @@ export default function Footer() {
           className="inline-flex items-center gap-2 rounded-lg text-xl font-bold tracking-tight text-white transition-colors hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-4 focus-visible:ring-offset-[#0f1117]"
         >
           <ArrowUp className="h-5 w-5" aria-hidden="true" />
-          <span><span className="text-[#1a7a5e]">Fin</span>App</span>
+          <span>
+            <span className="text-[#1a7a5e]">Fin</span>App
+          </span>
         </button>
         <p className="text-center sm:text-left text-xs text-white/50">
-          © {new Date().getFullYear()} FinApp. Todos los derechos reservados. Finanzas personales simples.
+          © {new Date().getFullYear()} FinApp. Todos los derechos reservados.
+          Finanzas personales simples.
         </p>
 
         <div className="flex items-center gap-6 text-xs text-white/60">
           <Link to="/" className="hover:text-white transition-colors">
             Inicio
           </Link>
-          <Link to="#funcionalidades" className="hover:text-white transition-colors">
+          <Link
+            to="#funcionalidades"
+            className="hover:text-white transition-colors"
+          >
             Funcionalidades
           </Link>
           <Link to="#privacidad" className="hover:text-white transition-colors">

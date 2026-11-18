@@ -25,7 +25,11 @@ Object.defineProperty(window, "matchMedia", {
     };
   },
 });
-Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+Object.defineProperty(window, "innerWidth", {
+  writable: true,
+  configurable: true,
+  value: 1024,
+});
 
 // Mock contextos
 vi.mock("../../context/UsuarioActivoContext", () => ({
@@ -68,7 +72,8 @@ vi.mock("../../features/auth/services/usuarioServicio", () => ({
 }));
 
 vi.mock("../../features/asistenteia/services/asistenteServicio", () => ({
-  conversarConAsistente: () => Promise.resolve({ respuesta: "Respuesta de prueba" }),
+  conversarConAsistente: () =>
+    Promise.resolve({ respuesta: "Respuesta de prueba" }),
 }));
 
 // Mock useNavigate
@@ -89,7 +94,7 @@ function renderPagina() {
   return render(
     <MemoryRouter initialEntries={["/"]}>
       <PaginaInicio />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -115,10 +120,10 @@ describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => 
     renderPagina();
 
     expect(
-      screen.getByRole("button", { name: "Abrir el asistente de ayuda" })
+      screen.getByRole("button", { name: "Abrir el asistente de ayuda" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Ayuda y preguntas frecuentes" })
+      screen.queryByRole("button", { name: "Ayuda y preguntas frecuentes" }),
     ).toBeNull();
   });
 
@@ -150,29 +155,29 @@ describe("PaginaInicio — disparador del asistente de ayuda (spec 014)", () => 
   });
 
   it("abre el asistente de ayuda al pulsarlo y no la ventana de acceso", async () => {
-      const usuario = userEvent.setup();
-      renderPagina();
+    const usuario = userEvent.setup();
+    renderPagina();
 
-      const disparador = screen.getByRole("button", {
-        name: "Abrir el asistente de ayuda",
-      });
-
-      await usuario.click(disparador);
-
-      expect(
-        await screen.findByRole("dialog", { name: "Asistente de FinApp" })
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByRole("dialog", { name: "Ventana de acceso" })
-      ).toBeNull();
+    const disparador = screen.getByRole("button", {
+      name: "Abrir el asistente de ayuda",
     });
+
+    await usuario.click(disparador);
+
+    expect(
+      await screen.findByRole("dialog", { name: "Asistente de FinApp" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Ventana de acceso" }),
+    ).toBeNull();
+  });
 
   it("no realiza peticiones de red al abrir la ayuda", async () => {
     const usuario = userEvent.setup();
     renderPagina();
 
     await usuario.click(
-      screen.getByRole("button", { name: "Abrir el asistente de ayuda" })
+      screen.getByRole("button", { name: "Abrir el asistente de ayuda" }),
     );
 
     expect(fetch).not.toHaveBeenCalled();

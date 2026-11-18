@@ -12,17 +12,20 @@ const PASOS = [
   {
     numero: "01",
     titulo: "Crea tu cuenta en minutos",
-    descripcion: "Regístrate de forma simple y segura. Sin tarjetas de crédito ni costos ocultos.",
+    descripcion:
+      "Regístrate de forma simple y segura. Sin tarjetas de crédito ni costos ocultos.",
   },
   {
     numero: "02",
     titulo: "Registra tus movimientos",
-    descripcion: "Categoriza ingresos, salidas y ahorros con una interfaz ágil pensada para tu día a día.",
+    descripcion:
+      "Categoriza ingresos, salidas y ahorros con una interfaz ágil pensada para tu día a día.",
   },
   {
     numero: "03",
     titulo: "Toma el control financiero",
-    descripcion: "Monitorea tu resumen mensual y toma decisiones con datos claros y actualizados.",
+    descripcion:
+      "Monitorea tu resumen mensual y toma decisiones con datos claros y actualizados.",
   },
 ];
 
@@ -52,7 +55,10 @@ export default function HowItWorks() {
           }`}
         >
           {PASOS.map((paso) => (
-            <div key={paso.numero} className="relative flex flex-col justify-between pt-6">
+            <div
+              key={paso.numero}
+              className="relative flex flex-col justify-between pt-6"
+            >
               <div className="font-display text-6xl sm:text-7xl font-bold text-[#e0ddd8]/70 select-none mb-3">
                 {paso.numero}
               </div>

@@ -8,7 +8,13 @@
  * @usadoPor   Vitest
  */
 import { useRef, useState } from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ModalPerfilUsuario from "../../../../features/configuracion/components/modals/PerfilUsuarioModal";
@@ -16,7 +22,11 @@ import {
   UsuarioActivoProvider,
   useUsuarioActivo,
 } from "../../../../context/UsuarioActivoContext";
-import { actualizarUsuario, crearUsuario, obtenerUsuarioActivo } from "../../../../features/auth/services";
+import {
+  actualizarUsuario,
+  crearUsuario,
+  obtenerUsuarioActivo,
+} from "../../../../features/auth/services";
 
 vi.mock("../../../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -59,7 +69,7 @@ const renderPerfil = () =>
   render(
     <UsuarioActivoProvider>
       <ArnesModalPerfil />
-    </UsuarioActivoProvider>
+    </UsuarioActivoProvider>,
   );
 
 const abrirPerfil = async () => {
@@ -68,7 +78,9 @@ const abrirPerfil = async () => {
   await usuario.click(screen.getByRole("button", { name: "Abrir perfil" }));
   const dialogo = screen.getByRole("dialog", { name: "Mi perfil" });
   await waitFor(() => {
-    expect(within(dialogo).getAllByText(USUARIO.nombre).length).toBeGreaterThan(0);
+    expect(within(dialogo).getAllByText(USUARIO.nombre).length).toBeGreaterThan(
+      0,
+    );
   });
   return { usuario, dialogo };
 };
@@ -77,7 +89,7 @@ beforeEach(() => {
   window.localStorage.getItem.mockReturnValue(JSON.stringify(USUARIO));
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
   window.localStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_autenticada" ? "activa" : null
+    key === "finapp_sesion_autenticada" ? "activa" : null,
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario (el provider lo llama al montarse)
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO });
@@ -111,42 +123,70 @@ describe("ModalPerfilUsuario (perfil)", () => {
   it("muestra estados vacíos para correo y teléfono y permite añadirlos al editar", async () => {
     const { dialogo } = await abrirPerfil();
 
-    expect(within(dialogo).getAllByText("Puedes agregarlo más adelante")).toHaveLength(2);
-    await userEvent.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
-    expect(within(dialogo).getByLabelText("Correo (opcional)")).toBeInTheDocument();
-    expect(within(dialogo).getByLabelText("Teléfono (opcional)")).toBeInTheDocument();
+    expect(
+      within(dialogo).getAllByText("Puedes agregarlo más adelante"),
+    ).toHaveLength(2);
+    await userEvent.click(
+      within(dialogo).getByRole("button", { name: "Editar perfil" }),
+    );
+    expect(
+      within(dialogo).getByLabelText("Correo (opcional)"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).getByLabelText("Teléfono (opcional)"),
+    ).toBeInTheDocument();
   });
 
   it("Editar perfil habilita los campos y deja opcional el cambio de contraseña", async () => {
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Editar perfil" }),
+    );
     const idUsuario = within(dialogo).getByLabelText("Cédula / Identificación");
     const nombre = within(dialogo).getByLabelText("Nombre");
     const contrasena = within(dialogo).getByLabelText(/Nueva contraseña/);
     expect(idUsuario).not.toHaveAttribute("readonly");
     expect(nombre).not.toHaveAttribute("readonly");
     expect(contrasena).not.toHaveAttribute("readonly");
-    expect(contrasena).toHaveAttribute("placeholder", "Dejar vacío para conservarla");
-    expect(within(dialogo).getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
-    expect(within(dialogo).getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
+    expect(contrasena).toHaveAttribute(
+      "placeholder",
+      "Dejar vacío para conservarla",
+    );
+    expect(
+      within(dialogo).getByRole("button", { name: "Guardar cambios" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).getByRole("button", { name: "Cancelar" }),
+    ).toBeInTheDocument();
   });
 
   it("guardar llama a actualizarUsuario con el id original y sincroniza el contexto", async () => {
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Editar perfil" }),
+    );
 
     const nombre = within(dialogo).getByLabelText("Nombre");
     await usuario.clear(nombre);
     await usuario.type(nombre, "Ana Actualizada");
 
-    await usuario.type(within(dialogo).getByLabelText(/Nueva contraseña/), "clave-segura");
-    await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
+    await usuario.type(
+      within(dialogo).getByLabelText(/Nueva contraseña/),
+      "clave-segura",
+    );
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Guardar cambios" }),
+    );
 
     await waitFor(() => {
       expect(actualizarUsuario).toHaveBeenCalledWith(USUARIO.idUsuario, {
-        idUsuario: USUARIO.idUsuario, nombre: "Ana Actualizada", correo: "", telefono: "", contrasena: "clave-segura",
+        idUsuario: USUARIO.idUsuario,
+        nombre: "Ana Actualizada",
+        correo: "",
+        telefono: "",
+        contrasena: "clave-segura",
       });
     });
 
@@ -154,7 +194,9 @@ describe("ModalPerfilUsuario (perfil)", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("usuario-activo")).toHaveTextContent("Ana Actualizada");
+    expect(screen.getByTestId("usuario-activo")).toHaveTextContent(
+      "Ana Actualizada",
+    );
     expect(window.localStorage.setItem).toHaveBeenCalled();
   });
 
@@ -162,9 +204,16 @@ describe("ModalPerfilUsuario (perfil)", () => {
     const espiaSetItem = vi.spyOn(window.localStorage, "setItem");
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
-    await usuario.type(within(dialogo).getByLabelText(/Nueva contraseña/), "secreto123");
-    await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Editar perfil" }),
+    );
+    await usuario.type(
+      within(dialogo).getByLabelText(/Nueva contraseña/),
+      "secreto123",
+    );
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Guardar cambios" }),
+    );
 
     await waitFor(() => expect(espiaSetItem).toHaveBeenCalled());
 
@@ -188,13 +237,22 @@ describe("ModalPerfilUsuario (perfil)", () => {
 
     const { usuario, dialogo } = await abrirPerfil();
 
-    await usuario.click(within(dialogo).getByRole("button", { name: "Editar perfil" }));
-    await usuario.type(within(dialogo).getByLabelText(/Nueva contraseña/), "secreto123");
-    await usuario.click(within(dialogo).getByRole("button", { name: "Guardar cambios" }));
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Editar perfil" }),
+    );
+    await usuario.type(
+      within(dialogo).getByLabelText(/Nueva contraseña/),
+      "secreto123",
+    );
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Guardar cambios" }),
+    );
 
     const alerta = await within(dialogo).findByRole("alert");
     expect(alerta).toHaveTextContent("Error HTTP 409");
-    expect(screen.getByRole("dialog", { name: "Mi perfil" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Mi perfil" }),
+    ).toBeInTheDocument();
     expect(espiaError).toHaveBeenCalled();
 
     espiaError.mockRestore();

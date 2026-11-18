@@ -7,7 +7,14 @@
  * @estados    viewport explícito (innerWidth + matchMedia) y estado de apertura en los re-render
  * @usadoPor   Vitest
  */
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -77,7 +84,12 @@ afterEach(() => {
 });
 
 const renderModal = (props = {}) => {
-  const propsFinales = { abierto: true, modoInicial: "login", alCerrar: vi.fn(), ...props };
+  const propsFinales = {
+    abierto: true,
+    modoInicial: "login",
+    alCerrar: vi.fn(),
+    ...props,
+  };
   const utilidades = render(<AuthModal {...propsFinales} />);
   return { ...utilidades, alCerrar: propsFinales.alCerrar };
 };
@@ -105,7 +117,13 @@ const esperarFocoEnContenedor = async (dialogo) => {
 /** Despacha un evento de puntero nativo con las propiedades que lee el gesto. */
 const dispararPuntero = (elemento, tipo, props = {}) => {
   const evento = new Event(tipo, { bubbles: true, cancelable: true });
-  Object.assign(evento, { isPrimary: true, pointerId: 7, clientX: 0, clientY: 0, ...props });
+  Object.assign(evento, {
+    isPrimary: true,
+    pointerId: 7,
+    clientX: 0,
+    clientY: 0,
+    ...props,
+  });
   elemento.dispatchEvent(evento);
 };
 
@@ -120,21 +138,35 @@ describe("AuthModal", () => {
     it("muestra solo placeholders del login y no ofrece inicio con Google", () => {
       renderModal();
 
-      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const identificacion = screen.getByLabelText(
+        "Nombre, identificación, correo o teléfono",
+      );
       const contrasena = screen.getByLabelText("Contraseña");
 
-      expect(screen.queryByText("Nombre, identificación, correo o teléfono")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Nombre, identificación, correo o teléfono"),
+      ).not.toBeInTheDocument();
       expect(screen.queryByText("Contraseña")).not.toBeInTheDocument();
-      expect(identificacion).toHaveAttribute("placeholder", "Nombre, identificación, correo o teléfono");
-      expect(contrasena).toHaveAttribute("placeholder", "Ingresa tu contraseña");
-      expect(screen.queryByRole("button", { name: "Iniciar sesión con Google" })).not.toBeInTheDocument();
+      expect(identificacion).toHaveAttribute(
+        "placeholder",
+        "Nombre, identificación, correo o teléfono",
+      );
+      expect(contrasena).toHaveAttribute(
+        "placeholder",
+        "Ingresa tu contraseña",
+      );
+      expect(
+        screen.queryByRole("button", { name: "Iniciar sesión con Google" }),
+      ).not.toBeInTheDocument();
     });
 
     it("la «X» está dentro del panel y tiene nombre accesible específico (ya no «Cerrar modal»)", async () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
       const dialogo = obtenerDialogo();
-      const botonX = screen.getByRole("button", { name: "Cerrar ventana de acceso" });
+      const botonX = screen.getByRole("button", {
+        name: "Cerrar ventana de acceso",
+      });
 
       expect(dialogo.contains(botonX)).toBe(true);
       expect(screen.queryByRole("button", { name: "Cerrar modal" })).toBeNull();
@@ -145,9 +177,13 @@ describe("AuthModal", () => {
 
     it("la «X» tiene anillo de foco con tokens sobre el panel oscuro", () => {
       renderModal();
-      const botonX = screen.getByRole("button", { name: "Cerrar ventana de acceso" });
+      const botonX = screen.getByRole("button", {
+        name: "Cerrar ventana de acceso",
+      });
       expect(botonX.classList.contains("focus-visible:ring-2")).toBe(true);
-      expect(botonX.classList.contains("focus-visible:ring-mint-accent")).toBe(true);
+      expect(botonX.classList.contains("focus-visible:ring-mint-accent")).toBe(
+        true,
+      );
     });
 
     it("el panel limita su altura, ofrece scroll interno y queda fuera del ciclo de Tab (RF-22)", () => {
@@ -189,7 +225,9 @@ describe("AuthModal", () => {
       const usuario = userEvent.setup();
       renderModal({ alCerrar });
 
-      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const identificacion = screen.getByLabelText(
+        "Nombre, identificación, correo o teléfono",
+      );
       await usuario.click(identificacion);
       expect(document.activeElement).toBe(identificacion);
 
@@ -224,7 +262,9 @@ describe("AuthModal", () => {
     it("no cierra si la selección de texto empieza en un input y termina en el fondo", () => {
       const alCerrar = vi.fn();
       renderModal({ alCerrar });
-      const entrada = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const entrada = screen.getByLabelText(
+        "Nombre, identificación, correo o teléfono",
+      );
       const overlay = obtenerOverlay();
 
       fireEvent.pointerDown(entrada);
@@ -279,7 +319,9 @@ describe("AuthModal", () => {
       renderModal({ alCerrar });
       await esperarFocoEnContenedor(obtenerDialogo());
 
-      const identificacion = screen.getByLabelText("Nombre, identificación, correo o teléfono");
+      const identificacion = screen.getByLabelText(
+        "Nombre, identificación, correo o teléfono",
+      );
       dispararPuntero(identificacion, "pointerdown", { clientY: 0 });
       dispararPuntero(identificacion, "pointermove", { clientY: 200 });
       dispararPuntero(identificacion, "pointerup", { clientY: 200 });
@@ -304,33 +346,45 @@ describe("AuthModal", () => {
 
   describe("AC-22: cerrar NO borra lo escrito", () => {
     const escribirCampos = async (usuario) => {
-          const idInput = screen.getByLabelText("Cédula o identificación");
-          await usuario.type(idInput, "12345678");
-          await usuario.type(screen.getByLabelText("Nombre completo"), "Ana Pérez");
-          await usuario.type(screen.getByLabelText("Contraseña"), "secreta123");
-        };
+      const idInput = screen.getByLabelText("Cédula o identificación");
+      await usuario.type(idInput, "12345678");
+      await usuario.type(screen.getByLabelText("Nombre completo"), "Ana Pérez");
+      await usuario.type(screen.getByLabelText("Contraseña"), "secreta123");
+    };
 
-        const comprobarCamposConservados = () => {
-          expect(screen.getByLabelText("Cédula o identificación").value).toBe("12345678");
-          expect(screen.getByLabelText("Nombre completo").value).toBe("Ana Pérez");
-          expect(screen.getByLabelText("Contraseña").value).toBe("secreta123");
-        };
+    const comprobarCamposConservados = () => {
+      expect(screen.getByLabelText("Cédula o identificación").value).toBe(
+        "12345678",
+      );
+      expect(screen.getByLabelText("Nombre completo").value).toBe("Ana Pérez");
+      expect(screen.getByLabelText("Contraseña").value).toBe("secreta123");
+    };
 
     it("conserva identificación, nombre y contraseña al cerrar con la «X» y reabrir", async () => {
       const usuario = userEvent.setup();
       const alCerrar = vi.fn();
       const { rerender } = render(
-        <AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />
+        <AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />,
       );
 
       await escribirCampos(usuario);
-      await usuario.click(screen.getByRole("button", { name: "Cerrar ventana de acceso" }));
+      await usuario.click(
+        screen.getByRole("button", { name: "Cerrar ventana de acceso" }),
+      );
       expect(alCerrar).toHaveBeenCalledTimes(1);
 
-      rerender(<AuthModal abierto={false} modoInicial="registro" alCerrar={alCerrar} />);
+      rerender(
+        <AuthModal
+          abierto={false}
+          modoInicial="registro"
+          alCerrar={alCerrar}
+        />,
+      );
       expect(screen.queryByRole("dialog")).toBeNull();
 
-      rerender(<AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />);
+      rerender(
+        <AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />,
+      );
       comprobarCamposConservados();
     });
 
@@ -339,15 +393,23 @@ describe("AuthModal", () => {
       const alCerrar = vi.fn();
       const spyError = vi.spyOn(console, "error").mockImplementation(() => {});
       const { rerender } = render(
-        <AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />
+        <AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />,
       );
 
       await escribirCampos(usuario);
       await usuario.keyboard("{Escape}");
       expect(alCerrar).toHaveBeenCalledTimes(1);
 
-      rerender(<AuthModal abierto={false} modoInicial="registro" alCerrar={alCerrar} />);
-      rerender(<AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />);
+      rerender(
+        <AuthModal
+          abierto={false}
+          modoInicial="registro"
+          alCerrar={alCerrar}
+        />,
+      );
+      rerender(
+        <AuthModal abierto modoInicial="registro" alCerrar={alCerrar} />,
+      );
 
       comprobarCamposConservados();
       expect(spyError).not.toHaveBeenCalled();
@@ -395,7 +457,8 @@ describe("AuthModal", () => {
 
     beforeEach(() => {
       // Punto de partida estable: nada enfocado antes de cada caso.
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
     });
 
     afterEach(() => {
@@ -443,9 +506,9 @@ describe("AuthModal", () => {
       await esperarFocoEnContenedor(screen.getByRole("dialog"));
 
       // Evidencia de H2: la vista de `/login` no ofrece ningún enfocable fuera del modal.
-      const enfocablesFuera = Array.from(document.querySelectorAll(SELECTOR_ENFOCABLE)).filter(
-        (nodo) => !nodo.closest('[role="dialog"]')
-      );
+      const enfocablesFuera = Array.from(
+        document.querySelectorAll(SELECTOR_ENFOCABLE),
+      ).filter((nodo) => !nodo.closest('[role="dialog"]'));
       expect(enfocablesFuera.length).toBe(0);
 
       await cerrarModal(rerender, alCerrar);
@@ -491,7 +554,7 @@ describe("AuthModal", () => {
             <Route path="/login" element={<PaginaLogin />} />
             <Route path="/" element={<PaginaInicio />} />
           </Routes>
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
     afterEach(() => {
@@ -505,11 +568,15 @@ describe("AuthModal", () => {
       renderRutasPublicas();
       await esperarFocoEnContenedor(screen.getByRole("dialog"));
 
-      await usuario.click(screen.getByRole("button", { name: "Cerrar ventana de acceso" }));
+      await usuario.click(
+        screen.getByRole("button", { name: "Cerrar ventana de acceso" }),
+      );
 
       // La navegación se completa cuando la vista de destino (la landing) ya está renderizada.
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /Controla tu dinero/ })).toBeTruthy();
+        expect(
+          screen.getByRole("heading", { name: /Controla tu dinero/ }),
+        ).toBeTruthy();
       });
 
       const logotipo = document.querySelector('header a[href="/"]');
@@ -519,7 +586,7 @@ describe("AuthModal", () => {
 
       // Y es, además, el **primer control enfocable** de la vista (lista ordenada de RF-15).
       const primerEnfocable = Array.from(
-        document.querySelectorAll(SELECTOR_ENFOCABLE)
+        document.querySelectorAll(SELECTOR_ENFOCABLE),
       ).find((nodo) => !nodo.closest('[role="dialog"]'));
       expect(primerEnfocable).toBe(logotipo);
     });

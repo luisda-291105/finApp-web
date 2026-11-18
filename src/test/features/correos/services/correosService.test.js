@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { obtenerCorreosGmail, obtenerEstadoCorreosGmail } from "../../../../services/gmailServicio";
-import { consultarCorreosDeFuente, consultarCorreosDeFuentes, consultarEstadoCorreos } from "../../../../features/correos/services/correosService";
+import {
+  obtenerCorreosGmail,
+  obtenerEstadoCorreosGmail,
+} from "../../../../services/gmailServicio";
+import {
+  consultarCorreosDeFuente,
+  consultarCorreosDeFuentes,
+  consultarEstadoCorreos,
+} from "../../../../features/correos/services/correosService";
 
 vi.mock("../../../../services/gmailServicio", () => ({
   obtenerCorreosGmail: vi.fn(),
@@ -22,16 +29,24 @@ beforeEach(() => {
 
 describe("correosService", () => {
   it("mantiene solo los mensajes recibidos por la dirección de la fuente", async () => {
-    await expect(consultarCorreosDeFuente("cuenta", FUENTE_A)).resolves.toEqual([MENSAJES[0]]);
+    await expect(consultarCorreosDeFuente("cuenta", FUENTE_A)).resolves.toEqual(
+      [MENSAJES[0]],
+    );
     expect(obtenerCorreosGmail).toHaveBeenCalledWith("cuenta", [FUENTE_A]);
   });
 
   it("consulta una vez y reparte los mensajes entre todas las fuentes", async () => {
-    await expect(consultarCorreosDeFuentes("cuenta", [FUENTE_A, FUENTE_B])).resolves.toEqual([
-      ["a", [MENSAJES[0]]], ["b", [MENSAJES[1]]],
+    await expect(
+      consultarCorreosDeFuentes("cuenta", [FUENTE_A, FUENTE_B]),
+    ).resolves.toEqual([
+      ["a", [MENSAJES[0]]],
+      ["b", [MENSAJES[1]]],
     ]);
     expect(obtenerCorreosGmail).toHaveBeenCalledTimes(1);
-    expect(obtenerCorreosGmail).toHaveBeenCalledWith("cuenta", [FUENTE_A, FUENTE_B]);
+    expect(obtenerCorreosGmail).toHaveBeenCalledWith("cuenta", [
+      FUENTE_A,
+      FUENTE_B,
+    ]);
   });
 
   it("consulta el estado de la cola de la cuenta", async () => {

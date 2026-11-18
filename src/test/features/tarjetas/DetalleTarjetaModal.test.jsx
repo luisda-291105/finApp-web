@@ -33,10 +33,27 @@ afterEach(cleanup);
 describe("DetalleTarjetaModal", () => {
   it("lista los movimientos vinculados a la tarjeta y el tipo de cuenta", async () => {
     obtenerMovimientosTarjeta.mockResolvedValue([
-      { idMovimiento: "mov-1", fecha: "2026-11-11", monto: 2000000, tipo: "INGRESO", categoria: "Ingresos", concepto: "Transferencia", origenTipo: "CUENTA", origenNombre: "Banco Nacional", estadoRevision: "CONFIRMADO" },
+      {
+        idMovimiento: "mov-1",
+        fecha: "2026-11-11",
+        monto: 2000000,
+        tipo: "INGRESO",
+        categoria: "Ingresos",
+        concepto: "Transferencia",
+        origenTipo: "CUENTA",
+        origenNombre: "Banco Nacional",
+        estadoRevision: "CONFIRMADO",
+      },
     ]);
 
-    render(<DetalleTarjetaModal tarjeta={TARJETA} alCerrar={vi.fn()} alGuardar={vi.fn()} alEliminar={vi.fn()} />);
+    render(
+      <DetalleTarjetaModal
+        tarjeta={TARJETA}
+        alCerrar={vi.fn()}
+        alGuardar={vi.fn()}
+        alEliminar={vi.fn()}
+      />,
+    );
 
     expect(await screen.findByText("Transferencia")).toBeInTheDocument();
     expect(screen.getByText("Movimientos")).toBeInTheDocument();
@@ -47,34 +64,124 @@ describe("DetalleTarjetaModal", () => {
 
   it("abre el detalle de un movimiento al hacer clic en su fila", async () => {
     obtenerMovimientosTarjeta.mockResolvedValue([
-      { idMovimiento: "mov-1", fecha: "2026-11-11", monto: 2000000, tipo: "INGRESO", categoria: "Ingresos", concepto: "Transferencia", origenTipo: "CUENTA", origenNombre: "Banco Nacional", estadoRevision: "CONFIRMADO" },
+      {
+        idMovimiento: "mov-1",
+        fecha: "2026-11-11",
+        monto: 2000000,
+        tipo: "INGRESO",
+        categoria: "Ingresos",
+        concepto: "Transferencia",
+        origenTipo: "CUENTA",
+        origenNombre: "Banco Nacional",
+        estadoRevision: "CONFIRMADO",
+      },
     ]);
 
     const usuario = userEvent.setup();
-    render(<DetalleTarjetaModal tarjeta={TARJETA} alCerrar={vi.fn()} alGuardar={vi.fn()} alEliminar={vi.fn()} />);
+    render(
+      <DetalleTarjetaModal
+        tarjeta={TARJETA}
+        alCerrar={vi.fn()}
+        alGuardar={vi.fn()}
+        alEliminar={vi.fn()}
+      />,
+    );
 
-    const fila = await screen.findByRole("button", { name: /Ver detalle del movimiento/i });
+    const fila = await screen.findByRole("button", {
+      name: /Ver detalle del movimiento/i,
+    });
     await usuario.click(fila);
 
-    const dialogo = await screen.findByRole("dialog", { name: "Detalle del movimiento" });
-    expect(within(dialogo).getByRole("heading", { name: "Transferencia" })).toBeInTheDocument();
+    const dialogo = await screen.findByRole("dialog", {
+      name: "Detalle del movimiento",
+    });
+    expect(
+      within(dialogo).getByRole("heading", { name: "Transferencia" }),
+    ).toBeInTheDocument();
     expect(within(dialogo).getByText(/2\.000\.000/)).toBeInTheDocument();
     expect(within(dialogo).getByText("Confirmado")).toBeInTheDocument();
+  });
+
+  it("abre el editor de movimiento al pulsar «Editar» desde el detalle", async () => {
+    const alEditar = vi.fn();
+    obtenerMovimientosTarjeta.mockResolvedValue([
+      {
+        idMovimiento: "mov-1",
+        fecha: "2026-11-11",
+        monto: 2000000,
+        tipo: "INGRESO",
+        categoria: "Ingresos",
+        concepto: "Transferencia",
+        origenTipo: "CUENTA",
+        origenNombre: "Banco Nacional",
+        estadoRevision: "CONFIRMADO",
+      },
+    ]);
+
+    const usuario = userEvent.setup();
+    render(
+      <DetalleTarjetaModal
+        tarjeta={TARJETA}
+        onCerrar={vi.fn()}
+        onGuardar={vi.fn()}
+        onEliminar={vi.fn()}
+        onEditarMovimiento={alEditar}
+        recargarMovimientos={0}
+      />,
+    );
+
+    const fila = await screen.findByRole("button", {
+      name: /Ver detalle del movimiento/i,
+    });
+    await usuario.click(fila);
+
+    const dialogo = await screen.findByRole("dialog", {
+      name: "Detalle del movimiento",
+    });
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Editar" }),
+    );
+
+    expect(alEditar).toHaveBeenCalledWith(
+      expect.objectContaining({ idMovimiento: "mov-1" }),
+    );
   });
 
   it("muestra el estado vacío cuando la tarjeta no tiene movimientos", async () => {
     obtenerMovimientosTarjeta.mockResolvedValue([]);
 
-    render(<DetalleTarjetaModal tarjeta={TARJETA} alCerrar={vi.fn()} alGuardar={vi.fn()} alEliminar={vi.fn()} />);
+    render(
+      <DetalleTarjetaModal
+        tarjeta={TARJETA}
+        alCerrar={vi.fn()}
+        alGuardar={vi.fn()}
+        alEliminar={vi.fn()}
+      />,
+    );
 
-    expect(await screen.findByText("Esta tarjeta todavía no tiene movimientos registrados.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Esta tarjeta todavía no tiene movimientos registrados.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("muestra un mensaje de error cuando falla la consulta de movimientos", async () => {
-    obtenerMovimientosTarjeta.mockRejectedValue(new Error("No se pudieron cargar los movimientos de esta tarjeta."));
+    obtenerMovimientosTarjeta.mockRejectedValue(
+      new Error("No se pudieron cargar los movimientos de esta tarjeta."),
+    );
 
-    render(<DetalleTarjetaModal tarjeta={TARJETA} alCerrar={vi.fn()} alGuardar={vi.fn()} alEliminar={vi.fn()} />);
+    render(
+      <DetalleTarjetaModal
+        tarjeta={TARJETA}
+        alCerrar={vi.fn()}
+        alGuardar={vi.fn()}
+        alEliminar={vi.fn()}
+      />,
+    );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("No se pudieron cargar los movimientos de esta tarjeta.");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No se pudieron cargar los movimientos de esta tarjeta.",
+    );
   });
 });

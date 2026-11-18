@@ -16,7 +16,11 @@ Object.defineProperty(window, "matchMedia", {
     };
   },
 });
-Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+Object.defineProperty(window, "innerWidth", {
+  writable: true,
+  configurable: true,
+  value: 1024,
+});
 
 // Mocks de servicios - DEBEN ir ANTES de imports (vitest hoistea)
 vi.mock("../../services/fuenteServicio", () => ({
@@ -38,18 +42,25 @@ vi.mock("../../services/gmailServicio", () => ({
   prepararGoogleIdentityServices: () => Promise.resolve(),
 }));
 
-vi.mock("../../features/almacenamiento/services/almacenamientoServicio", () => ({
-  obtenerConexiones: () => Promise.resolve([]),
-  desconectarCuenta: () => Promise.resolve({}),
-  conectarGoogleDrive: () => Promise.resolve({}),
-  iniciarConexion: () => Promise.resolve({}),
-  completarConexion: () => Promise.resolve({}),
-  conectarNextcloud: () => Promise.resolve({}),
-}));
+vi.mock(
+  "../../features/almacenamiento/services/almacenamientoServicio",
+  () => ({
+    obtenerConexiones: () => Promise.resolve([]),
+    desconectarCuenta: () => Promise.resolve({}),
+    conectarGoogleDrive: () => Promise.resolve({}),
+    iniciarConexion: () => Promise.resolve({}),
+    completarConexion: () => Promise.resolve({}),
+    conectarNextcloud: () => Promise.resolve({}),
+  }),
+);
 
 // Mock contextos
 vi.mock("../../context/UsuarioActivoContext", () => {
-  const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez", fechaCreacion: "2026-01-01" };
+  const USUARIO = {
+    idUsuario: "12345678",
+    nombre: "Ana Pérez",
+    fechaCreacion: "2026-01-01",
+  };
   return {
     UsuarioActivoProvider: ({ children }) => children,
     useUsuarioActivo: () => ({
@@ -84,7 +95,13 @@ vi.mock("../../context/GmailContext", () => ({
   }),
 }));
 
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfiguracionPage as PaginaDashboardConfiguracion } from "../../features/configuracion";
@@ -104,104 +121,198 @@ afterEach(() => {
 describe("PaginaDashboardConfiguracion", () => {
   it("consulta y registra fuentes del usuario activo y reinicia el campo al reabrir", async () => {
     const usuario = userEvent.setup();
-    const crearFuente = vi.spyOn(fuenteServicio, "crearFuente").mockImplementation(async (fuente) => fuente);
+    const crearFuente = vi
+      .spyOn(fuenteServicio, "crearFuente")
+      .mockImplementation(async (fuente) => fuente);
     const guardarLocalSpy = vi.spyOn(window.localStorage, "setItem");
 
     render(<PaginaDashboardConfiguracion />);
 
     expect(
-      screen.getByRole("heading", { name: "Configuración", level: 1 })
+      screen.getByRole("heading", { name: "Configuración", level: 1 }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Ajusta tus preferencias de cuenta y seguridad.")
+      screen.getByText("Ajusta tus preferencias de cuenta y seguridad."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Fuentes registradas" })).toBeInTheDocument();
-    expect(screen.getByText("Consulta y administra las fuentes asociadas a tu usuario.")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Fuentes registradas" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Consulta y administra las fuentes asociadas a tu usuario.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    const disparador = screen.getByRole("button", { name: "Registrar fuentes" });
+    const disparador = screen.getByRole("button", {
+      name: "Registrar fuentes",
+    });
     await usuario.click(disparador);
 
     const dialogo = screen.getByRole("dialog", { name: "Registro de fuentes" });
-    expect(within(dialogo).getByRole("button", { name: /Configura Gmail/ })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /Agregar cuenta Gmail/ })).not.toBeInTheDocument();
-    const contenido = within(dialogo).getByRole("textbox", { name: "Contenido de la fuente" });
+    expect(
+      within(dialogo).getByRole("button", { name: /Configura Gmail/ }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: /Agregar cuenta Gmail/ }),
+    ).not.toBeInTheDocument();
+    const contenido = within(dialogo).getByRole("textbox", {
+      name: "Contenido de la fuente",
+    });
 
     await usuario.type(contenido, "persona@ejemplo.test");
-    await usuario.click(within(dialogo).getByRole("button", { name: "Registrar fuente" }));
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Registrar fuente" }),
+    );
 
-    await waitFor(() => expect(crearFuente).toHaveBeenCalledWith(expect.objectContaining({
-      usuario: { idUsuario: USUARIO.idUsuario },
-      tipo: "CORREO",
-      contenido: "persona@ejemplo.test",
-    })));
+    await waitFor(() =>
+      expect(crearFuente).toHaveBeenCalledWith(
+        expect.objectContaining({
+          usuario: { idUsuario: USUARIO.idUsuario },
+          tipo: "CORREO",
+          contenido: "persona@ejemplo.test",
+        }),
+      ),
+    );
     await waitFor(() => expect(dialogo).not.toBeInTheDocument());
     expect(guardarLocalSpy).not.toHaveBeenCalled();
 
     expect(disparador).toHaveFocus();
 
     await usuario.click(disparador);
-    expect(screen.getByRole("textbox", { name: "Contenido de la fuente" })).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", { name: "Contenido de la fuente" }),
+    ).toHaveValue("");
   });
 
   it("edita tipo, contenido y estado de una fuente registrada", async () => {
     const usuario = userEvent.setup();
-    vi.spyOn(fuenteServicio, "obtenerFuentesPorUsuario").mockResolvedValue([{
-      idFuente: "fuente-1", tipo: "CORREO", contenido: "ana@ejemplo.test", estado: true, fechaCreacion: "2026-10-20",
-    }]);
-    const actualizarFuente = vi.spyOn(fuenteServicio, "actualizarFuente").mockImplementation(async (idFuente, fuente) => ({ idFuente, ...fuente }));
+    vi.spyOn(fuenteServicio, "obtenerFuentesPorUsuario").mockResolvedValue([
+      {
+        idFuente: "fuente-1",
+        tipo: "CORREO",
+        contenido: "ana@ejemplo.test",
+        estado: true,
+        fechaCreacion: "2026-10-20",
+      },
+    ]);
+    const actualizarFuente = vi
+      .spyOn(fuenteServicio, "actualizarFuente")
+      .mockImplementation(async (idFuente, fuente) => ({
+        idFuente,
+        ...fuente,
+      }));
     render(<PaginaDashboardConfiguracion />);
 
-    await usuario.click(await screen.findByRole("button", { name: "Ver fuente ana@ejemplo.test" }));
-    await usuario.click(screen.getByRole("button", { name: "Editar", exact: true }));
+    await usuario.click(
+      await screen.findByRole("button", {
+        name: "Ver fuente ana@ejemplo.test",
+      }),
+    );
+    await usuario.click(
+      screen.getByRole("button", { name: "Editar", exact: true }),
+    );
     await usuario.selectOptions(screen.getByLabelText("Tipo"), "TELEFONO");
     await usuario.clear(screen.getByLabelText("Contenido"));
     await usuario.type(screen.getByLabelText("Contenido"), "+573001234567");
     await usuario.selectOptions(screen.getByLabelText("Estado"), "false");
-    await usuario.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Guardar cambios" }),
+    );
 
-    await waitFor(() => expect(actualizarFuente).toHaveBeenCalledWith("fuente-1", expect.objectContaining({
-      tipo: "TELEFONO",
-      contenido: "+573001234567",
-      estado: false,
-      usuario: { idUsuario: USUARIO.idUsuario },
-    }), USUARIO.idUsuario));
+    await waitFor(() =>
+      expect(actualizarFuente).toHaveBeenCalledWith(
+        "fuente-1",
+        expect.objectContaining({
+          tipo: "TELEFONO",
+          contenido: "+573001234567",
+          estado: false,
+          usuario: { idUsuario: USUARIO.idUsuario },
+        }),
+        USUARIO.idUsuario,
+      ),
+    );
     expect((await screen.findAllByText("Inactiva")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("+573001234567")).toHaveLength(2);
   });
 
   it("elimina una fuente solo después de confirmar la acción", async () => {
     const usuario = userEvent.setup();
-    vi.spyOn(fuenteServicio, "obtenerFuentesPorUsuario").mockResolvedValue([{
-      idFuente: "fuente-2", tipo: "OTRO", contenido: "Cuenta antigua", estado: true, fechaCreacion: "2026-10-20",
-    }]);
-    const eliminarFuente = vi.spyOn(fuenteServicio, "eliminarFuente").mockResolvedValue(true);
+    vi.spyOn(fuenteServicio, "obtenerFuentesPorUsuario").mockResolvedValue([
+      {
+        idFuente: "fuente-2",
+        tipo: "OTRO",
+        contenido: "Cuenta antigua",
+        estado: true,
+        fechaCreacion: "2026-10-20",
+      },
+    ]);
+    const eliminarFuente = vi
+      .spyOn(fuenteServicio, "eliminarFuente")
+      .mockResolvedValue(true);
     render(<PaginaDashboardConfiguracion />);
 
-    await usuario.click(await screen.findByRole("button", { name: "Ver fuente Cuenta antigua" }));
-    await usuario.click(screen.getByRole("button", { name: "Eliminar", exact: true }));
+    await usuario.click(
+      await screen.findByRole("button", { name: "Ver fuente Cuenta antigua" }),
+    );
+    await usuario.click(
+      screen.getByRole("button", { name: "Eliminar", exact: true }),
+    );
     expect(eliminarFuente).not.toHaveBeenCalled();
-    await usuario.click(screen.getByRole("button", { name: "Confirmar eliminación" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Confirmar eliminación" }),
+    );
 
-    await waitFor(() => expect(eliminarFuente).toHaveBeenCalledWith("fuente-2", USUARIO.idUsuario));
+    await waitFor(() =>
+      expect(eliminarFuente).toHaveBeenCalledWith(
+        "fuente-2",
+        USUARIO.idUsuario,
+      ),
+    );
     expect(screen.queryByText("Cuenta antigua")).not.toBeInTheDocument();
   });
 
   it("mantiene datos y acciones de fuentes disponibles en la vista móvil", async () => {
-    vi.spyOn(fuenteServicio, "obtenerFuentesPorUsuario").mockResolvedValue([{
-      idFuente: "fuente-movil", tipo: "CORREO", contenido: "correo-muy-largo@ejemplo.test", estado: false, fechaCreacion: "2026-10-20",
-    }]);
+    vi.spyOn(fuenteServicio, "obtenerFuentesPorUsuario").mockResolvedValue([
+      {
+        idFuente: "fuente-movil",
+        tipo: "CORREO",
+        contenido: "correo-muy-largo@ejemplo.test",
+        estado: false,
+        fechaCreacion: "2026-10-20",
+      },
+    ]);
     render(<PaginaDashboardConfiguracion />);
-    expect(await screen.findAllByText("correo-muy-largo@ejemplo.test")).toHaveLength(1);
+    expect(
+      await screen.findAllByText("correo-muy-largo@ejemplo.test"),
+    ).toHaveLength(1);
     expect(screen.getAllByText("CORREO").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Inactiva").length).toBeGreaterThan(0);
-    expect(screen.queryByText("Cuenta Gmail conectada")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ver fuente correo-muy-largo@ejemplo.test" })).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("button", { name: "Ver fuente correo-muy-largo@ejemplo.test" }));
-    expect(screen.getByRole("dialog", { name: "Detalle de fuente" })).toBeInTheDocument();
+    expect(
+      screen.queryByText("Cuenta Gmail conectada"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Ver fuente correo-muy-largo@ejemplo.test",
+      }),
+    ).toBeInTheDocument();
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("button", {
+          name: "Ver fuente correo-muy-largo@ejemplo.test",
+        }),
+      );
+    expect(
+      screen.getByRole("dialog", { name: "Detalle de fuente" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("2026-10-20")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Editar", exact: true })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Eliminar", exact: true })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Editar", exact: true }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Eliminar", exact: true }),
+    ).toBeInTheDocument();
   });
 
   it("abre el modal de conexión Nextcloud y lo cierra con la «X»", async () => {
@@ -210,12 +321,16 @@ describe("PaginaDashboardConfiguracion", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    await usuario.click(screen.getByRole("button", { name: "Conectar Nextcloud" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Conectar Nextcloud" }),
+    );
 
     const dialogo = screen.getByRole("dialog", { name: "Conectar Nextcloud" });
     expect(dialogo).toBeInTheDocument();
 
-    await usuario.click(screen.getByRole("button", { name: "Cerrar conexión con Nextcloud" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Cerrar conexión con Nextcloud" }),
+    );
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -226,9 +341,13 @@ describe("PaginaDashboardConfiguracion", () => {
     const usuario = userEvent.setup();
     render(<PaginaDashboardConfiguracion />);
 
-    await usuario.click(screen.getByRole("button", { name: "Conectar Nextcloud" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Conectar Nextcloud" }),
+    );
 
-    expect(screen.getByRole("dialog", { name: "Conectar Nextcloud" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Conectar Nextcloud" }),
+    ).toBeInTheDocument();
 
     await usuario.keyboard("{Escape}");
 
@@ -236,5 +355,4 @@ describe("PaginaDashboardConfiguracion", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
-
 });
