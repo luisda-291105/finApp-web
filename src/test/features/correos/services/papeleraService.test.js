@@ -1,14 +1,33 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  agregarRemitenteListaBlanca,
+  eliminarRemitenteListaBlanca,
+  generarVistaPreviaPapelera,
+  guardarConfiguracionPapelera,
+  iniciarLimpiezaPapelera,
+  listarListaBlanca,
   listarPapeleraDeCuenta,
   listarPapeleraPorCuentas,
   moverCorreoAPapelera,
+  normalizarConfiguracionPapelera,
   normalizarCorreoPapelera,
+  normalizarLoteLimpieza,
+  normalizarVistaPreviaPapelera,
+  obtenerConfiguracionPapelera,
+  obtenerEstadoLimpiezaPapelera,
   restaurarCorreoDePapelera,
 } from "../../../../features/correos/services/papeleraService";
 import {
+  agregarRemitenteListaBlancaGmail,
+  eliminarRemitenteListaBlancaGmail,
+  generarVistaPreviaPapeleraGmail,
+  guardarConfiguracionPapeleraGmail,
+  iniciarLimpiezaPapeleraGmail,
+  listarListaBlancaGmail,
   listarPapeleraGmail,
   moverMensajeAPapeleraGmail,
+  obtenerConfiguracionPapeleraGmail,
+  obtenerEstadoLimpiezaPapeleraGmail,
   restaurarMensajeDePapeleraGmail,
 } from "../../../../services/gmailServicio";
 
@@ -16,6 +35,14 @@ vi.mock("../../../../services/gmailServicio", () => ({
   listarPapeleraGmail: vi.fn(),
   moverMensajeAPapeleraGmail: vi.fn(),
   restaurarMensajeDePapeleraGmail: vi.fn(),
+  obtenerConfiguracionPapeleraGmail: vi.fn(),
+  guardarConfiguracionPapeleraGmail: vi.fn(),
+  generarVistaPreviaPapeleraGmail: vi.fn(),
+  iniciarLimpiezaPapeleraGmail: vi.fn(),
+  obtenerEstadoLimpiezaPapeleraGmail: vi.fn(),
+  listarListaBlancaGmail: vi.fn(),
+  agregarRemitenteListaBlancaGmail: vi.fn(),
+  eliminarRemitenteListaBlancaGmail: vi.fn(),
 }));
 
 afterEach(() => vi.clearAllMocks());
@@ -150,6 +177,189 @@ describe("papeleraService", () => {
     expect(restaurarMensajeDePapeleraGmail).toHaveBeenCalledWith(
       "cuenta-a",
       "m-1",
+    );
+  });
+
+  it("normaliza la configuración, la vista previa y el lote de limpieza", () => {
+    expect(
+      normalizarConfiguracionPapelera({
+        categorias: [
+          {
+            categoria: "CATEGORY_UPDATES",
+            activa: true,
+            requiere_advertencia: true,
+            advertencia_aceptada: true,
+          },
+        ],
+        antiguedad_minima_dias: "14",
+        limite_por_ejecucion: 50,
+        scope_autorizado: true,
+      }),
+    ).toEqual({
+      categorias: [
+        {
+          categoria: "CATEGORY_UPDATES",
+          activa: true,
+          requiereAdvertencia: true,
+          advertenciaAceptada: true,
+        },
+      ],
+      antiguedadMinimaDias: 14,
+      limitePorEjecucion: 50,
+      scopeAutorizado: true,
+    });
+
+    expect(
+      normalizarVistaPreviaPapelera({
+        vista_previa_id: "vp-1",
+        total_estimado: 34,
+        por_categoria: [
+          {
+            categoria: "CATEGORY_PROMOTIONS",
+            cantidad: 28,
+            remitentes: [{ remitente: "promo@tienda.com", cantidad: 12 }],
+          },
+        ],
+        excluidos_por_motivo: [{ motivo: "LISTA_BLANCA", cantidad: 2 }],
+      }),
+    ).toEqual({
+      vistaPreviaId: "vp-1",
+      totalEstimado: 34,
+      porCategoria: [
+        {
+          categoria: "CATEGORY_PROMOTIONS",
+          cantidad: 28,
+          remitentes: [{ remitente: "promo@tienda.com", cantidad: 12 }],
+        },
+      ],
+      excluidosPorMotivo: [{ motivo: "LISTA_BLANCA", cantidad: 2 }],
+    });
+
+    expect(
+      normalizarLoteLimpieza({
+        lote_id: "lote-1",
+        estado: "EN_PROCESO",
+        total: 28,
+        movidos: 0,
+        omitidos: 0,
+        fallidos: 0,
+        limite_ejecucion_alcanzado: true,
+      }),
+    ).toEqual({
+      loteId: "lote-1",
+      estado: "EN_PROCESO",
+      total: 28,
+      movidos: 0,
+      omitidos: 0,
+      fallidos: 0,
+      limiteEjecucionAlcanzado: true,
+    });
+  });
+
+  it("lee y guarda la configuración delegando en el servicio de Gmail", async () => {
+    obtenerConfiguracionPapeleraGmail.mockResolvedValue({
+      categorias: [],
+      antiguedad_minima_dias: 7,
+      limite_por_ejecucion: 200,
+      scope_autorizado: false,
+    });
+    guardarConfiguracionPapeleraGmail.mockResolvedValue({
+      categorias: [],
+      antiguedad_minima_dias: 21,
+      limite_por_ejecucion: 10,
+      scope_autorizado: true,
+    });
+
+    const config = await obtenerConfiguracionPapelera("cuenta-a");
+    expect(config.scopeAutorizado).toBe(false);
+    expect(config.antiguedadMinimaDias).toBe(7);
+
+    const guardada = await guardarConfiguracionPapelera("cuenta-a", {
+      categoriasActivas: ["CATEGORY_SOCIAL"],
+      antiguedadMinimaDias: 21,
+      limitePorEjecucion: 10,
+      advertenciaAceptada: false,
+    });
+    expect(guardarConfiguracionPapeleraGmail).toHaveBeenCalledWith("cuenta-a", {
+      categoriasActivas: ["CATEGORY_SOCIAL"],
+      antiguedadMinimaDias: 21,
+      limitePorEjecucion: 10,
+      advertenciaAceptada: false,
+    });
+    expect(guardada.antiguedadMinimaDias).toBe(21);
+    expect(guardada.limitePorEjecucion).toBe(10);
+  });
+
+  it("genera la vista previa y sigue el lote de limpieza", async () => {
+    generarVistaPreviaPapeleraGmail.mockResolvedValue({
+      vista_previa_id: "vp-1",
+      total_estimado: 3,
+      por_categoria: [],
+      excluidos_por_motivo: [],
+    });
+    const previa = await generarVistaPreviaPapelera("cuenta-a", {
+      categorias: ["CATEGORY_PROMOTIONS"],
+      antiguedadMinimaDias: 7,
+    });
+    expect(generarVistaPreviaPapeleraGmail).toHaveBeenCalledWith("cuenta-a", {
+      categorias: ["CATEGORY_PROMOTIONS"],
+      antiguedadMinimaDias: 7,
+    });
+    expect(previa.vistaPreviaId).toBe("vp-1");
+
+    iniciarLimpiezaPapeleraGmail.mockResolvedValue({
+      lote_id: "lote-1",
+      estado: "EN_PROCESO",
+    });
+    const inicio = await iniciarLimpiezaPapelera("cuenta-a", {
+      vistaPreviaId: "vp-1",
+      totalEstimado: 3,
+    });
+    expect(iniciarLimpiezaPapeleraGmail).toHaveBeenCalledWith("cuenta-a", {
+      vistaPreviaId: "vp-1",
+      totalEstimado: 3,
+    });
+    expect(inicio).toEqual({ loteId: "lote-1", estado: "EN_PROCESO" });
+
+    obtenerEstadoLimpiezaPapeleraGmail.mockResolvedValue({
+      lote_id: "lote-1",
+      estado: "COMPLETADO",
+      total: 3,
+      movidos: 3,
+      omitidos: 0,
+      fallidos: 0,
+    });
+    const estado = await obtenerEstadoLimpiezaPapelera("cuenta-a", "lote-1");
+    expect(estado).toMatchObject({ estado: "COMPLETADO", movidos: 3 });
+  });
+
+  it("gestiona la lista blanca delegando en el servicio de Gmail", async () => {
+    listarListaBlancaGmail.mockResolvedValue({
+      remitentes: [{ id: "c-1", remitente: "banco@banco.com" }],
+    });
+    agregarRemitenteListaBlancaGmail.mockResolvedValue({
+      id: "c-2",
+      remitente: "otro@ejemplo.test",
+    });
+    eliminarRemitenteListaBlancaGmail.mockResolvedValue(undefined);
+
+    await expect(listarListaBlanca("cuenta-a")).resolves.toEqual([
+      { id: "c-1", remitente: "banco@banco.com" },
+    ]);
+    await expect(
+      agregarRemitenteListaBlanca("cuenta-a", "otro@ejemplo.test"),
+    ).resolves.toEqual({ id: "c-2", remitente: "otro@ejemplo.test" });
+    await expect(
+      eliminarRemitenteListaBlanca("cuenta-a", "c-2"),
+    ).resolves.toBeUndefined();
+
+    expect(agregarRemitenteListaBlancaGmail).toHaveBeenCalledWith(
+      "cuenta-a",
+      "otro@ejemplo.test",
+    );
+    expect(eliminarRemitenteListaBlancaGmail).toHaveBeenCalledWith(
+      "cuenta-a",
+      "c-2",
     );
   });
 });

@@ -225,6 +225,8 @@ export default function CorreosPage() {
         }
         alReintentar={papelera.reintentarCuenta}
         alCerrarAviso={papelera.cerrarAviso}
+        gestion={papelera.gestion}
+        accionesGestion={papelera.accionesGestion}
       />
       <BandejaNotificacionesModal
         abierto={bandejaNotificacionesAbierta}

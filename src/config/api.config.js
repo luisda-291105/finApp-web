@@ -70,6 +70,15 @@ export const ENDPOINTS = {
     papeleraMensaje: "/api/gmail/cuentas/{cuentaId}/mensajes/{mensajeId}/papelera",
     restaurarMensaje:
       "/api/gmail/cuentas/{cuentaId}/mensajes/{mensajeId}/restaurar",
+    papeleraConfiguracion:
+      "/api/gmail/cuentas/{cuentaId}/papelera/configuracion",
+    papeleraVistaPrevia: "/api/gmail/cuentas/{cuentaId}/papelera/vista-previa",
+    papeleraLimpieza: "/api/gmail/cuentas/{cuentaId}/papelera/limpieza",
+    papeleraLimpiezaLote:
+      "/api/gmail/cuentas/{cuentaId}/papelera/limpieza/{loteId}",
+    listaBlanca: "/api/gmail/cuentas/{cuentaId}/papelera/lista-blanca",
+    listaBlancaRemitente:
+      "/api/gmail/cuentas/{cuentaId}/papelera/lista-blanca/{remitenteId}",
   },
   indicadores: {
     trm: "/api/indicadores/trm",

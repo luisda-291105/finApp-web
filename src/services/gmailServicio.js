@@ -1,6 +1,6 @@
 /**
  * @uso        Autoriza Google y consulta Gmail/Contacts por medio del backend
- * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail, obtenerEstadoCorreosGmail, listarPapeleraGmail, moverMensajeAPapeleraGmail, restaurarMensajeDePapeleraGmail
+ * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail, obtenerEstadoCorreosGmail, listarPapeleraGmail, moverMensajeAPapeleraGmail, restaurarMensajeDePapeleraGmail, obtenerConfiguracionPapeleraGmail, guardarConfiguracionPapeleraGmail, generarVistaPreviaPapeleraGmail, iniciarLimpiezaPapeleraGmail, obtenerEstadoLimpiezaPapeleraGmail, listarListaBlancaGmail, agregarRemitenteListaBlancaGmail, eliminarRemitenteListaBlancaGmail
  * @datos      El backend conserva y usa las credenciales; el navegador solo recibe datos de consulta
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
@@ -354,6 +354,136 @@ export async function restaurarMensajeDePapeleraGmail(accountId, messageId) {
       mensajeId: messageId,
     }),
     { method: "POST" },
+  );
+}
+
+/** Lee la configuración de la limpieza automática por categorías de una cuenta. */
+export async function obtenerConfiguracionPapeleraGmail(accountId) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para configurar su papelera.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraConfiguracion", {
+      cuentaId: accountId,
+    }),
+  );
+}
+
+/** Guarda las categorías activas, la antigüedad, el límite y la advertencia aceptada. */
+export async function guardarConfiguracionPapeleraGmail(
+  accountId,
+  configuracion = {},
+) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para configurar su papelera.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraConfiguracion", {
+      cuentaId: accountId,
+    }),
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categorias_activas: configuracion.categoriasActivas || [],
+        antiguedad_minima_dias: configuracion.antiguedadMinimaDias,
+        limite_por_ejecucion: configuracion.limitePorEjecucion,
+        advertencia_aceptada: configuracion.advertenciaAceptada === true,
+      }),
+    },
+  );
+}
+
+/** Genera una vista previa de la limpieza (cuántos correos y remitentes por categoría). */
+export async function generarVistaPreviaPapeleraGmail(
+  accountId,
+  { categorias = [], antiguedadMinimaDias } = {},
+) {
+  if (!accountId)
+    throw new Error(
+      "Selecciona una cuenta Gmail para previsualizar la limpieza.",
+    );
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraVistaPrevia", {
+      cuentaId: accountId,
+    }),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categorias,
+        antiguedad_minima_dias: antiguedadMinimaDias,
+      }),
+    },
+  );
+}
+
+/** Inicia la limpieza explícita de los correos ya recibidos según la vista previa confirmada. */
+export async function iniciarLimpiezaPapeleraGmail(
+  accountId,
+  { vistaPreviaId, totalEstimado } = {},
+) {
+  if (!accountId || !vistaPreviaId)
+    throw new Error("Falta la vista previa para ejecutar la limpieza.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraLimpieza", {
+      cuentaId: accountId,
+    }),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vista_previa_id: vistaPreviaId,
+        total_estimado: totalEstimado,
+        confirmado: true,
+      }),
+    },
+  );
+}
+
+/** Consulta el progreso de un lote de limpieza de la papelera. */
+export async function obtenerEstadoLimpiezaPapeleraGmail(accountId, loteId) {
+  if (!accountId || !loteId)
+    throw new Error("Falta la cuenta o el lote de limpieza.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraLimpiezaLote", {
+      cuentaId: accountId,
+      loteId,
+    }),
+  );
+}
+
+/** Lista los remitentes de la lista blanca de una cuenta. */
+export async function listarListaBlancaGmail(accountId) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para ver su lista blanca.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.listaBlanca", { cuentaId: accountId }),
+  );
+}
+
+/** Añade un remitente a la lista blanca de una cuenta. */
+export async function agregarRemitenteListaBlancaGmail(accountId, remitente) {
+  if (!accountId || !remitente)
+    throw new Error("Indica la cuenta y el remitente para la lista blanca.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.listaBlanca", { cuentaId: accountId }),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ remitente }),
+    },
+  );
+}
+
+/** Quita un remitente de la lista blanca de una cuenta. */
+export async function eliminarRemitenteListaBlancaGmail(accountId, remitenteId) {
+  if (!accountId || !remitenteId)
+    throw new Error("Falta la cuenta o el remitente para quitar.");
+  await solicitarBackend(
+    getEndpointConParametros("gmail.listaBlancaRemitente", {
+      cuentaId: accountId,
+      remitenteId,
+    }),
+    { method: "DELETE" },
   );
 }
 
