@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTema } from "../../../context/TemaContext";
-import { ChevronDown, ChevronRight, FolderPlus, Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, FolderPlus, Pencil, Scissors } from "lucide-react";
 import useMuestras from "../hooks/useMuestras";
 import MuestraCard from "../components/cards/MuestraCard";
 import CrearMuestraModal from "../components/modals/CrearMuestraModal";
@@ -249,8 +249,8 @@ export default function InicioPage() {
             <p className="text-sm text-slate-text/80">Tus muestras y vistas guardadas, en un solo lugar.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button ref={triggerAgrupacionRef} type="button" onClick={() => { setErrorPersistencia(""); setModalAgrupacionAbierto(true); }} className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${temaOscuro ? "border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700" : "border-emerald-primary/40 text-emerald-primary hover:bg-emerald-primary/10"}`}><FolderPlus className="h-4 w-4" aria-hidden="true" />Crear agrupación</button>
-            <button ref={triggerRef} type="button" onClick={alCrearMuestra} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream shadow-md transition-all hover:scale-[1.02] hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">crear muestra</button>
+            <button ref={triggerAgrupacionRef} type="button" onClick={() => { setErrorPersistencia(""); setModalAgrupacionAbierto(true); }} className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${temaOscuro ? "border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700" : "border-emerald-primary/40 text-emerald-primary hover:bg-emerald-primary/10"}`}><FolderPlus className="h-4 w-4" aria-hidden="true" /><span className="sm:hidden">Agrupación</span><span className="hidden sm:inline">Crear agrupación</span></button>
+            <button ref={triggerRef} type="button" onClick={alCrearMuestra} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-emerald-primary px-4 py-2.5 text-sm font-medium text-bg-cream shadow-md transition-all hover:scale-[1.02] hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent"><span className="sm:hidden">Muestra</span><span className="hidden sm:inline">crear muestra</span></button>
           </div>
         </header>
 
@@ -305,10 +305,10 @@ export default function InicioPage() {
                   <button type="button" disabled={indice >= itemsDashboard.length - 1 || reordenandoMuestras} onClick={() => alMoverItemDashboard(item.clave, 1)} aria-label="Mover agrupación después" className="rounded px-2 py-1 text-current hover:bg-emerald-primary/10 disabled:opacity-40">↓</button>
                   <button type="button" onClick={() => setAgrupacionesContraidas((actuales) => ({ ...actuales, [item.idAgrupacion]: !actuales[item.idAgrupacion] }))} aria-expanded={!item.contraida} aria-label={`${item.contraida ? "Mostrar muestras de" : "Ocultar muestras de"} ${item.nombre}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-primary/40 bg-emerald-primary/10 px-2.5 text-xs font-semibold text-emerald-primary hover:bg-emerald-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">
                     {item.contraida ? <ChevronRight className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
-                    <span>{item.contraida ? "Mostrar muestras" : "Ocultar muestras"}</span>
+                    <span className="sr-only sm:not-sr-only">{item.contraida ? "Mostrar muestras" : "Ocultar muestras"}</span>
                   </button>
                   <button type="button" disabled={guardandoMuestra} onClick={() => alEditarAgrupacion(item)} aria-label={`Editar agrupación ${item.nombre}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-border-line/70 px-2 text-current hover:bg-emerald-primary/10 disabled:opacity-50"><Pencil className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Editar</span></button>
-                  <button type="button" disabled={guardandoMuestra} onClick={() => separarAgrupacion(item.idAgrupacion)} className={`ml-1 min-h-8 rounded-lg border px-2 text-xs disabled:opacity-50 ${temaOscuro ? "border-border-line text-bg-cream hover:bg-emerald-primary/20" : "border-border-line/70 text-bg-dark hover:bg-emerald-primary/10"}`}>Separar</button>
+                  <button type="button" disabled={guardandoMuestra} onClick={() => separarAgrupacion(item.idAgrupacion)} aria-label={`Separar agrupación ${item.nombre}`} className={`ml-1 min-h-8 inline-flex items-center gap-1.5 rounded-lg border px-2 text-xs disabled:opacity-50 ${temaOscuro ? "border-border-line text-bg-cream hover:bg-emerald-primary/20" : "border-border-line/70 text-bg-dark hover:bg-emerald-primary/10"}`}><Scissors className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Separar</span></button>
                 </div>
               </header>
               {!item.contraida && <ul className="dashboard-group-grid grid gap-3">
