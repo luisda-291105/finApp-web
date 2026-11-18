@@ -1,6 +1,6 @@
 /**
  * @uso        Agrupar todas las suscripciones (Gmail, manuales y cobros detectados) en una sola cuadrícula con divisiones por prioridad
- * @funciones  TodasSuscripcionesSection({ suscripcionesGmail, totalGmail, cargandoGmail, consultaRealizada, cantidadCuentas, manuales, cargandoManuales, recurrentes, cargandoRecurrentes, filtrosActivos, alLimpiarFiltros, alAbrirDetalle, formatoMoneda, formatoFecha })
+ * @funciones  TodasSuscripcionesSection({ suscripcionesGmail, cargandoGmail, cantidadCuentas, manuales, cargandoManuales, recurrentes, cargandoRecurrentes, filtrosActivos, alLimpiarFiltros, alAbrirDetalle, formatoMoneda, formatoFecha })
  * @datos      Items de tres fuentes; los de Gmail ya vienen filtrados por búsqueda y filtros; se dividen en bloques Alta/Media/Baja/Sin prioridad y dentro de cada bloque se ordenan por importancia (Alta primero) con orden estable
  * @eventos    Abrir detalle (gmail/manual), limpiar filtros y minimizar/expandir cada bloque de prioridad
  * @estados    bloquesColapsados (Set<string>): bloques minimizados, persistido en localStorage bajo `finapp:suscripciones:bloques-colapsados`
@@ -45,9 +45,7 @@ function leerBloquesColapsados() {
 /** Sección única con estados de carga, estado vacío y la cuadrícula combinada dividida por prioridad. */
 export default function TodasSuscripcionesSection({
   suscripcionesGmail,
-  totalGmail,
   cargandoGmail,
-  consultaRealizada,
   cantidadCuentas,
   manuales,
   cargandoManuales,
@@ -112,9 +110,6 @@ export default function TodasSuscripcionesSection({
         )}
         {cargandoGmail && (
           <p role="status" className="text-sm text-slate-text">Consultando las suscripciones recientes por cuenta Gmail…</p>
-        )}
-        {!cargandoGmail && consultaRealizada && (
-          <p role="status" className="text-sm text-slate-text">Mostrando {suscripcionesGmail.length} de {totalGmail} suscripciones detectadas en {cantidadCuentas} {cantidadCuentas === 1 ? "cuenta" : "cuentas"}.</p>
         )}
         {cargandoManuales && (
           <p role="status" className="text-sm text-slate-text">Cargando suscripciones registradas…</p>
