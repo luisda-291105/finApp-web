@@ -140,7 +140,11 @@ async function solicitarBackend(url, opciones = {}) {
   if (respuesta.status === 401) {
     cacheConsultas.clear();
     cacheContenido.clear();
-    window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+    // Un 401 con requires_reconnect viene de Google, no de la sesión FinApp:
+    // se limpia la caché, pero no se cierra la sesión del usuario.
+    if (!datos?.requires_reconnect) {
+      window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+    }
   }
   if (!respuesta.ok)
     throw new Error(

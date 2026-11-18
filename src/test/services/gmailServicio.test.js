@@ -109,4 +109,25 @@ describe("gmailServicio", () => {
     );
     notificarSesion.mockRestore();
   });
+
+  it("no cierra la sesión si el 401 indica que Gmail necesita reconectarse", async () => {
+    const notificarSesion = vi.spyOn(window, "dispatchEvent");
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({
+        message: "Google revocó o venció esta autorización. Conecta de nuevo la cuenta.",
+        requires_reconnect: true,
+      }),
+    });
+
+    await expect(obtenerCorreosGmail("cuenta-1", [])).rejects.toThrow(
+      "Google revocó o venció esta autorización.",
+    );
+
+    expect(notificarSesion).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "finapp:sesion-requerida" }),
+    );
+    notificarSesion.mockRestore();
+  });
 });
