@@ -72,15 +72,18 @@ export default function ContabilidadPage() {
   } = useContabilidad();
 
   const sincronizacionHechaRef = useRef(false);
+  const recargarMovimientosRef = useRef(recargarMovimientos);
+  recargarMovimientosRef.current = recargarMovimientos;
   const [sincronizandoApodos, setSincronizandoApodos] = useState(false);
 
   useEffect(() => {
     let vigente = true;
+    const yaSincronizado = sessionStorage.getItem("finapp:suscripciones-apodo-sincronizado");
     if (
       sincronizacionHechaRef.current ||
+      yaSincronizado === "1" ||
       !usuario?.idUsuario ||
-      cargandoMovimientos ||
-      movimientos.length === 0
+      cargandoMovimientos
     )
       return () => {
         vigente = false;
@@ -95,7 +98,8 @@ export default function ContabilidadPage() {
             tipo: "exito",
             mensaje: `${resultado.actualizados} movimiento(s) actualizado(s) con el apodo de la suscripción como origen.`,
           });
-          recargarMovimientos();
+          sessionStorage.setItem("finapp:suscripciones-apodo-sincronizado", "1");
+          recargarMovimientosRef.current();
         }
       } catch {
         if (vigente)
@@ -111,7 +115,7 @@ export default function ContabilidadPage() {
     return () => {
       vigente = false;
     };
-  }, [usuario?.idUsuario, cargandoMovimientos, movimientos.length, recargarMovimientos]);
+  }, [usuario?.idUsuario, cargandoMovimientos]);
 
   const bolsillosActivos = bolsillos.filter(
     (bolsillo) => bolsillo.estado !== false,

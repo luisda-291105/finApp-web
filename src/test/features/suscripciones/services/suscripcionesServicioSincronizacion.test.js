@@ -79,7 +79,7 @@ describe("sincronizarOrigenesMovimientosGmail", () => {
     expect(movimientosMocks.actualizarMovimiento).toHaveBeenCalledTimes(1);
     expect(movimientosMocks.actualizarMovimiento).toHaveBeenCalledWith(
       "mov-1",
-      { origenNombre: "bamcolombia" },
+      expect.objectContaining({ origenNombre: "bamcolombia" }),
     );
   });
 

@@ -211,17 +211,17 @@ export async function sincronizarOrigenesMovimientosGmail() {
     ? respuesta.suscripciones
     : []
   ).map((s) => ({
-    idSuscripcion: s.idSuscripcion ?? s.id ?? "",
     cuentaGmailId: String(s.cuentaGmailId ?? ""),
     correoRemitente: String(s.correoRemitente ?? ""),
     apodo: String(s.apodo ?? "").trim(),
   }));
 
-  const indiceApodo = new Map();
+  // Índice por cuenta Gmail para hacer match del movimiento.
+  const porCuenta = new Map();
   for (const s of suscripciones) {
     if (!s.apodo) continue;
-    const clave = `${s.cuentaGmailId}|${s.correoRemitente}`;
-    if (!indiceApodo.has(clave)) indiceApodo.set(clave, s.apodo);
+    if (!porCuenta.has(s.cuentaGmailId)) porCuenta.set(s.cuentaGmailId, []);
+    porCuenta.get(s.cuentaGmailId).push(s);
   }
 
   // 2. Movimientos GMAIL existentes en Contabilidad.
@@ -230,27 +230,45 @@ export async function sincronizarOrigenesMovimientosGmail() {
     (m) => String(m.origenTipo || "").toUpperCase() === "GMAIL",
   );
 
-  // 3. Actualizar los que coincidan con una suscripción y tengan apodo distinto.
+  // 3. Actualizar los que coincidan y aún no lleven el apodo como origen.
   let actualizados = 0;
   let errores = 0;
   const detalles = [];
   for (const movimiento of movimientos) {
     const cuentaGmailId = String(movimiento.origenId || "").split(":")[0];
-    const correoRemitente =
-      movimiento.origenNombre || movimiento.remitente || "";
-    const clave = `${cuentaGmailId}|${correoRemitente}`;
-    const apodo = indiceApodo.get(clave);
-    if (!apodo || apodo === correoRemitente) continue;
+    const candidatos = porCuenta.get(cuentaGmailId) || [];
+    const origenActual = String(movimiento.origenNombre || "");
+    const candidato = candidatos.find((s) => {
+      if (origenActual === s.apodo) return false; // ya actualizado
+      return (
+        s.correoRemitente &&
+        (movimiento.remitente === s.correoRemitente ||
+          movimiento.origenNombre === s.correoRemitente)
+      );
+    });
+    if (!candidato) continue;
+
     try {
       await actualizarMovimiento(movimiento.idMovimiento, {
-        origenNombre: apodo,
+        idBolsillo: movimiento.idBolsillo,
+        tipo: movimiento.tipo,
+        fecha: movimiento.fecha,
+        monto: movimiento.monto,
+        categoria: movimiento.categoria,
+        concepto: movimiento.concepto,
+        origenTipo: movimiento.origenTipo,
+        origenId: movimiento.origenId,
+        origenNombre: candidato.apodo,
+        ...(movimiento.entidad ? { entidad: movimiento.entidad } : {}),
+        ...(movimiento.remitente ? { remitente: movimiento.remitente } : {}),
+        ...(movimiento.descripcion ? { descripcion: movimiento.descripcion } : {}),
       });
       actualizados++;
       detalles.push({
         idMovimiento: movimiento.idMovimiento,
         concepto: movimiento.concepto || movimiento.categoria,
-        origenAnterior: correoRemitente,
-        apodo,
+        origenAnterior: origenActual,
+        apodo: candidato.apodo,
       });
     } catch {
       errores++;
