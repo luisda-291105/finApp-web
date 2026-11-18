@@ -50,7 +50,9 @@ export default function FuenteDetalleModal({
   }, [abierto, fuente]);
 
   useEffect(() => {
-    if (!abierto || !cuenta?.id) {
+    const esCuentaSeleccionada =
+      cuenta?.id && String(cuentaSeleccionadaId) === String(cuenta.id);
+    if (!abierto || !cuenta?.id || !gmailConectado || !esCuentaSeleccionada) {
       setPermisoContactos(null);
       setPermisoContactosCuentaId("");
       setVerificandoPermiso(false);
@@ -79,7 +81,7 @@ export default function FuenteDetalleModal({
     return () => {
       vigente = false;
     };
-  }, [abierto, cuenta?.id]);
+  }, [abierto, cuenta?.id, gmailConectado, cuentaSeleccionadaId]);
 
   if (!fuente) return null;
 
@@ -302,69 +304,89 @@ export default function FuenteDetalleModal({
                   Permisos
                 </h3>
                 <p className="mt-1 text-xs text-slate-text">
-                  Servicios de Google vinculados a esta fuente.
+                  {cuentaConectada
+                    ? "Servicios de Google vinculados a esta fuente."
+                    : "Esta cuenta no está conectada con Google. Conéctala para usar Gmail y sus servicios."}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
-                <div>
-                  <p className="text-sm font-semibold text-bg-dark">
-                    Correos de Gmail
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-text">
-                    Consultar y clasificar mensajes.
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
-                  Conectado
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
-                <div>
-                  <p className="text-sm font-semibold text-bg-dark">
-                    Suscripciones de Gmail
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-text">
-                    Detectar boletines usando la lectura de correos ya
-                    autorizada.
-                  </p>
-                </div>
-                <span className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
-                  Incluido
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
-                <div>
-                  <p className="text-sm font-semibold text-bg-dark">
-                    Contactos de Google
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-text">
-                    Consultar contactos para importarlos a FinApp.
-                  </p>
-                </div>
-                {permisoActualVerificado && permisoContactos ? (
-                  <span
-                    role="status"
-                    className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary"
-                  >
-                    Autorizado
-                  </span>
-                ) : (
-                  <BotonServicioExterno
-                    onClick={autorizarContactos}
-                    disabled={
-                      !gmailConfigurado ||
-                      !gisListo ||
-                      conexionCargando ||
-                      verificandoPermiso ||
-                      !permisoActualVerificado
-                    }
-                  >
-                    {verificandoPermiso || !permisoActualVerificado
-                      ? "Verificando permiso…"
-                      : "Autorizar contactos"}
-                  </BotonServicioExterno>
-                )}
-              </div>
+              {cuentaConectada ? (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-bg-dark">
+                        Correos de Gmail
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-text">
+                        Consultar y clasificar mensajes.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
+                      Conectado
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-bg-dark">
+                        Suscripciones de Gmail
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-text">
+                        Detectar boletines usando la lectura de correos ya
+                        autorizada.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary">
+                      Incluido
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-bg-cream/50 p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-bg-dark">
+                        Contactos de Google
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-text">
+                        Consultar contactos para importarlos a FinApp.
+                      </p>
+                    </div>
+                    {permisoActualVerificado && permisoContactos ? (
+                      <span
+                        role="status"
+                        className="rounded-full bg-emerald-primary/15 px-2.5 py-1 text-xs font-semibold text-emerald-primary"
+                      >
+                        Autorizado
+                      </span>
+                    ) : (
+                      <BotonServicioExterno
+                        onClick={autorizarContactos}
+                        disabled={
+                          !gmailConfigurado ||
+                          !gisListo ||
+                          conexionCargando ||
+                          verificandoPermiso ||
+                          !permisoActualVerificado
+                        }
+                      >
+                        {verificandoPermiso || !permisoActualVerificado
+                          ? "Verificando permiso…"
+                          : "Autorizar contactos"}
+                      </BotonServicioExterno>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <BotonServicioExterno
+                  onClick={autorizarContactos}
+                  disabled={
+                    !gmailConfigurado ||
+                    !gisListo ||
+                    conexionCargando ||
+                    verificandoPermiso
+                  }
+                >
+                  {conexionCargando
+                    ? "Conectando con Google…"
+                    : "Conectar Gmail y Contactos"}
+                </BotonServicioExterno>
+              )}
               {errorPermisos && (
                 <p role="status" className="text-xs text-amber-700">
                   {errorPermisos}
