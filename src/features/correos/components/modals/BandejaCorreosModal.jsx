@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Inbox } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import DetalleCorreoModal from "./DetalleCorreoModal";
@@ -77,11 +78,12 @@ export default function BandejaCorreosModal({
   fuente,
   gmailConectado,
   cuentaId,
-  cuentaGmail,
   mensajesFuente,
   cargandoMensajes,
   triggerRef,
   alCerrar,
+  alMover,
+  alAutorizarPermiso,
 }) {
   const [categoria, setCategoria] = useState("TODOS");
   const [tipoMovimiento, setTipoMovimiento] = useState("TODOS");
@@ -203,19 +205,22 @@ export default function BandejaCorreosModal({
               </p>
             )}
             {!cargandoMensajes && mensajesVisibles.length === 0 && (
-              <div className="space-y-2 p-6 text-sm text-slate-text">
-                <p>
+              <div className="flex flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+                <Inbox
+                  aria-hidden="true"
+                  className="h-8 w-8 text-slate-text"
+                  strokeWidth={1.5}
+                />
+                <p className="text-sm font-semibold text-bg-dark">
                   {categoria === "TODOS"
-                    ? `No encontramos mensajes recibidos para ${fuente.contenido} en la cuenta conectada (${cuentaGmail || "Gmail"}).`
-                    : "No hay mensajes en esta categoría para esta fuente."}
+                    ? "Aún no hay mensajes para esta dirección"
+                    : "No hay mensajes en esta categoría"}
                 </p>
-                {categoria === "TODOS" && (
-                  <p>
-                    La cuenta conectada debe recibir estos mensajes o tener
-                    configurado el reenvío/alias de esa dirección. Se incluyen
-                    mensajes archivados.
-                  </p>
-                )}
+                <p className="max-w-sm text-xs text-slate-text">
+                  {categoria === "TODOS"
+                    ? `Los mensajes para ${fuente.contenido} aparecerán aquí cuando la cuenta conectada los reciba.`
+                    : "Cambia a «Todos» o revisa otra categoría."}
+                </p>
               </div>
             )}
             {!cargandoMensajes && mensajesVisibles.length > 0 && (
@@ -313,6 +318,8 @@ export default function BandejaCorreosModal({
         cuentaId={cuentaId}
         triggerRef={detalleTriggerRef}
         alCerrar={() => setCorreoDetalle(null)}
+        alMover={alMover}
+        alAutorizarPermiso={alAutorizarPermiso}
       />
     </>
   );

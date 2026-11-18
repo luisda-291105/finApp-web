@@ -129,30 +129,36 @@ export function GmailProvider({ children }) {
 
   const conectarGmail = async ({
     incluirContactos = false,
+    incluirModificar = false,
     cuentaEsperadaId = cuentaSeleccionadaId,
   } = {}) => {
     setErrorGmail("");
     setConexionCargando(true);
     try {
-      const cuentaEsperada = incluirContactos
+      // Un permiso adicional (Contactos o modificar correos) se pide sobre una
+      // cuenta ya registrada y no debe reiniciar la cuenta Gmail activa.
+      const requiereCuentaEspecifica = incluirContactos || incluirModificar;
+      const cuentaEsperada = requiereCuentaEspecifica
         ? cuentasGmail.find(
             (cuenta) => String(cuenta.id) === String(cuentaEsperadaId),
           )
         : null;
-      if (incluirContactos && !cuentaEsperada)
+      if (requiereCuentaEspecifica && !cuentaEsperada)
         throw new Error(
-          "Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar Google Contacts.",
+          incluirModificar
+            ? "Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar el permiso para modificar sus correos."
+            : "Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar Google Contacts.",
         );
       const code = await iniciarCodigoAutorizacionGmail({
         incluirContactos,
+        incluirModificar,
         cuentaEsperada: cuentaEsperada?.email || "",
       });
       const conexion = await canjearCodigoGmail(
         code,
-        incluirContactos ? cuentaEsperadaId : "",
+        requiereCuentaEspecifica ? cuentaEsperadaId : "",
       );
-      if (incluirContactos) {
-        // La autorización de un permiso adicional no debe reiniciar la cuenta Gmail activa.
+      if (requiereCuentaEspecifica) {
         // El backend actualiza la conexión de la fuente indicada.
         if (String(cuentaSeleccionadaId) === String(conexion.accountId)) {
           setGmailConectado(true);

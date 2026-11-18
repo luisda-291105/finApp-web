@@ -1,20 +1,22 @@
 /**
  * @uso        Bandeja de correo Gmail por fuentes y cuentas conectadas
  * @funciones  CorreosPage()
- * @datos      Coordina useCorreos, notificaciones Gmail, tarjetas y bandejas modales
- * @eventos    Abrir bandeja de notificaciones, seleccionar dirección y filtrar mensajes
- * @estados    bandejaNotificacionesAbierta y referencias de foco/disparadores
+ * @datos      Coordina useCorreos, usePapelera, notificaciones Gmail, tarjetas y bandejas modales
+ * @eventos    Abrir bandeja de notificaciones, abrir la papelera, seleccionar dirección y filtrar mensajes
+ * @estados    bandejaNotificacionesAbierta, papeleraAbierta y referencias de foco/disparadores
  * @usadoPor   App.jsx mediante la API pública de features/correos
  */
 import { useMemo, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "../../../components/ui";
 import { useCorreos } from "../hooks/useCorreos";
 import { useNotificacionesCorreos } from "../hooks/useNotificacionesCorreos";
+import { usePapelera } from "../hooks/usePapelera";
 import CorreoCuentaCard from "../components/cards/CorreoCuentaCard";
 import BandejaCorreosModal from "../components/modals/BandejaCorreosModal";
 import BandejaNotificacionesModal from "../components/modals/BandejaNotificacionesModal";
+import PapeleraCorreosModal from "../components/modals/PapeleraCorreosModal";
 import { AlertaGlobal } from "../../../features/error";
 
 /** Renderiza las direcciones y entrega las acciones de datos a su hook. */
@@ -22,8 +24,11 @@ export default function CorreosPage() {
   const estado = useCorreos();
   const disparadorFuenteRef = useRef(null);
   const disparadorNotificacionesRef = useRef(null);
+  const disparadorPapeleraRef = useRef(null);
   const [bandejaNotificacionesAbierta, setBandejaNotificacionesAbierta] =
     useState(false);
+  const [papeleraAbierta, setPapeleraAbierta] = useState(false);
+  const papelera = usePapelera({ activo: papeleraAbierta });
   const mensajesFinancieros = useMemo(
     () => [
       ...new Map(
@@ -58,6 +63,17 @@ export default function CorreosPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {estado.gmailConectado && (
+            <button
+              ref={disparadorPapeleraRef}
+              type="button"
+              onClick={() => setPapeleraAbierta(true)}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-line bg-bg-cream/70 px-4 py-2.5 text-sm font-medium text-bg-dark transition-colors hover:border-emerald-primary/50 hover:text-emerald-primary"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              <span>Papelera</span>
+            </button>
+          )}
           {estado.gmailConectado ? (
             <button
               ref={disparadorNotificacionesRef}
@@ -184,11 +200,31 @@ export default function CorreosPage() {
         fuente={estado.fuenteSeleccionada}
         gmailConectado={estado.gmailConectado}
         cuentaId={estado.cuentaSeleccionadaId}
-        cuentaGmail={estado.cuentaGmail}
         mensajesFuente={estado.mensajesFuente}
         cargandoMensajes={estado.cargandoMensajes}
         triggerRef={disparadorFuenteRef}
         alCerrar={estado.cerrarBandeja}
+        alMover={estado.moverCorreoAPapelera}
+        alAutorizarPermiso={(cuentaId) =>
+          papelera.autorizarPermiso(cuentaId).catch(() => {})
+        }
+      />
+      <PapeleraCorreosModal
+        abierto={papeleraAbierta}
+        alCerrar={() => setPapeleraAbierta(false)}
+        triggerRef={disparadorPapeleraRef}
+        gmailConectado={estado.gmailConectado}
+        secciones={papelera.secciones}
+        cargando={papelera.cargando}
+        restaurando={papelera.restaurando}
+        autorizando={papelera.autorizando}
+        aviso={papelera.aviso}
+        alRestaurar={papelera.restaurar}
+        alAutorizar={(cuentaId) =>
+          papelera.autorizarPermiso(cuentaId).catch(() => {})
+        }
+        alReintentar={papelera.reintentarCuenta}
+        alCerrarAviso={papelera.cerrarAviso}
       />
       <BandejaNotificacionesModal
         abierto={bandejaNotificacionesAbierta}

@@ -1,6 +1,6 @@
 /**
  * @uso        Punto único de acceso a endpoints del backend
- * @funciones  getEndpoint(nombre), API_BASE_URL
+ * @funciones  getEndpoint(nombre), getEndpointConParametros(nombre, parametros), API_BASE_URL
  * @datos      Lee de variables de entorno (import.meta.env), sin transformación
  * @eventos    Ninguno
  * @estados    Ninguno
@@ -66,6 +66,10 @@ export const ENDPOINTS = {
     cuentas: "/api/gmail/cuentas",
     suscripciones: "/api/gmail/suscripciones",
     movimientosNotificaciones: "/api/gmail/movimientos/notificaciones",
+    papelera: "/api/gmail/cuentas/{cuentaId}/papelera",
+    papeleraMensaje: "/api/gmail/cuentas/{cuentaId}/mensajes/{mensajeId}/papelera",
+    restaurarMensaje:
+      "/api/gmail/cuentas/{cuentaId}/mensajes/{mensajeId}/restaurar",
   },
   indicadores: {
     trm: "/api/indicadores/trm",
@@ -102,4 +106,22 @@ export function getEndpoint(path) {
     throw new Error(`Endpoint no registrado: "${path}"`);
   }
   return `${API_BASE_URL}${value}`;
+}
+
+/**
+ * getEndpointConParametros
+ * Devuelve la URL completa de un endpoint registrado, sustituyendo y codificando
+ * los marcadores `{parametro}` presentes en su ruta.
+ * @param {string} path - clave simple o punteada
+ * @param {Record<string, string|number>} parametros - valores de los marcadores
+ * @returns {string} URL completa lista para fetch()
+ */
+export function getEndpointConParametros(path, parametros = {}) {
+  return getEndpoint(path).replace(
+    /\{([a-zA-Z0-9_]+)\}/g,
+    (coincidencia, clave) =>
+      clave in parametros
+        ? encodeURIComponent(String(parametros[clave]))
+        : coincidencia,
+  );
 }

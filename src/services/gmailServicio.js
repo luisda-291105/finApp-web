@@ -1,22 +1,26 @@
 /**
  * @uso        Autoriza Google y consulta Gmail/Contacts por medio del backend
- * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail, obtenerEstadoCorreosGmail
+ * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail, obtenerEstadoCorreosGmail, listarPapeleraGmail, moverMensajeAPapeleraGmail, restaurarMensajeDePapeleraGmail
  * @datos      El backend conserva y usa las credenciales; el navegador solo recibe datos de consulta
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
  * @usadoPor   GmailContext y features/configuracion, features/contactos, features/correos
  */
-import { getEndpoint } from "../config/api.config";
+import { getEndpoint, getEndpointConParametros } from "../config/api.config";
 import { renovarSesion } from "./httpServicio";
 
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const ALCANCE_GMAIL_LECTURA = "https://www.googleapis.com/auth/gmail.readonly";
+export const ALCANCE_GMAIL_MODIFICAR =
+  "https://www.googleapis.com/auth/gmail.modify";
 const ALCANCE_CONTACTOS_LECTURA =
   "https://www.googleapis.com/auth/contacts.readonly";
 const ID_CLIENTE_GOOGLE = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GMAIL_CONFIGURADO = Boolean(ID_CLIENTE_GOOGLE);
 const MENSAJE_ACCESO_DENEGADO =
   "Google denegó el acceso (403 access_denied). Si la app está en modo de prueba, agrega tu cuenta a Usuarios de prueba en Google Cloud Console y vuelve a intentar.";
+const MENSAJE_PERMISO_MODIFICAR =
+  "Google no concedió el permiso para modificar tus correos (gmail.modify). Vuelve a autorizarlo desde la vista Papelera.";
 const CACHE_CONSULTA_MS = 45 * 1000;
 const CACHE_CONTENIDO_MS = 5 * 60 * 1000;
 export const REMITENTE_MOVIMIENTOS_BANCOLOMBIA =
@@ -68,9 +72,23 @@ export async function prepararGoogleIdentityServices() {
   await cargarBibliotecaGoogle();
 }
 
+/** Compone el alcance OAuth solicitado según los permisos pedidos. */
+export function alcancesGmailSolicitados({
+  incluirContactos = false,
+  incluirModificar = false,
+} = {}) {
+  // `gmail.modify` incluye la lectura: no se piden ambos a la vez.
+  const alcances = [
+    incluirModificar ? ALCANCE_GMAIL_MODIFICAR : ALCANCE_GMAIL_LECTURA,
+  ];
+  if (incluirContactos) alcances.push(ALCANCE_CONTACTOS_LECTURA);
+  return alcances.join(" ");
+}
+
 /** Solicita un código OAuth con popup GIS; las llamadas a las APIs se hacen en el backend. */
 export async function iniciarCodigoAutorizacionGmail({
   incluirContactos = false,
+  incluirModificar = false,
   cuentaEsperada = "",
 } = {}) {
   if (!ID_CLIENTE_GOOGLE) {
@@ -83,12 +101,10 @@ export async function iniciarCodigoAutorizacionGmail({
   return new Promise((resolver, rechazar) => {
     const cliente = window.google.accounts.oauth2.initCodeClient({
       client_id: ID_CLIENTE_GOOGLE,
-      scope: incluirContactos
-        ? `${ALCANCE_GMAIL_LECTURA} ${ALCANCE_CONTACTOS_LECTURA}`
-        : ALCANCE_GMAIL_LECTURA,
+      scope: alcancesGmailSolicitados({ incluirContactos, incluirModificar }),
       include_granted_scopes: true,
       ux_mode: "popup",
-      ...(!incluirContactos ? { prompt: "consent" } : {}),
+      ...(incluirModificar || !incluirContactos ? { prompt: "consent" } : {}),
       select_account: !cuentaEsperada,
       ...(cuentaEsperada ? { login_hint: cuentaEsperada } : {}),
       callback: (respuesta) => {
@@ -103,10 +119,19 @@ export async function iniciarCodigoAutorizacionGmail({
           );
           return;
         }
+        const alcancesConcedidos = String(respuesta.scope || "").split(/\s+/);
+        if (
+          incluirModificar &&
+          !alcancesConcedidos.includes(ALCANCE_GMAIL_MODIFICAR)
+        ) {
+          // RF-24: no se da por hecho que Google concedió todo lo solicitado.
+          rechazar(new Error(MENSAJE_PERMISO_MODIFICAR));
+          return;
+        }
         if (
           incluirContactos &&
           respuesta.scope &&
-          !respuesta.scope.split(/\s+/).includes(ALCANCE_CONTACTOS_LECTURA)
+          !alcancesConcedidos.includes(ALCANCE_CONTACTOS_LECTURA)
         ) {
           rechazar(
             new Error(
@@ -165,6 +190,13 @@ async function solicitarBackend(url, opciones = {}, reintentada = false) {
       datos.message || "No se pudo completar la consulta de Google.",
     );
     error.status = respuesta.status;
+    // El backend añade flags de acción del usuario en el mismo cuerpo (patrón
+    // requires_reconnect): requires_scope_authorization, mail_unavailable,
+    // limpieza_en_curso, etc. Se propagan al Error para que la UI los distinga.
+    for (const [clave, valor] of Object.entries(datos || {})) {
+      if (clave === "message") continue;
+      error[clave] = valor;
+    }
     throw error;
   }
   return datos;
@@ -283,6 +315,45 @@ export async function obtenerEstadoCorreosGmail(accountId) {
     throw new Error("Selecciona una cuenta Gmail para consultar su estado.");
   return solicitarBackend(
     `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/estado`,
+  );
+}
+
+/** Lista la Papelera real de Gmail de una cuenta; admite paginación con `page_token`. */
+export async function listarPapeleraGmail(accountId, pageToken = "") {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para ver su papelera.");
+  const ruta = getEndpointConParametros("gmail.papelera", {
+    cuentaId: accountId,
+  });
+  const url = pageToken
+    ? `${ruta}?page_token=${encodeURIComponent(pageToken)}`
+    : ruta;
+  return solicitarBackend(url);
+}
+
+/** Mueve a la Papelera de Gmail un mensaje concreto (operación recuperable). */
+export async function moverMensajeAPapeleraGmail(accountId, messageId) {
+  if (!accountId || !messageId)
+    throw new Error("Falta la cuenta o el mensaje para mover a la papelera.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraMensaje", {
+      cuentaId: accountId,
+      mensajeId: messageId,
+    }),
+    { method: "POST" },
+  );
+}
+
+/** Restaura a la bandeja un mensaje que está en la Papelera de Gmail. */
+export async function restaurarMensajeDePapeleraGmail(accountId, messageId) {
+  if (!accountId || !messageId)
+    throw new Error("Falta la cuenta o el mensaje para restaurar.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.restaurarMensaje", {
+      cuentaId: accountId,
+      mensajeId: messageId,
+    }),
+    { method: "POST" },
   );
 }
 

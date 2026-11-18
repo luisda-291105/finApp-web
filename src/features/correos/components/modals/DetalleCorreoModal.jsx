@@ -17,6 +17,8 @@ export default function DetalleCorreoModal({
   cuentaId,
   triggerRef,
   alCerrar,
+  alMover,
+  alAutorizarPermiso,
 }) {
   const [contenido, setContenido] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -78,7 +80,13 @@ export default function DetalleCorreoModal({
           cargando={cargando}
           error={error}
         />
-        <AccionesDetalleCorreo idCorreo={correo.id} alCerrar={alCerrar} />
+        <AccionesDetalleCorreo
+          idCorreo={correo.id}
+          cuentaId={cuentaId}
+          alCerrar={alCerrar}
+          alMover={alMover}
+          alAutorizarPermiso={alAutorizarPermiso}
+        />
       </div>
     </ModalDetalleRegistro>
   );

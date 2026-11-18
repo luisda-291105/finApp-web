@@ -2,7 +2,7 @@
  * @uso        Estado y acciones de la bandeja por fuentes/cuentas Gmail
  * @funciones  useCorreos()
  * @datos      Carga fuentes y mensajes; refresca cada cinco minutos y consulta el estado de la cola cada 15 s
- * @eventos    Selección de dirección, cambio de cuenta, actualización y cierre de bandeja
+ * @eventos    Selección de dirección, cambio de cuenta, actualización, mover a la papelera y cierre de bandeja
  * @estados    fuentes, tarjetasCorreo, mensajes, categoría, estadoCorreos, errores y estados de carga
  * @usadoPor   CorreosPage
  */
@@ -16,6 +16,7 @@ import {
   consultarCorreosDeFuentes,
   consultarEstadoCorreos,
 } from "../services/correosService";
+import { moverCorreoAPapelera as moverCorreoAPapeleraEnGmail } from "../services/papeleraService";
 import {
   agruparFuentesPorCuenta,
   combinarTarjetasCorreo,
@@ -331,6 +332,43 @@ export function useCorreos() {
     setFuenteSeleccionada(null);
     setMensajesFuente([]);
   }, []);
+
+  /**
+   * Mueve un correo a la papelera con reflejo optimista: desaparece de la bandeja
+   * de inmediato y se revierte si Gmail rechaza el movimiento. Vuelve a lanzar el
+   * error para que el detalle muestre el motivo y no se cierre.
+   */
+  const moverCorreoAPapelera = useCallback(
+    async ({ id, cuentaId } = {}) => {
+      const cuentaDestino = cuentaId || cuentaSeleccionadaId;
+      if (!id) throw new Error("Falta el correo para mover a la papelera.");
+      if (!cuentaDestino)
+        throw new Error("Selecciona una cuenta Gmail para mover el correo.");
+      const respaldoPorFuente = mensajesPorFuente;
+      const respaldoFuente = mensajesFuente;
+      setMensajesPorFuente((actuales) =>
+        Object.fromEntries(
+          Object.entries(actuales).map(([clave, lista]) => [
+            clave,
+            lista.filter((correo) => correo.id !== id),
+          ]),
+        ),
+      );
+      setMensajesFuente((actuales) =>
+        actuales.filter((correo) => correo.id !== id),
+      );
+      try {
+        await moverCorreoAPapeleraEnGmail(cuentaDestino, id);
+        invalidarCacheConsultasGmail();
+        return { id, cuentaId: cuentaDestino };
+      } catch (fallo) {
+        setMensajesPorFuente(respaldoPorFuente);
+        setMensajesFuente(respaldoFuente);
+        throw fallo;
+      }
+    },
+    [mensajesPorFuente, mensajesFuente, cuentaSeleccionadaId],
+  );
   useEffect(() => {
     if (!fuenteSeleccionada) return;
     const mensajesActualizados = mensajesPorFuente[fuenteSeleccionada.idFuente];
@@ -390,6 +428,7 @@ export function useCorreos() {
     seleccionarFuente,
     consultarFuentesRegistradas,
     consultarTodasLasCuentas,
+    moverCorreoAPapelera,
     cerrarBandeja,
   };
 }
