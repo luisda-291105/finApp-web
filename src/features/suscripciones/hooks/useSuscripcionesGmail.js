@@ -8,6 +8,15 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { listarSuscripcionesGmail } from "../../../services/gmailServicio";
+import { normalizarNivelUi } from "../services/suscripcionesServicio";
+
+const normalizarSuscripcionGmail = (suscripcion = {}) => ({
+  ...suscripcion,
+  importancia: normalizarNivelUi(suscripcion.importancia, "Media"),
+  prioridad: normalizarNivelUi(suscripcion.prioridad, "Media"),
+  apodo: String(suscripcion.apodo ?? "").trim(),
+  idSuscripcion: suscripcion.idSuscripcion ?? "",
+});
 
 /** El navegador no obtiene tokens ni consulta Gmail directamente para esta vista. */
 export default function useSuscripcionesGmail({ cuentasGmail }) {
@@ -22,7 +31,7 @@ export default function useSuscripcionesGmail({ cuentasGmail }) {
     setError("");
     try {
       const respuesta = await listarSuscripcionesGmail();
-      setSuscripcionesCorreo(Array.isArray(respuesta?.suscripciones) ? respuesta.suscripciones : []);
+      setSuscripcionesCorreo((Array.isArray(respuesta?.suscripciones) ? respuesta.suscripciones : []).map(normalizarSuscripcionGmail));
       setErroresCuentas(Array.isArray(respuesta?.erroresCuentas) ? respuesta.erroresCuentas : []);
       if (respuesta?.erroresCuentas?.length) setError("Algunas cuentas Gmail no se pudieron consultar.");
     } catch (fallo) {
@@ -37,5 +46,11 @@ export default function useSuscripcionesGmail({ cuentasGmail }) {
 
   useEffect(() => { cargarSuscripciones(); }, [cargarSuscripciones, cuentasGmail.length]);
 
-  return { suscripcionesCorreo, cargando, erroresCuentas, error, consultaRealizada, actualizarSuscripciones: cargarSuscripciones };
+  /** Refleja en la lista los ajustes guardados de una suscripción sin recargar Gmail. */
+  const actualizarSuscripcionLocal = useCallback((idSuscripcion, cambios) => {
+    setSuscripcionesCorreo((actuales) => actuales.map((item) =>
+      String(item.idSuscripcion || "") === String(idSuscripcion) ? { ...item, ...cambios } : item));
+  }, []);
+
+  return { suscripcionesCorreo, cargando, erroresCuentas, error, actualizarSuscripcionLocal, consultaRealizada, actualizarSuscripciones: cargarSuscripciones };
 }

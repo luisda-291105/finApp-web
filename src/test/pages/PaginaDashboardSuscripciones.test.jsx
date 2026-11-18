@@ -9,6 +9,7 @@ const obtenerMensajesSuscripcionGmail = vi.hoisted(() => vi.fn().mockResolvedVal
 const listarSuscripcionesManuales = vi.hoisted(() => vi.fn());
 const crearSuscripcionManual = vi.hoisted(() => vi.fn());
 const actualizarSuscripcionManual = vi.hoisted(() => vi.fn());
+const actualizarAjustesSuscripcion = vi.hoisted(() => vi.fn());
 const cambiarEstadoSuscripcionManual = vi.hoisted(() => vi.fn());
 const eliminarSuscripcionManual = vi.hoisted(() => vi.fn());
 
@@ -17,8 +18,16 @@ vi.mock("../../features/suscripciones/services/suscripcionesServicio", () => ({
   listarSuscripcionesManuales,
   crearSuscripcionManual,
   actualizarSuscripcionManual,
+  actualizarAjustesSuscripcion,
   cambiarEstadoSuscripcionManual,
   eliminarSuscripcionManual,
+  normalizarNivelUi: (valor, porDefecto = "Media") => {
+    const normalizado = String(valor ?? "").trim().toUpperCase();
+    if (normalizado === "ALTA" || normalizado === "ALTO" || normalizado === "IMPORTANTE") return "Alta";
+    if (normalizado === "MEDIA" || normalizado === "MEDIO") return "Media";
+    if (normalizado === "BAJA" || normalizado === "BAJO") return "Baja";
+    return porDefecto;
+  },
 }));
 vi.mock("../../context/GmailContext", () => ({
   useGmail: () => ({ cuentasGmail: [{ id: "cuenta-1", email: "ana@example.test" }] }),
@@ -49,6 +58,7 @@ beforeEach(() => {
   listarSuscripcionesManuales.mockReset().mockResolvedValue([]);
   crearSuscripcionManual.mockReset();
   actualizarSuscripcionManual.mockReset();
+  actualizarAjustesSuscripcion.mockReset();
   cambiarEstadoSuscripcionManual.mockReset();
   eliminarSuscripcionManual.mockReset();
 });
@@ -70,7 +80,7 @@ describe("PaginaDashboardSuscripciones", () => {
     expect(screen.getAllByRole("status").some((estado) =>
       estado.textContent.includes("1 de 1 suscripciones detectadas en 1 cuenta.")
     )).toBe(true);
-    expect(within(screen.getByRole("list", { name: "Suscripciones de Gmail" })).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(screen.getByRole("list", { name: "Todas las suscripciones" })).getAllByRole("listitem")).toHaveLength(1);
     expect(listarSuscripcionesGmail).toHaveBeenCalledOnce();
   });
 
@@ -84,7 +94,7 @@ describe("PaginaDashboardSuscripciones", () => {
     await usuario.click(screen.getByRole("button", { name: "Ver resultados" }));
 
     expect(screen.queryByRole("heading", { name: "Netflix" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Suscripciones de Gmail" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Todas las suscripciones" })).not.toBeInTheDocument();
   });
 
   it("busca remitentes en los resultados cargados", async () => {
@@ -162,12 +172,54 @@ describe("PaginaDashboardSuscripciones", () => {
       fechaCobro: "2026-12-10",
       categoria: "Servicios",
       importancia: "Alta",
+      prioridad: "Media",
+      apodo: "",
     }));
     expect(listarSuscripcionesManuales).toHaveBeenCalledTimes(2);
     expect(await screen.findByText("Vercel Pro")).toBeInTheDocument();
   });
 
-  it("actualiza la importancia mediante el servicio y refleja el cambio", async () => {
+  it("minimiza un bloque de prioridad y conserva la preferencia entre montajes", async () => {
+    const usuario = userEvent.setup();
+    const almacen = new Map();
+    window.localStorage.getItem.mockImplementation((clave) => (almacen.has(clave) ? almacen.get(clave) : null));
+    window.localStorage.setItem.mockImplementation((clave, valor) => { almacen.set(clave, String(valor)); });
+    window.localStorage.clear.mockImplementation(() => almacen.clear());
+    almacen.clear();
+    listarSuscripcionesManuales.mockResolvedValue([{
+      id: "manual-baja",
+      origen: "MANUAL",
+      nombre: "Gimnasio",
+      categoria: "Salud",
+      monto: 50000,
+      fechaCobro: "2026-12-20",
+      importancia: "Media",
+      prioridad: "Baja",
+      apodo: "",
+      activa: true,
+    }]);
+
+    const { unmount } = renderPagina();
+    expect(await screen.findByText("Gimnasio")).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Minimizar bloque Prioridad Baja" }));
+    expect(screen.queryByText("Gimnasio")).not.toBeInTheDocument();
+    expect(almacen.get("finapp:suscripciones:bloques-colapsados")).toBe("[\"Baja\"]");
+
+    unmount();
+    renderPagina();
+    const expandir = await screen.findByRole("button", { name: "Expandir bloque Prioridad Baja" });
+    expect(screen.queryByText("Gimnasio")).not.toBeInTheDocument();
+
+    await usuario.click(expandir);
+    expect(await screen.findByText("Gimnasio")).toBeInTheDocument();
+    expect(almacen.get("finapp:suscripciones:bloques-colapsados")).toBe("[]");
+    window.localStorage.getItem.mockReset();
+    window.localStorage.setItem.mockReset();
+    window.localStorage.clear.mockReset();
+  });
+
+  it("abre el detalle desde la tarjeta completa y guarda la prioridad en el backend", async () => {
     const usuario = userEvent.setup();
     const manualDescargada = {
       id: "manual-1",
@@ -177,19 +229,23 @@ describe("PaginaDashboardSuscripciones", () => {
       monto: 120000,
       fechaCobro: "2026-12-10",
       importancia: "Alta",
+      prioridad: "Media",
+      apodo: "",
       activa: true,
     };
     listarSuscripcionesManuales.mockResolvedValue([manualDescargada]);
-    actualizarSuscripcionManual.mockResolvedValue({ ...manualDescargada, importancia: "Baja" });
+    actualizarAjustesSuscripcion.mockResolvedValue({ prioridad: "ALTA" });
 
     renderPagina();
-    const bajar = await screen.findByRole("button", { name: "Bajar importancia" });
-    await usuario.click(bajar);
+    const abrir = await screen.findByRole("button", { name: "Ver detalle de la suscripción Internet hogar" });
+    // La tarjeta manual no debe renderizar botones internos.
+    expect(within(abrir).queryByRole("button")).not.toBeInTheDocument();
+    await usuario.click(abrir);
 
-    await waitFor(() => expect(actualizarSuscripcionManual).toHaveBeenCalledWith("manual-1", {
-      ...manualDescargada,
-      importancia: "Baja",
-    }));
-    expect(await screen.findByRole("button", { name: "Subir importancia" })).toBeInTheDocument();
+    const detalle = screen.getByRole("dialog", { name: "Suscripción: Internet hogar" });
+    await usuario.selectOptions(within(detalle).getByLabelText("Prioridad de la suscripción"), "Alta");
+    await usuario.click(within(detalle).getByRole("button", { name: "Guardar ajustes" }));
+
+    await waitFor(() => expect(actualizarAjustesSuscripcion).toHaveBeenCalledWith("manual-1", { apodo: "", importancia: "Alta", prioridad: "Alta" }));
   });
 });

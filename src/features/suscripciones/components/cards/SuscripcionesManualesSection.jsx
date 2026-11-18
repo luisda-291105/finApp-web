@@ -1,8 +1,8 @@
 /**
  * @uso        Mostrar y gestionar suscripciones registradas manualmente
- * @funciones  SuscripcionesManualesSection({ suscripciones, cargando, alAlternarImportancia, formatoMoneda, formatoFecha })
- * @datos      Lista de suscripciones manuales con nombre, categoría, fecha de cobro, monto e importancia
- * @eventos    Alternar importancia (subir/bajar) y minimizar/expandir bloque
+ * @funciones  SuscripcionesManualesSection({ suscripciones, cargando, alAlternarImportancia, alAbrirDetalle, formatoMoneda, formatoFecha })
+ * @datos      Lista de suscripciones manuales con nombre, apodo, categoría, fecha de cobro, monto, importancia y prioridad
+ * @eventos    Alternar importancia (subir/bajar), abrir detalle de la suscripción y minimizar/expandir bloque
  * @estados    colapsado (boolean)
  * @usadoPor   SuscripcionesPage
  */
@@ -14,6 +14,7 @@ export default function SuscripcionesManualesSection({
   suscripciones,
   cargando = false,
   alAlternarImportancia,
+  alAbrirDetalle,
   formatoMoneda,
   formatoFecha,
 }) {
@@ -49,41 +50,50 @@ export default function SuscripcionesManualesSection({
                 Registra suscripciones de cobros o importantes para hacerles seguimiento manual.
               </p>
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Suscripciones registradas manualmente">
+              <ul className="space-y-3" aria-label="Suscripciones registradas manualmente">
                 {suscripciones.map((item) => (
-                  <li key={item.id} className="rounded-xl border border-border-line/50 bg-bg-cream/60 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-bg-dark">{item.nombre}</p>
-                        <p className="text-sm text-slate-text">
-                          {item.categoria} · Cobro: {formatoFecha.format(new Date(`${item.fechaCobro}T00:00:00`))}
-                        </p>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          item.importancia === "Alta"
-                            ? "bg-emerald-primary/10 text-emerald-primary"
-                            : "bg-border-line/40 text-slate-text"
-                        }`}
-                      >
-                        {item.importancia === "Alta" ? "Importante" : "Baja importancia"}
-                      </span>
-                    </div>
-                    <p className="mt-2 font-semibold tabular-nums text-bg-dark">{formatoMoneda.format(item.monto)}</p>
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => alAlternarImportancia(item.id)}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-line px-3 text-xs font-medium text-bg-dark hover:border-emerald-primary/50 hover:text-emerald-primary"
-                      >
-                        {item.importancia === "Alta" ? (
-                          <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
-                        ) : (
-                          <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                  <li
+                    key={item.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/50 bg-bg-cream/60 p-4 text-left cursor-pointer"
+                    onClick={() => alAbrirDetalle?.(item)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-semibold text-bg-dark" title={item.apodo ? item.nombre : undefined}>{item.apodo || item.nombre}</p>
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                            item.importancia === "Alta"
+                              ? "bg-emerald-primary/10 text-emerald-primary"
+                              : item.importancia === "Media"
+                                ? "bg-amber-500/10 text-amber-800"
+                                : "bg-border-line/40 text-slate-text"
+                          }`}
+                        >
+                          {item.importancia === "Alta" ? "Importante" : item.importancia === "Media" ? "Media importancia" : "Baja importancia"}
+                        </span>
+                        {item.prioridad && item.prioridad !== "Media" && (
+                          <span className="shrink-0 rounded-full bg-border-line/40 px-2.5 py-1 text-xs font-semibold text-slate-text">
+                            Prioridad {item.prioridad}
+                          </span>
                         )}
-                        {item.importancia === "Alta" ? "Bajar importancia" : "Subir importancia"}
-                      </button>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-text">
+                        {item.categoria} · Cobro: {formatoFecha.format(new Date(`${item.fechaCobro}T00:00:00`))}
+                      </p>
+                      <p className="mt-1 font-semibold tabular-nums text-bg-dark">{formatoMoneda.format(item.monto)}</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(evento) => { evento.stopPropagation(); alAlternarImportancia(item.id); }}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-line px-3 text-xs font-medium text-bg-dark hover:border-emerald-primary/50 hover:text-emerald-primary"
+                    >
+                      {item.importancia === "Baja" ? (
+                        <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                      ) : (
+                        <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+                      )}
+                      {item.importancia === "Baja" ? "Subir importancia" : "Bajar importancia"}
+                    </button>
                   </li>
                 ))}
               </ul>

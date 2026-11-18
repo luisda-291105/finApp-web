@@ -1,25 +1,22 @@
-import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, Filter, Plus, Search } from "lucide-react";
-import { Card } from "../../../components/ui";
+import { Filter, Plus, Search } from "lucide-react";
 import ModalDetalleRegistro from "../../../components/domain/modales/ModalDetalleRegistro";
 import { useGmail } from "../../../context/GmailContext";
 import useSuscripcionesGmail from "../hooks/useSuscripcionesGmail";
-import SuscripcionGmailCard from "../components/cards/SuscripcionGmailCard";
-import CobrosRecurrentesReales from "../components/cards/CobrosRecurrentesReales";
-import SuscripcionesManualesSection from "../components/cards/SuscripcionesManualesSection";
+import MetricasCobrosRecurrentes from "../components/cards/MetricasCobrosRecurrentes";
+import TodasSuscripcionesSection from "../components/cards/TodasSuscripcionesSection";
 import useSuscripcionesRecurrentes from "../hooks/useSuscripcionesRecurrentes";
 import BuscarSuscripcionesModal from "../components/modals/BuscarSuscripcionesModal";
 import FiltrarSuscripcionesModal from "../components/modals/FiltrarSuscripcionesModal";
 import DetalleSuscripcionModal from "../components/modals/DetalleSuscripcionModal";
 import CrearSuscripcionManualModal from "../components/modals/CrearSuscripcionManualModal";
-import { actualizarSuscripcionManual, crearSuscripcionManual, listarSuscripcionesManuales } from "../services/suscripcionesServicio";
+import { crearSuscripcionManual, listarSuscripcionesManuales } from "../services/suscripcionesServicio";
 import { AlertaGlobal } from "../../../features/error";
 import { formatoMoneda } from "../utils/suscripcionesData";
 
 const FILTROS_CORREO_INICIALES = { cuentas: [], categorias: [], baja: [] };
 const CATEGORIAS_SUSCRIPCION_MANUAL = ["Alimentación", "Comunicación", "Entretenimiento", "Servicios", "Transporte", "Salud", "Educación", "Hogar", "Otros"];
-const SUSCRIPCION_MANUAL_INICIAL = { nombre: "", monto: "", fechaCobro: "", categoria: "Servicios", importancia: "Alta" };
+const SUSCRIPCION_MANUAL_INICIAL = { nombre: "", monto: "", fechaCobro: "", categoria: "Servicios", importancia: "Alta", prioridad: "Media", apodo: "" };
 const formatoFechaCobro = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 /** Vista principal de suscripciones, compone el resumen, filtros y lista. */
@@ -42,7 +39,6 @@ export default function SuscripcionesPage() {
   const [guardandoSuscripcionManual, setGuardandoSuscripcionManual] = useState(false);
   const [errorSuscripcionManual, setErrorSuscripcionManual] = useState("");
   const [errorManualCerrado, setErrorManualCerrado] = useState("");
-  const [colapsadoCorreo, setColapsadoCorreo] = useState(false);
   const [errorRecurrentesCerrado, setErrorRecurrentesCerrado] = useState("");
   const [errorGmailCerrado, setErrorGmailCerrado] = useState("");
   const [erroresCuentasCerrados, setErroresCuentasCerrados] = useState("");
@@ -96,6 +92,15 @@ export default function SuscripcionesPage() {
     });
   }, [gmail.suscripcionesCorreo, filtrosCorreo, busquedaCorreo, categoriasPersonalizadas]);
 
+  const filtrosActivos = useMemo(
+    () =>
+      Boolean(busquedaCorreo.trim())
+      || filtrosCorreo.cuentas.length > 0
+      || filtrosCorreo.categorias.length > 0
+      || filtrosCorreo.baja.length > 0,
+    [busquedaCorreo, filtrosCorreo],
+  );
+
   const conteosFiltro = useMemo(() => {
     const cuentas = { TODAS: gmail.suscripcionesCorreo.length };
     cuentasGmail.forEach((cuenta) => { cuentas[String(cuenta.id)] = gmail.suscripcionesCorreo.filter((item) => String(item.cuentaGmailId ?? "") === String(cuenta.id) || String(item.cuentaGmail || "").toLocaleLowerCase() === String(cuenta.email || "").toLocaleLowerCase()).length; });
@@ -140,6 +145,8 @@ export default function SuscripcionesPage() {
         fechaCobro,
         categoria: suscripcionManual.categoria,
         importancia: suscripcionManual.importancia,
+        prioridad: suscripcionManual.prioridad,
+        apodo: suscripcionManual.apodo,
       });
 
       try {
@@ -157,33 +164,27 @@ export default function SuscripcionesPage() {
     }
   };
 
-  const alternarImportanciaManual = async (id) => {
-    const snapshot = suscripcionesManuales;
-    const objetivo = snapshot.find((item) => String(item.id) === String(id));
-    if (!objetivo) return;
-
-    const nuevaImportancia = objetivo.importancia === "Alta" ? "Baja" : "Alta";
-    setErrorSuscripcionManual("");
-    setSuscripcionesManuales((actuales) =>
-      actuales.map((item) =>
-        String(item.id) === String(id)
-          ? { ...item, importancia: nuevaImportancia }
-          : item,
-      ),
-    );
-
-    try {
-      const actualizada = await actualizarSuscripcionManual(id, { ...objetivo, importancia: nuevaImportancia });
-      setSuscripcionesManuales((actuales) =>
-        actuales.map((item) => (String(item.id) === String(id) ? actualizada : item)),
-      );
-    } catch (error) {
-      setSuscripcionesManuales(snapshot);
-      setErrorSuscripcionManual(error?.message || "No se pudo actualizar la importancia.");
+  /** Propaga los ajustes guardados en el detalle (apodo, importancia, prioridad) a la lista correspondiente. */
+  const alActualizarDetalle = (cambios) => {
+    const detalle = suscripcionCorreoDetalle;
+    if (!detalle) return;
+    const esManual = detalle.origen === "MANUAL" || (!detalle.cuentaGmailId && !detalle.correoRemitente);
+    if (esManual) {
+      setSuscripcionesManuales((actuales) => actuales.map((item) =>
+        String(item.id) === String(detalle.id) ? { ...item, ...cambios } : item));
+    } else {
+      gmail.actualizarSuscripcionLocal?.(detalle.idSuscripcion || detalle.id, cambios);
     }
+    setSuscripcionCorreoDetalle((actual) => (actual ? { ...actual, ...cambios } : actual));
   };
 
   // "Administrar en Gmail" se movió a Configuración (Ajustes).
+
+  /** Abre el detalle compartido; en items de Gmail recuerda el elemento que lo disparó para devolver el foco. */
+  const abrirDetalleCombinado = (item, evento) => {
+    triggerDetalleCorreoRef.current = evento?.currentTarget ?? null;
+    setSuscripcionCorreoDetalle(item);
+  };
 
   return (
     <section aria-labelledby="suscripciones-titulo" className="space-y-6 pt-6 pb-12">
@@ -215,7 +216,7 @@ export default function SuscripcionesPage() {
         <div>
           <p className="text-sm font-medium text-emerald-primary">FinApp / Panel</p>
           <h1 id="suscripciones-titulo" className="mt-1 font-display text-3xl font-medium text-bg-dark">Suscripciones</h1>
-          <p className="mt-1 text-sm text-slate-text">Controla tus cobros periódicos reales y las suscripciones de tus cuentas Gmail.</p>
+          <p className="mt-1 text-sm text-slate-text">Todas tus suscripciones y cobros periódicos en un solo lugar: Gmail, registros manuales y cobros detectados.</p>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto" aria-label="Acciones de suscripciones de Gmail">
           <button ref={triggerBuscarRef} type="button" onClick={() => setBuscarAbierto(true)} aria-label="Buscar suscripciones de Gmail" title="Buscar" className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-border-line px-3 text-sm font-medium text-slate-text hover:border-emerald-primary/50 hover:text-emerald-primary sm:flex-none"><Search className="h-4 w-4" aria-hidden="true" /><span>Buscar</span></button>
@@ -224,49 +225,24 @@ export default function SuscripcionesPage() {
         </div>
       </header>
 
-      <CobrosRecurrentesReales datos={recurrentes.suscripciones} cargando={recurrentes.cargando} error={recurrentes.error} />
+      <MetricasCobrosRecurrentes datos={recurrentes.suscripciones} cargando={recurrentes.cargando} />
 
-      <SuscripcionesManualesSection
-        suscripciones={suscripcionesManuales}
-        cargando={cargandoSuscripcionesManuales}
-        alAlternarImportancia={alternarImportanciaManual}
+      <TodasSuscripcionesSection
+        suscripcionesGmail={suscripcionesCorreoFiltradas}
+        totalGmail={gmail.suscripcionesCorreo.length}
+        cargandoGmail={gmail.cargando}
+        consultaRealizada={gmail.consultaRealizada}
+        cantidadCuentas={cuentasGmail.length}
+        manuales={suscripcionesManuales}
+        cargandoManuales={cargandoSuscripcionesManuales}
+        recurrentes={recurrentes.suscripciones}
+        cargandoRecurrentes={recurrentes.cargando}
+        filtrosActivos={filtrosActivos}
+        alLimpiarFiltros={() => { setFiltrosCorreo(FILTROS_CORREO_INICIALES); setBusquedaCorreo(""); }}
+        alAbrirDetalle={abrirDetalleCombinado}
         formatoMoneda={formatoMoneda}
         formatoFecha={formatoFechaCobro}
       />
-
-      <section aria-labelledby="suscripciones-correo-titulo" className="space-y-4">
-        <Card className="space-y-4 p-5">
-          <button
-            type="button"
-            onClick={() => setColapsadoCorreo((actual) => !actual)}
-            aria-expanded={!colapsadoCorreo}
-            aria-controls="suscripciones-correo-contenido"
-            className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
-          >
-            <h2 id="suscripciones-correo-titulo" className="font-display text-xl font-semibold text-bg-dark">
-              Suscripciones de Gmail
-            </h2>
-            <span className="inline-flex items-center gap-2 text-sm text-slate-text">
-              {gmail.suscripcionesCorreo.length} detectadas
-              <ChevronDown
-                aria-hidden="true"
-                className={`h-5 w-5 transition-transform ${colapsadoCorreo ? "" : "rotate-180"}`}
-              />
-            </span>
-          </button>
-          {!colapsadoCorreo && (
-            <div id="suscripciones-correo-contenido" className="space-y-4">
-              {!cuentasGmail.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-3 text-sm text-slate-text">Conecta Gmail desde <Link to="/dashboard/configuracion" className="font-semibold text-emerald-primary underline">Configuración → Fuentes</Link> para consultar las suscripciones.</p>}
-              {gmail.cargando && <p role="status" className="py-4 text-sm text-slate-text">Consultando las suscripciones recientes por cuenta Gmail…</p>}
-              {!gmail.cargando && gmail.consultaRealizada && <p role="status" className="text-sm text-slate-text">Mostrando {suscripcionesCorreoFiltradas.length} de {gmail.suscripcionesCorreo.length} suscripciones detectadas en {cuentasGmail.length} {cuentasGmail.length === 1 ? "cuenta" : "cuentas"}.</p>}
-              {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length === 0 && !gmail.erroresCuentas.length && <p className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text">No se detectaron suscripciones en los correos recientes. Gmail puede mostrar más en su administrador.</p>}
-              {!gmail.cargando && suscripcionesCorreoFiltradas.length > 0 && <ul aria-label="Suscripciones de Gmail" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{suscripcionesCorreoFiltradas.map((item) => <SuscripcionGmailCard key={`${item.cuentaGmailId}:${item.id}`} suscripcion={item} alAbrir={(evento) => { triggerDetalleCorreoRef.current = evento.currentTarget; setSuscripcionCorreoDetalle(item); }} />)}</ul>}
-              {!gmail.cargando && gmail.consultaRealizada && gmail.suscripcionesCorreo.length > 0 && suscripcionesCorreoFiltradas.length === 0 && <div className="rounded-xl border border-border-line/50 bg-bg-cream/50 p-4 text-sm text-slate-text"><p>No hay suscripciones que coincidan con la búsqueda y los filtros seleccionados.</p><button type="button" onClick={() => { setFiltrosCorreo(FILTROS_CORREO_INICIALES); setBusquedaCorreo(""); }} className="mt-2 font-semibold text-emerald-primary underline">Limpiar filtros y búsqueda</button></div>}
-              <p className="text-xs leading-relaxed text-slate-text">La lista se detecta en mensajes de Promociones y Actualizaciones. Para exactitud y administrar bajas, Gmail mantiene su administrador de suscripciones.</p>
-            </div>
-          )}
-        </Card>
-      </section>
 
       <BuscarSuscripcionesModal abierto={buscarAbierto} alCerrar={() => setBuscarAbierto(false)} triggerRef={triggerBuscarRef} busqueda={busquedaCorreo} alCambiarBusqueda={setBusquedaCorreo} resultados={suscripcionesCorreoFiltradas} alSeleccionar={(item) => { triggerDetalleCorreoRef.current = triggerBuscarRef.current; setBuscarAbierto(false); setSuscripcionCorreoDetalle(item); }} />
       <FiltrarSuscripcionesModal
@@ -282,7 +258,7 @@ export default function SuscripcionesPage() {
         categoriasPersonalizadas={categoriasPersonalizadas.map(({ nombre, ids }) => ({ nombre, cantidad: ids.length }))}
         alCrearCategoria={() => { setFiltrarAbierto(false); setCrearCategoriaAbierto(true); }}
       />
-      <DetalleSuscripcionModal suscripcion={suscripcionCorreoDetalle} triggerRef={triggerDetalleCorreoRef} alCerrar={() => setSuscripcionCorreoDetalle(null)} />
+      <DetalleSuscripcionModal suscripcion={suscripcionCorreoDetalle} triggerRef={triggerDetalleCorreoRef} alCerrar={() => setSuscripcionCorreoDetalle(null)} alActualizar={alActualizarDetalle} />
       <CrearSuscripcionManualModal
         abierto={modalManualAbierto}
         alCerrar={() => setModalManualAbierto(false)}

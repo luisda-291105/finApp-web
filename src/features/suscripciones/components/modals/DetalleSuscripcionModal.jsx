@@ -1,9 +1,9 @@
 /**
  * @uso        Gestionar una suscripción detectada en una cuenta Gmail
- * @funciones  DetalleSuscripcionModal({ suscripcion, triggerRef, alCerrar })
- * @datos      Muestra el remitente, cuenta de origen y opciones de baja
- * @eventos    Solicita la baja solo después de confirmación explícita
- * @estados    Confirmación y resultado de la solicitud de baja
+ * @funciones  DetalleSuscripcionModal({ suscripcion, triggerRef, alCerrar, alActualizar })
+ * @datos      Muestra el remitente, cuenta de origen, ajustes de organización (apodo, importancia, prioridad) y opciones de baja
+ * @eventos    Solicita la baja solo después de confirmación explícita; guarda los ajustes en el backend
+ * @estados    Confirmación y resultado de la solicitud de baja; estado de guardado de los ajustes
  * @usadoPor   SuscripcionesPage
  */
 import { useEffect, useRef, useState } from "react";
@@ -20,6 +20,7 @@ import { clasificarMovimientoCorreo, extraerMovimientoSugerido } from "../../../
 import { crearMovimiento, listarCorreosImportados } from "../../../contabilidad/services/movimientosService";
 import { listarBolsillos } from "../../../contabilidad/services/bolsillosService";
 import ModalCrearMovimientoContable from "../../../contabilidad/components/modals/ModalCrearMovimientoContable";
+import { actualizarAjustesSuscripcion } from "../../services/suscripcionesServicio";
 import { AlertaGlobal } from "../../../../features/error";
 
 function textoActividad(cantidad) {
@@ -38,7 +39,7 @@ function tipoBolsillo(bolsillo) {
 }
 
 /** Detalle centrado en el remitente, como la lista de Suscripciones de Gmail. */
-export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCerrar }) {
+export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCerrar, alActualizar }) {
   const [confirmando, setConfirmando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [resultadoBaja, setResultadoBaja] = useState("");
@@ -57,6 +58,10 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
   const [bolsillos, setBolsillos] = useState([]);
   const [valoresMovimiento, setValoresMovimiento] = useState(null);
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState(null);
+  const [ajustes, setAjustes] = useState({ apodo: "", importancia: "Media", prioridad: "Media" });
+  const [guardandoAjustes, setGuardandoAjustes] = useState(false);
+  const [avisoAjustes, setAvisoAjustes] = useState("");
+  const [errorAjustes, setErrorAjustes] = useState("");
   const triggerContabilidadRef = useRef(null);
   const triggerMensajesRef = useRef(null);
 
@@ -65,6 +70,13 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
     setEnviando(false);
     setResultadoBaja("");
     setErrorBaja("");
+    setAjustes({
+      apodo: suscripcion?.apodo ?? "",
+      importancia: suscripcion?.importancia || "Media",
+      prioridad: suscripcion?.prioridad || "Media",
+    });
+    setAvisoAjustes("");
+    setErrorAjustes("");
     setMensajesImportados({});
     setMensajeImportando("");
     setErrorImportacion("");
@@ -140,6 +152,25 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
       setErrorImportacion(fallo?.message || "No se pudo iniciar o consultar la importación por lote.");
     } finally {
       setImportandoTodos(false);
+    }
+  };
+
+  const guardarAjustes = async (evento) => {
+    evento?.preventDefault?.();
+    if (!suscripcion || guardandoAjustes) return;
+    const id = suscripcion.idSuscripcion || suscripcion.id;
+    const limpios = { apodo: ajustes.apodo.trim(), importancia: ajustes.importancia, prioridad: ajustes.prioridad };
+    setGuardandoAjustes(true);
+    setAvisoAjustes("");
+    setErrorAjustes("");
+    try {
+      await actualizarAjustesSuscripcion(id, limpios);
+      if (typeof alActualizar === "function") alActualizar(limpios);
+      setAvisoAjustes("Ajustes guardados.");
+    } catch (fallo) {
+      setErrorAjustes(fallo?.message || "No se pudieron guardar los ajustes.");
+    } finally {
+      setGuardandoAjustes(false);
     }
   };
 
@@ -239,7 +270,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
   };
 
   return <>
-    <ModalDetalleRegistro abierto={Boolean(suscripcion) && !modalContabilidadAbierto} titulo={`Suscripción: ${suscripcion.nombre || "Remitente"}`} alCerrar={alCerrar} triggerRef={triggerRef} ancho="max-w-lg">
+    <ModalDetalleRegistro abierto={Boolean(suscripcion) && !modalContabilidadAbierto} titulo={`Suscripción: ${suscripcion.apodo || suscripcion.nombre || "Remitente"}`} alCerrar={alCerrar} triggerRef={triggerRef} ancho="max-w-lg">
     <div className="space-y-4">
       <div className="rounded-2xl border border-border-line/50 bg-bg-cream/60 p-4">
         <dl className="space-y-4">
@@ -249,6 +280,64 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
           <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-text">Categorías detectadas</dt><dd className="mt-2 flex flex-wrap gap-2">{etiquetas.length ? etiquetas.map((etiqueta) => <span key={etiqueta} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-emerald-primary"><Tag className="h-3 w-3" aria-hidden="true" />{etiqueta}</span>) : <span className="text-sm text-slate-text">Sin categoría disponible</span>}</dd></div>
         </dl>
       </div>
+
+      <section aria-labelledby="ajustes-suscripcion-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
+        <div>
+          <h3 id="ajustes-suscripcion-titulo" className="font-semibold text-bg-dark">Organización</h3>
+          <p className="mt-0.5 text-xs text-slate-text">Añade un apodo, una importancia y una prioridad para reconocer y priorizar esta suscripción.</p>
+        </div>
+        <form onSubmit={guardarAjustes} className="grid gap-3 sm:grid-cols-2">
+          <label className="block space-y-2 text-sm font-medium text-bg-dark sm:col-span-2">
+            Apodo (opcional)
+            <input
+              type="text"
+              maxLength={120}
+              value={ajustes.apodo}
+              onChange={(evento) => setAjustes((actuales) => ({ ...actuales, apodo: evento.target.value }))}
+              placeholder="Ej. Alertas del banco"
+              aria-label="Apodo de la suscripción"
+              className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            />
+          </label>
+          <label className="block space-y-2 text-sm font-medium text-bg-dark">
+            Importancia
+            <select
+              value={ajustes.importancia}
+              onChange={(evento) => setAjustes((actuales) => ({ ...actuales, importancia: evento.target.value }))}
+              aria-label="Importancia de la suscripción"
+              className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            >
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </label>
+          <label className="block space-y-2 text-sm font-medium text-bg-dark">
+            Prioridad
+            <select
+              value={ajustes.prioridad}
+              onChange={(evento) => setAjustes((actuales) => ({ ...actuales, prioridad: evento.target.value }))}
+              aria-label="Prioridad de la suscripción"
+              className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            >
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </label>
+          <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+            <button
+              type="submit"
+              disabled={guardandoAjustes}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-primary px-4 text-sm font-semibold text-white hover:bg-emerald-hover disabled:opacity-60"
+            >
+              {guardandoAjustes ? "Guardando…" : "Guardar ajustes"}
+            </button>
+            {avisoAjustes && <p role="status" className="text-sm font-medium text-emerald-primary">{avisoAjustes}</p>}
+            {errorAjustes && <p role="alert" className="text-sm text-red-600">{errorAjustes}</p>}
+          </div>
+        </form>
+      </section>
 
       <section aria-labelledby="mensajes-suscripcion-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

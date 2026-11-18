@@ -20,6 +20,8 @@ function textoActividad(cantidad) {
 export default function SuscripcionGmailCard({ suscripcion, alAbrir }) {
   const etiquetas = (suscripcion.categorias || []).map((categoria) => categoria === "CATEGORY_PROMOTIONS" ? "Promociones" : "Actualizaciones");
   const tieneBaja = Boolean(suscripcion.urlBaja || suscripcion.mailtoBaja);
+  const nombreVisible = suscripcion.apodo || suscripcion.nombre || "Remitente desconocido";
+  const mostrarNombreReal = Boolean(suscripcion.apodo && suscripcion.nombre);
 
   return (
     <Card como="li" className="p-4">
@@ -27,14 +29,20 @@ export default function SuscripcionGmailCard({ suscripcion, alAbrir }) {
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-primary/10 text-emerald-primary"><Mail className="h-5 w-5" aria-hidden="true" /></span>
           <div className="min-w-0">
-            <h3 className="truncate font-display text-lg font-semibold text-bg-dark">{suscripcion.nombre || "Remitente desconocido"}</h3>
+            <h3 className="truncate font-display text-lg font-semibold text-bg-dark" title={mostrarNombreReal ? suscripcion.nombre : undefined}>{nombreVisible}</h3>
             <p className="mt-0.5 break-all text-sm text-slate-text">{suscripcion.correoRemitente || "Dirección no disponible"}</p>
           </div>
         </div>
         <div className="space-y-2 border-t border-border-line/40 pt-3">
           <p className="truncate text-xs text-slate-text" title={suscripcion.cuentaGmail}>Cuenta: {suscripcion.cuentaGmail}</p>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs text-slate-text">{textoActividad(suscripcion.correosRecientes)}</span>
+            <span className="flex flex-wrap items-center gap-2 text-slate-text">
+              <span className="text-xs">{textoActividad(suscripcion.correosRecientes)}</span>
+              <span className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide">
+                <span className="rounded-full bg-border-line/40 px-2 py-0.5">Prioridad {suscripcion.prioridad || "Media"}</span>
+                {suscripcion.importancia === "Alta" && <span className="rounded-full bg-emerald-primary/10 px-2 py-0.5 text-emerald-primary">Importante</span>}
+              </span>
+            </span>
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${tieneBaja ? "bg-emerald-primary/10 text-emerald-primary" : "bg-border-line/40 text-slate-text"}`}>
               {etiquetas.length > 0 && <Tag className="h-3 w-3" aria-hidden="true" />}
               {etiquetas.length ? etiquetas.join(" · ") : "Sin categoría"}

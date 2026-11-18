@@ -1,7 +1,7 @@
 /**
  * @uso        Registrar manualmente una suscripción de cobro o importante
  * @funciones  CrearSuscripcionManualModal({ abierto, alCerrar, triggerRef, valores, alCambiar, alGuardar, categorias, guardando })
- * @datos      Formulario controlado con nombre, monto, fecha de cobro, categoría e importancia
+ * @datos      Formulario controlado con nombre, monto, fecha de cobro, categoría, importancia, prioridad y apodo
  * @eventos    Cambio de campos, submit para guardar y cierre del modal
  * @estados    Ninguno (controlado por props)
  * @usadoPor   SuscripcionesPage
@@ -28,7 +28,7 @@ export default function CrearSuscripcionManualModal({
     >
       <form className="space-y-4" onSubmit={alGuardar}>
         <p className="text-sm text-slate-text">
-          Registra manualmente una suscripción de cobro o importante y ajusta su importancia.
+          Registra manualmente una suscripción de cobro o importante y ajústale importancia, prioridad y apodo.
         </p>
         <label className="block space-y-2 text-sm font-medium text-bg-dark">
           Nombre
@@ -88,8 +88,34 @@ export default function CrearSuscripcionManualModal({
               className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
             >
               <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
               <option value="Baja">Baja</option>
             </select>
+          </label>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block space-y-2 text-sm font-medium text-bg-dark">
+            Prioridad
+            <select
+              value={valores.prioridad ?? "Media"}
+              onChange={(e) => alCambiar("prioridad", e.target.value)}
+              className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            >
+              <option value="Alta">Alta</option>
+              <option value="Media">Media</option>
+              <option value="Baja">Baja</option>
+            </select>
+          </label>
+          <label className="block space-y-2 text-sm font-medium text-bg-dark">
+            Apodo (opcional)
+            <input
+              type="text"
+              maxLength={120}
+              value={valores.apodo ?? ""}
+              onChange={(e) => alCambiar("apodo", e.target.value)}
+              placeholder="Ej. Alertas del banco"
+              className="min-h-11 w-full rounded-xl border border-border-line bg-bg-cream px-3 text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            />
           </label>
         </div>
         <div className="flex justify-end gap-2 border-t border-border-line/40 pt-3">

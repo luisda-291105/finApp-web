@@ -1,10 +1,10 @@
 /**
- * @uso        Acceso al CRUD de suscripciones manuales del usuario activo
- * @funciones  listarSuscripcionesManuales, crearSuscripcionManual, actualizarSuscripcionManual, cambiarEstadoSuscripcionManual, eliminarSuscripcionManual
- * @datos      Envía nombre, monto, fecha de cobro, categoría, importancia y activa; normaliza la respuesta del backend
+ * @uso        Acceso al CRUD de suscripciones del usuario activo y a sus ajustes de organización
+ * @funciones  listarSuscripcionesManuales, crearSuscripcionManual, actualizarSuscripcionManual, cambiarEstadoSuscripcionManual, eliminarSuscripcionManual, actualizarAjustesSuscripcion
+ * @datos      Envía nombre, monto, fecha de cobro, categoría, importancia, prioridad, apodo y activa; normaliza la respuesta del backend
  * @eventos    Ninguno
  * @estados    Ninguno
- * @usadoPor   SuscripcionesPage
+ * @usadoPor   SuscripcionesPage, DetalleSuscripcionModal
  */
 import { getEndpoint } from "../../../config/api.config";
 import { actualizar, crear, eliminar, obtener, patch } from "../../../services/httpServicio";
@@ -16,13 +16,29 @@ const extraerLista = (respuesta) => {
   return respuesta?.datos || respuesta?.data || respuesta?.content || [];
 };
 
-const normalizarImportanciaUi = (valor) => {
-  const normalizado = String(valor ?? "ALTA").trim().toUpperCase();
-  return normalizado === "BAJA" || normalizado === "BAJO" ? "Baja" : "Alta";
+/** Normaliza un nivel (importancia o prioridad) a Alta, Media o Baja para la interfaz. */
+export const normalizarNivelUi = (valor, porDefecto = "Media") => {
+  const normalizado = String(valor ?? "").trim().toUpperCase();
+  if (normalizado === "ALTA" || normalizado === "ALTO" || normalizado === "IMPORTANTE") return "Alta";
+  if (normalizado === "MEDIA" || normalizado === "MEDIO") return "Media";
+  if (normalizado === "BAJA" || normalizado === "BAJO") return "Baja";
+  return porDefecto;
 };
 
-const normalizarImportanciaApi = (valor) =>
-  normalizarImportanciaUi(valor) === "Baja" ? "BAJA" : "ALTA";
+/** Normaliza un nivel (importancia o prioridad) a ALTA, MEDIA o BAJA para el backend. */
+export const normalizarNivelApi = (valor, porDefecto = "MEDIA") => {
+  const normalizado = String(valor ?? "").trim().toUpperCase();
+  if (normalizado === "ALTA" || normalizado === "ALTO" || normalizado === "IMPORTANTE") return "ALTA";
+  if (normalizado === "MEDIA" || normalizado === "MEDIO") return "MEDIA";
+  if (normalizado === "BAJA" || normalizado === "BAJO") return "BAJA";
+  return porDefecto;
+};
+
+const normalizarImportanciaUi = (valor) => normalizarNivelUi(valor, "Alta");
+
+const normalizarImportanciaApi = (valor) => normalizarNivelApi(valor, "ALTA");
+
+const normalizarApodo = (valor) => String(valor ?? "").trim();
 
 const numeroSeguro = (valor) => {
   if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
@@ -48,6 +64,8 @@ export function normalizarSuscripcionManual(respuesta) {
     monto: numeroSeguro(suscripcion.monto),
     fechaCobro: fechaSeguro(suscripcion.fechaCobro),
     importancia: normalizarImportanciaUi(suscripcion.importancia),
+    prioridad: normalizarNivelUi(suscripcion.prioridad, "Media"),
+    apodo: normalizarApodo(suscripcion.apodo) || "",
     activa: suscripcion.activa !== false,
   };
 }
@@ -58,6 +76,8 @@ const prepararPayload = (suscripcion) => ({
   fechaCobro: fechaSeguro(suscripcion.fechaCobro),
   categoria: String(suscripcion.categoria || "").trim(),
   importancia: normalizarImportanciaApi(suscripcion.importancia),
+  prioridad: normalizarNivelApi(suscripcion.prioridad, "MEDIA"),
+  apodo: normalizarApodo(suscripcion.apodo) || null,
   ...(typeof suscripcion.activa === "boolean" ? { activa: suscripcion.activa } : {}),
 });
 
@@ -71,6 +91,18 @@ export async function listarSuscripcionesManuales() {
 export async function crearSuscripcionManual(suscripcion) {
   const creada = await crear(ruta, prepararPayload(suscripcion));
   return normalizarSuscripcionManual(creada);
+}
+
+/**
+ * Actualiza los ajustes de organización (importancia, prioridad, apodo) de cualquier
+ * suscripción del usuario, manual o detectada en Gmail. Omitir un campo conserva su valor.
+ */
+export function actualizarAjustesSuscripcion(id, { importancia, prioridad, apodo } = {}) {
+  const cuerpo = {};
+  if (importancia != null && String(importancia).trim() !== "") cuerpo.importancia = normalizarNivelApi(importancia, "ALTA");
+  if (prioridad != null && String(prioridad).trim() !== "") cuerpo.prioridad = normalizarNivelApi(prioridad, "MEDIA");
+  if (apodo !== undefined) cuerpo.apodo = normalizarApodo(apodo) || null;
+  return patch(`${ruta}/${encodeURIComponent(String(id))}/ajustes`, cuerpo);
 }
 
 /** Reemplaza los datos editables de una suscripción manual. */

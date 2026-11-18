@@ -12,6 +12,7 @@ vi.mock("../../../services/httpServicio", () => httpMocks);
 
 import { getEndpoint } from "../../../config/api.config";
 import {
+  actualizarAjustesSuscripcion,
   actualizarSuscripcionManual,
   cambiarEstadoSuscripcionManual,
   crearSuscripcionManual,
@@ -36,6 +37,8 @@ describe("suscripcionesServicio manuales", () => {
         monto: "120000.5",
         fechaCobro: "2026-12-10",
         importancia: "BAJA",
+        prioridad: "ALTA",
+        apodo: "Alertas casa",
         activa: true,
       },
     ]);
@@ -45,6 +48,8 @@ describe("suscripcionesServicio manuales", () => {
         id: "manual-1",
         origen: "MANUAL",
         importancia: "Baja",
+        prioridad: "Alta",
+        apodo: "Alertas casa",
         monto: 120000.5,
       }),
     ]);
@@ -76,6 +81,8 @@ describe("suscripcionesServicio manuales", () => {
       monto: 47068.11,
       fechaCobro: "2026-12-04",
       importancia: "BAJA",
+      prioridad: "MEDIA",
+      apodo: null,
     });
   });
 
@@ -105,7 +112,26 @@ describe("suscripcionesServicio manuales", () => {
       monto: 90000,
       fechaCobro: "2026-12-15",
       importancia: "BAJA",
+      prioridad: "MEDIA",
+      apodo: null,
       activa: false,
+    });
+  });
+
+  it("guarda ajustes de organización con PATCH /ajustes, omite campos no enviados y limpia el apodo vacío", async () => {
+    httpMocks.patch.mockResolvedValue({ id: "gmail-1", importancia: "MEDIA", prioridad: "ALTA", apodo: null });
+
+    await actualizarAjustesSuscripcion("gmail-1", { importancia: "Media", prioridad: "Alta", apodo: "" });
+
+    expect(httpMocks.patch).toHaveBeenCalledWith(`${rutaSuscripcion}/gmail-1/ajustes`, {
+      importancia: "MEDIA",
+      prioridad: "ALTA",
+      apodo: null,
+    });
+
+    await actualizarAjustesSuscripcion("gmail-1", { apodo: "Alertas del banco" });
+    expect(httpMocks.patch).toHaveBeenLastCalledWith(`${rutaSuscripcion}/gmail-1/ajustes`, {
+      apodo: "Alertas del banco",
     });
   });
 
