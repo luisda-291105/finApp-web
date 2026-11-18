@@ -18,13 +18,11 @@ import {
   Wallet,
 } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
-import { formatoFecha, formatoMoneda } from "../../utils/contabilidadHelpers";
-
-function fechaLegible(fecha) {
-  if (!fecha) return "Fecha no disponible";
-  const valor = new Date(`${fecha}T00:00:00Z`);
-  return Number.isNaN(valor.getTime()) ? fecha : formatoFecha.format(valor);
-}
+import {
+  fechaMovimiento,
+  formatoMoneda,
+  nombreMovimiento,
+} from "../../utils/contabilidadHelpers";
 
 /** Modal con información y acciones del movimiento seleccionado. */
 export default function DetalleMovimientoModal({
@@ -42,12 +40,8 @@ export default function DetalleMovimientoModal({
       ? "text-emerald-primary"
       : "text-cat-expense";
   const Icono = ingreso ? ArrowUpRight : ArrowDownRight;
-  const esGmail = String(movimiento?.origenTipo || "").toUpperCase() === "GMAIL";
-  const nombre =
-    (esGmail && movimiento?.origenNombre?.trim()) ||
-    movimiento?.concepto?.trim() ||
-    movimiento?.categoria ||
-    "Movimiento";
+  // El apodo (origen_nombre) existe en movimientos importados desde suscripciones
+  const nombre = nombreMovimiento(movimiento);
 
   return (
     <ModalDetalleRegistro
@@ -114,7 +108,7 @@ export default function DetalleMovimientoModal({
                 Fecha
               </dt>
               <dd className="mt-1 text-sm font-medium text-bg-dark">
-                {fechaLegible(movimiento.fecha)}
+                {fechaMovimiento(movimiento.fecha)}
               </dd>
             </div>
             <div className="min-w-0 rounded-xl border border-border-line/40 p-3">
@@ -140,49 +134,72 @@ export default function DetalleMovimientoModal({
               <dd className="mt-1 break-words text-sm font-medium text-bg-dark">
                 {movimiento.entidad ||
                   movimiento.remitente ||
+                  movimiento.origenNombre ||
                   "No especificado"}
               </dd>
             </div>
+            <div className="min-w-0 rounded-xl border border-border-line/40 p-3">
+              <dt className="flex items-center gap-2 text-xs text-slate-text">
+                <CircleDollarSign
+                  className="h-4 w-4 text-emerald-primary"
+                  aria-hidden="true"
+                />
+                Tipo
+              </dt>
+              <dd className="mt-1 break-words text-sm font-medium text-bg-dark">
+                {tipo || "MOVIMIENTO"}
+              </dd>
+            </div>
+            <div className="min-w-0 rounded-xl border border-border-line/40 p-3 sm:col-span-2">
+              <dt className="flex items-center gap-2 text-xs text-slate-text">
+                <CircleDollarSign
+                  className="h-4 w-4 text-emerald-primary"
+                  aria-hidden="true"
+                />
+                Concepto
+              </dt>
+              <dd className="mt-1 break-words text-sm font-medium text-bg-dark">
+                {movimiento.concepto || "Sin concepto"}
+              </dd>
+            </div>
+            <div className="min-w-0 rounded-xl border border-border-line/40 p-3">
+              <dt className="flex items-center gap-2 text-xs text-slate-text">
+                <Tag
+                  className="h-4 w-4 text-emerald-primary"
+                  aria-hidden="true"
+                />
+                Origen tipo
+              </dt>
+              <dd className="mt-1 break-words text-sm font-medium text-bg-dark">
+                {movimiento.origenTipo || "No especificado"}
+              </dd>
+            </div>
+            <div className="min-w-0 rounded-xl border border-border-line/40 p-3">
+              <dt className="flex items-center gap-2 text-xs text-slate-text">
+                <Tag
+                  className="h-4 w-4 text-emerald-primary"
+                  aria-hidden="true"
+                />
+                Monto
+              </dt>
+              <dd className="mt-1 break-words text-sm font-medium text-bg-dark tabular-nums">
+                {formatoMoneda.format(Number(movimiento.monto) || 0)}
+              </dd>
+            </div>
+            <div className="min-w-0 rounded-xl border border-border-line/40 p-3 sm:col-span-2">
+              <dt className="flex items-center gap-2 text-xs text-slate-text">
+                <Tag
+                  className="h-4 w-4 text-emerald-primary"
+                  aria-hidden="true"
+                />
+                Estado de revisión
+              </dt>
+              <dd className="mt-1 break-words text-sm font-medium text-bg-dark">
+                {movimiento.estadoRevision || "No especificado"}
+              </dd>
+            </div>
           </dl>
-          {/* Datos completos: parámetros del registro sin truncar (texto completo) */}
-          <details className="rounded-xl border border-border-line/40 p-3" open>
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-text">
-              Datos completos
-            </summary>
-            <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {[
-                ["Id movimiento", movimiento.idMovimiento, true],
-                ["Id bolsillo", movimiento.idBolsillo, true],
-                ["Bolsillo", movimiento.nombreBolsillo ||
-                  movimiento.bolsillo?.nombre],
-                ["Tipo", tipo],
-                ["Categoría", movimiento.categoria],
-                ["Concepto", movimiento.concepto],
-                [
-                  "Monto",
-                  `${movimiento.monto ? formatoMoneda.format(Number(movimiento.monto)) : "Sin monto"}`,
-                ],
-                ["Fecha", fechaLegible(movimiento.fecha)],
-                ["Origen tipo", movimiento.origenTipo],
-                ["Origen id", movimiento.origenId, true],
-                ["Origen nombre", movimiento.origenNombre],
-                ["Estado de revisión", movimiento.estadoRevision],
-              ].map(([etiqueta, valor, mono]) => (
-                <div key={etiqueta} className="min-w-0 rounded-lg bg-bg-cream/60 p-2">
-                  <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-text">
-                    {etiqueta}
-                  </dt>
-                  <dd
-                    className={`mt-0.5 break-words whitespace-pre-wrap text-xs leading-snug text-bg-dark ${
-                      mono ? "break-all font-mono" : ""
-                    }`}
-                  >
-                    {valor || "No especificado"}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </details>
+
           {movimiento.descripcion && (
             <p className="rounded-xl border border-border-line/40 p-3 text-sm text-slate-text">
               <span className="font-medium text-bg-dark">Descripción: </span>

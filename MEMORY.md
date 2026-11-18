@@ -117,6 +117,17 @@ antes de tocar código** y no revertir sus ediciones.
   por lista vacía en la siguiente escritura. Revisión visual no aplicable (solo lógica).
   Commit `dc3776e`.
 
+- **Tarea suelta (bandeja «Movimientos por revisar»):** feedback de diseño sobre
+  `ModalMovimientosPorRevisar.jsx`: cada pendiente abre ahora `DetalleMovimientoModal`
+  (patrón de `DetalleTarjetaModal`: estado local `movimientoDetalle` + `disparadorDetalleRef`,
+  modal anidado vía portal, Escape cierra primero el detalle por la pila de `useCierreConEsc`) y la
+  fila muestra el apodo como título con `tipo · fecha · entidad`. La regla del apodo queda
+  centralizada en `contabilidadHelpers` (`nombreMovimiento`, `entidadMovimiento`, `fechaMovimiento`)
+  y la reusan `MovimientoItem` y `DetalleMovimientoModal` sin cambiar su comportamiento. Suite nueva
+  `src/test/features/contabilidad/ModalMovimientosPorRevisar.test.jsx` (7/7) y build correctos;
+  `npm test`: 709/729 con 16 fallos preexistentes y ajenos en `PaginaDashboardInicio`. Revisión
+  visual en navegador pendiente (apilado de los dos modales translúcidos).
+
 - **Tarea suelta (placeholders ModalDetalleGrupo):** `placeholder="Nombre del grupo"` en el
   `<input>` Nombre y `placeholder="Descripción del grupo"` en el `<textarea>` Descripción del
   formulario "Datos del grupo" (`src/components/domain/modales/ModalDetalleGrupo.jsx`, línea 228).

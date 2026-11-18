@@ -1,5 +1,10 @@
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { formatoFecha, formatoMoneda } from "../../utils/contabilidadHelpers";
+import {
+  entidadMovimiento,
+  fechaMovimiento,
+  formatoMoneda,
+  nombreMovimiento,
+} from "../../utils/contabilidadHelpers";
 
 /** Fila resumida de un movimiento que abre su modal de detalle. */
 export default function MovimientoItem({ movimiento, onDetalle }) {
@@ -13,16 +18,10 @@ export default function MovimientoItem({ movimiento, onDetalle }) {
       : tipo === "GASTO"
         ? "text-cat-expense"
         : "text-slate-text";
+  const titulo = nombreMovimiento(movimiento);
   const monto = Number(movimiento.monto) || 0;
-  const fecha = movimiento.fecha
-    ? new Date(`${movimiento.fecha}T00:00:00Z`)
-    : null;
-  const fechaTexto =
-    fecha && !Number.isNaN(fecha.getTime())
-      ? formatoFecha.format(fecha)
-      : movimiento.fecha || "Fecha no disponible";
-  const entidad =
-    movimiento.entidad || movimiento.remitente || movimiento.origenNombre || "";
+  const fechaTexto = fechaMovimiento(movimiento.fecha);
+  const entidad = entidadMovimiento(movimiento);
   const contexto = [movimiento.nombreBolsillo, movimiento.categoria]
     .filter(Boolean)
     .join(" · ");
@@ -33,7 +32,7 @@ export default function MovimientoItem({ movimiento, onDetalle }) {
       <button
         type="button"
         onClick={onDetalle}
-        aria-label={`Ver detalle del movimiento ${movimiento.concepto || movimiento.categoria}`}
+        aria-label={`Ver detalle del movimiento ${titulo}`}
         className="group grid w-full gap-3 rounded-xl p-2 text-left transition-colors hover:bg-bg-cream/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
       >
         <div className="flex min-w-0 items-center gap-3">
@@ -44,7 +43,7 @@ export default function MovimientoItem({ movimiento, onDetalle }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-bg-dark">
-              {movimiento.concepto?.trim() || movimiento.categoria}
+              {titulo}
             </p>
             {contexto && (
               <p className="mt-0.5 truncate text-sm font-medium text-slate-text">
