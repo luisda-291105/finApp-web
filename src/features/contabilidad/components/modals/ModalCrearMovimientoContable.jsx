@@ -19,7 +19,7 @@ import {
   formatearPesos,
   parsearPesos,
 } from "../../../../utils/formatoPesos";
-import { esBolsilloFijo } from "../../utils/contabilidadHelpers";
+import { esBolsilloClasificable, esBolsilloFijo } from "../../utils/contabilidadHelpers";
 
 function fechaLocal() {
   const hoy = new Date();
@@ -190,7 +190,8 @@ export default function ModalCrearMovimientoContable({
   const cerrar = () => {
     if (!ocupado) alCerrar();
   };
-  const bolsilloSeleccionado = bolsillos.find(
+  const bolsillosDestino = bolsillos.filter(esBolsilloClasificable);
+  const bolsilloSeleccionado = bolsillosDestino.find(
     (item) => item.idBolsillo === valores.idBolsillo,
   );
   const tipoSeleccionado = bolsilloSeleccionado?.tipo || "";
@@ -271,7 +272,7 @@ export default function ModalCrearMovimientoContable({
                   <option value="" disabled>
                     Selecciona un bolsillo
                   </option>
-                  {bolsillos.map((bolsillo) => (
+                  {bolsillosDestino.map((bolsillo) => (
                     <option
                       key={bolsillo.idBolsillo}
                       value={bolsillo.idBolsillo}

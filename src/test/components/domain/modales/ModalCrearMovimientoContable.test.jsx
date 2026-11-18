@@ -182,4 +182,28 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
       ),
     );
   });
+
+  it("no ofrece el bolsillo «Por revisar» como destino del movimiento", () => {
+    renderModal({
+      bolsillos: [
+        ...bolsillos,
+        {
+          idBolsillo: "por-revisar",
+          nombre: "Por revisar",
+          tipo: "POR_REVISAR",
+          estado: true,
+          saldoDisponible: 0,
+        },
+      ],
+    });
+
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    const destino = within(dialogo).getByLabelText("Bolsillo");
+    expect(
+      within(destino).queryByRole("option", { name: /Por revisar/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(destino).getByRole("option", { name: /Gastos diarios/ }),
+    ).toBeInTheDocument();
+  });
 });

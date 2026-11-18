@@ -9,6 +9,8 @@ import {
 } from "../../services/movimientosService";
 import {
   entidadMovimiento,
+  esBolsilloClasificable,
+  esTipoClasificable,
   fechaMovimiento,
   formatoMoneda,
   nombreMovimiento,
@@ -89,15 +91,23 @@ export default function ModalMovimientosPorRevisar({
   }, [abierto, recarga]);
 
   const confirmar = async (movimiento) => {
+    const tipo = tipoMovimiento(movimiento);
+    // Un movimiento sin clasificar (tipo POR_REVISAR) no puede confirmarse contra el bolsillo
+    // «Por revisar»: hay que elegir un bolsillo real que sí defina el tipo.
+    if (!esTipoClasificable(tipo)) {
+      alEditar(movimiento);
+      return;
+    }
     const compatibles = bolsillos.filter(
       (bolsillo) =>
         bolsillo.estado !== false &&
         String(bolsillo.estado).toLowerCase() !== "false" &&
-        tipoMovimiento(bolsillo) === tipoMovimiento(movimiento),
+        esBolsilloClasificable(bolsillo) &&
+        tipoMovimiento(bolsillo) === tipo,
     );
     if (
       movimiento.origenTipo === "GMAIL" &&
-      ["GASTO", "INGRESO"].includes(tipoMovimiento(movimiento))
+      ["GASTO", "INGRESO"].includes(tipo)
     ) {
       setOcupado(movimiento.idMovimiento);
       setError("");

@@ -27,6 +27,7 @@ const SUSCRIPCIONES = [
 const MOVIMIENTOS = [
   {
     idMovimiento: "mov-1",
+    idBolsillo: "bol-1",
     origenTipo: "GMAIL",
     origenId: "cta-1:mensaje-abc",
     origenNombre: "alertasynotificaciones@ayn.notificacionesbancolombia.com",
@@ -35,6 +36,7 @@ const MOVIMIENTOS = [
   },
   {
     idMovimiento: "mov-2",
+    idBolsillo: "bol-1",
     origenTipo: "GMAIL",
     origenId: "cta-1:mensaje-xyz",
     origenNombre: "bamcolombia",
@@ -81,6 +83,48 @@ describe("sincronizarOrigenesMovimientosGmail", () => {
       "mov-1",
       expect.objectContaining({ origenNombre: "bamcolombia" }),
     );
+  });
+
+  it("ignora movimientos sin bolsillo asignado para no fallar 400 en el backend", async () => {
+    mockFetch({ suscripciones: SUSCRIPCIONES });
+    movimientosMocks.listarMovimientos.mockResolvedValue([
+      {
+        idMovimiento: "mov-temp",
+        idBolsillo: null,
+        origenTipo: "GMAIL",
+        origenId: "cta-1:mensaje-pending",
+        origenNombre: "alertasynotificaciones@ayn.notificacionesbancolombia.com",
+        concepto: "Cobro pendiente",
+        categoria: "Suscripciones",
+      },
+    ]);
+
+    const resultado = await sincronizarOrigenesMovimientosGmail();
+
+    expect(resultado).toMatchObject({ total: 0, actualizados: 0, errores: 0 });
+    expect(movimientosMocks.actualizarMovimiento).not.toHaveBeenCalled();
+  });
+
+  it("ignora movimientos pendientes de revisión aunque tengan bolsillo", async () => {
+    mockFetch({ suscripciones: SUSCRIPCIONES });
+    movimientosMocks.listarMovimientos.mockResolvedValue([
+      {
+        idMovimiento: "mov-revisar",
+        idBolsillo: "bol-revisar",
+        estadoRevision: "POR_REVISAR",
+        origenTipo: "GMAIL",
+        origenId: "cta-1:mensaje-pending",
+        origenNombre:
+          "alertasynotificaciones@ayn.notificacionesbancolombia.com",
+        concepto: "Pendiente de clasificar",
+        categoria: "Pagos con tarjetas",
+      },
+    ]);
+
+    const resultado = await sincronizarOrigenesMovimientosGmail();
+
+    expect(resultado).toMatchObject({ total: 0, actualizados: 0, errores: 0 });
+    expect(movimientosMocks.actualizarMovimiento).not.toHaveBeenCalled();
   });
 
   it("no falla cuando no hay suscripciones ni movimientos", async () => {

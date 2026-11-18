@@ -1,5 +1,22 @@
 export const TIPOS_BASE = ["INGRESO", "GASTO", "AHORRO"];
 
+/** Tipos con los que un movimiento cuenta en los totales; «POR_REVISAR» no es uno de ellos. */
+export const TIPOS_CLASIFICABLES = ["GASTO", "INGRESO", "AHORRO", "TRANSFERENCIA"];
+
+/** Indica si un tipo (o el tipo de un bolsillo) puede clasificar un movimiento. */
+export function esTipoClasificable(tipo) {
+  return TIPOS_CLASIFICABLES.includes(
+    String(tipo || "")
+      .trim()
+      .toUpperCase(),
+  );
+}
+
+/** Indica si un bolsillo puede ser destino de un movimiento clasificado. */
+export function esBolsilloClasificable(bolsillo) {
+  return esTipoClasificable(bolsillo?.tipo);
+}
+
 export const formatoMoneda = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",

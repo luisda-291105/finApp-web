@@ -210,6 +210,33 @@ describe("ModalMovimientosPorRevisar", () => {
     expect(alConfirmar).toHaveBeenCalledWith(PENDIENTE_GMAIL);
   });
 
+  it("enruta a edición un movimiento sin clasificar en lugar de confirmarlo", async () => {
+    const usuario = userEvent.setup();
+    const alEditar = vi.fn();
+    const sinClasificar = {
+      ...PENDIENTE_GMAIL,
+      idMovimiento: "mov-sin-clasificar",
+      tipo: "POR_REVISAR",
+      origenNombre: "banColombia",
+    };
+    listarMovimientos.mockImplementation((idBolsillo, tipo, estadoRevision) => {
+      if (estadoRevision === "POR_REVISAR")
+        return Promise.resolve([sinClasificar]);
+      return Promise.resolve([]);
+    });
+    renderBandeja({ alEditar });
+    const bandeja = await screen.findByRole("dialog", {
+      name: "Movimientos por revisar",
+    });
+    await usuario.click(
+      within(bandeja).getByRole("button", { name: "Confirmar" }),
+    );
+
+    await waitFor(() => expect(alEditar).toHaveBeenCalledWith(sinClasificar));
+    expect(actualizarMovimiento).not.toHaveBeenCalled();
+    expect(confirmarMovimientoGmailGlobal).not.toHaveBeenCalled();
+  });
+
   it("muestra el estado vacío cuando no hay pendientes", async () => {
     listarMovimientos.mockResolvedValue([]);
     renderBandeja();

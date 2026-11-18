@@ -224,10 +224,16 @@ export async function sincronizarOrigenesMovimientosGmail() {
     porCuenta.get(s.cuentaGmailId).push(s);
   }
 
-  // 2. Movimientos GMAIL existentes en Contabilidad.
+  // 2. Movimientos GMAIL confirmados en Contabilidad con bolsillo asignado. Los pendientes
+  // de revisión se excluyen: su bolsillo es «Por revisar» y reasignarlo con actualizar los
+  // degradaría a tipo POR_REVISAR, dejándolos fuera de los totales.
   const respuestaMovimientos = await listarMovimientos(null, "TODOS");
   const movimientos = listaDeMovimientos(respuestaMovimientos).filter(
-    (m) => String(m.origenTipo || "").toUpperCase() === "GMAIL",
+    (m) =>
+      String(m.origenTipo || "").toUpperCase() === "GMAIL" &&
+      String(m.estadoRevision || "").toUpperCase() !== "POR_REVISAR" &&
+      typeof m.idBolsillo === "string" &&
+      m.idBolsillo.trim() !== "",
   );
 
   // 3. Actualizar los que coincidan y aún no lleven el apodo como origen.
