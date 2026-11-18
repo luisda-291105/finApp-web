@@ -41,6 +41,7 @@ antes de tocar código** y no revertir sus ediciones.
 - `specs/033-validacion-tarjetas/` — vencimiento `MM/AA` con cero y `/` automáticos; entrada numérica para número/CVV, CVV de 3 dígitos; `colorTema` retirado del contrato frontend/backend y script SQL manual para eliminar la columna persistente.
 - `specs/034-temas-y-tarjetas/` — implementada: el vencimiento agrega el cero al perder foco; tarjetas con frente transparente y borde, sidebar con estilo por tema; Configuración ofrece modo claro/oscuro persistente. Build correcto; revisión en navegador y pruebas pendientes.
 - `specs/035-agente-chat/` — implementada: chat del dashboard conectado a `finApp-backend`, documentación local, NVIDIA NIM y búsqueda pública Tavily opcional; claves solo en el entorno backend. El usuario obtendrá las claves; acceso trial de NVIDIA no garantiza uso estable ni licencia de producción. Build frontend/compilación backend pendientes de validación; pruebas no ejecutadas.
+- `specs/040-papelera-correos/` (en `finApp-backend`) — Papelera de correos (spec, contrato, plan y tareas aprobados). **T1 (datos y migración) hecha**: columnas de papelera en `gmail_mensaje`, `fuente.gmail_scope_concedido`, entidades y repositorios `MGmailPapeleraConfiguracion`/`MGmailPapeleraCategoria`/`MGmailPapeleraListaBlanca` y `sql/075_papelera_correos.sql` (idempotente, defaults CD-03). Pendientes T2–T10 (permiso ampliado, listar/mover/restaurar, configuración, regla automática, limpieza y frontend).
 
 ## Tareas faltantes
 
