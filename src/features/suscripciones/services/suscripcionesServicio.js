@@ -16,8 +16,8 @@ const extraerLista = (respuesta) => {
   return respuesta?.datos || respuesta?.data || respuesta?.content || [];
 };
 
-/** Normaliza un nivel (importancia o prioridad) a Alta, Media o Baja para la interfaz. */
-export const normalizarNivelUi = (valor, porDefecto = "Media") => {
+/** Normaliza un nivel (importancia o prioridad) a Alta, Media, Baja o "" («No definido») para la interfaz. */
+export const normalizarNivelUi = (valor, porDefecto = "") => {
   const normalizado = String(valor ?? "").trim().toUpperCase();
   if (normalizado === "ALTA" || normalizado === "ALTO" || normalizado === "IMPORTANTE") return "Alta";
   if (normalizado === "MEDIA" || normalizado === "MEDIO") return "Media";
@@ -33,8 +33,6 @@ export const normalizarNivelApi = (valor, porDefecto = "MEDIA") => {
   if (normalizado === "BAJA" || normalizado === "BAJO") return "BAJA";
   return porDefecto;
 };
-
-const normalizarImportanciaUi = (valor) => normalizarNivelUi(valor, "Alta");
 
 const normalizarImportanciaApi = (valor) => normalizarNivelApi(valor, "ALTA");
 
@@ -63,8 +61,8 @@ export function normalizarSuscripcionManual(respuesta) {
     categoria: String(suscripcion.categoria || "Otros"),
     monto: numeroSeguro(suscripcion.monto),
     fechaCobro: fechaSeguro(suscripcion.fechaCobro),
-    importancia: normalizarImportanciaUi(suscripcion.importancia),
-    prioridad: normalizarNivelUi(suscripcion.prioridad, "Media"),
+    importancia: normalizarNivelUi(suscripcion.importancia),
+    prioridad: normalizarNivelUi(suscripcion.prioridad),
     apodo: normalizarApodo(suscripcion.apodo) || "",
     activa: suscripcion.activa !== false,
   };
@@ -95,12 +93,13 @@ export async function crearSuscripcionManual(suscripcion) {
 
 /**
  * Actualiza los ajustes de organización (importancia, prioridad, apodo) de cualquier
- * suscripción del usuario, manual o detectada en Gmail. Omitir un campo conserva su valor.
+ * suscripción del usuario, manual o detectada en Gmail. "" en importancia/prioridad
+ * guarda NULL en el backend (opción «No definido» del detalle).
  */
 export function actualizarAjustesSuscripcion(id, { importancia, prioridad, apodo } = {}) {
   const cuerpo = {};
-  if (importancia != null && String(importancia).trim() !== "") cuerpo.importancia = normalizarNivelApi(importancia, "ALTA");
-  if (prioridad != null && String(prioridad).trim() !== "") cuerpo.prioridad = normalizarNivelApi(prioridad, "MEDIA");
+  if (importancia !== undefined) cuerpo.importancia = String(importancia).trim() === "" ? "" : normalizarNivelApi(importancia, "ALTA");
+  if (prioridad !== undefined) cuerpo.prioridad = String(prioridad).trim() === "" ? "" : normalizarNivelApi(prioridad, "MEDIA");
   if (apodo !== undefined) cuerpo.apodo = normalizarApodo(apodo) || null;
   return patch(`${ruta}/${encodeURIComponent(String(id))}/ajustes`, cuerpo);
 }

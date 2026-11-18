@@ -1,7 +1,7 @@
 /**
  * @uso        Agrupar todas las suscripciones (Gmail, manuales y cobros detectados) en una sola cuadrícula con divisiones por prioridad
  * @funciones  TodasSuscripcionesSection({ suscripcionesGmail, totalGmail, cargandoGmail, consultaRealizada, cantidadCuentas, manuales, cargandoManuales, recurrentes, cargandoRecurrentes, filtrosActivos, alLimpiarFiltros, alAbrirDetalle, formatoMoneda, formatoFecha })
- * @datos      Items de tres fuentes; los de Gmail ya vienen filtrados por búsqueda y filtros; se dividen en bloques Alta/Media/Baja y dentro de cada bloque se ordenan por importancia (Alta primero) con orden estable
+ * @datos      Items de tres fuentes; los de Gmail ya vienen filtrados por búsqueda y filtros; se dividen en bloques Alta/Media/Baja/Sin prioridad y dentro de cada bloque se ordenan por importancia (Alta primero) con orden estable
  * @eventos    Abrir detalle (gmail/manual), limpiar filtros y minimizar/expandir cada bloque de prioridad
  * @estados    bloquesColapsados (Set<string>): bloques minimizados, persistido en localStorage bajo `finapp:suscripciones:bloques-colapsados`
  * @usadoPor   SuscripcionesPage
@@ -12,18 +12,20 @@ import { Link } from "react-router-dom";
 import { Card } from "../../../../components/ui";
 import SuscripcionUnificadaCard from "./SuscripcionUnificadaCard";
 
-/** Rango de orden por nivel (prioridad o importancia); valores desconocidos se tratan como Medio. */
+/** Rango de orden por nivel (prioridad o importancia); sin valor reconocido («No definido»), queda al final. */
 function rangoNivel(valor) {
   const normal = String(valor ?? "").trim().toLocaleLowerCase();
   if (normal === "alta" || normal === "alto" || normal === "importante") return 0;
+  if (normal === "media" || normal === "medio") return 1;
   if (normal === "baja" || normal === "bajo") return 2;
-  return 1;
+  return 3;
 }
 
 const GRUPOS_PRIORIDAD = [
   { valor: "Alta", etiqueta: "Prioridad Alta", rango: 0 },
   { valor: "Media", etiqueta: "Prioridad Media", rango: 1 },
   { valor: "Baja", etiqueta: "Prioridad Baja", rango: 2 },
+  { valor: "SinPrioridad", etiqueta: "Sin prioridad", rango: 3 },
 ];
 
 /** Clave de localStorage con los bloques de prioridad minimizados (persiste entre sesiones). */
@@ -76,9 +78,9 @@ export default function TodasSuscripcionesSection({
   // `fuente` distingue el origen sin pisar el campo `origen` del backend (p. ej. "MANUAL").
   const grupos = useMemo(() => {
     const todos = [
-      ...manuales.map((item) => ({ ...item, fuente: "manual", _prioridad: item.prioridad || "Media", _importancia: item.importancia || "Media" })),
-      ...suscripcionesGmail.map((item) => ({ ...item, fuente: "gmail", _prioridad: item.prioridad || "Media", _importancia: item.importancia || "Media" })),
-      ...recurrentes.map((item) => ({ ...item, fuente: "recurrente", prioridad: item.prioridad || "Media", _prioridad: item.prioridad || "Media", _importancia: item.importancia || "Media" })),
+      ...manuales.map((item) => ({ ...item, fuente: "manual", _prioridad: item.prioridad || "", _importancia: item.importancia || "" })),
+      ...suscripcionesGmail.map((item) => ({ ...item, fuente: "gmail", _prioridad: item.prioridad || "", _importancia: item.importancia || "" })),
+      ...recurrentes.map((item) => ({ ...item, fuente: "recurrente", prioridad: item.prioridad || "", _prioridad: item.prioridad || "", _importancia: item.importancia || "" })),
     ];
     // Bloques por prioridad; dentro de cada bloque, orden estable por importancia (Alta primero).
     return GRUPOS_PRIORIDAD

@@ -44,10 +44,11 @@ function InsigniaOrigen({ fuente }) {
 }
 
 function InsigniaPrioridad({ prioridad }) {
-  const valor = prioridad || "Media";
+  const valor = prioridad || "";
+  const etiqueta = valor === "" ? "Sin prioridad" : `Prioridad ${valor}`;
   return (
-    <span className="shrink-0 rounded-full bg-border-line/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-text">
-      Prioridad {valor}
+    <span className="shrink-0 rounded-full bg-border-line/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-text">
+      {etiqueta}
     </span>
   );
 }
@@ -102,11 +103,12 @@ function CuerpoGmail({ item }) {
   );
 }
 
-const ETIQUETAS_IMPORTANCIA = { Alta: "Importante", Media: "Media importancia", Baja: "Baja importancia" };
+const ETIQUETAS_IMPORTANCIA = { Alta: "Importante", Media: "Media importancia", Baja: "Baja importancia", "": "No definido" };
 const CLASES_IMPORTANCIA = {
   Alta: "bg-emerald-primary/10 text-emerald-primary",
   Media: "bg-amber-500/10 text-amber-800",
   Baja: "bg-border-line/40 text-slate-text",
+  "": "bg-border-line/40 text-slate-text",
 };
 
 function CuerpoManual({ item, formatoMoneda, formatoFecha }) {
@@ -117,12 +119,10 @@ function CuerpoManual({ item, formatoMoneda, formatoFecha }) {
       </span>
       <span className="block font-semibold tabular-nums text-bg-dark">{formatoMoneda.format(item.monto)}</span>
       <span className="flex flex-wrap items-center gap-2">
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${CLASES_IMPORTANCIA[item.importancia] || CLASES_IMPORTANCIA.Media}`}>
-          {ETIQUETAS_IMPORTANCIA[item.importancia] || "Media importancia"}
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${CLASES_IMPORTANCIA[item.importancia ?? ""] || CLASES_IMPORTANCIA[""]}`}>
+          {ETIQUETAS_IMPORTANCIA[item.importancia ?? ""] || "No definido"}
         </span>
-        <span className="shrink-0 rounded-full bg-border-line/40 px-2.5 py-1 text-xs font-semibold text-slate-text">
-          Prioridad {item.prioridad || "Media"}
-        </span>
+        <InsigniaPrioridad prioridad={item.prioridad} />
       </span>
     </div>
   );

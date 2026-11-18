@@ -12,8 +12,8 @@ import { normalizarNivelUi } from "../services/suscripcionesServicio";
 
 const normalizarSuscripcionGmail = (suscripcion = {}) => ({
   ...suscripcion,
-  importancia: normalizarNivelUi(suscripcion.importancia, "Media"),
-  prioridad: normalizarNivelUi(suscripcion.prioridad, "Media"),
+  importancia: normalizarNivelUi(suscripcion.importancia),
+  prioridad: normalizarNivelUi(suscripcion.prioridad),
   apodo: String(suscripcion.apodo ?? "").trim(),
   idSuscripcion: suscripcion.idSuscripcion ?? "",
 });

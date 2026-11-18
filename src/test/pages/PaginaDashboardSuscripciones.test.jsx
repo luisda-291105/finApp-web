@@ -219,6 +219,34 @@ describe("PaginaDashboardSuscripciones", () => {
     window.localStorage.clear.mockReset();
   });
 
+  it("agrupa en «Sin prioridad» los registros sin nivel y usa «No definido» en el detalle", async () => {
+    const usuario = userEvent.setup();
+    listarSuscripcionesManuales.mockResolvedValue([{
+      id: "manual-null",
+      origen: "MANUAL",
+      nombre: "Seguro hogar",
+      categoria: "Servicios",
+      monto: 89000,
+      fechaCobro: "2026-12-15",
+      importancia: "",
+      prioridad: "",
+      apodo: "",
+      activa: true,
+    }]);
+
+    renderPagina();
+
+    // La suscripción sin niveles se ubica en el bloque «Sin prioridad».
+    expect(await screen.findByRole("button", { name: "Minimizar bloque Sin prioridad" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ver detalle de la suscripción Seguro hogar" })).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Ver detalle de la suscripción Seguro hogar" }));
+    const detalle = screen.getByRole("dialog", { name: "Suscripción: Seguro hogar" });
+    expect(within(detalle).getByLabelText("Importancia de la suscripción")).toHaveValue("");
+    expect(within(detalle).getByLabelText("Prioridad de la suscripción")).toHaveValue("");
+    expect(within(detalle).getAllByRole("option", { name: "No definido" })).toHaveLength(2);
+  });
+
   it("abre el detalle desde la tarjeta completa y guarda la prioridad en el backend", async () => {
     const usuario = userEvent.setup();
     const manualDescargada = {

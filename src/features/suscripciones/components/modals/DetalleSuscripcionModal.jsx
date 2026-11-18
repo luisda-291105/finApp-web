@@ -58,7 +58,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
   const [bolsillos, setBolsillos] = useState([]);
   const [valoresMovimiento, setValoresMovimiento] = useState(null);
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState(null);
-  const [ajustes, setAjustes] = useState({ apodo: "", importancia: "Media", prioridad: "Media" });
+  const [ajustes, setAjustes] = useState({ apodo: "", importancia: "", prioridad: "" });
   const [guardandoAjustes, setGuardandoAjustes] = useState(false);
   const [avisoAjustes, setAvisoAjustes] = useState("");
   const [errorAjustes, setErrorAjustes] = useState("");
@@ -72,8 +72,8 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
     setErrorBaja("");
     setAjustes({
       apodo: suscripcion?.apodo ?? "",
-      importancia: suscripcion?.importancia || "Media",
-      prioridad: suscripcion?.prioridad || "Media",
+      importancia: suscripcion?.importancia || "",
+      prioridad: suscripcion?.prioridad || "",
     });
     setAvisoAjustes("");
     setErrorAjustes("");
@@ -284,7 +284,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
       <section aria-labelledby="ajustes-suscripcion-titulo" className="space-y-3 rounded-2xl border border-border-line/50 p-4">
         <div>
           <h3 id="ajustes-suscripcion-titulo" className="font-semibold text-bg-dark">Organización</h3>
-          <p className="mt-0.5 text-xs text-slate-text">Añade un apodo, una importancia y una prioridad para reconocer y priorizar esta suscripción.</p>
+          <p className="mt-0.5 text-xs text-slate-text">Añade un apodo, una importancia y una prioridad para reconocer y priorizar esta suscripción. «No definido» la deja sin nivel y se agrupa en «Sin prioridad».</p>
         </div>
         <form onSubmit={guardarAjustes} className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-2 text-sm font-medium text-bg-dark sm:col-span-2">
@@ -310,6 +310,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
               <option value="Alta">Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
+              <option value="">No definido</option>
             </select>
           </label>
           <label className="block space-y-2 text-sm font-medium text-bg-dark">
@@ -323,6 +324,7 @@ export default function DetalleSuscripcionModal({ suscripcion, triggerRef, alCer
               <option value="Alta">Alta</option>
               <option value="Media">Media</option>
               <option value="Baja">Baja</option>
+              <option value="">No definido</option>
             </select>
           </label>
           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">

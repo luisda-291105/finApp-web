@@ -27,6 +27,29 @@ describe("suscripcionesServicio manuales", () => {
     Object.values(httpMocks).forEach((mock) => mock.mockReset());
   });
 
+  it("normaliza a cadena vacía («No definido») los niveles y suscripciones sin valor", async () => {
+    httpMocks.obtener.mockResolvedValue([
+      {
+        id: "manual-1",
+        origen: "MANUAL",
+        nombre: "Internet hogar",
+        categoria: "Servicios",
+        monto: 120000,
+        fechaCobro: "2026-12-10",
+        importancia: null,
+        prioridad: null,
+        activa: true,
+      },
+    ]);
+
+    await expect(listarSuscripcionesManuales()).resolves.toEqual([
+      expect.objectContaining({
+        importancia: "",
+        prioridad: "",
+      }),
+    ]);
+  });
+
   it("lista las manuales desde backend y normaliza los datos", async () => {
     httpMocks.obtener.mockResolvedValue([
       {
@@ -132,6 +155,17 @@ describe("suscripcionesServicio manuales", () => {
     await actualizarAjustesSuscripcion("gmail-1", { apodo: "Alertas del banco" });
     expect(httpMocks.patch).toHaveBeenLastCalledWith(`${rutaSuscripcion}/gmail-1/ajustes`, {
       apodo: "Alertas del banco",
+    });
+  });
+
+  it("envía cadena vacía en «No definido» para que el backend lo guarde como null", async () => {
+    httpMocks.patch.mockResolvedValue({ id: "gmail-1", importancia: null, prioridad: null, apodo: null });
+
+    await actualizarAjustesSuscripcion("gmail-1", { importancia: "", prioridad: "" });
+
+    expect(httpMocks.patch).toHaveBeenCalledWith(`${rutaSuscripcion}/gmail-1/ajustes`, {
+      importancia: "",
+      prioridad: "",
     });
   });
 
