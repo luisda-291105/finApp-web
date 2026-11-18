@@ -1,7 +1,7 @@
 /**
  * @uso        Gestionar una suscripción detectada en una cuenta Gmail
  * @funciones  DetalleSuscripcionModal({ suscripcion, triggerRef, alCerrar, alActualizar })
- * @datos      Muestra el remitente, cuenta de origen, ajustes de organización (apodo, importancia, prioridad) y opciones de baja
+ * @datos      Muestra el remitente, cuenta de origen, ajustes de organización (apodo, importancia, prioridad) y opciones de baja; al enviar a Contabilidad usa el apodo como origen del movimiento (ej. "Alertas y Notificaciones" → "bamcolombia")
  * @eventos    Solicita la baja solo después de confirmación explícita; guarda los ajustes en el backend
  * @estados    Confirmación y resultado de la solicitud de baja; estado de guardado de los ajustes
  * @usadoPor   SuscripcionesPage
@@ -361,7 +361,7 @@ export default function DetalleSuscripcionModal({
           sugerencia?.concepto || mensaje.asunto || "Correo de suscripción",
         origenTipo: "GMAIL",
         origenId: idOrigen,
-        origenNombre: mensaje.remitente || suscripcion.correoRemitente,
+        origenNombre: suscripcion.apodo || mensaje.remitente || suscripcion.correoRemitente,
       });
       setMovimientoSeleccionado(mensaje);
       setModalContabilidadAbierto(true);
@@ -386,7 +386,7 @@ export default function DetalleSuscripcionModal({
           180,
         ),
       origenNombre:
-        movimientoSeleccionado.remitente || suscripcion.correoRemitente,
+        suscripcion.apodo || movimientoSeleccionado.remitente || suscripcion.correoRemitente,
     });
     setMensajesImportados((actuales) => ({
       ...actuales,
