@@ -23,6 +23,7 @@ const gmailMock = vi.hoisted(() => ({
   conexionCargando: false,
   seleccionarCuentaGmail: vi.fn(),
   desconectarGmail: vi.fn(),
+  recargarCuentasGmail: vi.fn(),
 }));
 
 vi.mock("../../context/UsuarioActivoContext", () => ({

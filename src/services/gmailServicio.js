@@ -160,10 +160,13 @@ async function solicitarBackend(url, opciones = {}, reintentada = false) {
       window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
     }
   }
-  if (!respuesta.ok)
-    throw new Error(
+  if (!respuesta.ok) {
+    const error = new Error(
       datos.message || "No se pudo completar la consulta de Google.",
     );
+    error.status = respuesta.status;
+    throw error;
+  }
   return datos;
 }
 

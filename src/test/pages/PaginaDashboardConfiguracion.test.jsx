@@ -90,6 +90,7 @@ vi.mock("../../context/GmailContext", () => ({
     errorGmail: "",
     conectarGmail: vi.fn(),
     desconectarGmail: vi.fn(),
+    recargarCuentasGmail: vi.fn(),
     seleccionarCuentaGmail: vi.fn(),
     limpiarErrorGmail: vi.fn(),
   }),

@@ -60,6 +60,7 @@ export default function ConfiguracionPage() {
     errorGmail,
     conectarGmail,
     desconectarGmail,
+    recargarCuentasGmail,
     seleccionarCuentaGmail,
   } = useGmail();
 
@@ -135,6 +136,24 @@ export default function ConfiguracionPage() {
     } catch {
       /* El error temporal se muestra junto a las fuentes registradas. */
     }
+  };
+
+  /** Tras editar o eliminar una fuente se resincronizan las cuentas Gmail para
+   *  descartar las que ya no tienen fuente asociada (evita cuentas fantasma). */
+  const resincronizarCuentasGmail = () => {
+    Promise.resolve(recargarCuentasGmail?.()).catch(() => {});
+  };
+
+  const alGuardarEdicionFuente = async (cambios) => {
+    const guardado = await guardarEdicionFuente(cambios);
+    if (guardado) resincronizarCuentasGmail();
+    return guardado;
+  };
+
+  const alEliminarFuente = async (fuente) => {
+    const eliminado = await confirmarEliminacionFuente(fuente);
+    if (eliminado) resincronizarCuentasGmail();
+    return eliminado;
   };
 
   const alAbrirNextcloud = () => {
@@ -230,8 +249,8 @@ export default function ConfiguracionPage() {
         errorFuentes={errorFuentes}
         fuentes={fuentes}
         operacionFuente={operacionFuente}
-        guardarEdicionFuente={guardarEdicionFuente}
-        confirmarEliminacionFuente={confirmarEliminacionFuente}
+        guardarEdicionFuente={alGuardarEdicionFuente}
+        confirmarEliminacionFuente={alEliminarFuente}
         errorOperacionFuente={errorFuentes}
       />
 

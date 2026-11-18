@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   confirmarNotificacionesMovimientosGmail,
+  eliminarCuentaGmail,
   listarNotificacionesMovimientosGmail,
   obtenerContactosGoogle,
   obtenerCorreosGmail,
@@ -164,5 +165,18 @@ describe("gmailServicio", () => {
       expect.objectContaining({ type: "finapp:sesion-requerida" }),
     );
     notificarSesion.mockRestore();
+  });
+
+  it("adjunta el código HTTP al error para distinguir un 404", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({}),
+      text: async () => "",
+    });
+
+    await expect(eliminarCuentaGmail("cuenta-x")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 });
