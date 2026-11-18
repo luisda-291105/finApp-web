@@ -1,12 +1,14 @@
 /**
- * @uso        Organismo que compone la landing pública completa (Header + Hero + StatsBar + Features + HowItWorks + CtaSection + Footer)
+ * @uso        Organismo que compone la landing pública completa (Header + Regla + Hero + StatsBar + Features + HowItWorks + CtaSection + Footer)
  * @funciones  LandingLayout({ alAbrirAuth, children })
- * @datos      Recibe callback alAbrirAuth para propagar a Header, Hero, CtaSection; children para contenido flotante (AuthModal, botón ayuda)
- * @eventos    Ninguno propio; delega eventos a componentes hijos
- * @estados    Ninguno
+ * @datos      Recibe callback alAbrirAuth para propagar a Header, Hero, CtaSection; children para contenido flotante (AuthModal, botón ayuda); comparte seccionActiva entre Regla y Header
+ * @eventos    alCambiarSeccion desde Regla (scroll-spy)
+ * @estados    seccionActiva (string, título de la sección posicionada)
  * @usadoPor   LandingPage
  */
+import { useState } from "react";
 import Header from "./Header";
+import Regla from "./Regla";
 import Hero from "../sections/Hero";
 import StatsBar from "../sections/StatsBar";
 import Features from "../sections/Features";
@@ -17,6 +19,7 @@ import Footer from "../sections/Footer";
 /**
  * LandingLayout
  * Componente de layout que ensambla todas las secciones de la landing pública.
+ * El header muestra la sección posicionada como título; la regla la oculta de su lista.
  * @param {Object} props
  * @param {(modo: 'login' | 'registro') => void} props.alAbrirAuth - Callback para abrir modal de autenticación
  * @param {boolean} [props.ocultarHeader=false] - Oculta el header mientras el modal de acceso está abierto
@@ -27,13 +30,23 @@ export default function LandingLayout({
   ocultarHeader = false,
   children,
 }) {
+  const [seccionActiva, setSeccionActiva] = useState("Inicio");
+
   return (
     <div
       data-testid="landing-theme"
       className="landing-theme min-h-screen bg-[#0f1117] text-[#0f1117] flex flex-col font-body"
     >
       {/* Header principal */}
-      <Header alAbrirAuth={alAbrirAuth} modo="landing" oculto={ocultarHeader} />
+      <Header
+        alAbrirAuth={alAbrirAuth}
+        modo="landing"
+        oculto={ocultarHeader}
+        seccionActiva={seccionActiva}
+      />
+
+      {/* Regla de medición al borde derecho, centrada verticalmente */}
+      <Regla alCambiarSeccion={setSeccionActiva} />
 
       <main className="flex-1">
         {/* Hero editorial oscuro */}

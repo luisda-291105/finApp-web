@@ -129,7 +129,7 @@ export default function Features() {
   return (
     <section
       id="funcionalidades"
-      className="bg-[#f7f6f2] py-24 px-6 border-b border-[#e0ddd8]/60"
+      className="bg-[#f7f6f2] py-24 pl-6 pr-16 sm:pr-24 border-b border-[#e0ddd8]/60"
     >
       <div className="max-w-7xl mx-auto">
         {/* Cabecera de sección */}
@@ -137,7 +137,10 @@ export default function Features() {
           <span className="text-[#1a7a5e] text-xs font-semibold tracking-widest uppercase block mb-3">
             FUNCIONALIDADES
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#0f1117] font-normal tracking-tight leading-[1.15]">
+          <h2
+            id="titulo-funcionalidades"
+            className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#0f1117] font-normal tracking-tight leading-[1.15]"
+          >
             Todo lo que necesitas,
             <br />
             nada que no uses

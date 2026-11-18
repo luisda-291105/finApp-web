@@ -64,7 +64,9 @@ describe("LandingLayout", () => {
     expect(screen.getByText("Toma el control financiero")).toBeDefined();
 
     // CtaSection - busca llamada a la acción
-    expect(screen.getByText(/empezar/i)).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: /comenzar ahora gratis/i }),
+    ).toBeDefined();
 
     // Footer - busca copyright o marca
     expect(screen.getAllByText(/FinApp/i).length).toBeGreaterThan(0);

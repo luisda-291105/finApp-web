@@ -20,7 +20,7 @@ export default function Hero({ alAbrirAuth }) {
   return (
     <section
       id="inicio"
-      className="relative overflow-hidden bg-gradient-to-b from-[#0f1117] via-[#142820] to-[#12362b] pt-28 md:pt-32 pb-24 px-6 text-center"
+      className="relative overflow-hidden bg-gradient-to-b from-[#0f1117] via-[#142820] to-[#12362b] pt-28 md:pt-32 pb-24 pl-6 pr-16 sm:pr-24 text-center"
     >
       {/* Capa de grilla técnica de fondo */}
       <div
@@ -46,7 +46,10 @@ export default function Hero({ alAbrirAuth }) {
         </div>
 
         {/* Titular principal en Fraunces */}
-        <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-white tracking-tight leading-[1.08] max-w-4xl mx-auto mb-6">
+        <h1
+          id="titulo-inicio"
+          className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-normal text-white tracking-tight leading-[1.08] max-w-4xl mx-auto mb-6"
+        >
           Controla tu dinero,
           <br />
           <span className="italic text-[#6ee7c0] font-light">

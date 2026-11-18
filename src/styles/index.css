@@ -92,8 +92,13 @@ select {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -380,6 +385,79 @@ textarea::placeholder {
   opacity: 0.85;
 }
 
+/* Regla de medición de la landing: riel fijo a la derecha, centrado verticalmente y sin fondo.
+   Lista los nombres de las secciones: opacos por defecto y resaltados según la posición de lectura.
+   El tono cambia según la sección (light/dark). */
+.regla {
+  position: fixed;
+  right: calc(18px + env(safe-area-inset-right, 0px));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.1rem;
+  z-index: 1050;
+  background: none;
+  color: #e9eef2;
+  transition: color 0.35s;
+}
+
+.regla[data-tone="dark"] {
+  color: #14202b;
+}
+
+.regla-marca {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  transition: opacity 0.3s linear, visibility 0.3s linear;
+}
+
+.regla-marca.es-actual {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.regla-etiqueta {
+  display: block;
+  white-space: nowrap;
+  font: 600 0.78rem/1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.28;
+  pointer-events: none;
+  transition: opacity 0.2s linear;
+}
+
+.regla-marca:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+/* Entrada del título de sección en el header (la copia en vuelo llega desde la regla) */
+.titulo-seccion {
+  animation: titulo-seccion-entrada 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes titulo-seccion-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Grilla técnica del Hero */
 .hero-grid {
   background-image:
@@ -451,6 +529,14 @@ textarea::placeholder {
     backdrop-filter: blur(14px) saturate(180%);
     -webkit-backdrop-filter: blur(14px) saturate(180%);
   }
+
+  .regla {
+    right: calc(10px + env(safe-area-inset-right, 0px));
+  }
+
+  .regla-etiqueta {
+    font-size: 0.68rem;
+  }
 }
 
 /* Transparencia reducida: fondo semisólido y sin backdrop-filter */
@@ -475,6 +561,14 @@ textarea::placeholder {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  .regla,
+  .regla-marca,
+  .regla-etiqueta,
+  .titulo-seccion {
+    transition: none;
+    animation: none;
   }
 }
 

@@ -26,7 +26,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-[#0f1117] border-t border-white/10 py-12 px-6 text-white/60 text-sm">
+    <footer className="bg-[#0f1117] border-t border-white/10 py-12 pl-6 pr-16 sm:pr-24 text-white/60 text-sm">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
         <button
           type="button"
