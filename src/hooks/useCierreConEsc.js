@@ -14,51 +14,36 @@ let contadorOrden = 0;
 let listenerInstalado = false;
 let estadoScrollBloqueado = null;
 
-/** Bloquea el documento conservando la posición y permite scroll dentro del diálogo. */
+/** Bloquea el documento conservando la posición: el scroll solo se recorta, nunca se reposiciona. */
 function bloquearScrollPagina() {
   if (typeof document === "undefined" || typeof window === "undefined" || estadoScrollBloqueado) return;
   const { body, documentElement } = document;
-  const scrollX = window.scrollX || 0;
-  const scrollY = window.scrollY || 0;
   const anchoBarra = Math.max(0, window.innerWidth - documentElement.clientWidth);
   estadoScrollBloqueado = {
-    scrollX,
-    scrollY,
     htmlOverflow: documentElement.style.overflow,
     bodyOverflow: body.style.overflow,
-    bodyPosition: body.style.position,
-    bodyTop: body.style.top,
-    bodyLeft: body.style.left,
-    bodyWidth: body.style.width,
     bodyPaddingRight: body.style.paddingRight,
   };
 
+  // `overflow: hidden` recorta el scroll sin alterar el scrollTop ni desplazar el body:
+  // al cerrar solo hay que retirar el recorte y la posición no cambia (corrección «otras modales vuelven al inicio»).
   documentElement.style.overflow = "hidden";
   body.style.overflow = "hidden";
-  body.style.position = "fixed";
-  body.style.top = `-${scrollY}px`;
-  body.style.left = `-${scrollX}px`;
-  body.style.width = "100%";
   if (anchoBarra > 0) {
     const paddingActual = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
     body.style.paddingRight = `${paddingActual + anchoBarra}px`;
   }
 }
 
-/** Restaura estilos y posición al cerrar la última superficie modal. */
+/** Restaura la página al cerrar la última superficie modal (quita el recorte; el scroll nunca se movió). */
 function restaurarScrollPagina() {
-  if (!estadoScrollBloqueado || typeof document === "undefined" || typeof window === "undefined") return;
+  if (!estadoScrollBloqueado || typeof document === "undefined") return;
   const previo = estadoScrollBloqueado;
   estadoScrollBloqueado = null;
   const { body, documentElement } = document;
   documentElement.style.overflow = previo.htmlOverflow;
   body.style.overflow = previo.bodyOverflow;
-  body.style.position = previo.bodyPosition;
-  body.style.top = previo.bodyTop;
-  body.style.left = previo.bodyLeft;
-  body.style.width = previo.bodyWidth;
   body.style.paddingRight = previo.bodyPaddingRight;
-  window.scrollTo(previo.scrollX, previo.scrollY);
 }
 
 /** Devuelve la capa superior: mayor `zIndex`; en empate, la registrada más tarde (`orden`). */
