@@ -6,7 +6,8 @@
  * @estados    Ninguno propio; el estado en curso llega por props
  * @usadoPor   ConfiguracionPage
  */
-import { X } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, X } from "lucide-react";
 import { Card } from "../../../../../components/ui";
 import AvisoPermisoPapelera from "./AvisoPermisoPapelera";
 import ConfiguracionPapelera from "./ConfiguracionPapelera";
@@ -34,6 +35,7 @@ export default function LimpiezaAutomaticaPapelera({
   const cuentaGestion =
     cuentas.find((cuenta) => String(cuenta.cuentaId) === cuentaSeleccionada) ||
     null;
+  const [minimizada, setMinimizada] = useState(false);
 
   return (
     <Card
@@ -41,20 +43,33 @@ export default function LimpiezaAutomaticaPapelera({
       aria-labelledby="limpieza-papelera-titulo"
       className="space-y-3 p-6"
     >
-      <div>
-        <h2
-          id="limpieza-papelera-titulo"
-          className="font-display text-lg font-semibold text-bg-dark"
+      <h2
+        id="limpieza-papelera-titulo"
+        className="font-display text-lg font-semibold text-bg-dark"
+      >
+        <button
+          type="button"
+          onClick={() => setMinimizada((actual) => !actual)}
+          aria-expanded={!minimizada}
+          aria-label={`${minimizada ? "Expandir" : "Minimizar"} la limpieza automática de la papelera`}
+          className="flex w-full items-center justify-between gap-2 rounded-lg text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
         >
-          Limpieza automática de la papelera
-        </h2>
-        <p className="mt-1 text-xs text-slate-text">
-          Elige qué correos recibidos se mueven solos a la papelera, revisa
-          cuántos se moverían y gestiona los remitentes que nunca se mueven.
-        </p>
-      </div>
+          <span>Limpieza automática de la papelera</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`h-5 w-5 shrink-0 text-slate-text transition-transform ${minimizada ? "-rotate-90" : ""}`}
+          />
+        </button>
+      </h2>
 
-      {aviso && (
+      {!minimizada && (
+        <>
+          <p className="mt-1 text-xs text-slate-text">
+            Elige qué correos recibidos se mueven solos a la papelera, revisa
+            cuántos se moverían y gestiona los remitentes que nunca se mueven.
+          </p>
+
+          {aviso && (
         <div
           role={aviso.tipo === "error" ? "alert" : "status"}
           className={`flex items-start justify-between gap-3 rounded-2xl border p-3 text-sm ${ESTILOS_AVISO[aviso.tipo] || ESTILOS_AVISO.info}`}
@@ -138,6 +153,8 @@ export default function LimpiezaAutomaticaPapelera({
             />
           </>
         ))}
+        </>
+      )}
     </Card>
   );
 }

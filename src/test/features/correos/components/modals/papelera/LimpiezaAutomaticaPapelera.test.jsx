@@ -74,6 +74,31 @@ const renderLimpieza = (props = {}) =>
 afterEach(() => cleanup());
 
 describe("LimpiezaAutomaticaPapelera", () => {
+  it("minimiza y expande la sección con el botón del título", async () => {
+    renderLimpieza({
+      gestion: gestionBase(),
+    });
+
+    expect(
+      screen.getByText(/elige qué correos recibidos/i),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /minimizar la limpieza/i }),
+    );
+    expect(screen.queryByText(/elige qué correos recibidos/i)).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /expandir la limpieza/i }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /expandir la limpieza/i }),
+    );
+    expect(
+      screen.getByText(/elige qué correos recibidos/i),
+    ).toBeInTheDocument();
+  });
+
   it("no activa Actualizaciones sin aceptar antes la advertencia", async () => {
     const alGuardarConfiguracion = vi.fn();
     renderLimpieza({
