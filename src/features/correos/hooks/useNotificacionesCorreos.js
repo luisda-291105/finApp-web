@@ -253,6 +253,29 @@ export function useNotificacionesCorreos({
     });
   }, [notificaciones]);
 
+  const marcarComoLeida = useCallback(
+    (id) => {
+      const objetivo = notificaciones.find((n) => n.id === id);
+      if (!objetivo || objetivo.leida) return;
+      setNotificaciones((actuales) => {
+        const actualizadas = actuales.map((n) =>
+          n.id === id ? { ...n, leida: true } : n,
+        );
+        guardarBandeja(actualizadas);
+        return actualizadas;
+      });
+      if (
+        objetivo.origen === "movimiento-gmail" &&
+        !String(objetivo.id).startsWith("sync-")
+      ) {
+        confirmarNotificacionesMovimientosGmail([id]).catch(() => {
+          // Se conserva el marcado local aunque falle la confirmación remota.
+        });
+      }
+    },
+    [notificaciones],
+  );
+
   const limpiarBandeja = useCallback(() => {
     setNotificaciones([]);
     guardarBandeja([]);
@@ -269,6 +292,7 @@ export function useNotificacionesCorreos({
     toast,
     cerrarToast,
     marcarTodasLeidas,
+    marcarComoLeida,
     limpiarBandeja,
     sincronizando,
     errorSincronizacion,

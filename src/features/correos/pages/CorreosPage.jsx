@@ -2,7 +2,7 @@
  * @uso        Bandeja de correo Gmail por fuentes y cuentas conectadas
  * @funciones  CorreosPage()
  * @datos      Coordina useCorreos, usePapelera, notificaciones Gmail, tarjetas y bandejas modales
- * @eventos    Abrir bandeja de notificaciones, abrir la papelera, seleccionar dirección y filtrar mensajes
+ * @eventos    Abrir bandeja de notificaciones, marcar como leída al abrir su detalle, abrir la papelera, seleccionar dirección y filtrar mensajes
  * @estados    bandejaNotificacionesAbierta, papeleraAbierta y referencias de foco/disparadores
  * @usadoPor   App.jsx mediante la API pública de features/correos
  */
@@ -234,6 +234,7 @@ export default function CorreosPage() {
         triggerRef={disparadorNotificacionesRef}
         notificaciones={notificaciones.notificaciones}
         alMarcarTodasLeidas={notificaciones.marcarTodasLeidas}
+        alMarcarLeida={notificaciones.marcarComoLeida}
         alLimpiar={notificaciones.limpiarBandeja}
         sincronizando={notificaciones.sincronizando}
         errorSincronizacion={notificaciones.errorSincronizacion}

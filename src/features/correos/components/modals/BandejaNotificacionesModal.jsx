@@ -1,9 +1,9 @@
 /**
  * @uso        Bandeja modal de notificaciones de movimientos y sincronización Gmail
- * @funciones  BandejaNotificacionesModal({ abierto, alCerrar, triggerRef, notificaciones, alMarcarTodasLeidas, alLimpiar, sincronizando, errorSincronizacion, estadoCorreos })
+ * @funciones  BandejaNotificacionesModal({ abierto, alCerrar, triggerRef, notificaciones, alMarcarTodasLeidas, alMarcarLeida, alLimpiar, sincronizando, errorSincronizacion, estadoCorreos })
  * @datos      Lista de notificaciones persistidas con asunto, fecha, origen, cuenta y estado de lectura
- * @eventos    Cerrar modal, marcar todas como leídas, limpiar bandeja y abrir detalle de notificación
- * @estados    notificacionSeleccionada (notificación abierta en detalle)
+ * @eventos    Cerrar modal, marcar todas como leídas, marcar como leída al abrir el detalle, limpiar bandeja y abrir detalle de notificación
+ * @estados    idNotificacionSeleccionada (identificador de la notificación abierta en detalle)
  * @usadoPor   CorreosPage
  */
 import { useRef, useState } from "react";
@@ -33,17 +33,20 @@ export default function BandejaNotificacionesModal({
   triggerRef,
   notificaciones,
   alMarcarTodasLeidas,
+  alMarcarLeida,
   alLimpiar,
   sincronizando,
   errorSincronizacion,
   estadoCorreos,
 }) {
-  const [notificacionSeleccionada, setNotificacionSeleccionada] =
+  const [idNotificacionSeleccionada, setIdNotificacionSeleccionada] =
     useState(null);
+  const notificacionSeleccionada =
+    notificaciones.find((n) => n.id === idNotificacionSeleccionada) || null;
   const triggerDetalleRef = useRef(null);
 
   const cerrarBandeja = () => {
-    setNotificacionSeleccionada(null);
+    setIdNotificacionSeleccionada(null);
     alCerrar();
   };
 
@@ -152,7 +155,8 @@ export default function BandejaNotificacionesModal({
                     type="button"
                     onClick={(evento) => {
                       triggerDetalleRef.current = evento.currentTarget;
-                      setNotificacionSeleccionada(notificacion);
+                      setIdNotificacionSeleccionada(notificacion.id);
+                      alMarcarLeida(notificacion.id);
                     }}
                     className={`w-full rounded-xl border p-3 text-left transition-colors hover:border-emerald-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary ${notificacion.leida ? "border-border-line/50 bg-bg-cream/40" : "border-emerald-primary/30 bg-emerald-primary/5"}`}
                     aria-label={`Ver detalle de notificación: ${notificacion.asunto}`}
@@ -187,7 +191,7 @@ export default function BandejaNotificacionesModal({
       <ModalDetalleRegistro
         abierto={abierto && Boolean(notificacionSeleccionada)}
         titulo="Detalle de notificación"
-        alCerrar={() => setNotificacionSeleccionada(null)}
+        alCerrar={() => setIdNotificacionSeleccionada(null)}
         triggerRef={triggerDetalleRef}
         ancho="max-w-lg"
         icono={Bell}
