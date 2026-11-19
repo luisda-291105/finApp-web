@@ -11,7 +11,8 @@ Gestiona los grupos del usuario: listado, creación, edición, eliminación y vi
 - `components/forms/GrupoForm`: campos controlados para crear un grupo.
 - `components/forms/EditarGrupoForm`: campos controlados para actualizar los datos del grupo.
 - `components/modals/CrearGrupoModal`: formulario de creación.
-- `components/modals/GrupoDetalleModal`: fuentes, configuración y chat demostrativo.
+- `components/cards/GrupoConfiguracionCard`: configuración de grupos en `/dashboard/configuracion` (datos, invitaciones, fuentes y Vínculo de Telegram); transicional a la migración de la configuración fuera del modal.
+- `components/modals/GrupoDetalleModal`: fuentes vinculadas y chat con el asistente IA por Telegram.
 
 ## Hooks y servicios
 

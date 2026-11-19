@@ -69,16 +69,16 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Fuentes" })).toBeInTheDocument();
     expect(
-      screen.getByRole("tab", { name: "Chat grupal" }),
+      screen.getByRole("tab", { name: "Asistente IA Telegram" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("viaje@example.test").length).toBeGreaterThan(0);
     expect(
       screen.queryByRole("button", { name: "Editar grupo" }),
     ).not.toBeInTheDocument();
-    await usuario.click(screen.getByRole("button", { name: "Configuración" }));
+    // La configuración del grupo se gestiona en /dashboard/configuracion.
     expect(
-      await screen.findByRole("button", { name: "Editar grupo" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "Configuración" }),
+    ).not.toBeInTheDocument();
   });
 
   it("abre el formulario para registrar un nuevo grupo", async () => {

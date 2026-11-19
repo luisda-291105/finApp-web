@@ -32,6 +32,30 @@ vi.mock("../../services/fuenteServicio", () => ({
   obtenerFuentePorId: () => Promise.resolve(null),
 }));
 
+vi.mock("../../features/grupo/services/gruposService", () => ({
+  obtenerGruposPorUsuario: () => Promise.resolve([]),
+  obtenerGrupos: () => Promise.resolve([]),
+  obtenerGrupoPorUsuario: () => Promise.resolve(null),
+  actualizarGrupo: () => Promise.resolve({}),
+  eliminarGrupo: () => Promise.resolve({}),
+  vincularFuenteAGrupo: () => Promise.resolve({}),
+  desvincularFuenteDeGrupo: () => Promise.resolve({}),
+}));
+
+vi.mock("../../services/telegramServicio", () => ({
+  obtenerEstadoTelegram: () =>
+    Promise.resolve({
+      conectado: false,
+      configurado: false,
+      usuarioTelegram: "",
+      nombreBot: "FinAppBot",
+    }),
+  crearEnlaceTelegram: () => Promise.resolve({}),
+  desvincularTelegram: () => Promise.resolve({}),
+  obtenerMensajesTelegram: () => Promise.resolve([]),
+  enviarMensajeTelegram: () => Promise.resolve({}),
+}));
+
 vi.mock("../../services/gmailServicio", () => ({
   GMAIL_CONFIGURADO: false,
   listarCuentasGmail: () => Promise.resolve([]),

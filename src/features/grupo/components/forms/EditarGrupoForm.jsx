@@ -4,7 +4,7 @@
  * @datos      Presenta valores controlados por el modal de detalle
  * @eventos    Submit y cambios de nombre/descripción
  * @estados    Ninguno
- * @usadoPor   GrupoDetalleModal
+ * @usadoPor   GrupoConfiguracionCard
  */
 /** Renderiza y valida los campos de edición del grupo. */
 export default function EditarGrupoForm({

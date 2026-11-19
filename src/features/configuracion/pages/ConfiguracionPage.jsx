@@ -17,6 +17,7 @@ import TelegramCard from "../components/cards/TelegramCard";
 import CuentasAlmacenamientoCard from "../components/cards/CuentasAlmacenamientoCard";
 import LimpiezaAutomaticaPapelera from "../../correos/components/modals/papelera/LimpiezaAutomaticaPapelera";
 import { usePapelera } from "../../correos/hooks/usePapelera";
+import GrupoConfiguracionCard from "../../grupo/components/cards/GrupoConfiguracionCard";
 import { CrearFuenteModal, PerfilUsuarioModal } from "../components/modals";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { useTema } from "../../../context/TemaContext";
@@ -262,6 +263,7 @@ export default function ConfiguracionPage() {
           alCerrarAviso={papeleraLimpieza.cerrarAviso}
         />
       )}
+      <GrupoConfiguracionCard />
       <CuentasAlmacenamientoCard
         nextcloudAbierto={nextcloudAbierto}
         alAbrirNextcloud={alAbrirNextcloud}
