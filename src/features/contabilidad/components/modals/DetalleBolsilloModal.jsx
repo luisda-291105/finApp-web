@@ -446,7 +446,7 @@ export default function DetalleBolsilloModal({
                                     <ul
                                       className={
                                         mesAbierto
-                                          ? "divide-y divide-border-line/40 border-t border-border-line/40 bg-white/60"
+                                          ? "divide-y divide-border-line/40 border-t border-border-line/40 bg-white/0"
                                           : "hidden"
                                       }
                                     >
