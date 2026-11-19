@@ -129,6 +129,16 @@ antes de tocar código** y no revertir sus ediciones.
   `npm test`: 709/729 con 16 fallos preexistentes y ajenos en `PaginaDashboardInicio`. Revisión
   visual en navegador pendiente (apilado de los dos modales translúcidos).
 
+- **Tarea suelta (eliminar pendiente → papelera de Gmail):** al confirmar «Eliminar» en la bandeja
+  de movimientos por revisar, `useContabilidad` llama a `moverCorreoAPapelera(cuentaId, mensajeId)`
+  usando la referencia `origenId = "cuentaId:mensajeId"` (`referenciaGmailMovimiento` en
+  `contabilidadHelpers`) y solo después borra el movimiento pendiente; si Gmail falla, el movimiento
+  se conserva y se muestra el error. El modal de confirmación explica que el correo va a la
+  papelera. Tras el éxito, la bandeja **permanece abierta** y la fila se retira de la lista
+  (`movimientoEliminado` en `ModalMovimientosPorRevisar`, alimentado por `confirmarEliminarMovimiento`
+  que ahora devuelve `true`/`false`); al reabrir se recarga y se limpia esa marca. Validado:
+  30/30 pruebas focales, build correcto. Revisión visual pendiente.
+
 - **Tarea suelta (placeholders ModalDetalleGrupo):** `placeholder="Nombre del grupo"` en el
   `<input>` Nombre y `placeholder="Descripción del grupo"` en el `<textarea>` Descripción del
   formulario "Datos del grupo" (`src/components/domain/modales/ModalDetalleGrupo.jsx`, línea 228).
@@ -136,3 +146,29 @@ antes de tocar código** y no revertir sus ediciones.
   `ModalDetalleGrupo.test.jsx` específica); `npm test`: 575/579 — 4 fallos preexistentes y ajenos
   en `AsistenteAyuda`/`AsistenteDashboard` (textos estáticos del asistente, no importan el
   archivo modificado); `npm run build` OK. Sin fallos nuevos introducidos.
+
+- **Tarea suelta (feedback de diseño en `/dashboard/contabilidad`):** cuatro ajustes. (1)
+  `DetalleBolsilloModal` pinta cada fila con color, icono y etiqueta según tipo/estado (ingreso
+  verde, gasto rojo, ahorro azul, transferencia violeta, por revisar ámbar), en lugar del tono
+  único por bolsillo. (2) El monto principal del modal es ahora el «Total del mes actual», sumado
+  desde los movimientos del bolsillo (`mesActual()` se exporta desde `contabilidadHelpers` y lo
+  reutiliza `useContabilidad`); el total histórico por bolsillo ya no se muestra ahí. (3) La fila
+  «Balance del mes» de `BolsillosFijosCard` es clicable y abre el nuevo `DetalleBalanceModal`
+  (ingresos − gastos del resumen global), cableado por `BolsillosContablesCards` →
+  `BolsillosContablesCondiciones` → `ContabilidadPage` con retorno de foco. (4) El total de Gastos
+  de noviembre 2026 pasa de `$3.382.337` a `$2.382.337` **sin tocar la BD**: en el backend
+  `SMovimientoContable.resumenGlobal` detecta los GASTO de Gmail cuyo fragmento dice
+  «Transferiste … a la cuenta *X», filtra solo las cuentas propias configuradas en
+  `finapp.contabilidad.cuentas-propias-transferencia` / `CUENTAS_PROPIAS_TRANSFERENCIA` (por defecto
+  `25310487123`), y resta ese monto de `gastos` sumándolo a `transferencias`. La consulta nativa
+  `listarTransferenciasCuentaPorMes` usa `SUBSTRING(..., LOCATE(':', ...) + 1)` para ser portable
+  en MySQL y H2. El detalle del bolsillo sigue mostrando `$2.464.212` (el movimiento no se
+  elimina ni se recataloga) y el parser sigue clasificando «Transferiste» como GASTO. Validación:
+  backend 361/361 y prueba focal 6/6; frontend suites focales 15/15, `npm test` 789 pasadas con
+  los 16 fallos preexistentes de `PaginaDashboardInicio`, build correcto, `git diff --check`
+  limpio en ambos repos. Verificado en BD real: propio `1.000.000` restado, terceros excluidos.
+  Revisión visual completada en `http://localhost:5173/dashboard/contabilidad`: tarjetas con
+  Ingresos `$2.985.989`, Gastos `$2.382.337` y Balance `$603.652`; modal de balance con el
+  desglose correcto; modales de detalle con «TOTAL DEL MES ACTUAL» (`$2.464.212` en Gastos y
+  `$2.985.989` en Ingresos) y filas distinguibles por color/etiqueta (rosa para Gasto, verde para
+  Ingreso).
