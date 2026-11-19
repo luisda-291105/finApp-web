@@ -1,10 +1,10 @@
 /**
  * @uso        Operaciones HTTP propias de grupos
- * @funciones  crearGrupo, obtenerGruposPorUsuario, actualizarGrupo, eliminarGrupo
+ * @funciones  crearGrupo, obtenerGruposPorUsuario, actualizarGrupo, eliminarGrupo, listarMensajesGrupo, enviarMensajeGrupo
  * @datos      Delega el transporte en httpServicio y las rutas en api.config
  * @eventos    Ninguno
  * @estados    Ninguno
- * @usadoPor   useGrupos y componentes del detalle de grupo
+ * @usadoPor   useGrupos, GrupoDetalleModal y componentes del detalle de grupo
  */
 import { getEndpoint } from "../../../config/api.config";
 import {
@@ -77,4 +77,16 @@ export async function vincularFuenteAGrupo(idGrupo, idFuente, idUsuario) {
 export async function desvincularFuenteDeGrupo(idGrupo, idFuente, idUsuario) {
   const ruta = `${rutaBase}/${encodeURIComponent(idGrupo)}/fuentes/${encodeURIComponent(idFuente)}?idUsuario=${encodeURIComponent(idUsuario)}`;
   return eliminar(ruta);
+}
+
+/** Lista los mensajes del chat del grupo, en orden cronológico. */
+export async function listarMensajesGrupo(idGrupo) {
+  return obtener(`${rutaBase}/${encodeURIComponent(idGrupo)}/mensajes`);
+}
+
+/** Envía un mensaje al asistente del grupo y devuelve el par [usuario, asistente]. */
+export async function enviarMensajeGrupo(idGrupo, texto) {
+  return crear(`${rutaBase}/${encodeURIComponent(idGrupo)}/mensajes`, {
+    texto,
+  });
 }

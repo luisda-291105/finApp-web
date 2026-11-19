@@ -1,5 +1,5 @@
 /**
- * @uso        Modal de detalle y chat del grupo (fuentes vinculadas y asistente IA por Telegram)
+ * @uso        Modal de detalle y chat del grupo (fuentes vinculadas y asistente de IA del grupo)
  * @funciones  GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef, alGrupoActualizado })
  * @datos      Gestiona los datos del grupo mediante servicios de dominio
  * @eventos    Cambios de pestaña, desvincular fuente, enviar mensaje y cierre
@@ -11,15 +11,12 @@ import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDet
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import {
   desvincularFuenteDeGrupo,
+  listarMensajesGrupo,
+  enviarMensajeGrupo,
 } from "../../services/gruposService";
-import {
-  enviarMensajeTelegram,
-  obtenerEstadoTelegram,
-  obtenerMensajesTelegram,
-} from "../../../../services/telegramServicio";
 import { AlertaGlobal } from "../../../../features/error";
 
-const PESTANAS = ["Fuentes", "Asistente IA Telegram"];
+const PESTANAS = ["Fuentes", "Asistente IA"];
 
 function listaRespuesta(respuesta) {
   const datos = respuesta?.datos ?? respuesta?.data ?? respuesta?.content;
@@ -28,10 +25,6 @@ function listaRespuesta(respuesta) {
     : Array.isArray(datos)
       ? datos
       : [];
-}
-
-function datosRespuesta(respuesta) {
-  return respuesta?.datos ?? respuesta?.data ?? respuesta ?? {};
 }
 
 /** Presenta los detalles y las fuentes vinculadas al grupo. */
@@ -45,9 +38,8 @@ export default function GrupoDetalleModal({
   const { usuario } = useUsuarioActivo();
   const [pestana, setPestana] = useState("Fuentes");
   const [mensajes, setMensajes] = useState([]);
-  const [estadoTelegram, setEstadoTelegram] = useState(null);
-  const [cargandoTelegram, setCargandoTelegram] = useState(false);
-  const [enviandoTelegram, setEnviandoTelegram] = useState(false);
+  const [cargandoChat, setCargandoChat] = useState(false);
+  const [enviandoMensaje, setEnviandoMensaje] = useState(false);
   const [borrador, setBorrador] = useState("");
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
@@ -69,42 +61,28 @@ export default function GrupoDetalleModal({
   useEffect(() => {
     if (
       !abierto ||
-      pestana !== "Asistente IA Telegram" ||
+      pestana !== "Asistente IA" ||
+      !grupo?.id ||
       !usuario?.idUsuario
     )
       return undefined;
     let vigente = true;
-    let consultando = false;
-    const consultar = async () => {
-      if (consultando) return;
-      consultando = true;
-      try {
-        const [estado, conversacion] = await Promise.all([
-          obtenerEstadoTelegram(),
-          obtenerMensajesTelegram(),
-        ]);
-        if (!vigente) return;
-        setEstadoTelegram(datosRespuesta(estado));
-        setMensajes(listaRespuesta(conversacion));
-        setError("");
-      } catch (fallo) {
+    setCargandoChat(true);
+    listarMensajesGrupo(grupo.id)
+      .then((respuesta) => {
+        if (vigente) setMensajes(listaRespuesta(respuesta));
+      })
+      .catch((fallo) => {
         if (vigente)
-          setError(
-            fallo?.message || "No se pudo consultar el chat de Telegram.",
-          );
-      } finally {
-        consultando = false;
-        if (vigente) setCargandoTelegram(false);
-      }
-    };
-    setCargandoTelegram(true);
-    consultar();
-    const intervalo = window.setInterval(consultar, 3000);
+          setError(fallo?.message || "No se pudo cargar la conversación.");
+      })
+      .finally(() => {
+        if (vigente) setCargandoChat(false);
+      });
     return () => {
       vigente = false;
-      window.clearInterval(intervalo);
     };
-  }, [abierto, pestana, usuario?.idUsuario]);
+  }, [abierto, pestana, grupo?.id, usuario?.idUsuario]);
 
   if (!abierto || !grupo) return null;
 
@@ -137,20 +115,19 @@ export default function GrupoDetalleModal({
   const enviarMensaje = async (evento) => {
     evento.preventDefault();
     const texto = borrador.trim();
-    if (!texto || enviandoTelegram || !estadoTelegram?.conectado) return;
-    setEnviandoTelegram(true);
+    if (!texto || enviandoMensaje || !grupo?.id || !usuario?.idUsuario) return;
+    setEnviandoMensaje(true);
     setError("");
     setAviso("");
     try {
-      await enviarMensajeTelegram(texto, grupo.nombre);
+      const respuesta = await enviarMensajeGrupo(grupo.id, texto);
+      const nuevos = listaRespuesta(respuesta);
+      setMensajes((actuales) => [...actuales, ...nuevos]);
       setBorrador("");
-      setAviso("Mensaje enviado al asistente por Telegram.");
-      const respuesta = await obtenerMensajesTelegram();
-      setMensajes(listaRespuesta(respuesta));
     } catch (fallo) {
-      setError(fallo?.message || "No se pudo enviar el mensaje por Telegram.");
+      setError(fallo?.message || "No se pudo enviar el mensaje.");
     } finally {
-      setEnviandoTelegram(false);
+      setEnviandoMensaje(false);
     }
   };
 
@@ -245,60 +222,37 @@ export default function GrupoDetalleModal({
         </div>
       ) : (
         <div className="mt-5 space-y-4">
-          {estadoTelegram && !estadoTelegram.configurado && (
-            <p
-              role="alert"
-              className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900"
-            >
-              Telegram no está configurado en el backend. Revisa
-              TELEGRAM_BOT_TOKEN y NOMBRE_BOT_TELEGRAM.
-            </p>
-          )}
-          {estadoTelegram?.errorRecepcion && (
-            <p
-              role="alert"
-              className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900"
-            >
-              {estadoTelegram.errorRecepcion}
-            </p>
-          )}
           <section
-            aria-label="Mensajes con el asistente de IA por Telegram"
-            aria-busy={cargandoTelegram}
+            aria-label="Mensajes con el asistente de IA del grupo"
+            aria-busy={cargandoChat}
             className="max-h-72 min-h-36 space-y-2 overflow-y-auto rounded-2xl border border-border-line/50 bg-bg-cream/60 p-4"
           >
             {mensajes.length ? (
-              mensajes.map((mensaje) => (
-                <article
-                  key={mensaje.id}
-                  className={`w-fit max-w-[90%] break-words rounded-xl px-3 py-2 text-sm ${mensaje.rol === "assistant" ? "bg-white text-bg-dark" : "ml-auto bg-emerald-primary text-bg-cream"}`}
-                >
-                  {mensaje.grupo && (
-                    <p
-                      className={`mb-1 text-[11px] font-semibold ${mensaje.rol === "assistant" ? "text-emerald-primary" : "text-bg-cream/80"}`}
-                    >
-                      {mensaje.grupo}
-                    </p>
-                  )}
-                  <p>{mensaje.texto}</p>
-                  <time
-                    className={`mt-1 block text-right text-[10px] ${mensaje.rol === "assistant" ? "text-slate-text" : "text-bg-cream/70"}`}
-                    dateTime={mensaje.fecha}
+              mensajes.map((mensaje) => {
+                const esAsistente = mensaje.rol === "assistant";
+                return (
+                  <article
+                    key={mensaje.idMensaje || mensaje.id}
+                    className={`w-fit max-w-[90%] break-words rounded-xl px-3 py-2 text-sm ${esAsistente ? "bg-white text-bg-dark" : "ml-auto bg-emerald-primary text-bg-cream"}`}
                   >
-                    {new Date(mensaje.fecha).toLocaleTimeString("es-CO", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </time>
-                </article>
-              ))
+                    <p>{mensaje.texto}</p>
+                    <time
+                      className={`mt-1 block text-right text-[10px] ${esAsistente ? "text-slate-text" : "text-bg-cream/70"}`}
+                      dateTime={mensaje.fecha}
+                    >
+                      {new Date(mensaje.fecha).toLocaleTimeString("es-CO", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </article>
+                );
+              })
             ) : (
               <p className="text-sm text-slate-text">
-                {cargandoTelegram
-                  ? "Conectando con Telegram…"
-                  : estadoTelegram?.conectado
-                    ? "Aún no hay mensajes en esta conversación."
-                    : "Vincula Telegram en Configuración para hablar con el asistente de IA de FinApp."}
+                {cargandoChat
+                  ? "Cargando la conversación…"
+                  : "Aún no hay mensajes. Pregúntale algo al asistente sobre tus contactos, grupos, bolsillos o gastos."}
               </p>
             )}
           </section>
@@ -310,25 +264,17 @@ export default function GrupoDetalleModal({
               id="grupo-chat-mensaje"
               value={borrador}
               onChange={(evento) => setBorrador(evento.target.value)}
-              maxLength={3500}
-              disabled={!estadoTelegram?.conectado || enviandoTelegram}
-              placeholder={
-                estadoTelegram?.conectado
-                  ? "Escribe un mensaje"
-                  : "Vincula Telegram en Configuración para escribir"
-              }
+              maxLength={2000}
+              disabled={enviandoMensaje}
+              placeholder="Escribe un mensaje"
               className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60"
             />
             <button
               type="submit"
-              disabled={
-                !estadoTelegram?.conectado ||
-                !borrador.trim() ||
-                enviandoTelegram
-              }
+              disabled={!borrador.trim() || enviandoMensaje}
               className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {enviandoTelegram ? "Enviando…" : "Enviar"}
+              {enviandoMensaje ? "Enviando…" : "Enviar"}
             </button>
           </form>
         </div>

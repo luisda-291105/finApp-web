@@ -69,7 +69,7 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Fuentes" })).toBeInTheDocument();
     expect(
-      screen.getByRole("tab", { name: "Asistente IA Telegram" }),
+      screen.getByRole("tab", { name: "Asistente IA" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("viaje@example.test").length).toBeGreaterThan(0);
     expect(
