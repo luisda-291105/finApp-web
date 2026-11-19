@@ -37,40 +37,43 @@ export default function MetricasCobrosRecurrentes({ datos, cargando }) {
   return (
     <section
       aria-label="Resumen de cobros recurrentes"
-      className="grid gap-3 sm:grid-cols-3"
+      className="grid grid-cols-3 gap-2 sm:gap-3"
     >
-      <Card className="p-4">
-        <div className="flex items-center gap-2 text-sm text-slate-text">
+      <Card className="min-w-0 p-3 sm:p-4">
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-text sm:gap-2 sm:text-sm">
           <CircleDollarSign
-            className="h-4 w-4 text-emerald-primary"
+            className="h-4 w-4 shrink-0 text-emerald-primary"
             aria-hidden="true"
           />
           <span className="hidden sm:inline">
             Gasto recurrente estimado / mes
           </span>
         </div>
-        <p className="mt-2 font-display text-xl font-semibold text-bg-dark">
+        <p className="mt-1.5 break-words font-display text-base font-semibold tabular-nums text-bg-dark sm:mt-2 sm:text-xl">
           {moneda.format(mensualEstimado)}
         </p>
       </Card>
-      <Card className="p-4">
-        <div className="flex items-center gap-2 text-sm text-slate-text">
-          <Repeat className="h-4 w-4 text-emerald-primary" aria-hidden="true" />
+      <Card className="min-w-0 p-3 sm:p-4">
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-text sm:gap-2 sm:text-sm">
+          <Repeat
+            className="h-4 w-4 shrink-0 text-emerald-primary"
+            aria-hidden="true"
+          />
           <span className="hidden sm:inline">Servicios detectados</span>
         </div>
-        <p className="mt-2 font-display text-xl font-semibold text-bg-dark">
+        <p className="mt-1.5 font-display text-base font-semibold tabular-nums text-bg-dark sm:mt-2 sm:text-xl">
           {datos.length}
         </p>
       </Card>
-      <Card className="p-4">
-        <div className="flex items-center gap-2 text-sm text-slate-text">
+      <Card className="min-w-0 p-3 sm:p-4">
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-text sm:gap-2 sm:text-sm">
           <CalendarClock
-            className="h-4 w-4 text-emerald-primary"
+            className="h-4 w-4 shrink-0 text-emerald-primary"
             aria-hidden="true"
           />
           <span className="hidden sm:inline">Próximo cobro estimado</span>
         </div>
-        <p className="mt-2 font-display text-lg font-semibold text-bg-dark">
+        <p className="mt-1.5 break-words font-display text-[11px] font-semibold leading-snug text-bg-dark sm:mt-2 sm:text-lg">
           {proximo
             ? `${proximo.nombre} · ${fecha.format(new Date(`${proximo.proximoCobro}T00:00:00Z`))}`
             : "Sin cobros previstos"}
