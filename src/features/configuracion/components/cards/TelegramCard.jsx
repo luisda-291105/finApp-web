@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import useMinimizadoPersistente from "../../../../hooks/useMinimizadoPersistente";
 import {
   CheckCircle2,
   ChevronDown,
@@ -26,7 +27,12 @@ export default function TelegramCard() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [aviso, setAviso] = useState("");
-  const [abierto, setAbierto] = useState(true);
+  // Persistido en localStorage: la tarjeta conserva su estado al recargar la página.
+  const [minimizadaMensajeria, alternarMensajeria] = useMinimizadoPersistente(
+    "mensajeriaMinimizada",
+    false,
+  );
+  const abierto = !minimizadaMensajeria;
   const [configuracionAbierta, setConfiguracionAbierta] = useState(false);
   const disparadorTelegramRef = useRef(null);
 
@@ -103,7 +109,7 @@ export default function TelegramCard() {
                 type="button"
                 aria-expanded={abierto}
                 aria-controls="mensajeria-contenido"
-                onClick={() => setAbierto((actual) => !actual)}
+                onClick={() => alternarMensajeria()}
                 className="flex min-h-10 items-center gap-2 text-left font-display text-xl font-semibold text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
               >
                 <span>Mensajería</span>

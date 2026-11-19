@@ -7,7 +7,9 @@
  * @usadoPor   ConfiguracionPage
  */
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Card } from "../../../../components/ui";
+import useMinimizadoPersistente from "../../../../hooks/useMinimizadoPersistente";
 import EditarGrupoForm from "../forms/EditarGrupoForm";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 import {
@@ -84,6 +86,10 @@ export default function GrupoConfiguracionCard() {
   const [nombreEditado, setNombreEditado] = useState("");
   const [descripcionEditada, setDescripcionEditada] = useState("");
 
+  const [minimizado, alternarMinimizado] = useMinimizadoPersistente(
+    "grupoMinimizado",
+    false,
+  );
   const grupo = grupos.find(
     (item) => String(item.id) === String(idGrupoSeleccionado),
   );
@@ -325,32 +331,48 @@ export default function GrupoConfiguracionCard() {
 
   return (
     <Card como="section" aria-labelledby="grupo-configuracion-titulo" className="space-y-4 p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 id="grupo-configuracion-titulo" className="font-display text-lg font-semibold text-bg-dark">
-            Grupo
-          </h2>
-          <p className="mt-1 text-xs text-slate-text">
-            Datos del grupo, invitaciones, fuentes y el vínculo con Telegram.
-          </p>
-        </div>
-        {grupos.length > 1 && (
-          <label className="block shrink-0 text-xs text-slate-text">
-            Grupo a configurar
-            <select
-              value={idGrupoSeleccionado ?? ""}
-              onChange={(evento) => setIdGrupoSeleccionado(evento.target.value)}
-              className="mt-1 block w-full max-w-xs rounded-lg border border-border-line bg-bg-cream px-2 py-1.5 text-sm text-bg-dark"
-            >
-              {grupos.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
+      <h2
+        id="grupo-configuracion-titulo"
+        className="font-display text-lg font-semibold text-bg-dark"
+      >
+        <button
+          type="button"
+          onClick={() => alternarMinimizado()}
+          aria-expanded={!minimizado}
+          aria-label={`${minimizado ? "Expandir" : "Minimizar"} el grupo`}
+          className="flex w-full items-center justify-between gap-2 rounded-lg text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+        >
+          <span>Grupo</span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`h-5 w-5 shrink-0 text-slate-text transition-transform ${minimizado ? "-rotate-90" : ""}`}
+          />
+        </button>
+      </h2>
+
+      {!minimizado && (
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <p className="min-w-0 text-xs text-slate-text">
+              Datos del grupo, invitaciones, fuentes y el vínculo con Telegram.
+            </p>
+            {grupos.length > 1 && (
+              <label className="block shrink-0 text-xs text-slate-text">
+                Grupo a configurar
+                <select
+                  value={idGrupoSeleccionado ?? ""}
+                  onChange={(evento) => setIdGrupoSeleccionado(evento.target.value)}
+                  className="mt-1 block w-full max-w-xs rounded-lg border border-border-line bg-bg-cream px-2 py-1.5 text-sm text-bg-dark"
+                >
+                  {grupos.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
 
       {cargandoGrupos && <p role="status" className="text-sm text-slate-text">Cargando tus grupos…</p>}
       {!cargandoGrupos && grupos.length === 0 && (
@@ -634,6 +656,8 @@ export default function GrupoConfiguracionCard() {
         >
           {aviso}
         </p>
+      )}
+        </>
       )}
     </Card>
   );

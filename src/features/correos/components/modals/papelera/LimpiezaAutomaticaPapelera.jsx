@@ -6,13 +6,13 @@
  * @estados    Ninguno propio; el estado en curso llega por props
  * @usadoPor   ConfiguracionPage
  */
-import { useState } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { Card } from "../../../../../components/ui";
 import AvisoPermisoPapelera from "./AvisoPermisoPapelera";
 import ConfiguracionPapelera from "./ConfiguracionPapelera";
 import ListaBlancaRemitentes from "./ListaBlancaRemitentes";
 import VistaPreviaLimpieza from "./VistaPreviaLimpieza";
+import useMinimizadoPersistente from "../../../../../hooks/useMinimizadoPersistente";
 
 const ESTILOS_AVISO = {
   exito:
@@ -35,7 +35,10 @@ export default function LimpiezaAutomaticaPapelera({
   const cuentaGestion =
     cuentas.find((cuenta) => String(cuenta.cuentaId) === cuentaSeleccionada) ||
     null;
-  const [minimizada, setMinimizada] = useState(false);
+  const [minimizada, alternarMinimizada] = useMinimizadoPersistente(
+    "limpiezaMinimizada",
+    false,
+  );
 
   return (
     <Card
@@ -49,7 +52,7 @@ export default function LimpiezaAutomaticaPapelera({
       >
         <button
           type="button"
-          onClick={() => setMinimizada((actual) => !actual)}
+          onClick={() => alternarMinimizada()}
           aria-expanded={!minimizada}
           aria-label={`${minimizada ? "Expandir" : "Minimizar"} la limpieza automática de la papelera`}
           className="flex w-full items-center justify-between gap-2 rounded-lg text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"

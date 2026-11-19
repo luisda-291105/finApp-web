@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LimpiezaAutomaticaPapelera from "../../../../../../features/correos/components/modals/papelera/LimpiezaAutomaticaPapelera";
 
 const configBase = (extra = {}) => ({
@@ -71,7 +71,20 @@ const renderLimpieza = (props = {}) =>
     />,
   );
 
+const almacen = new Map();
+const resetLocalStorageMock = () => {
+  almacen.clear();
+  window.localStorage.getItem.mockImplementation((clave) =>
+    almacen.has(clave) ? almacen.get(clave) : null,
+  );
+  window.localStorage.setItem.mockImplementation((clave, valor) => {
+    almacen.set(clave, String(valor));
+  });
+  window.localStorage.clear.mockImplementation(() => almacen.clear());
+};
+
 afterEach(() => cleanup());
+beforeEach(() => resetLocalStorageMock());
 
 describe("LimpiezaAutomaticaPapelera", () => {
   it("minimiza y expande la sección con el botón del título", async () => {
