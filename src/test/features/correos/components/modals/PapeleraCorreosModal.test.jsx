@@ -142,6 +142,27 @@ describe("PapeleraCorreosModal", () => {
     expect(screen.getByText("El correo ya no está disponible.")).toBeInTheDocument();
   });
 
+  it("minimiza y expande la cuenta con el botón del encabezado", async () => {
+    renderModal({
+      secciones: [seccion({ correos: [correo("m-1")], total: 1 })],
+    });
+
+    expect(screen.getByText("Correo m-1")).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /minimizar la papelera/i }),
+    );
+    expect(screen.queryByText("Correo m-1")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /expandir la papelera/i }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /expandir la papelera/i }),
+    );
+    expect(screen.getByText("Correo m-1")).toBeInTheDocument();
+  });
+
   it("no renderiza la configuración de la limpieza automática (vive en Configuración)", () => {
     renderModal({ secciones: [seccion()] });
 

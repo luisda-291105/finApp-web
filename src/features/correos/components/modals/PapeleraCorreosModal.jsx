@@ -6,7 +6,8 @@
  * @estados    Ninguno propio; recibe el estado de usePapelera por props
  * @usadoPor   CorreosPage
  */
-import { Trash2, X } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Trash2, X } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import AvisoPermisoPapelera from "./papelera/AvisoPermisoPapelera";
 import ListaPapeleraCorreos from "./papelera/ListaPapeleraCorreos";
@@ -47,6 +48,15 @@ export default function PapeleraCorreosModal({
   // con la falta de permiso de una cuenta.
   const vaciaGlobal =
     gmailConectado && !cargando && !hayProblema && !hayCorreos;
+  const [minimizadas, setMinimizadas] = useState(() => new Set());
+  const alternarMinimizada = (cuentaId) =>
+    setMinimizadas((actuales) => {
+      const siguiente = new Set(actuales);
+      const clave = String(cuentaId);
+      if (siguiente.has(clave)) siguiente.delete(clave);
+      else siguiente.add(clave);
+      return siguiente;
+    });
 
   return (
     <ModalDetalleRegistro
@@ -111,33 +121,49 @@ export default function PapeleraCorreosModal({
 
         {gmailConectado &&
           !vaciaGlobal &&
-          secciones.map((seccion) => (
-            <section key={seccion.cuentaId} className="space-y-2">
-              {seccion.email && (
+          secciones.map((seccion) => {
+            const cuentaId = String(seccion.cuentaId);
+            const abierta = !minimizadas.has(cuentaId);
+            const etiquetaCuenta = seccion.email || "esta cuenta";
+            return (
+              <section key={cuentaId} className="space-y-2">
                 <h3 className="font-display text-sm font-semibold text-bg-dark">
-                  {seccion.email}
+                  <button
+                    type="button"
+                    onClick={() => alternarMinimizada(cuentaId)}
+                    aria-expanded={abierta}
+                    aria-label={`${abierta ? "Minimizar" : "Expandir"} la papelera de ${etiquetaCuenta}`}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                  >
+                    <span className="truncate">{etiquetaCuenta}</span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${abierta ? "" : "-rotate-90"}`}
+                    />
+                  </button>
                 </h3>
-              )}
-              {seccion.requierePermiso || seccion.requiereReconexion ? (
-                <AvisoPermisoPapelera
-                  cuentaId={seccion.cuentaId}
-                  email={seccion.email}
-                  requiereReconexion={seccion.requiereReconexion}
-                  autorizando={
-                    String(autorizando) === String(seccion.cuentaId)
-                  }
-                  alAutorizar={alAutorizar}
-                />
-              ) : (
-                <ListaPapeleraCorreos
-                  seccion={seccion}
-                  restaurando={restaurando}
-                  alRestaurar={alRestaurar}
-                  alReintentar={alReintentar}
-                />
-              )}
-            </section>
-          ))}
+                {abierta &&
+                  (seccion.requierePermiso || seccion.requiereReconexion ? (
+                    <AvisoPermisoPapelera
+                      cuentaId={seccion.cuentaId}
+                      email={seccion.email}
+                      requiereReconexion={seccion.requiereReconexion}
+                      autorizando={
+                        String(autorizando) === String(seccion.cuentaId)
+                      }
+                      alAutorizar={alAutorizar}
+                    />
+                  ) : (
+                    <ListaPapeleraCorreos
+                      seccion={seccion}
+                      restaurando={restaurando}
+                      alRestaurar={alRestaurar}
+                      alReintentar={alReintentar}
+                    />
+                  ))}
+              </section>
+            );
+          })}
 
       </div>
     </ModalDetalleRegistro>
