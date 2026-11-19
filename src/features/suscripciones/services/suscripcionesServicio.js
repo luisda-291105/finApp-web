@@ -21,6 +21,7 @@ import {
   obtenerContenidoCorreosFinancierosGmail,
 } from "../../../services/gmailServicio";
 import {
+  correoEnPapelera,
   esCandidatoFinanciero,
   extraerMovimientoSugerido,
 } from "../../correos/utils/correoFinancieroHelpers";
@@ -317,6 +318,7 @@ export async function importarMovimientosGmailPendientes(cuentasGmail = []) {
         },
       ]);
       const correos = (Array.isArray(respuestaCorreos) ? respuestaCorreos : [])
+        .filter((correo) => !correoEnPapelera(correo))
         .filter(esCandidatoFinanciero)
         .slice(0, 5)
         .map((correo) => ({ ...correo, cuentaGmailId: cuenta.id }));

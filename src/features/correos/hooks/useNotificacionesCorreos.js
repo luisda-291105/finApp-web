@@ -17,6 +17,7 @@ import {
   obtenerContenidoCorreosFinancierosGmail,
 } from "../../../services/gmailServicio";
 import {
+  correoEnPapelera,
   esCandidatoFinanciero,
   extraerMovimientoSugerido,
 } from "../utils/correoFinancieroHelpers";
@@ -143,6 +144,7 @@ export function useNotificacionesCorreos({
               (correo) =>
                 String(correo.cuentaGmailId || "") === String(cuentaId),
             )
+            .filter((correo) => !correoEnPapelera(correo))
             .filter(esCandidatoFinanciero)
             .slice(0, 5)
             .map((correo) => ({ ...correo, cuentaGmailId: cuentaId }));

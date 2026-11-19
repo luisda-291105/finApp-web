@@ -1,11 +1,25 @@
 /**
  * @uso        Identifica movimientos sugeridos a partir de correos Gmail
- * @funciones  extraerMovimientoSugerido(correo), esCandidatoFinanciero(correo)
+ * @funciones  extraerMovimientoSugerido(correo), esCandidatoFinanciero(correo), correoEnPapelera(correo)
  * @datos      Recibe metadatos y texto temporal del mensaje; nunca persiste el cuerpo
  * @eventos    Ninguno
  * @estados    Ninguno
  * @usadoPor   useNotificacionesCorreos
  */
+
+/**
+ * Indica si Gmail ya tiene el correo en la Papelera. Se usa antes de importar sugerencias para que
+ * un correo eliminado no vuelva a aparecer en «Movimientos por revisar» desde la caché local.
+ */
+export function correoEnPapelera(correo) {
+  const etiquetas = [
+    ...(Array.isArray(correo?.etiquetas) ? correo.etiquetas : []),
+    ...(Array.isArray(correo?.nombresEtiquetas) ? correo.nombresEtiquetas : []),
+  ].map((etiqueta) => String(etiqueta).trim().toUpperCase());
+  if (etiquetas.includes("TRASH")) return true;
+  const estado = String(correo?.papeleraEstado || "").trim().toUpperCase();
+  return correo?.enPapelera === true || estado === "EN_PAPELERA";
+}
 
 /** Evita pedir el cuerpo de mensajes sin señales de una transacción o etiqueta financiera. */
 export function esCandidatoFinanciero(correo) {

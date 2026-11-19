@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clasificarMovimientoCorreo,
+  correoEnPapelera,
   extraerMovimientoSugerido,
 } from "../../../../features/correos/utils/correoFinancieroHelpers";
 
@@ -70,5 +71,24 @@ describe("correoFinancieroHelpers", () => {
       encabezado: "Alertas y Notificaciones",
     });
     expect(extraerMovimientoSugerido(correo)).toMatchObject({ hora: "16:03" });
+  });
+
+  it("reconoce un correo en la Papelera por etiqueta o por estado local", () => {
+    expect(
+      correoEnPapelera({ etiquetas: ["INBOX", "TRASH"], nombresEtiquetas: [] }),
+    ).toBe(true);
+    expect(correoEnPapelera({ papeleraEstado: "EN_PAPELERA" })).toBe(true);
+    expect(correoEnPapelera({ enPapelera: true })).toBe(true);
+  });
+
+  it("no marca como papelera un correo normal de la bandeja", () => {
+    expect(
+      correoEnPapelera({
+        etiquetas: ["INBOX"],
+        nombresEtiquetas: ["IMPORTANT"],
+        papeleraEstado: "EN_BANDEJA",
+      }),
+    ).toBe(false);
+    expect(correoEnPapelera({})).toBe(false);
   });
 });
