@@ -1009,7 +1009,7 @@ describe("PaginaDashboardInicio (T5 — persistencia en backend)", () => {
     renderPagina();
 
     expect(
-      await screen.findByRole("heading", { name: "Ahorros guardados" }),
+      await screen.findByRole("button", { name: /Ahorros guardados/ }),
     ).toBeInTheDocument();
     expect(muestraMocks.listarMuestras).toHaveBeenCalledTimes(1);
   });
@@ -1046,7 +1046,7 @@ describe("PaginaDashboardInicio (T5 — persistencia en backend)", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Ingresos nuevos" }),
+      await screen.findByRole("button", { name: /Ingresos nuevos/ }),
     ).toBeInTheDocument();
     expect(muestraMocks.crearMuestra).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1141,7 +1141,7 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       });
 
       expect(
-        screen.getByRole("heading", { name: "Ahorros del mes" }),
+        screen.getByRole("button", { name: /Ahorros del mes/ }),
       ).toBeInTheDocument();
       expect(muestraMocks.obtenerDatosMuestra).toHaveBeenCalledWith(
         "contactos",
@@ -1149,11 +1149,13 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
         "todos",
         "todas",
       );
+      const usuario = userEvent.setup();
       const tarjeta = screen.getByRole("button", { name: /Ahorros del mes/ });
       expect(await within(tarjeta).findByText("4")).toBeInTheDocument();
-      expect(
-        within(tarjeta).getByText("Grupos identificados"),
-      ).toBeInTheDocument();
+      // Los detalles viven en el detalle de la muestra (la tarjeta no los renderiza).
+      await usuario.click(tarjeta);
+      const dialogo = await screen.findByRole("dialog");
+      expect(within(dialogo).getByText("Grupos identificados")).toBeInTheDocument();
     });
 
     it("muestra valores actuales de suscripciones, contabilidad, correo y contactos", async () => {
@@ -1309,15 +1311,17 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
           ["cuenta-1"],
         );
       });
-      const tarjeta = screen.getByRole("button", { name: /Correo personal/ });
+      // La tarjeta simplificada solo muestra la gráfica; la cuenta elegida
+      // quedó verificada en la llamada al servicio (assert anterior).
       expect(
-        within(tarjeta).getByText(/personal@example\.test/),
+        screen.getByRole("button", { name: /Correo personal/ }),
       ).toBeInTheDocument();
     });
   });
 
   describe("métrica (AC-14)", () => {
     it("muestra el valor y la variación calculada desde la contabilidad", async () => {
+      const usuario = userEvent.setup();
       renderPagina();
       await crearMuestra({
         titulo: "Balance",
@@ -1329,7 +1333,10 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       expect(
         (await within(tarjeta).findAllByText("$3.473.000")).length,
       ).toBeGreaterThan(0);
-      expect(screen.getByText("+12.4 %")).toBeInTheDocument();
+      // La variación vive en el detalle de la muestra (la tarjeta solo muestra la gráfica).
+      await usuario.click(tarjeta);
+      const dialogo = await screen.findByRole("dialog");
+      expect(within(dialogo).getByText("+12.4 %")).toBeInTheDocument();
     });
   });
 
@@ -1347,7 +1354,6 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
     expect(within(tarjeta).getAllByText("$3.473.000").length).toBeGreaterThan(
       0,
     );
-    expect(within(tarjeta).getAllByText("Fuente").length).toBeGreaterThan(0);
 
     await userEvent.click(tarjeta);
     const dialogo = await screen.findByRole("dialog");
@@ -1398,22 +1404,23 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
         tipo: "metrica",
       });
 
-      // Todas permanecen visibles (AC-9).
+      // Todas permanecen visibles (AC-9). El título viaja como nombre accesible
+      // de la tarjeta (la tarjeta simplificada solo muestra la gráfica).
       expect(
-        screen.getByRole("heading", { name: "Primera muestra" }),
+        screen.getByRole("button", { name: /Primera muestra,/ }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("heading", { name: "Segunda muestra" }),
+        screen.getByRole("button", { name: /Segunda muestra,/ }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("heading", { name: "Tercera muestra" }),
+        screen.getByRole("button", { name: /Tercera muestra,/ }),
       ).toBeInTheDocument();
 
       // Orden de creación: el DOM respeta el orden en que se guardaron (AC-10).
       const lista = screen.getByTestId("lista-muestras");
-      const titulos = [...lista.querySelectorAll("li h2")].map(
-        (titulo) => titulo.textContent,
-      );
+      const titulos = [
+        ...lista.querySelectorAll("article[aria-label]"),
+      ].map((tarjeta) => tarjeta.getAttribute("aria-label").split(",")[0]);
       expect(titulos).toEqual([
         "Primera muestra",
         "Segunda muestra",
@@ -1439,7 +1446,7 @@ describe("PaginaDashboardInicio (T6 — renderizado de muestras por tipo)", () =
       ).toBeGreaterThan(0);
       // La muestra sigue identificable por su título (la activación llega en T8).
       expect(
-        screen.getByRole("heading", { name: "Fuente huérfana" }),
+        screen.getByRole("button", { name: /Fuente huérfana,/ }),
       ).toBeInTheDocument();
     });
 
@@ -1532,8 +1539,10 @@ describe("PaginaDashboardInicio (T7 — superficie mixta y rejilla responsiva)",
       expect(muestraMocks.actualizarOrdenMuestras).toHaveBeenCalledWith([2, 1]),
     );
     const titulos = [
-      ...screen.getByTestId("lista-muestras").querySelectorAll("li h2"),
-    ].map((titulo) => titulo.textContent);
+      ...screen
+        .getByTestId("lista-muestras")
+        .querySelectorAll("article[aria-label]"),
+    ].map((tarjeta) => tarjeta.getAttribute("aria-label").split(",")[0]);
     expect(titulos).toEqual(["Segunda", "Primera"]);
   });
 
@@ -1544,7 +1553,8 @@ describe("PaginaDashboardInicio (T7 — superficie mixta y rejilla responsiva)",
     ]);
     renderPagina();
     const lista = screen.getByTestId("lista-muestras");
-    const origen = await screen.findByText("Primera");
+    // La tarjeta simplificada no muestra el título; se identifica por su nombre accesible.
+    const origen = await screen.findByRole("button", { name: /Primera,/ });
     const handle = origen.closest("li").querySelector('[draggable="true"]');
     const destino = lista.querySelector('[data-muestra-id="2"]');
     const dataTransfer = {
@@ -1568,8 +1578,8 @@ describe("PaginaDashboardInicio (T7 — superficie mixta y rejilla responsiva)",
     await waitFor(() =>
       expect(muestraMocks.actualizarOrdenMuestras).toHaveBeenCalledWith([2, 1]),
     );
-    const titulos = [...lista.querySelectorAll("li h2")].map(
-      (titulo) => titulo.textContent,
+    const titulos = [...lista.querySelectorAll("article[aria-label]")].map(
+      (tarjeta) => tarjeta.getAttribute("aria-label").split(",")[0],
     );
     expect(titulos).toEqual(["Segunda", "Primera"]);
   });
@@ -1626,8 +1636,9 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
 
   /** Abre el modal de detalle de la muestra creada y hace clic en "Ir a la fuente". */
   const abrirDetalleYIrAFuente = async () => {
-    const heading = screen.getByRole("heading", { name: "Muestra prueba" });
-    const button = heading.closest('[role="button"]');
+    const button = screen.getByRole("button", {
+      name: /^Muestra prueba,/,
+    });
     await userEvent.click(button);
 
     await waitFor(() => expect(obtenerPanelDetalle()).toBeTruthy());
@@ -1691,8 +1702,7 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
       tipo: "tarjeta",
     });
 
-    const heading = screen.getByRole("heading", { name: "Muestra teclado" });
-    const button = heading.closest('[role="button"]');
+    const button = screen.getByRole("button", { name: /^Muestra teclado,/ });
     await userEvent.click(button);
 
     await waitFor(() => expect(obtenerPanelDetalle()).toBeTruthy());
@@ -1712,8 +1722,7 @@ describe("PaginaDashboardInicio (T8 — muestras clicables y redirección por fu
       tipo: "metrica",
     });
 
-    const heading = screen.getByRole("heading", { name: "Muestra espacio" });
-    const button = heading.closest('[role="button"]');
+    const button = screen.getByRole("button", { name: /^Muestra espacio,/ });
     await userEvent.click(button);
 
     await waitFor(() => expect(obtenerPanelDetalle()).toBeTruthy());
