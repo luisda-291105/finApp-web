@@ -7,7 +7,7 @@
  * @usadoPor   CorreosPage
  */
 import { useState } from "react";
-import { ChevronDown, Trash2, X } from "lucide-react";
+import { ChevronRight, Trash2, X } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import AvisoPermisoPapelera from "./papelera/AvisoPermisoPapelera";
 import ListaPapeleraCorreos from "./papelera/ListaPapeleraCorreos";
@@ -136,9 +136,9 @@ export default function PapeleraCorreosModal({
                     className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
                   >
                     <span className="truncate">{etiquetaCuenta}</span>
-                    <ChevronDown
+                    <ChevronRight
                       aria-hidden="true"
-                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${abierta ? "" : "-rotate-90"}`}
+                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${abierta ? "rotate-90" : ""}`}
                     />
                   </button>
                 </h3>

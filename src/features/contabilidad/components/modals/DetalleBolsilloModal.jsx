@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   CalendarDays,
-  ChevronDown,
+  ChevronRight,
   Clock3,
   LoaderCircle,
   Pencil,
@@ -391,10 +391,6 @@ export default function DetalleBolsilloModal({
                               className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-bg-cream/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
                             >
                               <span className="flex items-center gap-2 text-sm font-semibold text-bg-dark">
-                                <ChevronDown
-                                  aria-hidden="true"
-                                  className={`h-4 w-4 text-slate-text transition-transform ${anioAbierto ? "" : "-rotate-90"}`}
-                                />
                                 <span>
                                   {grupoAnio.anio === "sin-fecha"
                                     ? "Sin fecha"
@@ -405,8 +401,12 @@ export default function DetalleBolsilloModal({
                                   </span>
                                 </span>
                               </span>
-                              <span className="text-sm font-semibold tabular-nums text-bg-dark">
+                              <span className="flex items-center gap-2 text-sm font-semibold tabular-nums text-bg-dark">
                                 {formatoMoneda.format(grupoAnio.total)}
+                                <ChevronRight
+                                  aria-hidden="true"
+                                  className={`h-4 w-4 text-slate-text transition-transform ${anioAbierto ? "rotate-90" : ""}`}
+                                />
                               </span>
                             </button>
                             <div
@@ -429,10 +429,6 @@ export default function DetalleBolsilloModal({
                                       className="flex w-full items-center justify-between gap-3 bg-bg-cream/40 px-3 py-2 text-left transition-colors hover:bg-bg-cream/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
                                     >
                                       <span className="flex items-center gap-2 text-sm font-medium text-bg-dark">
-                                        <ChevronDown
-                                          aria-hidden="true"
-                                          className={`h-4 w-4 text-slate-text transition-transform ${mesAbierto ? "" : "-rotate-90"}`}
-                                        />
                                         <span className="hidden sm:inline">
                                           {grupo.etiqueta}
                                         </span>
@@ -445,8 +441,12 @@ export default function DetalleBolsilloModal({
                                           · {grupo.movimientos.length}mov
                                         </span>
                                       </span>
-                                      <span className="text-xs font-semibold tabular-nums text-slate-text">
+                                      <span className="flex items-center gap-2 text-xs font-semibold tabular-nums text-slate-text">
                                         Total: {formatoMoneda.format(grupo.total)}
+                                        <ChevronRight
+                                          aria-hidden="true"
+                                          className={`h-4 w-4 shrink-0 transition-transform ${mesAbierto ? "rotate-90" : ""}`}
+                                        />
                                       </span>
                                     </button>
                                     <ul

@@ -7,7 +7,7 @@
  * @usadoPor   SuscripcionesPage
  */
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
 import { Card } from "../../../../components/ui";
 
 export default function SuscripcionesManualesSection({
@@ -39,11 +39,11 @@ export default function SuscripcionesManualesSection({
           >
             Suscripciones registradas
           </h2>
-          <span className="inline-flex items-center gap-2 text-sm text-slate-text">
+          <span className="inline-flex items-center gap-3 text-sm text-slate-text">
             {suscripciones.length} manuales
-            <ChevronDown
+            <ChevronRight
               aria-hidden="true"
-              className={`h-5 w-5 transition-transform ${colapsado ? "" : "rotate-180"}`}
+              className={`h-5 w-5 shrink-0 transition-transform ${colapsado ? "" : "rotate-90"}`}
             />
           </span>
         </button>

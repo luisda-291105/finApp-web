@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Card } from "../../../../components/ui";
+import useMinimizadoPersistente from "../../../../hooks/useMinimizadoPersistente";
 import { FuenteDetalleModal } from "../modals";
 import FuenteItem from "./FuenteItem";
 import EstadoFuente from "./EstadoFuente";
@@ -31,7 +32,12 @@ export default function FuentesRegistradas({
   errorOperacionFuente,
 }) {
   const [fuenteSeleccionadaId, setFuenteSeleccionadaId] = useState(null);
-  const [abierto, setAbierto] = useState(true);
+  // Persistido en localStorage: la tarjeta recuerda si quedó minimizada al recargar.
+  const [minimizadaFuentes, alternarFuentes] = useMinimizadoPersistente(
+    "fuentesMinimizada",
+    false,
+  );
+  const abierto = !minimizadaFuentes;
   const fuenteTriggerRef = useRef(null);
   const cuentaGmailConectada = Boolean(
     gmailConectado && !errorGmail && !conexionCargando,
@@ -66,21 +72,12 @@ export default function FuentesRegistradas({
     <>
       <Card className="space-y-4 p-6">
         <div className="flex flex-col gap-4 border-t border-border-line/60 pt-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2>
-              <button
-                type="button"
-                aria-expanded={abierto}
-                aria-controls="fuentes-registradas-contenido"
-                onClick={() => setAbierto((actual) => !actual)}
-                className="flex min-h-10 items-center gap-2 text-left font-display text-xl font-semibold text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
-              >
-                <span>Fuentes registradas</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`h-5 w-5 transition-transform ${abierto ? "rotate-180" : ""}`}
-                />
-              </button>
+          <div className="min-w-0">
+            <h2
+              id="fuentes-registradas-titulo"
+              className="font-display text-xl font-semibold text-bg-dark"
+            >
+              Fuentes registradas
             </h2>
             {abierto && (
               <p className="mt-1 text-sm text-slate-text">
@@ -88,28 +85,43 @@ export default function FuentesRegistradas({
               </p>
             )}
           </div>
-          {abierto && (
-            <div className="flex flex-wrap gap-2">
-              {cuentasGmail.length > 0 && (
-                <a
-                  href={`https://mail.google.com/mail/u/?authuser=${encodeURIComponent((cuentasGmail.find((c) => String(c.id) === String(cuentaSeleccionadaId)) || cuentasGmail[0])?.email || "")}#sub`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border-line px-4 py-2 text-sm font-medium text-bg-dark outline-none transition-colors hover:border-emerald-primary/50 hover:text-emerald-primary focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2"
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+            {abierto && (
+              <div className="flex flex-wrap gap-2">
+                {cuentasGmail.length > 0 && (
+                  <a
+                    href={`https://mail.google.com/mail/u/?authuser=${encodeURIComponent((cuentasGmail.find((c) => String(c.id) === String(cuentaSeleccionadaId)) || cuentasGmail[0])?.email || "")}#sub`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border-line px-4 py-2 text-sm font-medium text-bg-dark outline-none transition-colors hover:border-emerald-primary/50 hover:text-emerald-primary focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2"
+                  >
+                    Administrar en Gmail
+                  </a>
+                )}
+                <button
+                  ref={disparadorFuentesRef}
+                  type="button"
+                  className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2"
+                  onClick={abrirModalFuentes}
                 >
-                  Administrar en Gmail
-                </a>
-              )}
-              <button
-                ref={disparadorFuentesRef}
-                type="button"
-                className="min-h-11 rounded-xl bg-emerald-primary px-4 py-2 font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-emerald-primary focus-visible:ring-offset-2"
-                onClick={abrirModalFuentes}
-              >
-                Registrar fuentes
-              </button>
-            </div>
-          )}
+                  Registrar fuentes
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              aria-expanded={abierto}
+              aria-controls="fuentes-registradas-contenido"
+              onClick={() => alternarFuentes()}
+              aria-label={`${abierto ? "Minimizar" : "Expandir"} fuentes registradas`}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-text transition-colors hover:bg-bg-cream/60 hover:text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+            >
+              <ChevronRight
+                aria-hidden="true"
+                className={`h-5 w-5 transition-transform ${abierto ? "rotate-90" : ""}`}
+              />
+            </button>
+          </div>
         </div>
 
         <div

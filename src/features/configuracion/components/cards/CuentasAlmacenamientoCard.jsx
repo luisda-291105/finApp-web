@@ -11,11 +11,12 @@ import {
   Cloud,
   ExternalLink,
   HardDrive,
-  ChevronDown,
+  ChevronRight,
   RefreshCcw,
   Unplug,
 } from "lucide-react";
 import { Card } from "../../../../components/ui";
+import useMinimizadoPersistente from "../../../../hooks/useMinimizadoPersistente";
 import {
   conectarGoogleDrive,
   desconectarCuenta,
@@ -66,7 +67,10 @@ export default function CuentasAlmacenamientoCard({
   const [cuentaReconectando, setCuentaReconectando] = useState(null);
   const [modalDriveAbierto, setModalDriveAbierto] = useState(false);
   const [cuentaSeleccionadaDrive, setCuentaSeleccionadaDrive] = useState(null);
-  const [abierto, setAbierto] = useState(true);
+  // Persistido en localStorage: la tarjeta recuerda si quedó minimizada al recargar.
+  const [minimizadaAlmacenamiento, alternarAlmacenamiento] =
+    useMinimizadoPersistente("almacenamientoMinimizada", false);
+  const abierto = !minimizadaAlmacenamiento;
 
   const cargarConexiones = useCallback(async () => {
     setCargando(true);
@@ -146,34 +150,40 @@ export default function CuentasAlmacenamientoCard({
   return (
     <>
       <Card className="space-y-3 p-5">
-        <div className="flex items-center gap-3">
-          <HardDrive
-            className="h-5 w-5 shrink-0 text-emerald-primary"
-            aria-hidden="true"
-          />
-          <div>
-            <h2>
-              <button
-                type="button"
-                aria-expanded={abierto}
-                aria-controls="cuentas-almacenamiento-contenido"
-                onClick={() => setAbierto((actual) => !actual)}
-                className="flex min-h-10 items-center gap-2 text-left font-display text-lg font-semibold text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <HardDrive
+              className="h-5 w-5 shrink-0 text-emerald-primary"
+              aria-hidden="true"
+            />
+            <div className="min-w-0">
+              <h2
+                id="cuentas-almacenamiento-titulo"
+                className="font-display text-lg font-semibold text-bg-dark"
               >
-                <span>Cuentas de almacenamiento conectadas</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`h-5 w-5 shrink-0 transition-transform ${abierto ? "rotate-180" : ""}`}
-                />
-              </button>
-            </h2>
-            {abierto && (
-              <p className="text-sm text-slate-text">
-                Administra las cuentas vinculadas y conecta nuevas cuentas de
-                almacenamiento.
-              </p>
-            )}
+                Cuentas de almacenamiento conectadas
+              </h2>
+              {abierto && (
+                <p className="text-sm text-slate-text">
+                  Administra las cuentas vinculadas y conecta nuevas cuentas
+                  de almacenamiento.
+                </p>
+              )}
+            </div>
           </div>
+          <button
+            type="button"
+            aria-expanded={abierto}
+            aria-controls="cuentas-almacenamiento-contenido"
+            onClick={() => alternarAlmacenamiento()}
+            aria-label={`${abierto ? "Minimizar" : "Expandir"} cuentas de almacenamiento`}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-text transition-colors hover:bg-bg-cream/60 hover:text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+          >
+            <ChevronRight
+              aria-hidden="true"
+              className={`h-5 w-5 transition-transform ${abierto ? "rotate-90" : ""}`}
+            />
+          </button>
         </div>
 
         <div

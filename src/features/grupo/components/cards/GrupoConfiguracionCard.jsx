@@ -7,7 +7,7 @@
  * @usadoPor   ConfiguracionPage
  */
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import useMinimizadoPersistente from "../../../../hooks/useMinimizadoPersistente";
 import EditarGrupoForm from "../forms/EditarGrupoForm";
@@ -331,24 +331,26 @@ export default function GrupoConfiguracionCard() {
 
   return (
     <Card como="section" aria-labelledby="grupo-configuracion-titulo" className="space-y-4 p-6">
-      <h2
-        id="grupo-configuracion-titulo"
-        className="font-display text-lg font-semibold text-bg-dark"
-      >
+      <div className="flex items-center justify-between gap-3">
+        <h2
+          id="grupo-configuracion-titulo"
+          className="font-display text-lg font-semibold text-bg-dark"
+        >
+          Grupo
+        </h2>
         <button
           type="button"
           onClick={() => alternarMinimizado()}
           aria-expanded={!minimizado}
           aria-label={`${minimizado ? "Expandir" : "Minimizar"} el grupo`}
-          className="flex w-full items-center justify-between gap-2 rounded-lg text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-text transition-colors hover:bg-bg-cream/60 hover:text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
         >
-          <span>Grupo</span>
-          <ChevronDown
+          <ChevronRight
             aria-hidden="true"
-            className={`h-5 w-5 shrink-0 text-slate-text transition-transform ${minimizado ? "-rotate-90" : ""}`}
+            className={`h-5 w-5 transition-transform ${minimizado ? "" : "rotate-90"}`}
           />
         </button>
-      </h2>
+      </div>
 
       {!minimizado && (
         <>

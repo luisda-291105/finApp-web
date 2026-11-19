@@ -6,6 +6,7 @@
  * @estados    Ninguno
  * @usadoPor   MuestraVisual
  */
+import { ChevronRight } from "lucide-react";
 import LineaMetrica from "./LineaMetrica";
 import {
   SEGMENTOS_CONTABLES,
@@ -108,12 +109,10 @@ export default function MetricaMuestra({
               <span className={`text-[10px] ${etiqueta}`}>
                 Último mes · {serieSemanal.length} semanas
               </span>
-              <span
+              <ChevronRight
                 aria-hidden="true"
-                className="text-emerald-primary transition-transform group-open:rotate-180"
-              >
-                ⌄
-              </span>
+                className="h-4 w-4 text-emerald-primary transition-transform group-open:rotate-90"
+              />
             </span>
           </summary>
           <ul

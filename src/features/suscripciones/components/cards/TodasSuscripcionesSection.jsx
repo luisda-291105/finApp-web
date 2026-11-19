@@ -7,7 +7,7 @@
  * @usadoPor   SuscripcionesPage
  */
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "../../../../components/ui";
 import SuscripcionUnificadaCard from "./SuscripcionUnificadaCard";
@@ -198,9 +198,9 @@ export default function TodasSuscripcionesSection({
                       {grupo.items.length}
                     </span>
                     <span className="h-px flex-1 bg-border-line/50" />
-                    <ChevronDown
+                    <ChevronRight
                       aria-hidden="true"
-                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${colapsado ? "-rotate-90" : ""}`}
+                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${colapsado ? "" : "rotate-90"}`}
                     />
                   </button>
                 </li>,

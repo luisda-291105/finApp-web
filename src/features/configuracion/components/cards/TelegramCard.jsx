@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import useMinimizadoPersistente from "../../../../hooks/useMinimizadoPersistente";
 import {
   CheckCircle2,
-  ChevronDown,
+  ChevronRight,
   MessageCircle,
   RefreshCw,
   Settings,
@@ -98,26 +98,17 @@ export default function TelegramCard() {
 
   return (
     <Card className="space-y-4 p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="rounded-xl bg-emerald-primary/10 p-2 text-emerald-primary">
             <MessageCircle className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <h2>
-              <button
-                type="button"
-                aria-expanded={abierto}
-                aria-controls="mensajeria-contenido"
-                onClick={() => alternarMensajeria()}
-                className="flex min-h-10 items-center gap-2 text-left font-display text-xl font-semibold text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
-              >
-                <span>Mensajería</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`h-5 w-5 transition-transform ${abierto ? "rotate-180" : ""}`}
-                />
-              </button>
+            <h2
+              id="mensajeria-titulo"
+              className="font-display text-xl font-semibold text-bg-dark"
+            >
+              Mensajería
             </h2>
             {abierto && (
               <p className="mt-1 text-sm text-slate-text">
@@ -126,6 +117,19 @@ export default function TelegramCard() {
             )}
           </div>
         </div>
+        <button
+          type="button"
+          aria-expanded={abierto}
+          aria-controls="mensajeria-contenido"
+          onClick={() => alternarMensajeria()}
+          aria-label={`${abierto ? "Minimizar" : "Expandir"} mensajería`}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-text transition-colors hover:bg-bg-cream/60 hover:text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+        >
+          <ChevronRight
+            aria-hidden="true"
+            className={`h-5 w-5 transition-transform ${abierto ? "rotate-90" : ""}`}
+          />
+        </button>
       </div>
 
       <div id="mensajeria-contenido" hidden={!abierto}>

@@ -6,7 +6,7 @@
  * @estados    Ninguno propio; el estado en curso llega por props
  * @usadoPor   ConfiguracionPage
  */
-import { ChevronDown, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { Card } from "../../../../../components/ui";
 import AvisoPermisoPapelera from "./AvisoPermisoPapelera";
 import ConfiguracionPapelera from "./ConfiguracionPapelera";
@@ -46,24 +46,26 @@ export default function LimpiezaAutomaticaPapelera({
       aria-labelledby="limpieza-papelera-titulo"
       className="space-y-3 p-6"
     >
-      <h2
-        id="limpieza-papelera-titulo"
-        className="font-display text-lg font-semibold text-bg-dark"
-      >
+      <div className="flex items-center justify-between gap-3">
+        <h2
+          id="limpieza-papelera-titulo"
+          className="font-display text-lg font-semibold text-bg-dark"
+        >
+          Limpieza automática de la papelera
+        </h2>
         <button
           type="button"
           onClick={() => alternarMinimizada()}
           aria-expanded={!minimizada}
           aria-label={`${minimizada ? "Expandir" : "Minimizar"} la limpieza automática de la papelera`}
-          className="flex w-full items-center justify-between gap-2 rounded-lg text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-text transition-colors hover:bg-bg-cream/60 hover:text-bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
         >
-          <span>Limpieza automática de la papelera</span>
-          <ChevronDown
+          <ChevronRight
             aria-hidden="true"
-            className={`h-5 w-5 shrink-0 text-slate-text transition-transform ${minimizada ? "-rotate-90" : ""}`}
+            className={`h-5 w-5 transition-transform ${minimizada ? "" : "rotate-90"}`}
           />
         </button>
-      </h2>
+      </div>
 
       {!minimizada && (
         <>
