@@ -98,7 +98,21 @@ function perteneceAlBolsillo(movimiento, bolsillo) {
   const bolsilloOrigen =
     String(movimiento.origenTipo || "").toUpperCase() === "BOLSILLO" &&
     movimiento.origenId === bolsillo.idBolsillo;
-  return bolsilloDestino || bolsilloOrigen;
+  if (bolsilloDestino || bolsilloOrigen) return true;
+  // Los gastos confirmados sin bolsillo (importados de Gmail) también forman parte del
+  // detalle del mes del bolsillo Gastos: así el modal resume todos los movimientos
+  // registrados como gasto, como exige el resumen.
+  const tipoBolsillo = String(bolsillo?.tipo || "")
+    .trim()
+    .toUpperCase();
+  const tipoMovimiento = String(movimiento?.tipo || "")
+    .trim()
+    .toUpperCase();
+  const estadoRevision = String(movimiento?.estadoRevision || "")
+    .trim()
+    .toUpperCase();
+  if (estadoRevision === "POR_REVISAR") return false;
+  return tipoBolsillo === "GASTO" && !movimiento?.idBolsillo && tipoMovimiento === "GASTO";
 }
 
 /** Detalle financiero del bolsillo con total de movimientos agrupado por año y mes. */

@@ -333,6 +333,79 @@ describe("PaginaDashboardContabilidad", () => {
     expect(within(filaAhorro).getByText(/700\.000/)).toHaveClass("text-sky-700");
   });
 
+  it("resume en el modal del bolsillo Gastos también los gastos globales sin bolsillo", async () => {
+    const usuario = userEvent.setup();
+    const claveMes = mesActual();
+    const movimientosDetalle = [
+      {
+        idMovimiento: "gasto-fijo",
+        idBolsillo: "fijo-gasto",
+        tipo: "GASTO",
+        estadoRevision: "CONFIRMADO",
+        monto: 200000,
+        fecha: `${claveMes}-10`,
+        concepto: "Gasto del bolsillo",
+        categoria: "Compras",
+        origenNombre: "Tienda",
+      },
+      {
+        idMovimiento: "gasto-global",
+        idBolsillo: null,
+        tipo: "GASTO",
+        estadoRevision: "CONFIRMADO",
+        monto: 63125,
+        fecha: `${claveMes}-14`,
+        concepto: "Gasto global Gmail",
+        categoria: "Compras y pagos",
+        origenNombre: "Farmacia",
+      },
+      {
+        idMovimiento: "transferencia-global",
+        idBolsillo: null,
+        tipo: "TRANSFERENCIA",
+        estadoRevision: "CONFIRMADO",
+        monto: 855000,
+        fecha: `${claveMes}-15`,
+        concepto: "Transferencia global Gmail",
+        categoria: "Transferencias",
+        origenNombre: "Banco",
+      },
+      {
+        idMovimiento: "por-revisar-global",
+        idBolsillo: null,
+        tipo: "GASTO",
+        estadoRevision: "POR_REVISAR",
+        monto: 999999,
+        fecha: `${claveMes}-16`,
+        concepto: "Pendiente por revisar",
+        categoria: "Compras",
+        origenNombre: "Pendiente",
+      },
+    ];
+    listarMovimientos.mockImplementation(() =>
+      Promise.resolve(movimientosDetalle),
+    );
+
+    renderPagina();
+    const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
+    const cardFijos = within(rejilla).getByRole("article", {
+      name: "Bolsillos fijos",
+    });
+    await usuario.click(
+      within(cardFijos).getByRole("button", { name: "Ver detalles de Gastos" }),
+    );
+    const dialogo = await screen.findByRole("dialog", { name: "Gastos" });
+    expect(await within(dialogo).findByText("Gasto del bolsillo")).toBeInTheDocument();
+    expect(await within(dialogo).findByText("Gasto global Gmail")).toBeInTheDocument();
+
+    const etiquetaMes = within(dialogo).getByText("Total del mes actual");
+    // 200.000 (bolsillo) + 63.125 (gasto global); la transferencia global y
+    // lo pendiente por revisar no cuentan como gasto del mes.
+    expect(etiquetaMes.nextElementSibling?.textContent).toContain("263.125");
+    expect(within(dialogo).queryByText("Transferencia global Gmail")).toBeNull();
+    expect(within(dialogo).queryByText("Pendiente por revisar")).toBeNull();
+  });
+
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {
     const usuario = userEvent.setup();
     renderPagina();
