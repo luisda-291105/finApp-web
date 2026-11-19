@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   CalendarDays,
@@ -13,6 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
+import DetalleMovimientoModal from "./DetalleMovimientoModal";
 import { listarMovimientos } from "../../services/movimientosService";
 import {
   claveMesMovimiento,
@@ -123,8 +124,13 @@ export default function DetalleBolsilloModal({
   alCerrar,
   alEditar,
   alEliminar,
+  alEditarMovimiento,
+  alEliminarMovimiento,
+  revision = 0,
 }) {
   const [movimientos, setMovimientos] = useState([]);
+  const [movimientoDetalle, setMovimientoDetalle] = useState(null);
+  const disparadorDetalleRef = useRef(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
   const tipo = String(bolsillo?.tipo || "")
@@ -161,7 +167,7 @@ export default function DetalleBolsilloModal({
     return () => {
       vigente = false;
     };
-  }, [abierto, bolsillo?.idBolsillo]);
+  }, [abierto, bolsillo?.idBolsillo, revision]);
 
   const reciente = movimientos[0];
   const claveMesActual = useMemo(() => mesActual(), []);
@@ -454,11 +460,27 @@ export default function DetalleBolsilloModal({
                                         const estilo =
                                           estiloDelMovimiento(movimiento);
                                         const IconoMovimiento = estilo.Icono;
+                                        const nombreMovimiento =
+                                          movimiento.concepto?.trim() ||
+                                          movimiento.categoria ||
+                                          "Movimiento";
                                         return (
                                           <li
                                             key={movimiento.idMovimiento}
-                                            className="flex items-center gap-3 py-2 pl-11 pr-3"
+                                            className="pl-11 pr-3"
                                           >
+                                            <button
+                                              type="button"
+                                              onClick={(evento) => {
+                                                disparadorDetalleRef.current =
+                                                  evento.currentTarget;
+                                                setMovimientoDetalle(
+                                                  movimiento,
+                                                );
+                                              }}
+                                              aria-label={`Ver detalle del movimiento ${nombreMovimiento}`}
+                                              className="flex w-full items-center gap-3 rounded-lg py-2 text-left transition-colors hover:bg-bg-cream/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                                            >
                                             <span
                                               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${estilo.fondo} ${estilo.texto}`}
                                             >
@@ -469,9 +491,7 @@ export default function DetalleBolsilloModal({
                                             </span>
                                             <div className="min-w-0 flex-1">
                                               <p className="truncate text-sm font-semibold text-bg-dark">
-                                                {movimiento.concepto?.trim() ||
-                                                  movimiento.categoria ||
-                                                  "Movimiento"}
+                                                {nombreMovimiento}
                                               </p>
                                               <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-text">
                                                 <span
@@ -499,6 +519,7 @@ export default function DetalleBolsilloModal({
                                                 Number(movimiento.monto) || 0,
                                               )}
                                             </span>
+                                            </button>
                                           </li>
                                         );
                                       })}
@@ -549,6 +570,21 @@ export default function DetalleBolsilloModal({
           </div>
         )}
       </ModalDetalleRegistro>
+      <DetalleMovimientoModal
+        movimiento={movimientoDetalle}
+        triggerRef={disparadorDetalleRef}
+        alCerrar={() => setMovimientoDetalle(null)}
+        alEditar={() => {
+          const movimiento = movimientoDetalle;
+          setMovimientoDetalle(null);
+          if (movimiento) alEditarMovimiento?.(movimiento);
+        }}
+        alEliminar={() => {
+          const movimiento = movimientoDetalle;
+          setMovimientoDetalle(null);
+          if (movimiento) alEliminarMovimiento?.(movimiento);
+        }}
+      />
     </>
   );
 }

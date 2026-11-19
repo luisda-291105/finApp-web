@@ -406,6 +406,54 @@ describe("PaginaDashboardContabilidad", () => {
     expect(within(dialogo).queryByText("Pendiente por revisar")).toBeNull();
   });
 
+  it("abre el detalle del movimiento al hacer clic en una fila del bolsillo Gastos", async () => {
+    const usuario = userEvent.setup();
+    const claveMes = mesActual();
+    const movimientosDetalle = [
+      {
+        idMovimiento: "gasto-detalle",
+        idBolsillo: "fijo-gasto",
+        tipo: "GASTO",
+        estadoRevision: "CONFIRMADO",
+        monto: 150000,
+        fecha: `${claveMes}-11`,
+        concepto: "Gasto reciente",
+        categoria: "Compras",
+        origenNombre: "Tienda",
+      },
+    ];
+    listarMovimientos.mockImplementation(() =>
+      Promise.resolve(movimientosDetalle),
+    );
+
+    renderPagina();
+    const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
+    const cardFijos = within(rejilla).getByRole("article", {
+      name: "Bolsillos fijos",
+    });
+    await usuario.click(
+      within(cardFijos).getByRole("button", { name: "Ver detalles de Gastos" }),
+    );
+    const dialogoBolso = await screen.findByRole("dialog", { name: "Gastos" });
+    const fila = await within(dialogoBolso).findByRole("button", {
+      name: "Ver detalle del movimiento Gasto reciente",
+    });
+    await usuario.click(fila);
+
+    const dialogo = await screen.findByRole("dialog", {
+      name: "Detalle del movimiento",
+    });
+    expect(
+      within(dialogo).getByRole("heading", { name: "Tienda" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).getByRole("button", { name: "Editar movimiento Tienda" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).getByRole("button", { name: "Eliminar movimiento Tienda" }),
+    ).toBeInTheDocument();
+  });
+
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {
     const usuario = userEvent.setup();
     renderPagina();

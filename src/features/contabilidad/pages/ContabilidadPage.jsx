@@ -56,6 +56,7 @@ export default function ContabilidadPage() {
     setCrearMovimientoAbierto,
     resumenMensual,
     cargandoResumenMensual,
+    revisionMovimientos,
     movimientoEditando,
     setMovimientoEditando,
     movimientoEliminando,
@@ -315,6 +316,15 @@ export default function ContabilidadPage() {
             bolsillo: bolsilloDetalle,
           });
           setBolsilloDetalle(null);
+        }}
+        revision={revisionMovimientos}
+        alEditarMovimiento={(movimiento) => {
+          setMovimientoEditando(movimiento);
+          setCrearMovimientoAbierto(true);
+        }}
+        alEliminarMovimiento={(movimiento) => {
+          setErrorEliminarMovimiento("");
+          setMovimientoEliminando(movimiento);
         }}
       />
       <DetalleBalanceModal

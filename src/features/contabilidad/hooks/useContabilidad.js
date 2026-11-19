@@ -322,6 +322,7 @@ export default function useContabilidad() {
     setCrearMovimientoAbierto,
     resumenMensual,
     cargandoResumenMensual,
+    revisionMovimientos,
     movimientoEditando,
     setMovimientoEditando,
     movimientoEliminando,
