@@ -43,7 +43,9 @@ export default function TarjetaCard({ tarjeta, alAbrir }) {
           aria-hidden="true"
           className="rounded-md border border-border-line px-2 py-1 text-[10px] font-semibold uppercase"
         >
-          FinApp
+         
+          {tarjeta.tipoCuenta || "Tipo de cuenta"}
+                  
         </span>
       </div>
       <div>
