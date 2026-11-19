@@ -118,16 +118,26 @@ export default function useContabilidad() {
       };
     }
     setCargandoMovimientos(true);
-    listarMovimientos(null, filtroMovimiento)
+    // «Gastos» incluye las transferencias (mismo criterio que el bolsillo Gastos):
+    // se trae la lista completa y se filtra en cliente para no tocar otros consumidores del API.
+    const filtroServidor = filtroMovimiento === "GASTO" ? "TODOS" : filtroMovimiento;
+    listarMovimientos(null, filtroServidor)
       .then((data) => {
         if (vigente) {
           // "Por revisar" va a su propia bandeja; nunca se incluye en las pestañas normales
+          const confirmados = listaDe(data).filter(
+            (item) =>
+              String(item?.estadoRevision ?? "").toUpperCase() !==
+              "POR_REVISAR",
+          );
+          const gastosCompleto = (item) =>
+            ["GASTO", "TRANSFERENCIA"].includes(
+              String(item?.tipo ?? "").trim().toUpperCase(),
+            );
           setMovimientos(
-            listaDe(data).filter(
-              (item) =>
-                String(item?.estadoRevision ?? "").toUpperCase() !==
-                "POR_REVISAR",
-            ),
+            filtroMovimiento === "GASTO"
+              ? confirmados.filter(gastosCompleto)
+              : confirmados,
           );
           setErrorMovimientos("");
         }

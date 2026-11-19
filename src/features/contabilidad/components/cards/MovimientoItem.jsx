@@ -61,12 +61,12 @@ export default function MovimientoItem({ movimiento, onDetalle }) {
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between gap-4 pl-[52px] sm:justify-end sm:pl-0">
-          <span className="rounded-full bg-bg-cream px-2.5 py-1 text-xs font-medium text-slate-text">
+        <div className="flex items-center justify-between gap-3 pl-[52px] sm:justify-end sm:pl-0">
+          <span className="hidden rounded-full bg-bg-cream px-2.5 py-1 text-xs font-medium text-slate-text sm:inline-flex">
             {tipo}
           </span>
           <span
-            className={`min-w-28 text-right font-medium tabular-nums ${tono}`}
+            className={`min-w-0 whitespace-nowrap text-right font-medium tabular-nums ${tono}`}
           >
             {ingreso ? "+" : "−"}
             {formatoMoneda.format(monto)}

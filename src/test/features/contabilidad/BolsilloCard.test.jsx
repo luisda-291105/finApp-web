@@ -42,7 +42,7 @@ describe("BolsilloCard", () => {
     );
     expect(within(tarjeta).getByText("Fondeos")).toBeInTheDocument();
     expect(within(tarjeta).getByText("Nómina")).toBeInTheDocument();
-    expect(within(tarjeta).getByText("Ver movimientos")).toBeInTheDocument();
+    expect(within(tarjeta).queryByText("Ver movimientos")).toBeNull();
     expect(tarjeta.getAttribute("aria-label")).toContain(
       "tipo AHORRO, 2 movimientos, sin meta definida",
     );

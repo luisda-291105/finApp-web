@@ -149,6 +149,51 @@ describe("PaginaDashboardContabilidad", () => {
     expect(listarMovimientos).toHaveBeenLastCalledWith(null, "INGRESO");
   });
 
+  it("el filtro Gastos incluye las transferencias y no los ingresos", async () => {
+    const usuario = userEvent.setup();
+    const movimientosGastos = [
+      {
+        idMovimiento: "mov-gasto",
+        idBolsillo: "fijo-gasto",
+        tipo: "GASTO",
+        estadoRevision: "CONFIRMADO",
+        monto: 150000,
+        fecha: "2026-11-10",
+        concepto: "Gasto filtrado",
+        categoria: "Compras",
+      },
+      {
+        idMovimiento: "mov-transferencia",
+        idBolsillo: "fijo-gasto",
+        tipo: "TRANSFERENCIA",
+        estadoRevision: "CONFIRMADO",
+        monto: 160000,
+        fecha: "2026-11-11",
+        concepto: "Transferencia filtrada",
+        categoria: "Transferencia",
+      },
+      {
+        idMovimiento: "mov-ingreso",
+        idBolsillo: "fijo-ingreso",
+        tipo: "INGRESO",
+        estadoRevision: "CONFIRMADO",
+        monto: 99000,
+        fecha: "2026-11-12",
+        concepto: "Ingreso filtrado",
+        categoria: "Nómina",
+      },
+    ];
+    listarMovimientos.mockResolvedValue(movimientosGastos);
+    renderPagina();
+    await screen.findByText("Gastos diarios");
+    await usuario.click(screen.getByRole("button", { name: "Gastos" }));
+    // El «Gastos» del tab trae la lista completa y filtra en cliente GASTO + TRANSFERENCIA.
+    expect(listarMovimientos).toHaveBeenLastCalledWith(null, "TODOS");
+    expect(await screen.findByText("Gasto filtrado")).toBeInTheDocument();
+    expect(screen.getByText("Transferencia filtrada")).toBeInTheDocument();
+    expect(screen.queryByText("Ingreso filtrado")).toBeNull();
+  });
+
   it("abre el formulario de movimiento con bolsillos disponibles", async () => {
     const usuario = userEvent.setup();
     renderPagina();

@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   PiggyBank,
   ReceiptText,
   TrendingUp,
@@ -167,10 +166,6 @@ export default function BolsilloCard({
           )}
         </div>
 
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-primary">
-          Ver movimientos
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </span>
       </div>
     </Card>
   );

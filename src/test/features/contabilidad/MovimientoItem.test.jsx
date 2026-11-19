@@ -44,4 +44,14 @@ describe("MovimientoItem", () => {
       "text-cat-income",
     );
   });
+
+  it("representa las transferencias en rojo como los gastos", () => {
+    const boton = renderMovimiento("TRANSFERENCIA", "Transferencia banColombia");
+    const monto = within(boton).getByText(/100\.000/);
+
+    expect(monto).toHaveClass("text-cat-expense");
+    expect(boton.querySelector("svg")?.parentElement).toHaveClass(
+      "text-cat-expense",
+    );
+  });
 });
