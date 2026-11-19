@@ -1,6 +1,6 @@
 /**
  * @uso        Operaciones HTTP propias de grupos
- * @funciones  crearGrupo, obtenerGruposPorUsuario, actualizarGrupo, eliminarGrupo, listarMensajesGrupo, enviarMensajeGrupo
+ * @funciones  crearGrupo, obtenerGruposPorUsuario, actualizarGrupo, eliminarGrupo, listarMensajesGrupo, enviarMensajeGrupo, listarMiembrosGrupo, agregarMiembroGrupo, eliminarMiembroGrupo, buscarUsuariosGrupo
  * @datos      Delega el transporte en httpServicio y las rutas en api.config
  * @eventos    Ninguno
  * @estados    Ninguno
@@ -84,9 +84,35 @@ export async function listarMensajesGrupo(idGrupo) {
   return obtener(`${rutaBase}/${encodeURIComponent(idGrupo)}/mensajes`);
 }
 
-/** Envía un mensaje al asistente del grupo y devuelve el par [usuario, asistente]. */
+/** Envía un mensaje a la conversación del grupo (respuesta del miembro). */
 export async function enviarMensajeGrupo(idGrupo, texto) {
   return crear(`${rutaBase}/${encodeURIComponent(idGrupo)}/mensajes`, {
     texto,
   });
+}
+
+/** Lista los integrantes del grupo (incluye al propietario aunque sea un grupo antiguo). */
+export async function listarMiembrosGrupo(idGrupo) {
+  return obtener(`${rutaBase}/${encodeURIComponent(idGrupo)}/miembros`);
+}
+
+/** Añade un integrante (por identificador, correo, teléfono o nombre, quizás con coincidencias). */
+export async function agregarMiembroGrupo(idGrupo, usuario) {
+  return crear(`${rutaBase}/${encodeURIComponent(idGrupo)}/miembros`, {
+    idUsuario: usuario,
+  });
+}
+
+/** Quita un integrante del grupo (no el propietario). */
+export async function eliminarMiembroGrupo(idGrupo, idUsuarioMiembro) {
+  return eliminar(
+    `${rutaBase}/${encodeURIComponent(idGrupo)}/miembros/${encodeURIComponent(idUsuarioMiembro)}`,
+  );
+}
+
+/** Busca usuarios registrados por fragmento (identificación, correo, teléfono o nombre). */
+export async function buscarUsuariosGrupo(q) {
+  const parametros = new URLSearchParams();
+  if (q) parametros.set("q", q);
+  return obtener(`${rutaBase}/usuarios/buscar?${parametros.toString()}`);
 }

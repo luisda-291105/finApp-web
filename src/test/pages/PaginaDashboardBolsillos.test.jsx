@@ -19,6 +19,14 @@ vi.mock("../../features/grupo/services/gruposService", () => ({
   eliminarGrupo: vi.fn(),
   vincularFuenteAGrupo: vi.fn(),
   desvincularFuenteDeGrupo: vi.fn(),
+  listarMiembrosGrupo: vi.fn().mockResolvedValue([
+    { idUsuario: "usuario-prueba", nombre: "Ana", correo: "ana@test", telefono: "300", rol: "DUENO", fecha: null },
+  ]),
+  buscarUsuariosGrupo: vi.fn().mockResolvedValue([]),
+  agregarMiembroGrupo: vi.fn(),
+  eliminarMiembroGrupo: vi.fn(),
+  listarMensajesGrupo: vi.fn().mockResolvedValue([]),
+  enviarMensajeGrupo: vi.fn(),
 }));
 vi.mock("../../services/fuenteServicio", () => ({
   obtenerFuentesPorUsuario: vi.fn().mockResolvedValue([]),
@@ -69,7 +77,7 @@ describe("PaginaDashboardBolsillos: página de Grupos", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Fuentes" })).toBeInTheDocument();
     expect(
-      screen.getByRole("tab", { name: "Asistente IA" }),
+      screen.getByRole("tab", { name: "Chat" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("viaje@example.test").length).toBeGreaterThan(0);
     expect(
