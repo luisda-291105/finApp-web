@@ -1,10 +1,10 @@
 /**
  * @uso        Estado y acciones de la vista Papelera (composición multi-cuenta)
- * @funciones  usePapelera({ activo, intervaloMs, intervaloLoteMs })
+ * @funciones  usePapelera({ activo, intervaloMs, intervaloLoteMs, soloGestion })
  * @datos      Consulta la papelera en vivo por cuenta, restaura, configura la limpieza automática, genera la vista previa, ejecuta y sigue la limpieza y gestiona la lista blanca
  * @eventos    Restaurar por fila, autorizar el permiso ampliado, reintentar una cuenta, guardar la configuración, previsualizar, confirmar la limpieza y añadir/quitar remitentes
  * @estados    secciones, cargando, restaurando, autorizando, aviso y el subestado de gestión (configuración, vista previa, lote y lista blanca)
- * @usadoPor   CorreosPage
+ * @usadoPor   CorreosPage, ConfiguracionPage
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGmail } from "../../../context/GmailContext";
@@ -27,11 +27,14 @@ export const INTERVALO_LOTE_MS = 3 * 1000;
 
 const claveCorreo = (cuentaId, mensajeId) => `${cuentaId}:${mensajeId}`;
 
-/** Encapsula el listado multi-cuenta, la restauración optimista y la limpieza automática. */
+/** Estado y acciones de la vista Papelera (composición multi-cuenta).
+ *  Con `soloGestion` se omite la consulta en vivo de la lista y la polling de reconciliación;
+ *  la configuración de limpieza y el seguimiento del lote siguen activos (para /dashboard/configuracion). */
 export function usePapelera({
   activo = false,
   intervaloMs = INTERVALO_ESTADO_MS,
   intervaloLoteMs = INTERVALO_LOTE_MS,
+  soloGestion = false,
 } = {}) {
   const { gmailConectado, cuentasGmail, conectarGmail } = useGmail();
   const [secciones, setSecciones] = useState([]);
@@ -302,7 +305,7 @@ export function usePapelera({
               "Permiso concedido. Ya puedes ver y gestionar la papelera de esa cuenta.",
           });
         setRequierePermisoGestion(false);
-        await cargar();
+        if (!soloGestion) await cargar();
         if (gestionCuentaIdRef.current)
           await cargarGestion(gestionCuentaIdRef.current);
       } catch (fallo) {
@@ -318,7 +321,7 @@ export function usePapelera({
         if (montadoRef.current) setAutorizando(null);
       }
     },
-    [conectarGmail, cargar, cargarGestion],
+    [conectarGmail, cargar, cargarGestion, soloGestion],
   );
 
   /** Selecciona la cuenta cuya limpieza automática se va a configurar. */
@@ -627,7 +630,7 @@ export function usePapelera({
   const cerrarAviso = useCallback(() => setAviso(null), []);
 
   useEffect(() => {
-    if (!activo) return undefined;
+    if (!activo || soloGestion) return undefined;
     if (!gmailConectado || cuentasGmail.length === 0) {
       setSecciones([]);
       return undefined;
@@ -645,6 +648,7 @@ export function usePapelera({
     return () => window.clearInterval(temporizador);
   }, [
     activo,
+    soloGestion,
     gmailConectado,
     cuentasGmail,
     cargar,

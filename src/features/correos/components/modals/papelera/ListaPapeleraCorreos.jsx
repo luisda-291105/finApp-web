@@ -1,7 +1,7 @@
 /**
  * @uso        Lista de correos de la papelera de una cuenta con restaurar por fila
  * @funciones  ListaPapeleraCorreos({ seccion, restaurando, alRestaurar, alReintentar })
- * @datos      Correos de la papelera en vivo con fecha estimada de eliminación definitiva
+ * @datos      Correos de la papelera en vivo; cada fila muestra el remitente arriba
  * @eventos    Restaurar una fila y reintentar la consulta cuando falla
  * @estados    Ninguno propio; el estado en curso llega por props
  * @usadoPor   PapeleraCorreosModal
@@ -41,69 +41,70 @@ export default function ListaPapeleraCorreos({
     );
   }
   return (
-    <div className="space-y-3">
-      <p className="rounded-xl border border-border-line/40 bg-bg-cream/70 px-3 py-2 text-xs text-slate-text">
-        Gmail elimina definitivamente los correos de la papelera después de unos
-        30 días desde que se movieron.
-      </p>
-      <ul className="grid min-w-0 gap-3">
-        {seccion.correos.map((correo) => {
-          const enCurso = Boolean(
-            restaurando[`${seccion.cuentaId}:${correo.mensajeId}`],
-          );
-          const remitente = separarRemitente(correo.remitente);
-          return (
-            <li
-              key={correo.mensajeId}
-              className="min-w-0 space-y-2 rounded-2xl border border-border-line/70 bg-white p-4 shadow-sm"
-            >
-              <h4 className="min-w-0 break-words text-sm font-semibold text-bg-dark">
-                {correo.asunto}
-              </h4>
-              <p className="min-w-0 break-words text-xs text-slate-text">
+    <ul
+      aria-label="Correos en la papelera"
+      className="divide-y divide-border-line/40 overflow-hidden rounded-2xl border border-border-line/50 bg-white shadow-sm"
+    >
+      {seccion.correos.map((correo) => {
+        const enCurso = Boolean(
+          restaurando[`${seccion.cuentaId}:${correo.mensajeId}`],
+        );
+        const remitente = separarRemitente(correo.remitente);
+        return (
+          <li
+            key={correo.mensajeId}
+            className="flex min-w-0 items-center gap-2 px-4 py-3"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-medium text-slate-text">
                 {remitente.email
                   ? `${remitente.nombre} · ${remitente.email}`
                   : remitente.nombre}
               </p>
-              {correo.fecha && (
-                <time
-                  dateTime={correo.fecha}
-                  className="block text-xs text-slate-text"
-                >
-                  {fechaLegible(correo.fecha)}
-                </time>
-              )}
-              {correo.movidoAutomaticamente && (
-                <p className="inline-flex rounded-full bg-emerald-primary/10 px-2 py-0.5 text-xs font-medium text-emerald-primary">
-                  Movido automáticamente
-                  {correo.motivoAutomatico
-                    ? ` · ${correo.motivoAutomatico}`
-                    : ""}
-                </p>
-              )}
-              {correo.eliminacionEstimadaEn && (
-                <p className="text-xs text-amber-700">
-                  Se eliminará definitivamente el{" "}
-                  {fechaLegible(correo.eliminacionEstimadaEn)}.
-                </p>
-              )}
-              <div className="flex justify-end border-t border-border-line/40 pt-2">
-                <button
-                  type="button"
-                  title={`Restaurar ${correo.asunto}`}
-                  onClick={() => alRestaurar?.(correo)}
-                  disabled={enCurso}
-                  aria-busy={enCurso}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-primary/40 px-3 text-xs font-semibold text-emerald-primary transition-colors hover:bg-emerald-primary hover:text-bg-cream disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
-                  {enCurso ? "Restaurando..." : "Restaurar"}
-                </button>
+              <h4 className="mt-0.5 break-words text-sm font-semibold text-bg-dark">
+                {correo.asunto}
+              </h4>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-text">
+                {correo.fecha && (
+                  <time dateTime={correo.fecha}>
+                    {fechaLegible(correo.fecha)}
+                  </time>
+                )}
+                {correo.movidoAutomaticamente && (
+                  <span className="inline-flex rounded-full bg-emerald-primary/10 px-2 py-0.5 font-medium text-emerald-primary">
+                    Movido automáticamente
+                    {correo.motivoAutomatico
+                      ? ` · ${correo.motivoAutomatico}`
+                      : ""}
+                  </span>
+                )}
+                {correo.eliminacionEstimadaEn && (
+                  <span className="text-amber-700">
+                    Se eliminará el {fechaLegible(correo.eliminacionEstimadaEn)}
+                  </span>
+                )}
               </div>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+            </div>
+            <button
+              type="button"
+              title={`Restaurar ${correo.asunto}`}
+              onClick={() => alRestaurar?.(correo)}
+              disabled={enCurso}
+              aria-busy={enCurso}
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 self-center rounded-lg border border-emerald-primary/40 px-2.5 text-xs font-semibold text-emerald-primary transition-colors hover:bg-emerald-primary hover:text-bg-cream disabled:cursor-not-allowed disabled:opacity-60 sm:px-3"
+            >
+              <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">
+                {enCurso ? "Restaurando..." : "Restaurar"}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+      <li className="border-t-0 bg-bg-cream/40 px-4 py-2 text-[11px] text-slate-text">
+        Gmail elimina definitivamente los correos de la papelera después de
+        unos 30 días desde que se movieron.
+      </li>
+    </ul>
   );
 }

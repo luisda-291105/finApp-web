@@ -1,18 +1,15 @@
 /**
- * @uso        Vista modal de la Papelera de Gmail (multi-cuenta) con restaurar por fila y limpieza automática
- * @funciones  PapeleraCorreosModal({ abierto, alCerrar, secciones, gestion, accionesGestion, ... })
- * @datos      Secciones por cuenta con los correos en vivo de la papelera, configuración de limpieza, vista previa, lote y lista blanca
- * @eventos    Restaurar por fila, autorizar el permiso ampliado, reintentar una cuenta, guardar la configuración, previsualizar, limpiar y gestionar la lista blanca
+ * @uso        Vista modal de la Papelera de Gmail (multi-cuenta) con restaurar por fila
+ * @funciones  PapeleraCorreosModal({ abierto, alCerrar, secciones, ... })
+ * @datos      Secciones por cuenta con los correos en vivo de la papelera
+ * @eventos    Restaurar por fila, autorizar el permiso ampliado, reintentar una cuenta y cerrar avisos
  * @estados    Ninguno propio; recibe el estado de usePapelera por props
  * @usadoPor   CorreosPage
  */
 import { Trash2, X } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import AvisoPermisoPapelera from "./papelera/AvisoPermisoPapelera";
-import ConfiguracionPapelera from "./papelera/ConfiguracionPapelera";
-import ListaBlancaRemitentes from "./papelera/ListaBlancaRemitentes";
 import ListaPapeleraCorreos from "./papelera/ListaPapeleraCorreos";
-import VistaPreviaLimpieza from "./papelera/VistaPreviaLimpieza";
 
 const ESTILOS_AVISO = {
   exito:
@@ -36,8 +33,6 @@ export default function PapeleraCorreosModal({
   alAutorizar,
   alReintentar,
   alCerrarAviso,
-  gestion = {},
-  accionesGestion = {},
 }) {
   const hayProblema = secciones.some(
     (seccion) =>
@@ -52,9 +47,6 @@ export default function PapeleraCorreosModal({
   // con la falta de permiso de una cuenta.
   const vaciaGlobal =
     gmailConectado && !cargando && !hayProblema && !hayCorreos;
-  const seccionGestion = secciones.find(
-    (seccion) => String(seccion.cuentaId) === String(gestion.cuentaId),
-  );
 
   return (
     <ModalDetalleRegistro
@@ -67,10 +59,7 @@ export default function PapeleraCorreosModal({
       icono={Trash2}
     >
       <div className="space-y-4">
-        <p className="text-sm text-slate-text">
-          Correos movidos a la Papelera de Gmail. Puedes restaurarlos a la
-          bandeja mientras Gmail no los haya eliminado definitivamente.
-        </p>
+        
 
         {aviso && (
           <div
@@ -150,77 +139,6 @@ export default function PapeleraCorreosModal({
             </section>
           ))}
 
-        {gmailConectado && (
-          <section className="space-y-3 rounded-2xl border border-border-line/50 bg-bg-cream/40 p-4">
-            <h3 className="font-display text-sm font-semibold text-bg-dark">
-              Limpieza automática de la papelera
-            </h3>
-            <p className="text-xs text-slate-text">
-              Elige qué correos recibidos se mueven solos a la papelera, revisa
-              cuántos se moverían y gestiona los remitentes que nunca se mueven.
-            </p>
-
-            {secciones.length > 1 && (
-              <label className="block text-xs text-slate-text">
-                Cuenta a configurar
-                <select
-                  value={gestion.cuentaId || ""}
-                  onChange={(evento) =>
-                    accionesGestion.alSeleccionarCuenta?.(evento.target.value)
-                  }
-                  className="mt-1 block w-full max-w-xs rounded-lg border border-border-line bg-bg-cream px-2 py-1.5 text-sm text-bg-dark"
-                >
-                  {secciones.map((seccion) => (
-                    <option key={seccion.cuentaId} value={seccion.cuentaId}>
-                      {seccion.email || seccion.cuentaId}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
-            {gestion.requierePermiso ? (
-              <AvisoPermisoPapelera
-                cuentaId={gestion.cuentaId}
-                email={seccionGestion?.email}
-                autorizando={
-                  String(autorizando) === String(gestion.cuentaId)
-                }
-                alAutorizar={alAutorizar}
-              />
-            ) : (
-              <>
-                <ConfiguracionPapelera
-                  configuracion={gestion.configuracion}
-                  guardando={gestion.guardandoConfiguracion}
-                  previsualizando={gestion.generandoVistaPrevia}
-                  vistaPreviaInformativa={gestion.vistaPreviaInformativa}
-                  alGuardar={accionesGestion.alGuardarConfiguracion}
-                  alPrevisualizar={accionesGestion.alPrevisualizar}
-                />
-                <VistaPreviaLimpieza
-                  configuracion={gestion.configuracion}
-                  vistaPrevia={gestion.vistaPreviaLimpieza}
-                  generando={gestion.generandoVistaPrevia}
-                  limpiando={gestion.limpiando}
-                  desactualizada={gestion.vistaPreviaDesactualizada}
-                  lote={gestion.lote}
-                  alGenerarVistaPrevia={accionesGestion.alGenerarVistaPrevia}
-                  alConfirmarLimpieza={accionesGestion.alConfirmarLimpieza}
-                  alRefrescarLote={accionesGestion.alRefrescarLote}
-                />
-                <ListaBlancaRemitentes
-                  remitentes={gestion.listaBlanca}
-                  cargando={gestion.cargandoListaBlanca}
-                  agregando={gestion.agregandoRemitente}
-                  eliminandoId={gestion.eliminandoRemitenteId}
-                  alAgregar={accionesGestion.alAgregarRemitente}
-                  alEliminar={accionesGestion.alEliminarRemitente}
-                />
-              </>
-            )}
-          </section>
-        )}
       </div>
     </ModalDetalleRegistro>
   );

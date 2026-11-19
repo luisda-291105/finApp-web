@@ -7,7 +7,7 @@
  * @usadoPor   App.jsx (ruta /dashboard/configuracion)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Card } from "../../../components/ui";
 import FuentesRegistradas from "../components/cards/FuentesRegistradas";
@@ -15,6 +15,8 @@ import AparienciaCard from "../components/cards/AparienciaCard";
 import PerfilCard from "../components/cards/PerfilCard";
 import TelegramCard from "../components/cards/TelegramCard";
 import CuentasAlmacenamientoCard from "../components/cards/CuentasAlmacenamientoCard";
+import LimpiezaAutomaticaPapelera from "../../correos/components/modals/papelera/LimpiezaAutomaticaPapelera";
+import { usePapelera } from "../../correos/hooks/usePapelera";
 import { CrearFuenteModal, PerfilUsuarioModal } from "../components/modals";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
 import { useTema } from "../../../context/TemaContext";
@@ -63,6 +65,30 @@ export default function ConfiguracionPage() {
     recargarCuentasGmail,
     seleccionarCuentaGmail,
   } = useGmail();
+  // Limpieza automática de la papelera (misma composición que antes vivía en el modal):
+  // sin consulta en vivo de la lista; se selecciona la primera cuenta y se carga su configuración.
+  const papeleraLimpieza = usePapelera({ activo: true, soloGestion: true });
+  const cuentasLimpieza = useMemo(
+    () =>
+      (cuentasGmail || []).map((cuenta) => ({
+        cuentaId: String(cuenta.id),
+        email: cuenta.email,
+      })),
+    [cuentasGmail],
+  );
+  useEffect(() => {
+    const primera = cuentasLimpieza[0];
+    if (
+      gmailConectado &&
+      primera &&
+      !papeleraLimpieza.gestion.cuentaId
+    ) {
+      papeleraLimpieza.accionesGestion.alSeleccionarCuenta?.(
+        primera.cuentaId,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gmailConectado, cuentasLimpieza]);
 
   const {
     fuentes,
@@ -223,6 +249,19 @@ export default function ConfiguracionPage() {
         alAbrir={() => setUsuarioAbierto(true)}
       />
       <TelegramCard />
+      {gmailConectado && (
+        <LimpiezaAutomaticaPapelera
+          cuentas={cuentasLimpieza}
+          gestion={papeleraLimpieza.gestion}
+          accionesGestion={papeleraLimpieza.accionesGestion}
+          autorizando={papeleraLimpieza.autorizando}
+          aviso={papeleraLimpieza.aviso}
+          alAutorizar={(cuentaId) =>
+            papeleraLimpieza.autorizarPermiso(cuentaId).catch(() => {})
+          }
+          alCerrarAviso={papeleraLimpieza.cerrarAviso}
+        />
+      )}
       <CuentasAlmacenamientoCard
         nextcloudAbierto={nextcloudAbierto}
         alAbrirNextcloud={alAbrirNextcloud}
