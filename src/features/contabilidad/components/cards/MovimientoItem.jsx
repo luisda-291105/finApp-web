@@ -19,7 +19,7 @@ export default function MovimientoItem({ movimiento, onDetalle }) {
     ? "text-emerald-primary"
     : tipo === "AHORRO"
       ? "text-cat-income"
-      : tipo === "GASTO"
+      : tipo === "GASTO" || tipo === "TRANSFERENCIA"
         ? "text-cat-expense"
         : "text-slate-text";
   const titulo = nombreMovimiento(movimiento);

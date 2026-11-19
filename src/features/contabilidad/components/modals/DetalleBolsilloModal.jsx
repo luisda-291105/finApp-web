@@ -54,8 +54,8 @@ const estilosMovimiento = {
   },
   TRANSFERENCIA: {
     Icono: ArrowLeftRight,
-    fondo: "bg-violet-100",
-    texto: "text-violet-700",
+    fondo: "bg-rose-100",
+    texto: "text-rose-700",
     etiqueta: "Transferencia",
   },
   POR_REVISAR: {
