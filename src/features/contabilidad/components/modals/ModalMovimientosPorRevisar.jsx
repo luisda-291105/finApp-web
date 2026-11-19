@@ -35,6 +35,7 @@ export default function ModalMovimientosPorRevisar({
   bolsillos = [],
   triggerRef,
   recarga = 0,
+  movimientoEliminado = null,
   alCerrar,
   alEditar,
   alConfirmar,
@@ -89,6 +90,17 @@ export default function ModalMovimientosPorRevisar({
       vigente = false;
     };
   }, [abierto, recarga]);
+
+  // Cuando se confirma una eliminación (con su correo movido a la papelera), la fila
+  // desaparece de la bandeja sin esperar a recargar el listado completo.
+  useEffect(() => {
+    if (!movimientoEliminado) return;
+    setMovimientos((actuales) =>
+      actuales.filter(
+        (item) => item.idMovimiento !== movimientoEliminado,
+      ),
+    );
+  }, [movimientoEliminado]);
 
   const confirmar = async (movimiento) => {
     const tipo = tipoMovimiento(movimiento);
@@ -253,7 +265,10 @@ export default function ModalMovimientosPorRevisar({
         triggerRef={disparadorDetalleRef}
         alCerrar={() => setMovimientoDetalle(null)}
         alEditar={() => alEditar(movimientoDetalle)}
-        alEliminar={() => alEliminar(movimientoDetalle)}
+        alEliminar={() => {
+          setMovimientoDetalle(null);
+          alEliminar(movimientoDetalle);
+        }}
       />
     </>
   );

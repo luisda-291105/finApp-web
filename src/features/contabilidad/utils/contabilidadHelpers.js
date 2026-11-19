@@ -91,6 +91,23 @@ export function entidadMovimiento(movimiento) {
   );
 }
 
+/** Referencia Gmail de un movimiento importado: `origenId` = `cuentaId:mensajeId`. */
+export function referenciaGmailMovimiento(movimiento) {
+  if (
+    String(movimiento?.origenTipo || "")
+      .trim()
+      .toUpperCase() !== "GMAIL"
+  )
+    return null;
+  const origen = String(movimiento?.origenId || "");
+  const separador = origen.indexOf(":");
+  if (separador <= 0 || separador === origen.length - 1) return null;
+  return {
+    cuentaId: origen.slice(0, separador),
+    mensajeId: origen.slice(separador + 1),
+  };
+}
+
 /** Regla compartida con el backend: «Ingresos»/INGRESO y «Gastos»/GASTO son bolsillos fijos del usuario. */
 export function esBolsilloFijo(bolsillo) {
   const nombre = String(bolsillo?.nombre || "")
@@ -130,6 +147,12 @@ export function obtenerOrigenes(bolsillo) {
     .split(/[,\n]/)
     .map((valor) => valor.trim())
     .filter(Boolean);
+}
+
+/** Mes local actual en formato "YYYY-MM", igual al que consulta el resumen global. */
+export function mesActual() {
+  const ahora = new Date();
+  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
 }
 
 /** Normaliza una fecha en "YYYY-MM"; inválida o vacía → "sin-fecha". */

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeftRight,
   CalendarDays,
   ChevronDown,
+  Clock3,
   LoaderCircle,
   Pencil,
   PiggyBank,
@@ -13,12 +15,16 @@ import {
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { listarMovimientos } from "../../services/movimientosService";
 import {
+  claveMesMovimiento,
   esBolsilloFijo,
+  etiquetaMesMovimiento,
+  etiquetaMesMovimientoCorta,
+  etiquetaTipo,
   formatoFecha,
   formatoMoneda,
+  mesActual,
   obtenerOrigenes,
   agruparPorAnioYMes,
-  etiquetaMesMovimientoCorta,
 } from "../../utils/contabilidadHelpers";
 import { AlertaGlobal } from "../../../../features/error";
 
@@ -27,10 +33,54 @@ const iconoPorTipo = {
   INGRESO: TrendingUp,
   AHORRO: PiggyBank,
 };
-const campoPorTipo = {
-  GASTO: "gastos",
-  INGRESO: "ingresos",
-  AHORRO: "ahorros",
+const estilosMovimiento = {
+  INGRESO: {
+    Icono: TrendingUp,
+    fondo: "bg-emerald-100",
+    texto: "text-emerald-700",
+    etiqueta: "Ingreso",
+  },
+  GASTO: {
+    Icono: ReceiptText,
+    fondo: "bg-rose-100",
+    texto: "text-rose-700",
+    etiqueta: "Gasto",
+  },
+  AHORRO: {
+    Icono: PiggyBank,
+    fondo: "bg-sky-100",
+    texto: "text-sky-700",
+    etiqueta: "Ahorro",
+  },
+  TRANSFERENCIA: {
+    Icono: ArrowLeftRight,
+    fondo: "bg-violet-100",
+    texto: "text-violet-700",
+    etiqueta: "Transferencia",
+  },
+  POR_REVISAR: {
+    Icono: Clock3,
+    fondo: "bg-amber-100",
+    texto: "text-amber-700",
+    etiqueta: "Por revisar",
+  },
+};
+const estiloDelMovimiento = (movimiento) => {
+  const tipo = String(movimiento?.tipo || "")
+    .trim()
+    .toUpperCase();
+  const estado = String(movimiento?.estadoRevision || "")
+    .trim()
+    .toUpperCase();
+  const clave = estado === "POR_REVISAR" ? "POR_REVISAR" : tipo;
+  return (
+    estilosMovimiento[clave] || {
+      Icono: Wallet,
+      fondo: "bg-slate-100",
+      texto: "text-slate-700",
+      etiqueta: etiquetaTipo(tipo) || "Movimiento",
+    }
+  );
 };
 const listaDe = (respuesta) =>
   Array.isArray(respuesta)
@@ -55,7 +105,6 @@ function perteneceAlBolsillo(movimiento, bolsillo) {
 export default function DetalleBolsilloModal({
   abierto,
   bolsillo,
-  resumen = {},
   triggerRef,
   alCerrar,
   alEditar,
@@ -68,7 +117,6 @@ export default function DetalleBolsilloModal({
     .trim()
     .toUpperCase();
   const Icono = iconoPorTipo[tipo] || Wallet;
-  const monto = Number(resumen[campoPorTipo[tipo]]) || 0;
   const esGasto = tipo === "GASTO";
 
   useEffect(() => {
@@ -102,6 +150,20 @@ export default function DetalleBolsilloModal({
   }, [abierto, bolsillo?.idBolsillo]);
 
   const reciente = movimientos[0];
+  const claveMesActual = useMemo(() => mesActual(), []);
+  const totalMesActual = useMemo(
+    () =>
+      movimientos
+        .filter(
+          (movimiento) =>
+            claveMesMovimiento(movimiento.fecha) === claveMesActual,
+        )
+        .reduce(
+          (total, movimiento) => total + (Number(movimiento.monto) || 0),
+          0,
+        ),
+    [movimientos, claveMesActual],
+  );
   const totalMovimientos = useMemo(
     () =>
       movimientos.reduce(
@@ -200,10 +262,13 @@ export default function DetalleBolsilloModal({
                 )}
                 <div className="mt-5">
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-text">
-                    Monto del bolsillo
+                    Total del mes actual
                   </p>
                   <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-bg-dark">
-                    {formatoMoneda.format(monto)}
+                    {formatoMoneda.format(totalMesActual)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-text">
+                    {etiquetaMesMovimiento(claveMesActual)}
                   </p>
                 </div>
                 <div className="mt-4 space-y-3 border-t border-border-line/40 pt-4">
@@ -371,45 +436,58 @@ export default function DetalleBolsilloModal({
                                           : "hidden"
                                       }
                                     >
-                                      {grupo.movimientos.map((movimiento) => (
-                                        <li
-                                          key={movimiento.idMovimiento}
-                                          className="flex items-center gap-3 py-2 pl-11 pr-3"
-                                        >
-                                          <span
-                                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${esGasto ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}
+                                      {grupo.movimientos.map((movimiento) => {
+                                        const estilo =
+                                          estiloDelMovimiento(movimiento);
+                                        const IconoMovimiento = estilo.Icono;
+                                        return (
+                                          <li
+                                            key={movimiento.idMovimiento}
+                                            className="flex items-center gap-3 py-2 pl-11 pr-3"
                                           >
-                                            <Wallet
-                                              className="h-4 w-4"
-                                              aria-hidden="true"
-                                            />
-                                          </span>
-                                          <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-semibold text-bg-dark">
-                                              {movimiento.concepto?.trim() ||
-                                                movimiento.categoria ||
-                                                "Movimiento"}
-                                            </p>
-                                            <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-text">
-                                              <span className="truncate">
-                                                {movimiento.origenNombre ||
-                                                  "Movimiento del bolsillo"}
-                                              </span>
-                                              <time
-                                                className="shrink-0 whitespace-nowrap"
-                                                dateTime={movimiento.fecha}
-                                              >
-                                                · {fechaLegible(movimiento.fecha)}
-                                              </time>
+                                            <span
+                                              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${estilo.fondo} ${estilo.texto}`}
+                                            >
+                                              <IconoMovimiento
+                                                className="h-4 w-4"
+                                                aria-hidden="true"
+                                              />
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                              <p className="truncate text-sm font-semibold text-bg-dark">
+                                                {movimiento.concepto?.trim() ||
+                                                  movimiento.categoria ||
+                                                  "Movimiento"}
+                                              </p>
+                                              <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-text">
+                                                <span
+                                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${estilo.fondo} ${estilo.texto}`}
+                                                >
+                                                  {estilo.etiqueta}
+                                                </span>
+                                                <span className="truncate">
+                                                  {movimiento.origenNombre ||
+                                                    "Movimiento del bolsillo"}
+                                                </span>
+                                                <time
+                                                  className="shrink-0 whitespace-nowrap"
+                                                  dateTime={movimiento.fecha}
+                                                >
+                                                  ·{" "}
+                                                  {fechaLegible(movimiento.fecha)}
+                                                </time>
+                                              </div>
                                             </div>
-                                          </div>
-                                          <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-bg-dark">
-                                            {formatoMoneda.format(
-                                              Number(movimiento.monto) || 0,
-                                            )}
-                                          </span>
-                                        </li>
-                                      ))}
+                                            <span
+                                              className={`shrink-0 text-right text-sm font-semibold tabular-nums ${estilo.texto}`}
+                                            >
+                                              {formatoMoneda.format(
+                                                Number(movimiento.monto) || 0,
+                                              )}
+                                            </span>
+                                          </li>
+                                        );
+                                      })}
                                     </ul>
                                   </section>
                                 );

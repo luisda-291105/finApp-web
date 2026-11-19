@@ -11,10 +11,13 @@ import { MemoryRouter } from "react-router-dom";
 import { ContabilidadPage as PaginaDashboardContabilidad } from "../../features/contabilidad";
 import { listarBolsillos } from "../../features/contabilidad/services/bolsillosService";
 import {
+  eliminarMovimiento,
   listarMovimientos,
   obtenerResumenesBolsillos,
   obtenerResumenGlobal,
 } from "../../features/contabilidad/services/movimientosService";
+import { moverCorreoAPapelera } from "../../features/correos/services/papeleraService";
+import { mesActual } from "../../features/contabilidad/utils/contabilidadHelpers";
 
 vi.mock("../../context/UsuarioActivoContext", () => ({
   useUsuarioActivo: () => ({
@@ -45,6 +48,9 @@ vi.mock("../../features/suscripciones/services/suscripcionesServicio", () => ({
     errores: 0,
     detalles: [],
   }),
+}));
+vi.mock("../../features/correos/services/papeleraService", () => ({
+  moverCorreoAPapelera: vi.fn(),
 }));
 
 const BOLSILLOS = [
@@ -91,6 +97,8 @@ const MOVIMIENTOS = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  moverCorreoAPapelera.mockResolvedValue({});
+  eliminarMovimiento.mockResolvedValue({});
   listarBolsillos.mockResolvedValue(BOLSILLOS);
   listarMovimientos.mockResolvedValue(MOVIMIENTOS);
   obtenerResumenesBolsillos.mockResolvedValue([]);
@@ -211,6 +219,120 @@ describe("PaginaDashboardContabilidad", () => {
     );
   });
 
+  it("abre el detalle del balance del mes desde la card de ingresos y gastos", async () => {
+    const usuario = userEvent.setup();
+    renderPagina();
+    const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
+    const cardFijos = within(rejilla).getByRole("article", {
+      name: "Bolsillos fijos",
+    });
+    await usuario.click(
+      within(cardFijos).getByRole("button", {
+        name: "Ver detalle del balance del mes",
+      }),
+    );
+
+    const dialogo = await screen.findByRole("dialog", {
+      name: "Detalle del balance",
+    });
+    expect(within(dialogo).getByText("Ingresos del mes")).toBeInTheDocument();
+    expect(within(dialogo).getByText("Gastos del mes")).toBeInTheDocument();
+    expect(within(dialogo).getByTestId("detalle-balance-total")).toHaveTextContent(
+      "$ 7.000",
+    );
+  });
+
+  it("muestra en el detalle el total del mes actual y colorea cada movimiento según su tipo", async () => {
+    const usuario = userEvent.setup();
+    const claveMes = mesActual();
+    const [anio, mes] = claveMes.split("-").map(Number);
+    const mesAnterior = new Date(Date.UTC(anio, mes - 2, 10))
+      .toISOString()
+      .slice(0, 10);
+    const movimientosDetalle = [
+      {
+        idMovimiento: "ingreso-actual",
+        idBolsillo: "fijo-gasto",
+        tipo: "INGRESO",
+        estadoRevision: "CONFIRMADO",
+        monto: 250000,
+        fecha: `${claveMes}-10`,
+        concepto: "Ingreso reciente",
+        categoria: "Ingresos",
+        origenNombre: "Nómina",
+      },
+      {
+        idMovimiento: "gasto-actual",
+        idBolsillo: "fijo-gasto",
+        tipo: "GASTO",
+        estadoRevision: "CONFIRMADO",
+        monto: 150000,
+        fecha: `${claveMes}-11`,
+        concepto: "Gasto reciente",
+        categoria: "Compras",
+        origenNombre: "Tienda",
+      },
+      {
+        idMovimiento: "ahorro-anterior",
+        idBolsillo: "fijo-gasto",
+        tipo: "AHORRO",
+        estadoRevision: "CONFIRMADO",
+        monto: 700000,
+        fecha: mesAnterior,
+        concepto: "Ahorro antiguo",
+        categoria: "Ahorro",
+        origenNombre: "NU",
+      },
+    ];
+    listarMovimientos.mockImplementation((idBolsillo, tipo) =>
+      Promise.resolve(tipo === "POR_REVISAR" ? [] : movimientosDetalle),
+    );
+    obtenerResumenesBolsillos.mockResolvedValue([
+      { idBolsillo: "fijo-gasto", gastos: 9999999 },
+    ]);
+
+    renderPagina();
+    const rejilla = await screen.findByRole("region", { name: "Bolsillos" });
+    const cardFijos = within(rejilla).getByRole("article", {
+      name: "Bolsillos fijos",
+    });
+    await usuario.click(
+      within(cardFijos).getByRole("button", { name: "Ver detalles de Gastos" }),
+    );
+    const dialogo = await screen.findByRole("dialog", { name: "Gastos" });
+    await waitFor(() =>
+      expect(within(dialogo).getByText("Gasto reciente")).toBeInTheDocument(),
+    );
+
+    const etiquetaMes = within(dialogo).getByText("Total del mes actual");
+    expect(etiquetaMes.nextElementSibling?.textContent).toContain("400.000");
+    expect(within(dialogo).queryByText(/9\.999\.999/)).toBeNull();
+
+    const filaIngreso = within(dialogo)
+      .getByText("Ingreso reciente")
+      .closest("li");
+    expect(within(filaIngreso).getByText("Ingreso")).toHaveClass(
+      "text-emerald-700",
+    );
+    expect(within(filaIngreso).getByText(/250\.000/)).toHaveClass(
+      "text-emerald-700",
+    );
+
+    const filaGasto = within(dialogo)
+      .getByText("Gasto reciente")
+      .closest("li");
+    expect(within(filaGasto).getByText("Gasto")).toHaveClass("text-rose-700");
+    expect(within(filaGasto).getByText(/150\.000/)).toHaveClass(
+      "text-rose-700",
+    );
+
+    const filaAhorro = within(dialogo)
+      .getByText("Ahorro antiguo")
+      .closest("li");
+    expect(within(filaAhorro).getByText("Ahorro")).toHaveClass("text-sky-700");
+    expect(within(filaAhorro).getByText(/700\.000/)).toHaveClass("text-sky-700");
+  });
+
   it("ofrece los bolsillos fijos primero en el formulario de movimiento", async () => {
     const usuario = userEvent.setup();
     renderPagina();
@@ -230,5 +352,128 @@ describe("PaginaDashboardContabilidad", () => {
       "Gastos diarios · GASTO",
       "Nómina · INGRESO",
     ]);
+  });
+
+  describe("eliminación de pendientes de Gmail", () => {
+    const PENDIENTE = {
+      idMovimiento: "mov-pendiente",
+      idBolsillo: "por-revisar",
+      tipo: "GASTO",
+      fecha: "2026-11-07",
+      monto: 125000,
+      categoria: "Suscripciones",
+      concepto: "Beam’s free period on Ollama ends this weekend",
+      origenTipo: "GMAIL",
+      origenId: "cuenta-1:mensaje-1",
+      origenNombre: "Ollama",
+      estadoRevision: "POR_REVISAR",
+    };
+
+    const preparar = () => {
+      listarMovimientos.mockImplementation((idBolsillo, tipo, estadoRevision) => {
+        if (estadoRevision === "POR_REVISAR" || tipo === "POR_REVISAR")
+          return Promise.resolve([PENDIENTE]);
+        return Promise.resolve(MOVIMIENTOS);
+      });
+    };
+
+    const abrirConfirmacion = async () => {
+      const usuario = userEvent.setup();
+      renderPagina();
+      await usuario.click(
+        await screen.findByRole("button", { name: /Por revisar/ }),
+      );
+      const bandeja = await screen.findByRole("dialog", {
+        name: "Movimientos por revisar",
+      });
+      await usuario.click(
+        within(bandeja).getByRole("button", { name: "Eliminar" }),
+      );
+      const confirmacion = await screen.findByRole("dialog", {
+        name: "Eliminar movimiento",
+      });
+      expect(
+        within(confirmacion).getByText(/se moverá a la papelera de Gmail/i),
+      ).toBeInTheDocument();
+      await usuario.click(
+        within(confirmacion).getByRole("button", {
+          name: "Eliminar movimiento",
+        }),
+      );
+      return confirmacion;
+    };
+
+    it("mueve el correo a la papelera antes de eliminar el movimiento pendiente", async () => {
+      preparar();
+      await abrirConfirmacion();
+
+      expect(moverCorreoAPapelera).toHaveBeenCalledWith(
+        "cuenta-1",
+        "mensaje-1",
+      );
+      expect(eliminarMovimiento).toHaveBeenCalledWith("mov-pendiente");
+      expect(
+        await screen.findByText(
+          "Correo movido a la papelera y movimiento eliminado.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("conserva el movimiento si Gmail no permite mover el correo a la papelera", async () => {
+      preparar();
+      moverCorreoAPapelera.mockRejectedValue(
+        new Error("FinApp necesita permiso para modificar tus correos."),
+      );
+      const confirmacion = await abrirConfirmacion();
+
+      expect(
+        within(confirmacion).getByText(
+          "FinApp necesita permiso para modificar tus correos.",
+        ),
+      ).toBeInTheDocument();
+      expect(eliminarMovimiento).not.toHaveBeenCalled();
+    });
+
+    it("retira la fila de la bandeja al mover el correo a la papelera", async () => {
+      preparar();
+      const usuario = userEvent.setup();
+      renderPagina();
+      await usuario.click(
+        await screen.findByRole("button", { name: /Por revisar/ }),
+      );
+      const bandeja = await screen.findByRole("dialog", {
+        name: "Movimientos por revisar",
+      });
+      expect(
+        within(bandeja).getByRole("button", {
+          name: "Ver detalle del movimiento Ollama",
+        }),
+      ).toBeInTheDocument();
+
+      await usuario.click(
+        within(bandeja).getByRole("button", { name: "Eliminar" }),
+      );
+      const confirmacion = await screen.findByRole("dialog", {
+        name: "Eliminar movimiento",
+      });
+      await usuario.click(
+        within(confirmacion).getByRole("button", {
+          name: "Eliminar movimiento",
+        }),
+      );
+
+      // La bandeja sigue abierta y el pendiente ya no figura en su lista.
+      expect(
+        await screen.findByRole("dialog", { name: "Movimientos por revisar" }),
+      ).toBeInTheDocument();
+      await waitFor(() =>
+        expect(
+          within(bandeja).queryByRole("button", {
+            name: "Ver detalle del movimiento Ollama",
+          }),
+        ).not.toBeInTheDocument(),
+      );
+      expect(moverCorreoAPapelera).toHaveBeenCalledWith("cuenta-1", "mensaje-1");
+    });
   });
 });

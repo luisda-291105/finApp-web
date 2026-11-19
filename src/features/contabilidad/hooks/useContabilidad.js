@@ -16,15 +16,13 @@ import {
   obtenerResumenesBolsillos,
 } from "../services/movimientosService";
 import { obtenerTarjetasPorUsuario } from "../../tarjetas/services/tarjetasService";
+import { moverCorreoAPapelera } from "../../correos/services/papeleraService";
+import { mesActual, referenciaGmailMovimiento } from "../utils/contabilidadHelpers";
 
 const listaDe = (respuesta) =>
   Array.isArray(respuesta)
     ? respuesta
     : respuesta?.data || respuesta?.content || [];
-const mesActual = () => {
-  const ahora = new Date();
-  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
-};
 
 export default function useContabilidad() {
   const navigate = useNavigate();
@@ -280,18 +278,30 @@ export default function useContabilidad() {
     setCrearMovimientoAbierto(true);
   };
   const confirmarEliminarMovimiento = async () => {
-    if (!movimientoEliminando) return;
+    if (!movimientoEliminando) return false;
     setEliminandoMovimiento(true);
     setErrorEliminarMovimiento("");
     try {
+      const gmail = referenciaGmailMovimiento(movimientoEliminando);
+      if (gmail) {
+        // Primero la papelera: si falla, el movimiento pendiente sigue disponible para reintentar.
+        await moverCorreoAPapelera(gmail.cuentaId, gmail.mensajeId);
+      }
       await eliminarMovimiento(movimientoEliminando.idMovimiento);
-      setRespuesta({ tipo: "exito", mensaje: "Movimiento eliminado." });
+      setRespuesta({
+        tipo: "exito",
+        mensaje: gmail
+          ? "Correo movido a la papelera y movimiento eliminado."
+          : "Movimiento eliminado.",
+      });
       setMovimientoEliminando(null);
       setRevisionMovimientos((revision) => revision + 1);
+      return true;
     } catch (fallo) {
       setErrorEliminarMovimiento(
         fallo?.message || "No se pudo eliminar el movimiento.",
       );
+      return false;
     } finally {
       setEliminandoMovimiento(false);
     }

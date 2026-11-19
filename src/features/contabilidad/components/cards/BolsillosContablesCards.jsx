@@ -2,7 +2,7 @@
  * @uso        Cuadrícula de tarjetas de bolsillos fijos y propios
  * @funciones  BolsillosContablesCards({ bolsillos, ... })
  * @datos      Recibe bolsillos, resúmenes y el total mensual para presentarlos
- * @eventos    Abre el detalle del bolsillo seleccionado
+ * @eventos    Abre el detalle del bolsillo seleccionado o el desglose del balance mensual
  * @estados    Ninguno
  * @usadoPor   BolsillosContablesCondiciones
  */
@@ -19,6 +19,7 @@ export default function BolsillosContablesCards({
   cargandoResumenMensual,
   errorResumenes,
   alAbrirDetalle,
+  alAbrirBalance,
 }) {
   const fijos = bolsillos.filter(esBolsilloFijo);
   const propios = bolsillos.filter((bolsillo) => !esBolsilloFijo(bolsillo));
@@ -31,6 +32,7 @@ export default function BolsillosContablesCards({
           resumenMensual={resumenMensual}
           cargando={cargandoResumenMensual}
           alDetalle={alAbrirDetalle}
+          alBalance={alAbrirBalance}
         />
       )}
       {propios.map((bolsillo) => (

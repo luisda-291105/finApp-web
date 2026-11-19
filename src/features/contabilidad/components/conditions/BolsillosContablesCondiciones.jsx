@@ -22,6 +22,7 @@ export default function BolsillosContablesCondiciones({
   cargandoResumenMensual,
   errorResumenes,
   alAbrirDetalle,
+  alAbrirBalance,
   alAbrirBolsillo,
   disparadorBolsilloRef,
 }) {
@@ -80,6 +81,7 @@ export default function BolsillosContablesCondiciones({
           cargandoResumenMensual={cargandoResumenMensual}
           errorResumenes={errorResumenes}
           alAbrirDetalle={alAbrirDetalle}
+          alAbrirBalance={alAbrirBalance}
         />
       )}
     </section>

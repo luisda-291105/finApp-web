@@ -1,8 +1,8 @@
 /**
  * @uso        Card única dividida de los bolsillos fijos «Ingresos» y «Gastos» del feature contabilidad
- * @funciones  BolsillosFijosCard({ fijos, resumenMensual, cargando, alDetalle })
+ * @funciones  BolsillosFijosCard({ fijos, resumenMensual, cargando, alDetalle, alBalance })
  * @datos      Recibe los bolsillos fijos y el resumen mensual; calcula el balance del mes
- * @eventos    alDetalle(bolsillo): cada mitad abre el detalle del bolsillo correspondiente
+ * @eventos    alDetalle(bolsillo): cada mitad abre el detalle del bolsillo; alBalance(evento): abre el desglose
  * @estados    Ninguno
  * @usadoPor   ContabilidadPage
  */
@@ -35,6 +35,7 @@ export default function BolsillosFijosCard({
   resumenMensual = {},
   cargando = false,
   alDetalle,
+  alBalance,
 }) {
   const ingresos = Number((resumenMensual || {}).ingresos) || 0;
   const gastos = Number((resumenMensual || {}).gastos) || 0;
@@ -90,18 +91,23 @@ export default function BolsillosFijosCard({
           );
         })}
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/60 px-3 py-2">
+      <button
+        type="button"
+        disabled={cargando}
+        onClick={alBalance}
+        aria-label="Ver detalle del balance del mes"
+        className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border border-border-line/40 bg-bg-cream/60 px-3 py-2 text-left transition-colors hover:border-emerald-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
+      >
         <span className="text-sm font-medium text-slate-text">
           Balance del mes
         </span>
         <span
           className={`font-display text-base font-semibold tabular-nums sm:text-lg ${balanceNegativo ? "text-cat-expense" : "text-emerald-primary"}`}
           data-testid="balance-mes"
-          aria-label={`Balance del mes: ${formatoMoneda.format(balance)}`}
         >
           {cargando ? "—" : formatoMoneda.format(balance)}
         </span>
-      </div>
+      </button>
     </Card>
   );
 }

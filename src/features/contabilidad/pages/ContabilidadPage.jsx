@@ -13,6 +13,7 @@ import ContabilidadHeader from "../components/headers/ContabilidadHeader";
 import BolsillosContablesCondiciones from "../components/conditions/BolsillosContablesCondiciones";
 import ModalBolsillo from "../components/modals/ModalBolsillo";
 import DetalleBolsilloModal from "../components/modals/DetalleBolsilloModal";
+import DetalleBalanceModal from "../components/modals/DetalleBalanceModal";
 import DetalleMovimientoModal from "../components/modals/DetalleMovimientoModal";
 import ModalCrearMovimientoContable from "../components/modals/ModalCrearMovimientoContable";
 import ModalMovimientosPorRevisar from "../components/modals/ModalMovimientosPorRevisar";
@@ -24,6 +25,7 @@ import {
   agregarSaldoDisponible,
   crearFiltrosMovimiento,
   esBolsilloFijo,
+  referenciaGmailMovimiento,
 } from "../utils/contabilidadHelpers";
 import {
   importarMovimientosGmailPendientes,
@@ -35,8 +37,10 @@ import { AlertaGlobal } from "../../../features/error";
 export default function ContabilidadPage() {
   const [bolsilloDetalle, setBolsilloDetalle] = useState(null);
   const [movimientoDetalle, setMovimientoDetalle] = useState(null);
+  const [balanceAbierto, setBalanceAbierto] = useState(false);
   const [bandejaRevisionAbierta, setBandejaRevisionAbierta] = useState(false);
   const [recargaRevision, setRecargaRevision] = useState(0);
+  const [movimientoEliminadoBandeja, setMovimientoEliminadoBandeja] = useState(null);
   const {
     navigate,
     usuario,
@@ -78,6 +82,7 @@ export default function ContabilidadPage() {
   } = useContabilidad();
 
   const sincronizacionHechaRef = useRef(false);
+  const disparadorBalanceRef = useRef(null);
   const recargarMovimientosRef = useRef(recargarMovimientos);
   recargarMovimientosRef.current = recargarMovimientos;
   const [sincronizandoApodos, setSincronizandoApodos] = useState(false);
@@ -198,6 +203,10 @@ export default function ContabilidadPage() {
     disparadorMovimientoRef.current = evento.currentTarget;
     setMovimientoDetalle(movimiento);
   };
+  const abrirDetalleBalance = (evento) => {
+    disparadorBalanceRef.current = evento?.currentTarget || null;
+    setBalanceAbierto(true);
+  };
 
   return (
     <section aria-labelledby="contabilidad-titulo" className="space-y-6 pt-6">
@@ -205,7 +214,10 @@ export default function ContabilidadPage() {
         cantidadPorRevisar={cantidadPorRevisar}
         hayBolsillosActivos={bolsillosActivos.length > 0}
         disparadorMovimientoRef={disparadorMovimientoRef}
-        alAbrirRevision={() => setBandejaRevisionAbierta(true)}
+        alAbrirRevision={() => {
+          setMovimientoEliminadoBandeja(null);
+          setBandejaRevisionAbierta(true);
+        }}
         alAbrirMovimiento={abrirMovimiento}
       />
       <BolsillosContablesCondiciones
@@ -218,6 +230,7 @@ export default function ContabilidadPage() {
         cargandoResumenMensual={cargandoResumenMensual}
         errorResumenes={errorResumenes}
         alAbrirDetalle={abrirDetalleBolsillo}
+        alAbrirBalance={abrirDetalleBalance}
         alAbrirBolsillo={abrirBolsillo}
         disparadorBolsilloRef={disparadorBolsilloRef}
       />
@@ -285,7 +298,6 @@ export default function ContabilidadPage() {
       <DetalleBolsilloModal
         abierto={Boolean(bolsilloDetalle)}
         bolsillo={bolsilloDetalle}
-        resumen={resumenesBolsillos[bolsilloDetalle?.idBolsillo]}
         triggerRef={disparadorBolsilloRef}
         alCerrar={() => setBolsilloDetalle(null)}
         alEditar={() => {
@@ -304,6 +316,12 @@ export default function ContabilidadPage() {
           });
           setBolsilloDetalle(null);
         }}
+      />
+      <DetalleBalanceModal
+        abierto={balanceAbierto}
+        resumenMensual={resumenMensual}
+        triggerRef={disparadorBalanceRef}
+        alCerrar={() => setBalanceAbierto(false)}
       />
       <DetalleMovimientoModal
         movimiento={movimientoDetalle}
@@ -345,8 +363,9 @@ export default function ContabilidadPage() {
           setCrearMovimientoAbierto(true);
         }}
         alConfirmar={recargarMovimientos}
+        movimientoEliminado={movimientoEliminadoBandeja}
         alEliminar={(movimiento) => {
-          setBandejaRevisionAbierta(false);
+          // La bandeja se mantiene abierta: al confirmar, la fila desaparece de la lista.
           setErrorEliminarMovimiento("");
           setMovimientoEliminando(movimiento);
         }}
@@ -359,11 +378,14 @@ export default function ContabilidadPage() {
         ancho="max-w-md"
       >
         <p className="mb-4 text-sm text-slate-text">
-          ¿Eliminar definitivamente el movimiento{" "}
+          ¿Eliminar el movimiento{" "}
           <strong className="text-bg-dark">
             {movimientoEliminando?.concepto || movimientoEliminando?.categoria}
           </strong>
-          ? Esta acción no se puede deshacer.
+          ?{" "}
+          {referenciaGmailMovimiento(movimientoEliminando)
+            ? "El correo asociado se moverá a la papelera de Gmail y podrás restaurarlo desde allí."
+            : "Esta acción no se puede deshacer."}
         </p>
         <AlertaGlobal
           tipo="error"
@@ -382,7 +404,12 @@ export default function ContabilidadPage() {
           <button
             type="button"
             disabled={eliminandoMovimiento}
-            onClick={confirmarEliminarMovimiento}
+            onClick={async () => {
+              const idEliminado = movimientoEliminando?.idMovimiento;
+              const confirmado = await confirmarEliminarMovimiento();
+              if (confirmado && idEliminado)
+                setMovimientoEliminadoBandeja(idEliminado);
+            }}
             className="min-h-10 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-50"
           >
             {eliminandoMovimiento ? "Eliminando…" : "Eliminar movimiento"}

@@ -16,9 +16,9 @@ export default function MovimientoItem({ movimiento, onDetalle }) {
       ? PiggyBank
       : ArrowDownRight;
   const tono = ingreso
-    ? "text-cat-income"
+    ? "text-emerald-primary"
     : tipo === "AHORRO"
-      ? "text-emerald-primary"
+      ? "text-cat-income"
       : tipo === "GASTO"
         ? "text-cat-expense"
         : "text-slate-text";
