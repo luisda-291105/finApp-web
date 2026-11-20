@@ -163,7 +163,10 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
       "fijo-gasto",
     );
     await usuario.type(within(dialogo).getByLabelText(/Monto/), "5000");
-    await usuario.type(within(dialogo).getByLabelText(/Categoría/), "Mercado");
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("Categoría"),
+      "Alimentación",
+    );
     await usuario.selectOptions(
       within(dialogo).getByLabelText("¿De dónde salió el dinero?"),
       "EFECTIVO",
