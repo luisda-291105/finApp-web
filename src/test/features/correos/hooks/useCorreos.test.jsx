@@ -1,10 +1,11 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   consultarCorreosDeFuentes,
   consultarEstadoCorreos,
 } from "../../../../features/correos/services/correosService";
 import { obtenerFuentesPorUsuario } from "../../../../services/fuenteServicio";
+import { invalidarCacheConsultasGmail } from "../../../../services/gmailServicio";
 import { useCorreos } from "../../../../features/correos/hooks/useCorreos";
 
 const gmail = vi.hoisted(() => {
@@ -102,5 +103,23 @@ describe("useCorreos · consulta por cuenta", () => {
     });
     expect(result.current.mensajesPorFuente["fuente-a"]).toHaveLength(1);
     expect(result.current.mensajesPorFuente["fuente-b"]).toHaveLength(1);
+  });
+
+  it("sincronizarTrasRestaurar invalida la caché y recarga la bandeja de inmediato", async () => {
+    const { result } = renderHook(() => useCorreos());
+
+    await waitFor(() =>
+      expect(consultarCorreosDeFuentes).toHaveBeenCalledTimes(2),
+    );
+    const consultasPrevias = consultarCorreosDeFuentes.mock.calls.length;
+    expect(invalidarCacheConsultasGmail).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.sincronizarTrasRestaurar();
+    });
+
+    expect(invalidarCacheConsultasGmail).toHaveBeenCalledTimes(1);
+    expect(obtenerFuentesPorUsuario).toHaveBeenCalledTimes(2);
+    expect(consultarCorreosDeFuentes).toHaveBeenCalledTimes(consultasPrevias + 2);
   });
 });

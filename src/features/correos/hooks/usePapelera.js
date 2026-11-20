@@ -1,8 +1,8 @@
 /**
  * @uso        Estado y acciones de la vista Papelera (composición multi-cuenta)
- * @funciones  usePapelera({ activo, intervaloMs, intervaloLoteMs, soloGestion })
+ * @funciones  usePapelera({ activo, intervaloMs, intervaloLoteMs, soloGestion, alCorreoRestaurado })
  * @datos      Consulta la papelera en vivo por cuenta, restaura, configura la limpieza automática, genera la vista previa, ejecuta y sigue la limpieza y gestiona la lista blanca
- * @eventos    Restaurar por fila, autorizar el permiso ampliado, reintentar una cuenta, guardar la configuración, previsualizar, confirmar la limpieza y añadir/quitar remitentes
+ * @eventos    Restaurar por fila (y sincronizar la bandeja), autorizar el permiso ampliado, reintentar una cuenta, guardar la configuración, previsualizar, confirmar la limpieza y añadir/quitar remitentes
  * @estados    secciones, cargando, restaurando, autorizando, aviso y el subestado de gestión (configuración, vista previa, lote y lista blanca)
  * @usadoPor   CorreosPage, ConfiguracionPage
  */
@@ -35,6 +35,7 @@ export function usePapelera({
   intervaloMs = INTERVALO_ESTADO_MS,
   intervaloLoteMs = INTERVALO_LOTE_MS,
   soloGestion = false,
+  alCorreoRestaurado,
 } = {}) {
   const { gmailConectado, cuentasGmail, conectarGmail } = useGmail();
   const [secciones, setSecciones] = useState([]);
@@ -205,6 +206,13 @@ export function usePapelera({
           tipo: "exito",
           mensaje: "Correo restaurado en la bandeja de Gmail.",
         });
+      // RF-14: reflejarlo en la bandeja de inmediato. Gmail ya lo restauró, así que
+      // un fallo de la sincronización no debe revertir ni opacar el éxito.
+      try {
+        await alCorreoRestaurado?.({ cuentaId, mensajeId });
+      } catch {
+        /* La reconciliación periódica terminará de reflejarlo. */
+      }
     } catch (fallo) {
       if (!montadoRef.current) return;
       if (fallo?.status === 410) {
@@ -248,7 +256,7 @@ export function usePapelera({
           return copia;
         });
     }
-  }, []);
+  }, [alCorreoRestaurado]);
 
   /** Carga la configuración y la lista blanca de la cuenta en gestión. */
   const cargarGestion = useCallback(async (cuentaId) => {

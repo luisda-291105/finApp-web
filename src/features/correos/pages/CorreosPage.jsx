@@ -28,7 +28,10 @@ export default function CorreosPage() {
   const [bandejaNotificacionesAbierta, setBandejaNotificacionesAbierta] =
     useState(false);
   const [papeleraAbierta, setPapeleraAbierta] = useState(false);
-  const papelera = usePapelera({ activo: papeleraAbierta });
+  const papelera = usePapelera({
+    activo: papeleraAbierta,
+    alCorreoRestaurado: estado.sincronizarTrasRestaurar,
+  });
   const mensajesFinancieros = useMemo(
     () => [
       ...new Map(

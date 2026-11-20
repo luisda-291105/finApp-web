@@ -128,6 +128,58 @@ describe("usePapelera", () => {
     ]);
   });
 
+  it("sincroniza la bandeja tras restaurar con éxito", async () => {
+    const alCorreoRestaurado = vi.fn().mockResolvedValue();
+    listarPapeleraPorCuentas.mockResolvedValue([SECCION_A]);
+    restaurarCorreoDePapelera.mockResolvedValue({
+      mensaje_id: "m-1",
+      estado: "EN_BANDEJA",
+    });
+    const { result } = renderHook(() =>
+      usePapelera({ activo: true, alCorreoRestaurado }),
+    );
+    await waitFor(() => expect(result.current.secciones[0]?.correos).toHaveLength(2));
+
+    await act(async () => {
+      await result.current.restaurar({ cuentaId: "cuenta-a", mensajeId: "m-1" });
+    });
+
+    expect(alCorreoRestaurado).toHaveBeenCalledTimes(1);
+    expect(alCorreoRestaurado).toHaveBeenCalledWith({
+      cuentaId: "cuenta-a",
+      mensajeId: "m-1",
+    });
+    expect(result.current.aviso).toMatchObject({ tipo: "exito" });
+  });
+
+  it("mantiene el éxito si falla la sincronización posterior a restaurar", async () => {
+    const alCorreoRestaurado = vi
+      .fn()
+      .mockRejectedValue(new Error("Gmail no responde al recargar."));
+    listarPapeleraPorCuentas.mockResolvedValue([SECCION_A]);
+    restaurarCorreoDePapelera.mockResolvedValue({
+      mensaje_id: "m-1",
+      estado: "EN_BANDEJA",
+    });
+    const { result } = renderHook(() =>
+      usePapelera({ activo: true, alCorreoRestaurado }),
+    );
+    await waitFor(() => expect(result.current.secciones[0]?.correos).toHaveLength(2));
+
+    await act(async () => {
+      await result.current.restaurar({ cuentaId: "cuenta-a", mensajeId: "m-1" });
+    });
+
+    expect(alCorreoRestaurado).toHaveBeenCalledWith({
+      cuentaId: "cuenta-a",
+      mensajeId: "m-1",
+    });
+    expect(result.current.secciones[0].correos.map((c) => c.mensajeId)).toEqual([
+      "m-2",
+    ]);
+    expect(result.current.aviso).toMatchObject({ tipo: "exito" });
+  });
+
   it("revierte el reflejo y avisa si restaurar falla", async () => {
     listarPapeleraPorCuentas.mockResolvedValue([SECCION_A]);
     restaurarCorreoDePapelera.mockRejectedValue(
@@ -144,6 +196,25 @@ describe("usePapelera", () => {
       "m-1",
       "m-2",
     ]);
+    expect(result.current.aviso).toMatchObject({ tipo: "error" });
+  });
+
+  it("no sincroniza la bandeja si restaurar falla", async () => {
+    const alCorreoRestaurado = vi.fn().mockResolvedValue();
+    listarPapeleraPorCuentas.mockResolvedValue([SECCION_A]);
+    restaurarCorreoDePapelera.mockRejectedValue(
+      Object.assign(new Error("Gmail no responde."), { status: 503 }),
+    );
+    const { result } = renderHook(() =>
+      usePapelera({ activo: true, alCorreoRestaurado }),
+    );
+    await waitFor(() => expect(result.current.secciones[0]?.correos).toHaveLength(2));
+
+    await act(async () => {
+      await result.current.restaurar({ cuentaId: "cuenta-a", mensajeId: "m-1" });
+    });
+
+    expect(alCorreoRestaurado).not.toHaveBeenCalled();
     expect(result.current.aviso).toMatchObject({ tipo: "error" });
   });
 

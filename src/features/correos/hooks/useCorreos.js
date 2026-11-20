@@ -2,7 +2,7 @@
  * @uso        Estado y acciones de la bandeja por fuentes/cuentas Gmail
  * @funciones  useCorreos()
  * @datos      Carga fuentes y mensajes; refresca cada cinco minutos y consulta el estado de la cola cada 15 s
- * @eventos    Selección de dirección, cambio de cuenta, actualización, mover a la papelera y cierre de bandeja
+ * @eventos    Selección de dirección, cambio de cuenta, actualización, mover a la papelera, sincronización tras restaurar y cierre de bandeja
  * @estados    fuentes, tarjetasCorreo, mensajes, categoría, estadoCorreos, errores y estados de carga
  * @usadoPor   CorreosPage
  */
@@ -333,6 +333,14 @@ export function useCorreos() {
     setMensajesFuente([]);
   }, []);
 
+  /** Tras restaurar en Gmail, invalida la caché y vuelve a consultar la bandeja de inmediato. */
+  const sincronizarTrasRestaurar = useCallback(async () => {
+    if (!gmailConectado || cuentasGmail.length === 0) return;
+    invalidarCacheConsultasGmail();
+    const fuentesActuales = await cargarFuentes();
+    await consultarTodasLasCuentas(fuentesActuales);
+  }, [gmailConectado, cuentasGmail, cargarFuentes, consultarTodasLasCuentas]);
+
   /**
    * Mueve un correo a la papelera con reflejo optimista: desaparece de la bandeja
    * de inmediato y se revierte si Gmail rechaza el movimiento. Vuelve a lanzar el
@@ -428,6 +436,7 @@ export function useCorreos() {
     seleccionarFuente,
     consultarFuentesRegistradas,
     consultarTodasLasCuentas,
+    sincronizarTrasRestaurar,
     moverCorreoAPapelera,
     cerrarBandeja,
   };
