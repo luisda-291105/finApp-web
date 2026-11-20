@@ -25,6 +25,7 @@ import {
   obtenerOrigenes,
   agruparPorAnioYMes,
 } from "../../utils/contabilidadHelpers";
+import { listarMovimientos } from "../../services/movimientosService";
 import { AlertaGlobal } from "../../../../features/error";
 import {
   perteneceAlBolsillo,
