@@ -119,7 +119,7 @@ export default function ModalMovimientosPorRevisar({
     );
     if (
       movimiento.origenTipo === "GMAIL" &&
-      ["GASTO", "INGRESO"].includes(tipo)
+      ["GASTO", "INGRESO", "TRANSFERENCIA"].includes(tipo)
     ) {
       setOcupado(movimiento.idMovimiento);
       setError("");

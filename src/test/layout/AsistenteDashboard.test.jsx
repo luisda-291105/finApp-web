@@ -31,6 +31,7 @@ vi.mock("../../hooks/useBreakpoint", () => ({
 
 vi.mock("../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   obtenerUsuarioActivo: vi.fn(),
 }));
 

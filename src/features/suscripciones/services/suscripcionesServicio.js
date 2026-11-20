@@ -352,6 +352,7 @@ export async function importarMovimientosGmailPendientes(cuentasGmail = []) {
             monto: item.monto,
             categoria: item.categoria,
             concepto: item.concepto,
+            cuentaOrigen: item.cuentaOrigen || null,
             origenTipo: "GMAIL",
             origenId: item.origenId,
             origenNombre: item.remitente,

@@ -17,6 +17,7 @@ import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
 
 vi.mock("../../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   obtenerUsuarioActivo: vi.fn(),
 }));
 

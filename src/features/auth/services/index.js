@@ -1,6 +1,7 @@
 export {
   crearUsuario,
   iniciarSesion,
+  hayUsuariosRegistrados,
   obtenerUsuarioActivo,
   cerrarSesionServidor,
   obtenerUsuarios,

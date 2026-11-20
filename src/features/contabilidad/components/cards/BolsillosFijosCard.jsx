@@ -9,12 +9,12 @@
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { Card } from "../../../../components/ui";
 import { formatoMoneda } from "../../utils/contabilidadHelpers";
+import { useMovimientosBolsillo } from "../../context/MovimientosBolsilloContext";
 
 const mitades = [
   {
     nombre: "Ingresos",
     etiqueta: "Ingresos",
-    campo: "ingresos",
     tono: "text-emerald-primary",
     fondo: "bg-emerald-50",
     Icono: ArrowUpRight,
@@ -22,7 +22,6 @@ const mitades = [
   {
     nombre: "Gastos",
     etiqueta: "Gastos",
-    campo: "gastos",
     tono: "text-cat-expense",
     fondo: "bg-rose-50",
     Icono: ArrowDownLeft,
@@ -37,6 +36,7 @@ export default function BolsillosFijosCard({
   alDetalle,
   alBalance,
 }) {
+  const { tieneDatosDe, totalMesDe } = useMovimientosBolsillo();
   const ingresos = Number((resumenMensual || {}).ingresos) || 0;
   const gastos = Number((resumenMensual || {}).gastos) || 0;
   const balance = ingresos - gastos;
@@ -58,7 +58,7 @@ export default function BolsillosFijosCard({
       <div className="mt-4 grid grid-cols-1 gap-2">
         {mitades.map((mitad) => {
           const bolsillo = fijos.find((fijo) => fijo.nombre === mitad.nombre);
-          const monto = Number((resumenMensual || {})[mitad.campo]) || 0;
+          const totalMesActual = totalMesDe(bolsillo?.idBolsillo);
           return (
             <button
               key={mitad.nombre}
@@ -82,9 +82,9 @@ export default function BolsillosFijosCard({
                 <p
                   className={`font-display text-base font-semibold tabular-nums sm:text-xl ${mitad.tono}`}
                 >
-                  {cargando
+                  {cargando || !tieneDatosDe(bolsillo?.idBolsillo)
                     ? "—"
-                    : formatoMoneda.format(Number.isFinite(monto) ? monto : 0)}
+                    : formatoMoneda.format(Number.isFinite(totalMesActual) ? totalMesActual : 0)}
                 </p>
               </div>
             </button>

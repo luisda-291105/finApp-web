@@ -11,6 +11,7 @@ export default function LoginForm({
   alEnviar,
   cargando,
   mensaje,
+  tipoMensaje = "error",
 }) {
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
 
@@ -56,7 +57,11 @@ export default function LoginForm({
           )}
         </button>
       </div>
-      <AlertaGlobal tipo="error" mensaje={mensaje} idBase="LoginForm-mensaje" />
+      <AlertaGlobal
+        tipo={tipoMensaje}
+        mensaje={mensaje}
+        idBase="LoginForm-mensaje"
+      />
       <button
         type="submit"
         disabled={cargando}

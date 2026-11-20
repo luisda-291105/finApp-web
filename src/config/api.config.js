@@ -18,6 +18,7 @@ export const ENDPOINTS = {
   },
   usuario: {
     base: "/usuario",
+    hayRegistrados: "/usuario/hay-registrados",
     porId: "/usuario/id",
     porNombre: "/usuario/nombre",
     porContacto: "/usuario/contacto",

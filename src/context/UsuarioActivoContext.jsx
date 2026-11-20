@@ -10,6 +10,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   cerrarSesionServidor,
+  hayUsuariosRegistrados,
   obtenerUsuarioActivo,
 } from "../features/auth/services";
 
@@ -50,50 +51,81 @@ export function UsuarioActivoProvider({ children }) {
     } catch {
       sesionMarcada = false;
     }
-    if (!sesionMarcada) {
-      setUsuario(null);
-      setEstadoSesion("sin-sesion");
+
+    const limpiarMarcasLocales = () => {
+      try {
+        localStorage.removeItem(CLAVE_SESION_AUTENTICADA);
+      } catch {
+        /* Almacenamiento opcional. */
+      }
       try {
         localStorage.removeItem(CLAVE_ALMACEN);
       } catch {
         /* Almacenamiento opcional. */
       }
+    };
+
+    const comprobarSesion = () => {
+      obtenerUsuarioActivo()
+        .then((respuesta) => {
+          const datos = respuesta?.datos || respuesta;
+          if (!activo || revisionSesion.current !== revisionInicial) return;
+          if (datos?.idUsuario) {
+            setUsuario(datos);
+            setEstadoSesion("autenticado");
+            try {
+              localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos));
+            } catch {
+              /* La sesión no depende de localStorage. */
+            }
+          } else {
+            setUsuario(null);
+            setEstadoSesion("sin-sesion");
+          }
+        })
+        .catch(() => {
+          if (!activo || revisionSesion.current !== revisionInicial) return;
+          setUsuario(null);
+          setEstadoSesion("sin-sesion");
+          limpiarMarcasLocales();
+        });
+    };
+
+    if (!sesionMarcada) {
+      setUsuario(null);
+      setEstadoSesion("sin-sesion");
+      limpiarMarcasLocales();
       return () => {
         activo = false;
       };
     }
-    obtenerUsuarioActivo()
-      .then((respuesta) => {
-        const datos = respuesta?.datos || respuesta;
+
+    // Sin cuentas registradas no existe sesión posible: evitar la consulta a
+    // /usuario/activo (y su 401) para no dejar errores en la consola del navegador.
+    if (typeof hayUsuariosRegistrados !== "function") {
+      comprobarSesion();
+      return () => {
+        activo = false;
+      };
+    }
+    hayUsuariosRegistrados()
+      .then((hayUsuarios) => {
         if (!activo || revisionSesion.current !== revisionInicial) return;
-        if (datos?.idUsuario) {
-          setUsuario(datos);
-          setEstadoSesion("autenticado");
-          try {
-            localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos));
-          } catch {
-            /* La sesión no depende de localStorage. */
-          }
-        } else {
+        if (!hayUsuarios) {
           setUsuario(null);
           setEstadoSesion("sin-sesion");
+          limpiarMarcasLocales();
+          return;
         }
+        comprobarSesion();
       })
       .catch(() => {
-        if (!activo || revisionSesion.current !== revisionInicial) return;
-        setUsuario(null);
-        setEstadoSesion("sin-sesion");
-        try {
-          localStorage.removeItem(CLAVE_SESION_AUTENTICADA);
-        } catch {
-          /* Almacenamiento opcional. */
-        }
-        try {
-          localStorage.removeItem(CLAVE_ALMACEN);
-        } catch {
-          /* Almacenamiento opcional. */
+        // Si el estado del registro no está disponible, se conserva el flujo anterior.
+        if (activo && revisionSesion.current === revisionInicial) {
+          comprobarSesion();
         }
       });
+
     return () => {
       activo = false;
     };

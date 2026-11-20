@@ -32,6 +32,7 @@ import {
   sincronizarOrigenesMovimientosGmail,
 } from "../../suscripciones/services/suscripcionesServicio";
 import { AlertaGlobal } from "../../../features/error";
+import { MovimientosBolsilloProvider } from "../context/MovimientosBolsilloContext";
 
 /** Página de bolsillos persistidos y movimientos contables. */
 export default function ContabilidadPage() {
@@ -210,6 +211,7 @@ export default function ContabilidadPage() {
   };
 
   return (
+    <MovimientosBolsilloProvider bolsillos={bolsillos} revision={revisionMovimientos}>
     <section aria-labelledby="contabilidad-titulo" className="space-y-6 pt-6">
       <ContabilidadHeader
         cantidadPorRevisar={cantidadPorRevisar}
@@ -427,5 +429,6 @@ export default function ContabilidadPage() {
         </div>
       </ModalDetalleRegistro>
     </section>
+    </MovimientosBolsilloProvider>
   );
 }

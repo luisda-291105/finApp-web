@@ -1,6 +1,6 @@
 /**
  * @uso        Servicio para consumir endpoints de usuario
- * @funciones  crearUsuario, obtenerUsuarios, obtenerUsuarioPorId, obtenerUsuarioPorNombre, obtenerUsuarioPorContacto, eliminarUsuario, actualizarUsuario
+ * @funciones  crearUsuario, hayUsuariosRegistrados, obtenerUsuarios, obtenerUsuarioPorId, obtenerUsuarioPorNombre, obtenerUsuarioPorContacto, eliminarUsuario, actualizarUsuario
  * @datos      Usa httpServicio y rutas definidas en config/api.config
  * @eventos    Ninguno
  * @estados    Ninguno
@@ -29,6 +29,14 @@ export async function crearUsuario(usuario) {
 export async function iniciarSesion(credenciales) {
   return crear(`${rutaBase}/login`, credenciales);
 }
+
+/** Consulta pública: ¿existe ya al menos una cuenta registrada? */
+export async function hayUsuariosRegistrados() {
+  const respuesta = await obtener(getEndpoint("usuario.hayRegistrados"));
+  const datos = respuesta?.datos ?? respuesta;
+  return Boolean(datos?.hayUsuarios);
+}
+
 export async function obtenerUsuarioActivo() {
   return obtener(`${rutaBase}/activo`);
 }

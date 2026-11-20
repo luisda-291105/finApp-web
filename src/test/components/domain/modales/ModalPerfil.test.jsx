@@ -30,6 +30,7 @@ import {
 
 vi.mock("../../../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   actualizarUsuario: vi.fn(),
   crearUsuario: vi.fn(),
   obtenerUsuarioActivo: vi.fn(),

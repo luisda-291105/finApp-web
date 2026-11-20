@@ -99,7 +99,9 @@ export function extraerMovimientoSugerido(correo) {
     : String(correo.operacion || "Transferencia");
   const cuentaOrigen =
     lineas
-      .map((linea) => linea.match(/cuenta origen[:\s]*\*?\s*(\d{3,})/i))
+      .map((linea) =>
+        linea.match(/(?:cuenta\s+origen|(?:desde\s+tu\s+)?cuenta|tarjeta(?:\s+(?:d[eé]bito|cr[eé]dito))?|t\.\s*(?:cred|d[eé]b)\.?)[:\s·-]*\\?[*xX•\s-]*(\d{3,})/i),
+      )
       .find(Boolean)?.[1] || null;
   const cuentaDestino =
     lineas
@@ -171,7 +173,7 @@ export function clasificarMovimientoCorreo(correo) {
   if (/retiraste|retiro/.test(texto))
     return { categoria: "Retiros", tipo: "GASTO" };
   if (/transferiste/.test(texto))
-    return { categoria: "Transferencia", tipo: "GASTO" };
+    return { categoria: "Transferencia", tipo: "TRANSFERENCIA" };
   if (/compraste|pagaste/.test(texto))
     return { categoria: "Compras", tipo: "GASTO" };
   if (/recibiste\s+(?:una\s+)?transferencia/.test(texto))

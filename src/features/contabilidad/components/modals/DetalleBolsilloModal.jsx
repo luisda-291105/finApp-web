@@ -14,9 +14,7 @@ import {
 } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import DetalleMovimientoModal from "./DetalleMovimientoModal";
-import { listarMovimientos } from "../../services/movimientosService";
 import {
-  claveMesMovimiento,
   esBolsilloFijo,
   etiquetaMesMovimiento,
   etiquetaMesMovimientoCorta,
@@ -28,6 +26,10 @@ import {
   agruparPorAnioYMes,
 } from "../../utils/contabilidadHelpers";
 import { AlertaGlobal } from "../../../../features/error";
+import {
+  perteneceAlBolsillo,
+  useMovimientosBolsillo,
+} from "../../context/MovimientosBolsilloContext";
 
 const iconoPorTipo = {
   GASTO: ReceiptText,
@@ -94,28 +96,6 @@ function fechaLegible(fecha) {
   return Number.isNaN(valor.getTime()) ? fecha : formatoFecha.format(valor);
 }
 
-function perteneceAlBolsillo(movimiento, bolsillo) {
-  const bolsilloDestino = movimiento.idBolsillo === bolsillo.idBolsillo;
-  const bolsilloOrigen =
-    String(movimiento.origenTipo || "").toUpperCase() === "BOLSILLO" &&
-    movimiento.origenId === bolsillo.idBolsillo;
-  if (bolsilloDestino || bolsilloOrigen) return true;
-  // Los gastos confirmados sin bolsillo (importados de Gmail) también forman parte del
-  // detalle del mes del bolsillo Gastos: así el modal resume todos los movimientos
-  // registrados como gasto, como exige el resumen.
-  const tipoBolsillo = String(bolsillo?.tipo || "")
-    .trim()
-    .toUpperCase();
-  const tipoMovimiento = String(movimiento?.tipo || "")
-    .trim()
-    .toUpperCase();
-  const estadoRevision = String(movimiento?.estadoRevision || "")
-    .trim()
-    .toUpperCase();
-  if (estadoRevision === "POR_REVISAR") return false;
-  return tipoBolsillo === "GASTO" && !movimiento?.idBolsillo && tipoMovimiento === "GASTO";
-}
-
 /** Detalle financiero del bolsillo con total de movimientos agrupado por año y mes. */
 export default function DetalleBolsilloModal({
   abierto,
@@ -133,6 +113,7 @@ export default function DetalleBolsilloModal({
   const disparadorDetalleRef = useRef(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
+  const { guardarMovimientos, movimientosDe, tieneDatosDe, totalMesDe } = useMovimientosBolsillo();
   const tipo = String(bolsillo?.tipo || "")
     .trim()
     .toUpperCase();
@@ -140,7 +121,7 @@ export default function DetalleBolsilloModal({
   const esGasto = tipo === "GASTO";
 
   useEffect(() => {
-    if (!abierto || !bolsillo?.idBolsillo) return undefined;
+    if (!abierto || !bolsillo?.idBolsillo || tieneDatosDe(bolsillo.idBolsillo)) return undefined;
     let vigente = true;
     setCargando(true);
     setError("");
@@ -153,6 +134,7 @@ export default function DetalleBolsilloModal({
             String(b.fecha || "").localeCompare(String(a.fecha || "")),
           );
         setMovimientos(lista);
+        guardarMovimientos(bolsillo.idBolsillo, lista);
       })
       .catch((fallo) => {
         if (vigente)
@@ -167,34 +149,27 @@ export default function DetalleBolsilloModal({
     return () => {
       vigente = false;
     };
-  }, [abierto, bolsillo?.idBolsillo, revision]);
+  }, [abierto, bolsillo?.idBolsillo, revision, guardarMovimientos, tieneDatosDe]);
 
-  const reciente = movimientos[0];
+  const movimientosCompartidos = movimientosDe(bolsillo?.idBolsillo);
+  const listaMovimientos = tieneDatosDe(bolsillo?.idBolsillo)
+    ? movimientosCompartidos
+    : movimientos;
+
+  const reciente = listaMovimientos[0];
   const claveMesActual = useMemo(() => mesActual(), []);
-  const totalMesActual = useMemo(
-    () =>
-      movimientos
-        .filter(
-          (movimiento) =>
-            claveMesMovimiento(movimiento.fecha) === claveMesActual,
-        )
-        .reduce(
-          (total, movimiento) => total + (Number(movimiento.monto) || 0),
-          0,
-        ),
-    [movimientos, claveMesActual],
-  );
+  const totalMesActual = totalMesDe(bolsillo?.idBolsillo);
   const totalMovimientos = useMemo(
     () =>
-      movimientos.reduce(
+      listaMovimientos.reduce(
         (total, movimiento) => total + (Number(movimiento.monto) || 0),
         0,
       ),
-    [movimientos],
+    [listaMovimientos],
   );
   const gruposPorAnioYMes = useMemo(
-    () => agruparPorAnioYMes(movimientos),
-    [movimientos],
+    () => agruparPorAnioYMes(listaMovimientos),
+    [listaMovimientos],
   );
   const [aniosAbiertos, setAniosAbiertos] = useState(() => new Set());
   const [mesesAbiertos, setMesesAbiertos] = useState(() => new Set());
@@ -330,8 +305,8 @@ export default function DetalleBolsilloModal({
                     <p
                       className={`mt-1 text-xs ${esGasto ? "text-rose-900/80" : "text-emerald-800/80"}`}
                     >
-                      {movimientos.length} movimiento
-                      {movimientos.length === 1 ? "" : "s"}
+                      {listaMovimientos.length} movimiento
+                      {listaMovimientos.length === 1 ? "" : "s"}
                     </p>
                   </div>
                 </div>
@@ -539,7 +514,7 @@ export default function DetalleBolsilloModal({
                   mensaje={error}
                   idBase="DetalleBolsilloModal-error"
                 />
-                {!cargando && !error && movimientos.length === 0 && (
+                {!cargando && !error && listaMovimientos.length === 0 && (
                   <p className="rounded-xl border border-border-line/40 p-4 text-sm text-slate-text">
                     Todavía no hay movimientos asociados a este bolsillo.
                   </p>

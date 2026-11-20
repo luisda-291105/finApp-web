@@ -8,8 +8,9 @@
  *             clic fuera (overlay con guarda de destino) y gesto (useDeslizarParaCerrar) → alCerrar;
  *             al abrir se captura el elemento activo y al cerrar se devuelve el foco con la pieza
  *             común (useRetornoDeFoco: captura + devolución)
- * @estados    modo ('login' | 'registro'), formulario (objeto), cargando (boolean), mensaje (string);
- *             la captura y la devolución del foco no usan estado de React (viven en useRetornoDeFoco)
+ * @estados    modo ('login' | 'registro'), formulario (objeto), cargando (boolean), mensaje (string)
+ *             y tipoMensaje ('error' | 'advertencia'); la ausencia de cuenta es una validación de
+ *             existencia, no un error de acceso. La captura y devolución del foco viven en useRetornoDeFoco.
  * @usadoPor   PaginaInicio y LoginPage
  */
 import { useEffect, useRef, useState } from "react";
@@ -80,6 +81,15 @@ export default function AuthModal({
   const [contrasena, setContrasena] = useState("");
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [tipoMensaje, setTipoMensaje] = useState("error");
+
+  // El aviso de "usuario no registrado" es temporal y solo tiene sentido en el login:
+  // se oculta automáticamente y desaparece al cambiar de pestaña.
+  useEffect(() => {
+    if (!mensaje || tipoMensaje !== "advertencia") return undefined;
+    const temporizador = setTimeout(() => setMensaje(""), 4000);
+    return () => clearTimeout(temporizador);
+  }, [mensaje, tipoMensaje]);
 
   // Esc: mecanismo único compartido; la capa de este panel es 50 (plan §2.3-M1)
   useCierreConEsc({ activo: abierto, zIndex: 50, alCerrar });
@@ -94,6 +104,7 @@ export default function AuthModal({
     setModo(modoInicial);
     // Si la sesión expiró por inactividad, mostramos el aviso al reabrir el acceso.
     setMensaje(abierto ? consumirMensajeSesion() : "");
+    setTipoMensaje("error");
   }, [modoInicial, abierto]);
 
   if (!abierto) return null;
@@ -122,6 +133,7 @@ export default function AuthModal({
     e.preventDefault();
     setCargando(true);
     setMensaje("");
+    setTipoMensaje("error");
 
     try {
       if (modo === "login") {
@@ -154,14 +166,23 @@ export default function AuthModal({
             return;
           }
         } catch (error) {
-          setMensaje(error?.message || "No fue posible iniciar sesión.");
+          const texto = error?.message || "No fue posible iniciar sesión.";
+          // La ausencia de cuenta es una validación de existencia, no un error de acceso.
+          const esValidacionExistencia =
+            texto.includes("Aún no hay cuentas registradas") ||
+            texto.includes("No se encontró una cuenta");
+          setTipoMensaje(esValidacionExistencia ? "advertencia" : "error");
+          setMensaje(
+            esValidacionExistencia
+              ? "Usuario no registrado. Crea una cuenta para comenzar."
+              : texto,
+          );
           setCargando(false);
           return;
         }
 
-        setMensaje(
-          "No se encontró una cuenta con esa identificación o correo.",
-        );
+        setTipoMensaje("advertencia");
+        setMensaje("Usuario no registrado. Crea una cuenta para comenzar.");
         setCargando(false);
         return;
       }
@@ -307,7 +328,11 @@ export default function AuthModal({
               <div className="flex border-b border-white/10 mb-6 pb-2 gap-6 pr-10">
                 <button
                   type="button"
-                  onClick={() => setModo("login")}
+                  onClick={() => {
+                    setModo("login");
+                    setMensaje("");
+                    setTipoMensaje("error");
+                  }}
                   className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
                     modo === "login"
                       ? "border-[#1a7a5e] text-white"
@@ -318,7 +343,11 @@ export default function AuthModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setModo("registro")}
+                  onClick={() => {
+                    setModo("registro");
+                    setMensaje("");
+                    setTipoMensaje("error");
+                  }}
                   className={`text-base font-semibold pb-2 border-b-2 transition-all cursor-pointer ${
                     modo === "registro"
                       ? "border-[#1a7a5e] text-white"
@@ -338,6 +367,7 @@ export default function AuthModal({
                   alEnviar={manejarEnvio}
                   cargando={cargando}
                   mensaje={mensaje}
+                  tipoMensaje={tipoMensaje}
                 />
               ) : (
                 <RegistroForm
