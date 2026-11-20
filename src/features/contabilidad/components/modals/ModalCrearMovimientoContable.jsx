@@ -21,6 +21,32 @@ import {
 } from "../../../../utils/formatoPesos";
 import { esBolsilloClasificable, esBolsilloFijo } from "../../utils/contabilidadHelpers";
 
+const CATEGORIAS_MOVIMIENTO = [
+  "Alimentación",
+  "Comunicación",
+  "Entretenimiento",
+  "Servicios",
+  "Transporte",
+  "Salud",
+  "Educación",
+  "Hogar",
+];
+const CATEGORIA_PERSONALIZADA = "__PERSONALIZADA__";
+const CLAVE_CATEGORIAS_PERSONALIZADAS = "finapp.contabilidad.categorias-personalizadas";
+
+function leerCategoriasPersonalizadas() {
+  try {
+    const guardadas = JSON.parse(
+      window.localStorage.getItem(CLAVE_CATEGORIAS_PERSONALIZADAS) || "[]",
+    );
+    return Array.isArray(guardadas)
+      ? guardadas.filter((categoria) => typeof categoria === "string" && categoria.trim())
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function fechaLocal() {
   const hoy = new Date();
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
@@ -69,6 +95,10 @@ export default function ModalCrearMovimientoContable({
   const [valores, setValores] = useState(() => valoresIniciales());
   const [respuesta, setRespuesta] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+  const [categoriaPersonalizada, setCategoriaPersonalizada] = useState(false);
+  const [categoriasPersonalizadas, setCategoriasPersonalizadas] = useState(
+    leerCategoriasPersonalizadas,
+  );
 
   useEffect(() => {
     if (abierto) {
@@ -92,6 +122,15 @@ export default function ModalCrearMovimientoContable({
               origenNombre: movimiento.origenNombre || "",
             }
           : { ...valoresIniciales(), ...(valoresPredeterminados || {}) },
+      );
+      const categoriaActual =
+        modo === "editar" && movimiento
+          ? movimiento.categoria || ""
+          : valoresPredeterminados?.categoria || "";
+      setCategoriaPersonalizada(
+        Boolean(categoriaActual) &&
+          !CATEGORIAS_MOVIMIENTO.includes(categoriaActual) &&
+          !categoriasPersonalizadas.includes(categoriaActual),
       );
       setRespuesta(null);
       setOcupado(false);
@@ -157,6 +196,7 @@ export default function ModalCrearMovimientoContable({
     setOcupado(true);
     setRespuesta(null);
     try {
+      const categoria = valores.categoria.trim();
       await alGuardar?.({
         ...valores,
         tipo,
@@ -173,9 +213,21 @@ export default function ModalCrearMovimientoContable({
                   ? "Efectivo"
                   : "",
         monto,
-        categoria: valores.categoria.trim(),
+        categoria,
         concepto: valores.concepto.trim(),
       });
+      if (categoriaPersonalizada && !CATEGORIAS_MOVIMIENTO.includes(categoria)) {
+        const actualizadas = [...new Set([...categoriasPersonalizadas, categoria])];
+        setCategoriasPersonalizadas(actualizadas);
+        try {
+          window.localStorage.setItem(
+            CLAVE_CATEGORIAS_PERSONALIZADAS,
+            JSON.stringify(actualizadas),
+          );
+        } catch {
+          // El movimiento ya quedó guardado; la memoria de categorías es opcional.
+        }
+      }
       alCerrar();
     } catch (fallo) {
       setRespuesta({
@@ -335,17 +387,38 @@ export default function ModalCrearMovimientoContable({
                 htmlFor="nuevo-movimiento-categoria"
               >
                 Categoría
-                <input
+                <select
                   id="nuevo-movimiento-categoria"
                   required
-                  maxLength={80}
-                  placeholder="Ej. Alimentación"
-                  value={valores.categoria}
-                  onChange={(evento) =>
-                    cambiar("categoria", evento.target.value)
-                  }
-                  className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text"
-                />
+                  value={categoriaPersonalizada ? CATEGORIA_PERSONALIZADA : valores.categoria}
+                  onChange={(evento) => {
+                    const seleccion = evento.target.value;
+                    const personalizada = seleccion === CATEGORIA_PERSONALIZADA;
+                    setCategoriaPersonalizada(personalizada);
+                    cambiar("categoria", personalizada ? "" : seleccion);
+                  }}
+                  className="mt-1 min-h-11 w-full rounded-xl border border-border-line bg-white px-3"
+                >
+                  <option value="" disabled>Selecciona una categoría</option>
+                  {CATEGORIAS_MOVIMIENTO.map((categoria) => (
+                    <option key={categoria} value={categoria}>{categoria}</option>
+                  ))}
+                  {categoriasPersonalizadas.map((categoria) => (
+                    <option key={categoria} value={categoria}>{categoria}</option>
+                  ))}
+                  <option value={CATEGORIA_PERSONALIZADA}>Otra (escribir)</option>
+                </select>
+                {categoriaPersonalizada && (
+                  <input
+                    id="nuevo-movimiento-categoria-personalizada"
+                    required
+                    maxLength={80}
+                    placeholder="Escribe la categoría"
+                    value={valores.categoria}
+                    onChange={(evento) => cambiar("categoria", evento.target.value)}
+                    className="mt-2 min-h-11 w-full rounded-xl border border-border-line bg-white px-3 placeholder:text-slate-text"
+                  />
+                )}
               </label>
               <label
                 className="block text-sm font-medium"
