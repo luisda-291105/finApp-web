@@ -74,7 +74,7 @@ export default function CorreosPage() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border-line bg-bg-cream/70 px-4 py-2.5 text-sm font-medium text-bg-dark transition-colors hover:border-emerald-primary/50 hover:text-emerald-primary"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
-              <span>Papelera</span>
+              <span className="sm:hidden">Papelera</span>
             </button>
           )}
           {estado.gmailConectado ? (
