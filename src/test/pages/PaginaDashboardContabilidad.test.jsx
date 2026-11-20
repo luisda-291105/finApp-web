@@ -218,8 +218,12 @@ describe("PaginaDashboardContabilidad", () => {
     });
     expect(within(cardFijos).getByText("Ingresos")).toBeInTheDocument();
     expect(within(cardFijos).getByText("Gastos")).toBeInTheDocument();
-    expect(within(cardFijos).getByText(/12\.000/)).toBeInTheDocument();
-    expect(within(cardFijos).getByText(/5\.000/)).toBeInTheDocument();
+    expect(
+      within(cardFijos).getByRole("button", { name: "Ver detalles de Ingresos" }),
+    ).toHaveTextContent("$ 0");
+    expect(
+      within(cardFijos).getByRole("button", { name: "Ver detalles de Gastos" }),
+    ).toHaveTextContent("11.000");
     expect(within(cardFijos).getByText("Balance del mes")).toBeInTheDocument();
     expect(within(cardFijos).getByText(/7\.000/)).toBeInTheDocument();
     expect(within(rejilla).queryAllByText("Fijo")).toHaveLength(0);
@@ -378,7 +382,7 @@ describe("PaginaDashboardContabilidad", () => {
     expect(within(filaAhorro).getByText(/700\.000/)).toHaveClass("text-sky-700");
   });
 
-  it("resume en el modal del bolsillo Gastos también los gastos globales sin bolsillo", async () => {
+  it("resume en Gastos los movimientos Gmail asociados al bolsillo fijo", async () => {
     const usuario = userEvent.setup();
     const claveMes = mesActual();
     const movimientosDetalle = [
@@ -395,7 +399,7 @@ describe("PaginaDashboardContabilidad", () => {
       },
       {
         idMovimiento: "gasto-global",
-        idBolsillo: null,
+        idBolsillo: "fijo-gasto",
         tipo: "GASTO",
         estadoRevision: "CONFIRMADO",
         monto: 63125,

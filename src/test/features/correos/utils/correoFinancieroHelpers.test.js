@@ -59,10 +59,10 @@ describe("correoFinancieroHelpers", () => {
 
     expect(clasificarMovimientoCorreo(correo)).toEqual({
       categoria: "Transferencia",
-      tipo: "GASTO",
+      tipo: "TRANSFERENCIA",
     });
     expect(extraerMovimientoSugerido(correo)).toMatchObject({
-      tipo: "GASTO",
+      tipo: "TRANSFERENCIA",
       banco: "Bancolombia",
       operacion: "Transferiste",
       monto: 1000000,
