@@ -8,7 +8,12 @@
  *   renderiza el contenedor (por defecto, `div`).
  * @usadoPor   Features, inicio, contabilidad y configuracion
  */
-export function Card({ children, className = "", como: Tag = "div", ...props }) {
+export function Card({
+  children,
+  className = "",
+  como: Tag = "div",
+  ...props
+}) {
   return (
     <Tag className={"glass-card " + className} {...props}>
       {children}

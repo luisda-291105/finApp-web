@@ -1,1 +1,13 @@
-export { crearUsuario, iniciarSesion, obtenerUsuarioActivo, cerrarSesionServidor, obtenerUsuarios, obtenerUsuarioPorId, obtenerUsuarioPorNombre, obtenerUsuarioPorContacto, eliminarUsuario, actualizarUsuario } from "./usuarioServicio";
+export {
+  crearUsuario,
+  iniciarSesion,
+  hayUsuariosRegistrados,
+  obtenerUsuarioActivo,
+  cerrarSesionServidor,
+  obtenerUsuarios,
+  obtenerUsuarioPorId,
+  obtenerUsuarioPorNombre,
+  obtenerUsuarioPorContacto,
+  eliminarUsuario,
+  actualizarUsuario,
+} from "./usuarioServicio";

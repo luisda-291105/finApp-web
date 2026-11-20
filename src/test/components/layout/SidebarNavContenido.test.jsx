@@ -16,6 +16,7 @@ import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
 
 vi.mock("../../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   obtenerUsuarioActivo: vi.fn(),
 }));
 
@@ -32,7 +33,7 @@ afterEach(() => {
 beforeEach(() => {
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
   window.localStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_autenticada" ? "activa" : null
+    key === "finapp_sesion_autenticada" ? "activa" : null,
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_SIDEBAR });
@@ -43,7 +44,10 @@ function RutaActual() {
   return <output data-testid="ruta-actual">{ubicacion.pathname}</output>;
 }
 
-const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) => {
+const renderSidebarNavContenido = (
+  props = {},
+  initialEntries = ["/dashboard"],
+) => {
   const defaultProps = {
     alAbrirUserModal: vi.fn(),
     ...props,
@@ -52,7 +56,7 @@ const renderSidebarNavContenido = (props = {}, initialEntries = ["/dashboard"]) 
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <SidebarNavContenido {...defaultProps} />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 };
 
@@ -86,17 +90,31 @@ describe("SidebarNavContenido", () => {
       expect(correosLink.getAttribute("href")).toBe("/dashboard/correos");
       expect(correosLink.querySelector("svg")).toBeTruthy();
 
-      const contabilidadLink = screen.getByRole("link", { name: /Contabilidad/i });
-      expect(contabilidadLink.getAttribute("href")).toBe("/dashboard/contabilidad");
+      const contabilidadLink = screen.getByRole("link", {
+        name: /Contabilidad/i,
+      });
+      expect(contabilidadLink.getAttribute("href")).toBe(
+        "/dashboard/contabilidad",
+      );
       expect(contabilidadLink.querySelector("svg.lucide-wallet")).toBeTruthy();
 
-      const suscripcionesLink = screen.getByRole("link", { name: /Suscripciones/i });
-      expect(suscripcionesLink.getAttribute("href")).toBe("/dashboard/suscripciones");
+      const suscripcionesLink = screen.getByRole("link", {
+        name: /Suscripciones/i,
+      });
+      expect(suscripcionesLink.getAttribute("href")).toBe(
+        "/dashboard/suscripciones",
+      );
       expect(suscripcionesLink.querySelector("svg.lucide-repeat")).toBeTruthy();
 
-      const almacenamientoLink = screen.getByRole("link", { name: /Almacenamiento/i });
-      expect(almacenamientoLink.getAttribute("href")).toBe("/dashboard/almacenamiento");
-      expect(almacenamientoLink.querySelector("svg.lucide-hard-drive")).toBeTruthy();
+      const almacenamientoLink = screen.getByRole("link", {
+        name: /Almacenamiento/i,
+      });
+      expect(almacenamientoLink.getAttribute("href")).toBe(
+        "/dashboard/almacenamiento",
+      );
+      expect(
+        almacenamientoLink.querySelector("svg.lucide-hard-drive"),
+      ).toBeTruthy();
     });
 
     it("iconos tienen flex-shrink-0 w-6 h-6", () => {
@@ -141,7 +159,9 @@ describe("SidebarNavContenido", () => {
       renderSidebarNavContenido();
 
       // El avatar es un botón que contiene las iniciales
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       expect(avatarButton).toBeTruthy();
 
       // Guarda (spec 015, RF-01): `my-` es un token fantasma que no genera ninguna regla.
@@ -149,7 +169,9 @@ describe("SidebarNavContenido", () => {
       expect(avatarButton.classList.contains("my-")).toBe(false);
 
       // Verificar círculo con iniciales
-      const avatarCircle = avatarButton.querySelector(".w-10.h-10.rounded-full.bg-emerald-primary");
+      const avatarCircle = avatarButton.querySelector(
+        ".w-10.h-10.rounded-full.bg-emerald-primary",
+      );
       expect(avatarCircle).toBeTruthy();
       expect(avatarCircle.textContent).toContain("UD");
 
@@ -164,7 +186,7 @@ describe("SidebarNavContenido", () => {
           <UsuarioActivoProvider>
             <SidebarNavContenido alAbrirUserModal={vi.fn()} />
           </UsuarioActivoProvider>
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       const avatarButton = await screen.findByRole("button", {
@@ -172,16 +194,22 @@ describe("SidebarNavContenido", () => {
       });
 
       expect(avatarButton.textContent).toContain("Ana María Ruiz");
-      expect(avatarButton.querySelector(".w-10.h-10.rounded-full").textContent).toBe("AM");
+      expect(
+        avatarButton.querySelector(".w-10.h-10.rounded-full").textContent,
+      ).toBe("AM");
       expect(avatarButton.textContent).toContain("No registrado");
       expect(avatarButton.textContent).not.toContain("demo@finapp.local");
-      expect(avatarButton.getAttribute("aria-label")).toBe("Cuenta de Ana María Ruiz");
+      expect(avatarButton.getAttribute("aria-label")).toBe(
+        "Cuenta de Ana María Ruiz",
+      );
     });
 
     it("avatar tiene clases correctas: w-10 h-10 rounded-full bg-emerald-primary flex items-center justify-center text-bg-cream font-medium", () => {
       renderSidebarNavContenido();
 
-      const avatarCircle = document.querySelector(".w-10.h-10.rounded-full.bg-emerald-primary.flex.items-center.justify-center.text-bg-cream.font-medium");
+      const avatarCircle = document.querySelector(
+        ".w-10.h-10.rounded-full.bg-emerald-primary.flex.items-center.justify-center.text-bg-cream.font-medium",
+      );
       expect(avatarCircle).toBeTruthy();
     });
   });
@@ -191,7 +219,9 @@ describe("SidebarNavContenido", () => {
       const alAbrirUserModal = vi.fn();
       renderSidebarNavContenido({ alAbrirUserModal });
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       await userEvent.click(avatarButton);
 
       expect(alAbrirUserModal).toHaveBeenCalledTimes(1);
@@ -201,7 +231,9 @@ describe("SidebarNavContenido", () => {
       const alAbrirUserModal = vi.fn();
       renderSidebarNavContenido({ alAbrirUserModal });
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
       await userEvent.click(avatarButton);
       await userEvent.click(avatarButton);
 
@@ -223,13 +255,15 @@ describe("SidebarNavContenido", () => {
 
     it("no tiene estado interno ni efectos secundarios", () => {
       // Componente stateless: solo renderiza según props
-      const { rerender } = renderSidebarNavContenido({ alAbrirUserModal: vi.fn() });
+      const { rerender } = renderSidebarNavContenido({
+        alAbrirUserModal: vi.fn(),
+      });
 
       // Re-render con misma prop no debe causar efectos extra
       rerender(
         <MemoryRouter initialEntries={["/dashboard"]}>
           <SidebarNavContenido alAbrirUserModal={vi.fn()} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       // Si llegamos aquí sin errores, el componente es stateless
@@ -245,7 +279,7 @@ describe("SidebarNavContenido", () => {
         <MemoryRouter initialEntries={["/dashboard"]}>
           <SidebarNavContenido alAbrirUserModal={vi.fn()} />
           <RutaActual />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       await usuario.click(screen.getByRole("link", { name: etiqueta }));
@@ -259,16 +293,27 @@ describe("SidebarNavContenido", () => {
       renderSidebarNavContenido();
 
       const nav = screen.getByRole("navigation");
-      expect(nav.getAttribute("aria-label")).toBe("Navegación principal del dashboard");
+      expect(nav.getAttribute("aria-label")).toBe(
+        "Navegación principal del dashboard",
+      );
     });
 
     it("conserva nombres accesibles cuando la sidebar está colapsada", () => {
       renderSidebarNavContenido({ colapsada: true });
 
-      ["Inicio", "Tarjetas", "Grupos", "Contactos", "Correos", "Contabilidad", "Suscripciones", "Almacenamiento"].forEach((etiqueta) => {
+      [
+        "Inicio",
+        "Tarjetas",
+        "Grupos",
+        "Contactos",
+        "Correos",
+        "Contabilidad",
+        "Suscripciones",
+        "Almacenamiento",
+      ].forEach((etiqueta) => {
         expect(screen.getByRole("link", { name: etiqueta })).toHaveAttribute(
           "aria-label",
-          etiqueta
+          etiqueta,
         );
       });
     });
@@ -286,14 +331,20 @@ describe("SidebarNavContenido", () => {
     it("avatar button tiene aria-label descriptivo", () => {
       renderSidebarNavContenido();
 
-      const avatarButton = screen.getByRole("button", { name: /Cuenta de Usuario Demo/i });
-      expect(avatarButton.getAttribute("aria-label")).toBe("Cuenta de Usuario Demo");
+      const avatarButton = screen.getByRole("button", {
+        name: /Cuenta de Usuario Demo/i,
+      });
+      expect(avatarButton.getAttribute("aria-label")).toBe(
+        "Cuenta de Usuario Demo",
+      );
     });
 
     it("el correo del avatar usa texto con contraste adecuado sobre la sidebar oscura", () => {
       renderSidebarNavContenido();
 
-      expect(screen.getByText("correo No registrado")).toHaveClass("text-bg-cream/70");
+      expect(screen.getByText("correo No registrado")).toHaveClass(
+        "text-bg-cream/70",
+      );
     });
 
     it("separador tiene aria-hidden=true", () => {
@@ -320,7 +371,9 @@ describe("SidebarNavContenido", () => {
 
       const inactiveLink = screen.getByRole("link", { name: /Contabilidad/i });
       expect(inactiveLink.classList.contains("text-bg-cream")).toBe(true);
-      expect(inactiveLink.classList.contains("hover:bg-emerald-primary/5")).toBe(true);
+      expect(
+        inactiveLink.classList.contains("hover:bg-emerald-primary/5"),
+      ).toBe(true);
     });
 
     it("Inicio no queda activo en subrutas del dashboard", () => {
@@ -328,8 +381,12 @@ describe("SidebarNavContenido", () => {
 
       const inicioLink = screen.getByRole("link", { name: /Inicio/i });
       const tarjetasLink = screen.getByRole("link", { name: /Tarjetas/i });
-      expect(inicioLink.classList.contains("bg-emerald-primary/10")).toBe(false);
-      expect(tarjetasLink.classList.contains("bg-emerald-primary/10")).toBe(true);
+      expect(inicioLink.classList.contains("bg-emerald-primary/10")).toBe(
+        false,
+      );
+      expect(tarjetasLink.classList.contains("bg-emerald-primary/10")).toBe(
+        true,
+      );
     });
   });
 });

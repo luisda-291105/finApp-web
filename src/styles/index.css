@@ -41,6 +41,24 @@
   padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
 
+/* Altura real de la barra de navegación inferior (BottomNav), publicada por el
+   componente en :root. Fallback 0px: sin barra (p. ej. landing) la hoja del
+   modal llega al borde inferior del viewport. */
+:root {
+  --bottom-nav-alto: 0px;
+}
+
+/* Overlay de modal que encuadra solo el contenido del dashboard: parte del borde derecho
+   de la navegación lateral (expuesta como --dashboard-sidebar-width) hasta el final. */
+.modal-overlay-dashboard {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--dashboard-sidebar-width, 0px);
+  transition: left 300ms;
+}
+
 /* Etiquetas de la barra de navegación inferior (BottomNav): visibles en
    vertical y ocultas en landscape, donde el espacio vertical es escaso.
    Reglas migradas desde el <style jsx> del componente (styled-jsx no está
@@ -74,6 +92,13 @@ select {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  scroll-padding-top: 5.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -107,10 +132,18 @@ textarea::placeholder {
 }
 
 /* Logo alterna según tema claro/oscuro */
-.logo-tema-claro { display: block; }
-.logo-tema-oscuro { display: none; }
-:root[data-tema="oscuro"] .logo-tema-claro { display: none; }
-:root[data-tema="oscuro"] .logo-tema-oscuro { display: block; }
+.logo-tema-claro {
+  display: block;
+}
+.logo-tema-oscuro {
+  display: none;
+}
+:root[data-tema="oscuro"] .logo-tema-claro {
+  display: none;
+}
+:root[data-tema="oscuro"] .logo-tema-oscuro {
+  display: block;
+}
 
 :root[data-tema="oscuro"] body {
   overflow-x: hidden;
@@ -119,49 +152,172 @@ textarea::placeholder {
   color: #f7f6f2;
 }
 
-:root[data-tema="oscuro"] .text-bg-dark { color: #f7f6f2; }
-:root[data-tema="oscuro"] .text-bg-dark\/70 { color: rgb(247 246 242 / 70%); }
-:root[data-tema="oscuro"] .text-bg-dark\/80 { color: rgb(247 246 242 / 80%); }
-:root[data-tema="oscuro"] .text-bg-cream { color: #f7f6f2; }
-:root[data-tema="oscuro"] .text-bg-cream\/70 { color: rgb(247 246 242 / 70%); }
-:root[data-tema="oscuro"] .glass-card { background: #202630; color: #f7f6f2; border-color: #39414e; }
-:root[data-tema="oscuro"] .bg-white { background-color: #252c37; }
-:root[data-tema="oscuro"] .bg-slate-100 { background-color: #252c37; }
-:root[data-tema="oscuro"] .bg-slate-300 { background-color: #556071; }
-:root[data-tema="oscuro"] :is(.bg-red-50, .bg-red-100) { background-color: #3a2024; }
-:root[data-tema="oscuro"] :is(.border-red-200, .border-red-700\/30) { border-color: #71363d; }
-:root[data-tema="oscuro"] :is(.text-red-700, .text-red-900) { color: #fca5a5; }
+:root[data-tema="oscuro"] .text-bg-dark {
+  color: #f7f6f2;
+}
+:root[data-tema="oscuro"] .text-bg-dark\/70 {
+  color: rgb(247 246 242 / 70%);
+}
+:root[data-tema="oscuro"] .text-bg-dark\/80 {
+  color: rgb(247 246 242 / 80%);
+}
+:root[data-tema="oscuro"] .text-bg-cream {
+  color: #f7f6f2;
+}
+:root[data-tema="oscuro"] .text-bg-cream\/70 {
+  color: rgb(247 246 242 / 70%);
+}
+:root[data-tema="oscuro"] .glass-card {
+  background: #202630;
+  color: #f7f6f2;
+  border-color: #39414e;
+}
+:root[data-tema="oscuro"] .bg-white {
+  background-color: #252c37;
+}
+:root[data-tema="oscuro"] .bg-slate-100 {
+  background-color: #252c37;
+}
+:root[data-tema="oscuro"] .bg-slate-300 {
+  background-color: #556071;
+}
+:root[data-tema="oscuro"] :is(.bg-red-50, .bg-red-100) {
+  background-color: #3a2024;
+}
+:root[data-tema="oscuro"] :is(.border-red-200, .border-red-700\/30) {
+  border-color: #71363d;
+}
+:root[data-tema="oscuro"] :is(.text-red-700, .text-red-900) {
+  color: #fca5a5;
+}
 
 /* Paleta compartida para filtros y etiquetas de correo. */
-.correo-tono-todos { color: #1d4ed8; background: #dbeafe; border-color: #93c5fd; }
-.correo-tono-contable { color: #166534; background: #dcfce7; border-color: #86efac; }
-.correo-tono-importante { color: #92400e; background: #fef3c7; border-color: #fcd34d; }
-.correo-tono-no-importante { color: #475569; background: #f1f5f9; border-color: #cbd5e1; }
-.correo-tono-estudios { color: #0e7490; background: #cffafe; border-color: #67e8f9; }
-.correo-tono-entretenimiento { color: #6b21a8; background: #f3e8ff; border-color: #d8b4fe; }
-.correo-tono-otros { color: #ffffff; background: #111827; border-color: #374151; }
-.correo-tono-gasto { color: #991b1b; background: #fee2e2; border-color: #fca5a5; }
-.correo-filtro-activo { border-width: 2px; box-shadow: 0 0 0 2px rgb(148 163 184 / 18%); }
-.correo-etiqueta { display: inline-flex; align-items: center; border: 1px solid; border-radius: 9999px; padding: 0.25rem 0.625rem; font-size: 0.75rem; font-weight: 600; line-height: 1rem; }
-.correo-contador { background: rgb(255 255 255 / 60%); color: inherit; }
-.correo-barra-importante { border-left-color: #f59e0b !important; }
-.correo-barra-contable { border-left-color: #16a34a !important; }
-.correo-barra-no-importante { border-left-color: #64748b !important; }
-.correo-barra-estudios { border-left-color: #0891b2 !important; }
-.correo-barra-entretenimiento { border-left-color: #9333ea !important; }
-.correo-barra-otros { border-left-color: #111827 !important; }
-.correo-barra-gasto { border-left-color: #dc2626 !important; }
+.correo-tono-todos {
+  color: #1d4ed8;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+.correo-tono-contable {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+.correo-tono-importante {
+  color: #92400e;
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+.correo-tono-no-importante {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.correo-tono-estudios {
+  color: #0e7490;
+  background: #cffafe;
+  border-color: #67e8f9;
+}
+.correo-tono-entretenimiento {
+  color: #6b21a8;
+  background: #f3e8ff;
+  border-color: #d8b4fe;
+}
+.correo-tono-otros {
+  color: #ffffff;
+  background: #111827;
+  border-color: #374151;
+}
+.correo-tono-gasto {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+.correo-filtro-activo {
+  border-width: 2px;
+  box-shadow: 0 0 0 2px rgb(148 163 184 / 18%);
+}
+.correo-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid;
+  border-radius: 9999px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+}
+.correo-contador {
+  background: rgb(255 255 255 / 60%);
+  color: inherit;
+}
+.correo-barra-importante {
+  border-left-color: #f59e0b !important;
+}
+.correo-barra-contable {
+  border-left-color: #16a34a !important;
+}
+.correo-barra-no-importante {
+  border-left-color: #64748b !important;
+}
+.correo-barra-estudios {
+  border-left-color: #0891b2 !important;
+}
+.correo-barra-entretenimiento {
+  border-left-color: #9333ea !important;
+}
+.correo-barra-otros {
+  border-left-color: #111827 !important;
+}
+.correo-barra-gasto {
+  border-left-color: #dc2626 !important;
+}
 
-:root[data-tema="oscuro"] .correo-tono-todos { color: #93c5fd; background: rgb(59 130 246 / 16%); border-color: rgb(96 165 250 / 42%); }
-:root[data-tema="oscuro"] .correo-tono-contable { color: #86efac; background: rgb(22 163 74 / 16%); border-color: rgb(74 222 128 / 42%); }
-:root[data-tema="oscuro"] .correo-tono-importante { color: #fcd34d; background: rgb(245 158 11 / 16%); border-color: rgb(251 191 36 / 42%); }
-:root[data-tema="oscuro"] .correo-tono-no-importante { color: #cbd5e1; background: rgb(100 116 139 / 18%); border-color: rgb(148 163 184 / 38%); }
-:root[data-tema="oscuro"] .correo-tono-estudios { color: #67e8f9; background: rgb(8 145 178 / 16%); border-color: rgb(34 211 238 / 42%); }
-:root[data-tema="oscuro"] .correo-tono-entretenimiento { color: #d8b4fe; background: rgb(147 51 234 / 16%); border-color: rgb(192 132 252 / 42%); }
-:root[data-tema="oscuro"] .correo-tono-otros { color: #f3f4f6; background: #10141c; border-color: #4b5563; }
-:root[data-tema="oscuro"] .correo-tono-gasto { color: #fca5a5; background: rgb(220 38 38 / 16%); border-color: rgb(248 113 113 / 42%); }
-:root[data-tema="oscuro"] .correo-contador { background: rgb(255 255 255 / 12%); }
-:root[data-tema="oscuro"] .correo-barra-otros { border-left-color: #05070b !important; }
+:root[data-tema="oscuro"] .correo-tono-todos {
+  color: #93c5fd;
+  background: rgb(59 130 246 / 16%);
+  border-color: rgb(96 165 250 / 42%);
+}
+:root[data-tema="oscuro"] .correo-tono-contable {
+  color: #86efac;
+  background: rgb(22 163 74 / 16%);
+  border-color: rgb(74 222 128 / 42%);
+}
+:root[data-tema="oscuro"] .correo-tono-importante {
+  color: #fcd34d;
+  background: rgb(245 158 11 / 16%);
+  border-color: rgb(251 191 36 / 42%);
+}
+:root[data-tema="oscuro"] .correo-tono-no-importante {
+  color: #cbd5e1;
+  background: rgb(100 116 139 / 18%);
+  border-color: rgb(148 163 184 / 38%);
+}
+:root[data-tema="oscuro"] .correo-tono-estudios {
+  color: #67e8f9;
+  background: rgb(8 145 178 / 16%);
+  border-color: rgb(34 211 238 / 42%);
+}
+:root[data-tema="oscuro"] .correo-tono-entretenimiento {
+  color: #d8b4fe;
+  background: rgb(147 51 234 / 16%);
+  border-color: rgb(192 132 252 / 42%);
+}
+:root[data-tema="oscuro"] .correo-tono-otros {
+  color: #f3f4f6;
+  background: #10141c;
+  border-color: #4b5563;
+}
+:root[data-tema="oscuro"] .correo-tono-gasto {
+  color: #fca5a5;
+  background: rgb(220 38 38 / 16%);
+  border-color: rgb(248 113 113 / 42%);
+}
+:root[data-tema="oscuro"] .correo-contador {
+  background: rgb(255 255 255 / 12%);
+}
+:root[data-tema="oscuro"] .correo-barra-otros {
+  border-left-color: #05070b !important;
+}
 
 /* El asistente se abre también desde la landing (que conserva siempre su tema claro).
    Dentro del dashboard aplica superficies y texto explícitos para mantener contraste. */
@@ -183,7 +339,10 @@ textarea::placeholder {
 :root[data-tema="oscuro"] .landing-theme .asistente-modal .text-bg-dark {
   color: #0f1117;
 }
-:root[data-tema="oscuro"] .landing-theme .asistente-modal .asistente-mensaje-ia {
+:root[data-tema="oscuro"]
+  .landing-theme
+  .asistente-modal
+  .asistente-mensaje-ia {
   background-color: #ffffff;
   border-color: rgb(224 221 216 / 70%);
   color: #0f1117;
@@ -226,9 +385,82 @@ textarea::placeholder {
   opacity: 0.85;
 }
 
+/* Regla de medición de la landing: riel fijo a la derecha, centrado verticalmente y sin fondo.
+   Lista los nombres de las secciones: opacos por defecto y resaltados según la posición de lectura.
+   El tono cambia según la sección (light/dark). */
+.regla {
+  position: fixed;
+  right: calc(18px + env(safe-area-inset-right, 0px));
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.1rem;
+  z-index: 1050;
+  background: none;
+  color: #e9eef2;
+  transition: color 0.35s;
+}
+
+.regla[data-tone="dark"] {
+  color: #14202b;
+}
+
+.regla-marca {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  transition: opacity 0.3s linear, visibility 0.3s linear;
+}
+
+.regla-marca.es-actual {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.regla-etiqueta {
+  display: block;
+  white-space: nowrap;
+  font: 600 0.78rem/1 var(--font-body);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.28;
+  pointer-events: none;
+  transition: opacity 0.2s linear;
+}
+
+.regla-marca:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+/* Entrada del título de sección en el header (la copia en vuelo llega desde la regla) */
+.titulo-seccion {
+  animation: titulo-seccion-entrada 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes titulo-seccion-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Grilla técnica del Hero */
 .hero-grid {
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 36px 36px;
@@ -240,7 +472,7 @@ textarea::placeholder {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 
+  box-shadow:
     0 20px 40px -15px rgba(0, 0, 0, 0.5),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
   border-radius: var(--radius-glass);
@@ -259,21 +491,28 @@ textarea::placeholder {
    por compatibilidad con las clases y pruebas existentes. */
 .glass-card {
   background: #ffffff;
-  border: 1px solid color-mix(in srgb, var(--color-border-line) 80%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--color-border-line) 80%, transparent);
   border-radius: var(--radius-glass);
-  box-shadow: 0 4px 20px -2px color-mix(in srgb, var(--color-bg-dark) 4%, transparent);
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 4px 20px -2px
+    color-mix(in srgb, var(--color-bg-dark) 4%, transparent);
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (hover: hover) {
   .glass-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 16px 32px -4px color-mix(in srgb, var(--color-emerald-primary) 12%, transparent);
+    box-shadow: 0 16px 32px -4px
+      color-mix(in srgb, var(--color-emerald-primary) 12%, transparent);
   }
 }
 
 /* Fallback si el navegador no soporta backdrop-filter */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
   .glass-hero {
     background: rgba(15, 17, 23, 0.88);
   }
@@ -289,6 +528,14 @@ textarea::placeholder {
   .glass-surface {
     backdrop-filter: blur(14px) saturate(180%);
     -webkit-backdrop-filter: blur(14px) saturate(180%);
+  }
+
+  .regla {
+    right: calc(10px + env(safe-area-inset-right, 0px));
+  }
+
+  .regla-etiqueta {
+    font-size: 0.68rem;
   }
 }
 
@@ -315,6 +562,14 @@ textarea::placeholder {
     transform: none;
     transition: none;
   }
+
+  .regla,
+  .regla-marca,
+  .regla-etiqueta,
+  .titulo-seccion {
+    transition: none;
+    animation: none;
+  }
 }
 
 /* El contenido de la landing se muestra desde la primera pintura. IntersectionObserver
@@ -322,7 +577,9 @@ textarea::placeholder {
 .js .reveal {
   opacity: 1;
   transform: none;
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .js .reveal.revealed {
@@ -333,7 +590,9 @@ textarea::placeholder {
 .js .reveal-left {
   opacity: 1;
   transform: none;
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .js .reveal-left.revealed {
@@ -344,52 +603,108 @@ textarea::placeholder {
 .js .reveal-stagger > * {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.js .reveal-stagger.revealed > * { opacity: 1; transform: translateY(0); transition-delay: calc(var(--i, 0) * 90ms); }
+.js .reveal-stagger.revealed > * {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
 
 /* Foco visible en interactivos con superficies Glass, con tokens del tema */
-.glass-hero :is(a, button, [role="button"], input, select, textarea):focus-visible,
-.glass-hero:is(a, button, [role="button"], input, select, textarea):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-mint-accent) 50%, transparent);
+.glass-hero
+  :is(a, button, [role="button"], input, select, textarea):focus-visible,
+.glass-hero:is(
+    a,
+    button,
+    [role="button"],
+    input,
+    select,
+    textarea
+  ):focus-visible {
+  outline: 3px solid
+    color-mix(in srgb, var(--color-mint-accent) 50%, transparent);
   outline-offset: 2px;
 }
 
-.glass-card :is(a, button, [role="button"], input, select, textarea):focus-visible,
-.glass-card:is(a, button, [role="button"], input, select, textarea):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-emerald-primary) 40%, transparent);
+.glass-card
+  :is(a, button, [role="button"], input, select, textarea):focus-visible,
+.glass-card:is(
+    a,
+    button,
+    [role="button"],
+    input,
+    select,
+    textarea
+  ):focus-visible {
+  outline: 3px solid
+    color-mix(in srgb, var(--color-emerald-primary) 40%, transparent);
   outline-offset: 2px;
 }
 
 /* Ocultar scrollbar sin afectar funcionalidad */
-.sidebar-scroll::-webkit-scrollbar { display: none; }
-.sidebar-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+.sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+.sidebar-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 /* Ocultar barras de desplazamiento en toda la app sin desactivar el scroll. */
-* { scrollbar-width: none; -ms-overflow-style: none; }
-*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
 
 /* El dashboard usa el ancho real que deja el sidebar, no el ancho total del viewport. */
-.dashboard-content-container { container: dashboard / inline-size; }
-.dashboard-card-grid { grid-template-columns: minmax(0, 1fr); }
+.dashboard-content-container {
+  container: dashboard / inline-size;
+}
+.dashboard-card-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
 @container dashboard (min-width: 48rem) {
-  .dashboard-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @container dashboard (min-width: 80rem) {
-  .dashboard-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dashboard-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* Cada agrupación mantiene dos columnas cuando las tarjetas caben sin comprimirse. */
-.dashboard-group-container { container: dashboard-group / inline-size; }
-.dashboard-group-grid { grid-template-columns: minmax(0, 1fr); }
+.dashboard-group-container {
+  container: dashboard-group / inline-size;
+}
+.dashboard-group-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
 @container dashboard-group (min-width: 42rem) {
-  .dashboard-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-group-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @keyframes sheet-up {
-  from { transform: translateY(100%); opacity: 0.96; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0.96;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-sheet-mobile {
@@ -397,9 +712,13 @@ textarea::placeholder {
 }
 
 @media (min-width: 640px) {
-  .modal-sheet-mobile { animation: none; }
+  .modal-sheet-mobile {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .modal-sheet-mobile { animation: none; }
+  .modal-sheet-mobile {
+    animation: none;
+  }
 }

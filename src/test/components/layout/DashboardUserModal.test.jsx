@@ -17,6 +17,7 @@ import { UsuarioActivoProvider } from "../../../context/UsuarioActivoContext";
 
 vi.mock("../../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   obtenerUsuarioActivo: vi.fn(),
 }));
 
@@ -32,23 +33,52 @@ vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   const React = await vi.importActual("react");
   const PROPS_DE_ANIMACION = new Set([
-    "initial", "animate", "exit", "transition", "variants", "custom",
-    "whileHover", "whileTap", "whileFocus", "whileDrag", "whileInView",
-    "layout", "layoutId", "layoutDependency", "layoutScroll",
-    "drag", "dragConstraints", "dragElastic", "dragMomentum", "dragPropagation",
-    "dragDirectionLock", "dragControls",
-    "onDragStart", "onDrag", "onDragEnd", "onAnimationStart", "onAnimationComplete",
-    "onUpdate", "transformTemplate", "viewport", "inherit",
+    "initial",
+    "animate",
+    "exit",
+    "transition",
+    "variants",
+    "custom",
+    "whileHover",
+    "whileTap",
+    "whileFocus",
+    "whileDrag",
+    "whileInView",
+    "layout",
+    "layoutId",
+    "layoutDependency",
+    "layoutScroll",
+    "drag",
+    "dragConstraints",
+    "dragElastic",
+    "dragMomentum",
+    "dragPropagation",
+    "dragDirectionLock",
+    "dragControls",
+    "onDragStart",
+    "onDrag",
+    "onDragEnd",
+    "onAnimationStart",
+    "onAnimationComplete",
+    "onUpdate",
+    "transformTemplate",
+    "viewport",
+    "inherit",
   ]);
   const propsDom = (props) =>
-    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
+    Object.fromEntries(
+      Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)),
+    );
   return {
     ...actual,
     useReducedMotion: vi.fn(() => false),
-    AnimatePresence: ({ children, ...props }) => React.createElement(React.Fragment, props, children),
+    AnimatePresence: ({ children, ...props }) =>
+      React.createElement(React.Fragment, props, children),
     motion: {
       div: React.forwardRef(({ children, ...props }, ref) => (
-        <div ref={ref} {...propsDom(props)}>{children}</div>
+        <div ref={ref} {...propsDom(props)}>
+          {children}
+        </div>
       )),
     },
   };
@@ -78,7 +108,11 @@ const mockMatchMedia = (coincide) =>
  * `min-width` quedan en `false`). Así la suite mide una sola versión de vista (pantallas grandes).
  */
 const restaurarViewportEscritorio = () => {
-  Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+  Object.defineProperty(window, "innerWidth", {
+    writable: true,
+    configurable: true,
+    value: 1024,
+  });
   window.matchMedia = mockMatchMedia((query) => {
     const minimo = /min-width:\s*(\d+)px/.exec(query);
     return minimo ? window.innerWidth >= Number(minimo[1]) : false;
@@ -89,7 +123,7 @@ beforeEach(() => {
   restaurarViewportEscritorio();
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
   window.localStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_autenticada" ? "activa" : null
+    key === "finapp_sesion_autenticada" ? "activa" : null,
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_PERFIL });
@@ -111,12 +145,12 @@ const renderModal = (props = {}) => {
   return render(
     <MemoryRouter initialEntries={["/dashboard"]}>
       <DashboardUserModal {...defaultProps} />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 };
 
 const obtenerOverlay = () =>
-  document.body.querySelector(".fixed.inset-0.bg-bg-dark\\/80");
+  document.body.querySelector(".modal-overlay-dashboard.bg-bg-dark\\/80");
 
 /** Espera a que la trampa real (delayInitialFocus) enfoque el contenedor del diálogo. */
 const esperarFocoEnContenedor = async (dialogo) => {
@@ -128,7 +162,13 @@ const esperarFocoEnContenedor = async (dialogo) => {
 /** Despacha un evento de puntero nativo con las propiedades que lee el gesto. */
 const dispararPuntero = (elemento, tipo, props = {}) => {
   const evento = new Event(tipo, { bubbles: true, cancelable: true });
-  Object.assign(evento, { isPrimary: true, pointerId: 7, clientX: 0, clientY: 0, ...props });
+  Object.assign(evento, {
+    isPrimary: true,
+    pointerId: 7,
+    clientX: 0,
+    clientY: 0,
+    ...props,
+  });
   elemento.dispatchEvent(evento);
 };
 
@@ -168,22 +208,28 @@ describe("DashboardUserModal", () => {
   });
 
   describe("perfil dinámico (spec 024)", () => {
-      it("muestra el nombre del usuario activo y el correo «No registrado»", async () => {
-        render(
-          <MemoryRouter initialEntries={["/dashboard"]}>
-            <UsuarioActivoProvider>
-              <DashboardUserModal abierto alCerrar={vi.fn()} triggerRef={{ current: null }} />
-            </UsuarioActivoProvider>
-          </MemoryRouter>,
-        );
+    it("muestra el nombre del usuario activo y el correo «No registrado»", async () => {
+      render(
+        <MemoryRouter initialEntries={["/dashboard"]}>
+          <UsuarioActivoProvider>
+            <DashboardUserModal
+              abierto
+              alCerrar={vi.fn()}
+              triggerRef={{ current: null }}
+            />
+          </UsuarioActivoProvider>
+        </MemoryRouter>,
+      );
 
-        const dialog = screen.getByRole("dialog");
-        await waitFor(() => {
-          expect(document.getElementById("user-modal-title").textContent).toBe("Ana Pérez");
-        });
-        expect(dialog.textContent).toContain("Correo");
-        expect(dialog.textContent).toContain("No registrado");
+      const dialog = screen.getByRole("dialog");
+      await waitFor(() => {
+        expect(document.getElementById("user-modal-title").textContent).toBe(
+          "Ana Pérez",
+        );
       });
+      expect(dialog.textContent).toContain("Correo");
+      expect(dialog.textContent).toContain("No registrado");
+    });
 
     it("usa «Cuenta de Usuario Demo» como respaldo sin usuario activo", () => {
       renderModal();
@@ -284,7 +330,7 @@ describe("DashboardUserModal", () => {
       renderModal();
       const dialog = screen.getByRole("dialog");
       const focusables = dialog.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       expect(focusables.length).toBe(3);
       expect(focusables[0].getAttribute("aria-label")).toBe("Cerrar Cuenta");
@@ -306,8 +352,12 @@ describe("DashboardUserModal", () => {
       await act(async () => {
         rerender(
           <MemoryRouter initialEntries={["/dashboard"]}>
-            <DashboardUserModal abierto={false} alCerrar={alCerrar} triggerRef={triggerRef} />
-          </MemoryRouter>
+            <DashboardUserModal
+              abierto={false}
+              alCerrar={alCerrar}
+              triggerRef={triggerRef}
+            />
+          </MemoryRouter>,
         );
       });
 
@@ -325,12 +375,19 @@ describe("DashboardUserModal", () => {
       previousButton.focus();
       const focusSpy = vi.spyOn(previousButton, "focus");
 
-      const { rerender } = renderModal({ alCerrar, triggerRef: { current: null } });
+      const { rerender } = renderModal({
+        alCerrar,
+        triggerRef: { current: null },
+      });
       await act(async () => {
         rerender(
           <MemoryRouter initialEntries={["/dashboard"]}>
-            <DashboardUserModal abierto={false} alCerrar={alCerrar} triggerRef={{ current: null }} />
-          </MemoryRouter>
+            <DashboardUserModal
+              abierto={false}
+              alCerrar={alCerrar}
+              triggerRef={{ current: null }}
+            />
+          </MemoryRouter>,
         );
       });
 
@@ -350,12 +407,19 @@ describe("DashboardUserModal", () => {
       document.body.appendChild(aside);
       const focusSpy = vi.spyOn(navButton, "focus");
 
-      const { rerender } = renderModal({ alCerrar, triggerRef: { current: null } });
+      const { rerender } = renderModal({
+        alCerrar,
+        triggerRef: { current: null },
+      });
       await act(async () => {
         rerender(
           <MemoryRouter initialEntries={["/dashboard"]}>
-            <DashboardUserModal abierto={false} alCerrar={alCerrar} triggerRef={{ current: null }} />
-          </MemoryRouter>
+            <DashboardUserModal
+              abierto={false}
+              alCerrar={alCerrar}
+              triggerRef={{ current: null }}
+            />
+          </MemoryRouter>,
         );
       });
 
@@ -369,13 +433,23 @@ describe("DashboardUserModal", () => {
 
   describe("gesto de deslizar hacia abajo (solo móvil)", () => {
     const activarMovil = () => {
-      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 375 });
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 375,
+      });
       window.matchMedia = mockMatchMedia(false);
     };
 
     const activarPantallasGrandes = () => {
-      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
-      window.matchMedia = mockMatchMedia((query) => query.includes("min-width: 768px"));
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: 1024,
+      });
+      window.matchMedia = mockMatchMedia((query) =>
+        query.includes("min-width: 768px"),
+      );
     };
 
     it("cierra al deslizar hacia abajo en móvil", async () => {
@@ -426,7 +500,7 @@ describe("DashboardUserModal", () => {
     it("el panel limita su altura y ofrece scroll interno", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
-      expect(panel.classList.contains("max-h-[85vh]")).toBe(true);
+      expect(panel.classList.contains("max-h-[85dvh]")).toBe(true);
       expect(panel.classList.contains("overflow-y-auto")).toBe(true);
       expect(panel.getAttribute("tabindex")).toBe("-1");
     });
@@ -449,7 +523,7 @@ describe("DashboardUserModal", () => {
       rerender(
         <MemoryRouter initialEntries={["/dashboard"]}>
           <DashboardUserModal abierto={false} alCerrar={vi.fn()} />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       expect(screen.queryByRole("dialog")).toBeNull();
     });
@@ -475,7 +549,9 @@ describe("DashboardUserModal", () => {
     it("los iconos lucide tienen flex-shrink-0 w-6 h-6 (acotado a los iconos bajo prueba)", () => {
       renderModal();
       // Acotado a los iconos lucide: el aspa de BotonCerrar (w-5 h-5) no debe romper esta aserción.
-      const icons = document.querySelectorAll("#dashboard-user-modal-panel svg.lucide");
+      const icons = document.querySelectorAll(
+        "#dashboard-user-modal-panel svg.lucide",
+      );
       expect(icons.length).toBe(2);
       icons.forEach((icon) => {
         expect(icon.classList.contains("flex-shrink-0")).toBe(true);
@@ -486,15 +562,15 @@ describe("DashboardUserModal", () => {
   });
 
   describe("estilos y clases Fluid Glass", () => {
-    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-[1105]", () => {
+    it("overlay usa bg-bg-dark/80 backdrop-blur-sm z-[100]", () => {
       renderModal();
       const overlay = obtenerOverlay();
       expect(overlay).toBeTruthy();
       expect(overlay.classList.contains("backdrop-blur-sm")).toBe(true);
-      expect(overlay.classList.contains("z-[1105]")).toBe(true);
+      expect(overlay.classList.contains("z-[100]")).toBe(true);
     });
 
-    it("panel usa bg-bg-cream/95 glass-surface border-border-line/30 rounded-2xl shadow-xl z-[1110]", () => {
+    it("panel usa bg-bg-cream/95 glass-surface border-border-line/30 rounded-2xl shadow-xl z-[101]", () => {
       renderModal();
       const panel = screen.getByRole("dialog");
       expect(panel.classList.contains("bg-bg-cream/95")).toBe(true);
@@ -502,7 +578,7 @@ describe("DashboardUserModal", () => {
       expect(panel.classList.contains("border-border-line/30")).toBe(true);
       expect(panel.classList.contains("rounded-2xl")).toBe(true);
       expect(panel.classList.contains("shadow-xl")).toBe(true);
-      expect(panel.classList.contains("z-[1110]")).toBe(true);
+      expect(panel.classList.contains("z-[101]")).toBe(true);
       expect(panel.classList.contains("w-[90vw]")).toBe(true);
       expect(panel.classList.contains("max-w-sm")).toBe(true);
     });
@@ -521,7 +597,11 @@ describe("DashboardUserModal", () => {
      * sola versión de vista y `useBreakpoint` —fuente del respaldo— no puede leer algo distinto.
      */
     const medirVersionDeVista = (ancho) => {
-      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: ancho });
+      Object.defineProperty(window, "innerWidth", {
+        writable: true,
+        configurable: true,
+        value: ancho,
+      });
       window.matchMedia = mockMatchMedia((query) => {
         const minimo = /min-width:\s*(\d+)px/.exec(query);
         return minimo ? window.innerWidth >= Number(minimo[1]) : false;
@@ -540,13 +620,18 @@ describe("DashboardUserModal", () => {
     const rerenderCerrado = (rerender, alCerrar, triggerRef) =>
       rerender(
         <MemoryRouter initialEntries={["/dashboard"]}>
-          <DashboardUserModal abierto={false} alCerrar={alCerrar} triggerRef={triggerRef} />
-        </MemoryRouter>
+          <DashboardUserModal
+            abierto={false}
+            alCerrar={alCerrar}
+            triggerRef={triggerRef}
+          />
+        </MemoryRouter>,
       );
 
     beforeEach(() => {
       // Punto de partida estable: nada enfocado antes de cada caso.
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
     });
 
     afterEach(() => {

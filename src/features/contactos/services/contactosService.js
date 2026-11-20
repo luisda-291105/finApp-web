@@ -7,26 +7,59 @@
  * @usadoPor   useContactos y CrearContactoModal
  */
 import { getEndpoint } from "../../../config/api.config";
-import { crear, obtener, actualizar, eliminar } from "../../../services/httpServicio";
+import {
+  crear,
+  obtener,
+  actualizar,
+  eliminar,
+} from "../../../services/httpServicio";
 const rutaBase = getEndpoint("contacto.base");
 
 /** @param {object} contacto */
-export function crearContacto(contacto) { return crear(rutaBase, contacto); }
+export function crearContacto(contacto) {
+  return crear(rutaBase, contacto);
+}
 /** Importa en lote los contactos de Google; el backend evita duplicados por resourceName. */
-export function importarContactosGoogle(contactos) { return crear(`${rutaBase}/importar-google`, contactos); }
+export function importarContactosGoogle(contactos) {
+  return crear(`${rutaBase}/importar-google`, contactos);
+}
 /** @param {string|number} idUsuario */
-export function obtenerContactosPorUsuario(idUsuario) { return obtener(`${rutaBase}/usuario/${encodeURIComponent(idUsuario)}`); }
+export function obtenerContactosPorUsuario(idUsuario) {
+  return obtener(`${rutaBase}/usuario/${encodeURIComponent(idUsuario)}`);
+}
 /** @param {string|number} idContacto */
-export function eliminarContacto(idContacto) { return eliminar(`${rutaBase}/${encodeURIComponent(idContacto)}`); }
+export function eliminarContacto(idContacto) {
+  return eliminar(`${rutaBase}/${encodeURIComponent(idContacto)}`);
+}
 /** @param {string|number} idContacto @param {object} contacto */
-export function actualizarContacto(idContacto, contacto) { return actualizar(`${rutaBase}/${encodeURIComponent(idContacto)}`, contacto); }
+export function actualizarContacto(idContacto, contacto) {
+  return actualizar(`${rutaBase}/${encodeURIComponent(idContacto)}`, contacto);
+}
 /** @param {object} contacto */
-export function obtenerContactos() { return obtener(rutaBase); }
+export function obtenerContactos() {
+  return obtener(rutaBase);
+}
 /** @param {string|number} idContacto */
-export function obtenerContactoPorId(idContacto) { return obtener(`${getEndpoint("contacto.porId")}/${encodeURIComponent(idContacto)}`); }
+export function obtenerContactoPorId(idContacto) {
+  return obtener(
+    `${getEndpoint("contacto.porId")}/${encodeURIComponent(idContacto)}`,
+  );
+}
 /** @param {string} nombre */
-export function obtenerContactoPorNombre(nombre) { return obtener(`${getEndpoint("contacto.porNombre")}/${encodeURIComponent(nombre)}`); }
+export function obtenerContactoPorNombre(nombre) {
+  return obtener(
+    `${getEndpoint("contacto.porNombre")}/${encodeURIComponent(nombre)}`,
+  );
+}
 /** @param {string} nota */
-export function obtenerContactoPorNota(nota) { return obtener(`${getEndpoint("contacto.porNota")}/${encodeURIComponent(nota)}`); }
+export function obtenerContactoPorNota(nota) {
+  return obtener(
+    `${getEndpoint("contacto.porNota")}/${encodeURIComponent(nota)}`,
+  );
+}
 /** @param {string} telefono */
-export function obtenerContactoPorTelefono(telefono) { return obtener(`${getEndpoint("contacto.porTelefono")}/${encodeURIComponent(telefono)}`); }
+export function obtenerContactoPorTelefono(telefono) {
+  return obtener(
+    `${getEndpoint("contacto.porTelefono")}/${encodeURIComponent(telefono)}`,
+  );
+}

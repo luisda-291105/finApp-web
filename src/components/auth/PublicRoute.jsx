@@ -14,7 +14,11 @@ export function PublicRoute({ children }) {
 
   if (estadoSesion === "verificando") {
     return (
-      <div className="min-h-screen grid place-items-center bg-bg-cream text-slate-text" role="status" aria-live="polite">
+      <div
+        className="min-h-screen grid place-items-center bg-bg-cream text-slate-text"
+        role="status"
+        aria-live="polite"
+      >
         Verificando sesión…
       </div>
     );

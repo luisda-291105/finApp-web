@@ -64,19 +64,30 @@ function crearOpcionesTrampa(refPanel) {
  * @param {React.ReactNode} props.children - Contenido a renderizar (ej. SidebarNavContenido)
  * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Ref al elemento trigger para retorno de foco
  */
-export default function DashboardDrawer({ abierto, alCerrar, children, triggerRef, temaClaro = false }) {
+export default function DashboardDrawer({
+  abierto,
+  alCerrar,
+  children,
+  triggerRef,
+  temaClaro = false,
+}) {
   const panelRef = useRef(null);
   const focusTrapRef = useRef(null);
   const location = useLocation();
-  const paginaActual = [
-    ["/dashboard", "Inicio"],
-    ["/dashboard/tarjetas", "Tarjetas"],
-    ["/dashboard/grupos", "Grupos"],
-    ["/dashboard/contactos", "Contactos"],
-    ["/dashboard/correos", "Correos"],
-    ["/dashboard/contabilidad", "Contabilidad"],
-    ["/dashboard/almacenamiento", "Almacenamiento"],
-  ].find(([ruta]) => ruta === "/dashboard" ? location.pathname === ruta : location.pathname.startsWith(ruta))?.[1] || "Inicio";
+  const paginaActual =
+    [
+      ["/dashboard", "Inicio"],
+      ["/dashboard/tarjetas", "Tarjetas"],
+      ["/dashboard/grupos", "Grupos"],
+      ["/dashboard/contactos", "Contactos"],
+      ["/dashboard/correos", "Correos"],
+      ["/dashboard/contabilidad", "Contabilidad"],
+      ["/dashboard/almacenamiento", "Almacenamiento"],
+    ].find(([ruta]) =>
+      ruta === "/dashboard"
+        ? location.pathname === ruta
+        : location.pathname.startsWith(ruta),
+    )?.[1] || "Inicio";
 
   // Esc: mecanismo único compartido con el resto de superficies (capa del panel: 55)
   useCierreConEsc({ activo: abierto, zIndex: CAPA_MENU, alCerrar });
@@ -104,10 +115,7 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
   // y la trampa se cree de verdad (plan §2.3-M5). Sin animaciones nuevas (DP-07).
   const mobilePanelContent = (
     <AnimatePresence>
-      <FocusTrap
-        ref={focusTrapRef}
-        focusTrapOptions={focusTrapOptions}
-      >
+      <FocusTrap ref={focusTrapRef} focusTrapOptions={focusTrapOptions}>
         <motion.div
           ref={panelRef}
           id="dashboard-drawer-panel"
@@ -117,7 +125,9 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
           tabIndex={-1}
           className={clsx(
             "fixed inset-y-0 right-0 w-[85vw] max-w-sm flex flex-col glass-surface border-l z-[1110] outline-none",
-            temaClaro ? "bg-bg-cream/95 border-border-line/70 shadow-xl" : "bg-bg-dark/95 border-border-line/20"
+            temaClaro
+              ? "bg-bg-cream/95 border-border-line/70 shadow-xl"
+              : "bg-bg-dark/95 border-border-line/20",
           )}
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
@@ -126,19 +136,37 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
         >
           {/* Cromo superior: único control visible de cierre, alineado a la derecha. Deja el
               contenido un poco más abajo (RF-15) sin solaparse con la «X». */}
-          <div data-testid="dashboard-drawer-header" className="flex items-center justify-between gap-3 px-4 pt-6 pb-2">
-            <div className={clsx("min-w-0 truncate font-display text-base font-semibold", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
-              <span className="text-emerald-primary">Fin</span>App<span aria-hidden="true"> / </span><span className="font-sans text-sm font-medium">{paginaActual}</span>
+          <div
+            data-testid="dashboard-drawer-header"
+            className="flex items-center justify-between gap-3 px-4 pt-6 pb-2"
+          >
+            <div
+              className={clsx(
+                "min-w-0 truncate font-display text-base font-semibold",
+                temaClaro ? "text-bg-dark" : "text-bg-cream",
+              )}
+            >
+              <span className="text-emerald-primary">Fin</span>App
+              <span aria-hidden="true"> / </span>
+              <span className="font-sans text-sm font-medium">
+                {paginaActual}
+              </span>
             </div>
             <BotonCerrar
               ariaLabel="Cerrar menú"
               alCerrar={alCerrar}
-              className={temaClaro ? "text-bg-dark hover:text-emerald-primary hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary" : "text-bg-cream hover:text-mint-accent hover:bg-emerald-primary/10 focus-visible:ring-mint-accent"}
+              className={
+                temaClaro
+                  ? "text-bg-dark hover:text-emerald-primary hover:bg-emerald-primary/10 focus-visible:ring-emerald-primary"
+                  : "text-bg-cream hover:text-mint-accent hover:bg-emerald-primary/10 focus-visible:ring-mint-accent"
+              }
             />
           </div>
 
-          {/* Contenido desplazable: ocupa el resto de la altura completa del panel (RF-22) */}
-          <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+          {/* Contenido desplazable: ocupa el resto de la altura completa del panel (RF-22);
+              columna flex para que el nav crezca y el avatar quede anclado al fondo del menú
+              (por encima del alto de la barra inferior móvil, publicado como --bottom-nav-alto) */}
+          <div className="min-h-0 flex-1 flex flex-col overflow-y-auto pb-[max(1rem,var(--bottom-nav-alto,0px))]">
             {children}
           </div>
         </motion.div>
@@ -156,6 +184,6 @@ export default function DashboardDrawer({ abierto, alCerrar, children, triggerRe
       />
       {mobilePanelContent}
     </>,
-    document.body
+    document.body,
   );
 }

@@ -31,7 +31,9 @@ describe("ModalGoogleDrive", () => {
       estado: "ACTIVA",
     };
 
-    render(<ModalGoogleDrive abierto={true} alCerrar={() => {}} cuenta={cuenta} />);
+    render(
+      <ModalGoogleDrive abierto={true} alCerrar={() => {}} cuenta={cuenta} />,
+    );
 
     expect(screen.getByText("Cuenta vinculada")).toBeInTheDocument();
     expect(screen.getByText("usuario@ejemplo.test")).toBeInTheDocument();
@@ -40,7 +42,7 @@ describe("ModalGoogleDrive", () => {
     const botonIr = screen.getByRole("link", { name: /Ir a Google Drive/i });
     expect(botonIr).toHaveAttribute(
       "href",
-      "https://drive.google.com/drive/u/usuario%40ejemplo.test"
+      "https://drive.google.com/drive/u/usuario%40ejemplo.test",
     );
   });
 
@@ -50,7 +52,9 @@ describe("ModalGoogleDrive", () => {
 
     render(<ModalGoogleDrive abierto={true} alCerrar={alCerrar} />);
 
-    const botonX = screen.getByRole("button", { name: "Cerrar ventana de Google Drive" });
+    const botonX = screen.getByRole("button", {
+      name: "Cerrar ventana de Google Drive",
+    });
     await usuario.click(botonX);
 
     expect(alCerrar).toHaveBeenCalledOnce();

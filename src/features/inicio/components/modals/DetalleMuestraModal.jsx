@@ -6,8 +6,13 @@ import { BotonCerrar } from "../../../../components/ui";
 import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import MuestraVisual from "../cards/MuestraVisual";
-import { FUENTES_MUESTRAS, SEGMENTOS_CONTABLES, TIPOS_VISUALIZACION, normalizarFuente } from "../../utils/inicioHelpers";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import {
+  FUENTES_MUESTRAS,
+  SEGMENTOS_CONTABLES,
+  TIPOS_VISUALIZACION,
+  normalizarFuente,
+} from "../../utils/inicioHelpers";
+import { AlertaGlobal } from "../../../../features/error";
 
 const opcionesTrampa = (panelRef) => ({
   allowOutsideClick: true,
@@ -18,8 +23,18 @@ const opcionesTrampa = (panelRef) => ({
 
 /** Modal de detalle, navegación a la fuente y acciones sobre una muestra. */
 export default function DetalleMuestraModal({
-  muestra, temaOscuro, triggerRef, confirmandoEliminacion, eliminando, error,
-  alCerrar, alCrear, alEditar, alEliminar, alCancelarEliminacion, alIrAFuente,
+  muestra,
+  temaOscuro,
+  triggerRef,
+  confirmandoEliminacion,
+  eliminando,
+  error,
+  alCerrar,
+  alCrear,
+  alEditar,
+  alEliminar,
+  alCancelarEliminacion,
+  alIrAFuente,
 }) {
   const panelRef = useRef(null);
   const abierto = Boolean(muestra);
@@ -27,20 +42,39 @@ export default function DetalleMuestraModal({
   useRetornoDeFoco({ activo: abierto, triggerRef });
   if (!muestra) return null;
 
-  const fuente = FUENTES_MUESTRAS.find((opcion) => opcion.valor === normalizarFuente(muestra.fuente));
+  const fuente = FUENTES_MUESTRAS.find(
+    (opcion) => opcion.valor === normalizarFuente(muestra.fuente),
+  );
   const etiquetaFuente = fuente?.etiqueta || muestra.fuente;
-  const segmento = SEGMENTOS_CONTABLES.find((opcion) => opcion.valor === (muestra.segmentoContable || "todos"));
-  const tipoDemo = TIPOS_VISUALIZACION.find((opcion) => opcion.valor === muestra.tipo);
+  const segmento = SEGMENTOS_CONTABLES.find(
+    (opcion) => opcion.valor === (muestra.segmentoContable || "todos"),
+  );
+  const tipoDemo = TIPOS_VISUALIZACION.find(
+    (opcion) => opcion.valor === muestra.tipo,
+  );
   const etiquetaTipo = tipoDemo?.etiqueta || muestra.tipo;
-  const cuentaCorreo = normalizarFuente(muestra.fuente) === "correo" ? (muestra.cuentaCorreoEtiqueta || "") : "";
-  const segmentoContable = normalizarFuente(muestra.fuente) === "contabilidad" ? segmento : null;
+  const cuentaCorreo =
+    normalizarFuente(muestra.fuente) === "correo"
+      ? muestra.cuentaCorreoEtiqueta || ""
+      : "";
+  const segmentoContable =
+    normalizarFuente(muestra.fuente) === "contabilidad" ? segmento : null;
   const nombreFuente = `${etiquetaFuente}${segmentoContable ? ` · ${segmentoContable.etiqueta}` : ""}${cuentaCorreo ? ` · ${cuentaCorreo}` : ""}`;
-  const focoTrap = { ...opcionesTrampa(panelRef), initialFocus: () => panelRef.current };
-  const cerrarDesdeFondo = (evento) => { if (evento.target === evento.currentTarget) alCerrar(); };
+  const focoTrap = {
+    ...opcionesTrampa(panelRef),
+    initialFocus: () => panelRef.current,
+  };
+  const cerrarDesdeFondo = (evento) => {
+    if (evento.target === evento.currentTarget) alCerrar();
+  };
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-50 bg-bg-dark/80 backdrop-blur-sm" onClick={cerrarDesdeFondo} aria-hidden="true" />
+      <div
+        className="modal-overlay-dashboard z-[100] bg-bg-dark/80 backdrop-blur-sm"
+        onClick={cerrarDesdeFondo}
+        aria-hidden="true"
+      />
       <AnimatePresence>
         <FocusTrap focusTrapOptions={focoTrap}>
           <motion.div
@@ -50,43 +84,115 @@ export default function DetalleMuestraModal({
             aria-modal="true"
             aria-labelledby="modal-detalle-muestra-titulo"
             tabIndex={-1}
-            className="fixed left-1/2 top-1/2 z-60 max-h-[85vh] w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border-line/30 bg-bg-cream/95 outline-none glass-surface shadow-xl"
+            className="modal-sheet-mobile fixed bottom-[var(--bottom-nav-alto)] z-[101] max-h-[85dvh] w-[90vw] max-w-md -translate-x-1/2 overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 outline-none glass-surface shadow-xl sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:max-h-[85vh] sm:rounded-2xl"
+            style={{
+              left: "calc((100vw + var(--dashboard-sidebar-width, 0px)) / 2)",
+            }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
           >
             <header className="flex items-center justify-between border-b border-border-line/30 px-5 py-4">
-              <h2 id="modal-detalle-muestra-titulo" className="font-display text-lg font-semibold text-bg-dark">Detalle de muestra</h2>
-              <BotonCerrar ariaLabel="Cerrar detalle de muestra" alCerrar={alCerrar} className="text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark focus-visible:ring-emerald-primary" />
+              <h2
+                id="modal-detalle-muestra-titulo"
+                className="font-display text-lg font-semibold text-bg-dark"
+              >
+                Detalle de muestra
+              </h2>
+              <BotonCerrar
+                ariaLabel="Cerrar detalle de muestra"
+                alCerrar={alCerrar}
+                className="text-slate-text hover:bg-emerald-primary/10 hover:text-bg-dark focus-visible:ring-emerald-primary"
+              />
             </header>
 
             <div className="space-y-4 px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="min-w-0 flex-1 break-words font-display text-xl font-semibold text-bg-dark">{muestra.titulo}</h3>
-                <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-slate-text">{etiquetaTipo}</span>
+                <h3 className="min-w-0 flex-1 break-words font-display text-xl font-semibold text-bg-dark">
+                  {muestra.titulo}
+                </h3>
+                <span className="shrink-0 rounded-full bg-emerald-primary/10 px-2.5 py-1 text-xs font-medium text-slate-text">
+                  {etiquetaTipo}
+                </span>
               </div>
 
-              <section aria-label="Datos actuales de la muestra" className={`rounded-2xl border p-4 ${temaOscuro ? "border-border-line/50 bg-bg-dark/70" : "border-border-line/40 bg-bg-cream/60"}`}>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-text">Datos actuales</p>
-                <div className="min-w-0"><MuestraVisual muestra={muestra} temaOscuro={temaOscuro} /></div>
-              </section>
-
-              <section aria-label="Fuente de la muestra" className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 ${temaOscuro ? "border-border-line/50 bg-bg-dark/50" : "border-border-line/40 bg-bg-cream/40"}`}>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">Fuente</p>
-                  <p className="break-words text-sm font-medium text-bg-dark">{nombreFuente}</p>
+              <section
+                aria-label="Datos actuales de la muestra"
+                className={`rounded-2xl border p-4 ${temaOscuro ? "border-border-line/50 bg-bg-dark/70" : "border-border-line/40 bg-bg-cream/60"}`}
+              >
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-text">
+                  Datos actuales
+                </p>
+                <div className="min-w-0">
+                  <MuestraVisual muestra={muestra} temaOscuro={temaOscuro} />
                 </div>
-                <button type="button" onClick={() => alIrAFuente(muestra.fuente)} className="min-h-10 shrink-0 rounded-lg bg-emerald-primary px-4 py-2 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent">Ir a {etiquetaFuente}</button>
               </section>
 
-              {confirmandoEliminacion && <div role="alert" className="mb-4 rounded-xl border border-red-300/50 bg-red-50/60 p-3 text-sm text-bg-dark">¿Eliminar esta muestra? Esta acción no se puede deshacer.</div>}
+              <section
+                aria-label="Fuente de la muestra"
+                className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 ${temaOscuro ? "border-border-line/50 bg-bg-dark/50" : "border-border-line/40 bg-bg-cream/40"}`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.65rem] font-medium uppercase tracking-wide text-slate-text">
+                    Fuente
+                  </p>
+                  <p className="break-words text-sm font-medium text-bg-dark">
+                    {nombreFuente}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => alIrAFuente(muestra.fuente)}
+                  className="min-h-10 shrink-0 rounded-lg bg-emerald-primary px-4 py-2 text-sm font-medium text-bg-cream outline-none transition-colors hover:bg-emerald-hover focus-visible:ring-2 focus-visible:ring-mint-accent"
+                >
+                  Ir a {etiquetaFuente}
+                </button>
+              </section>
+
+              {confirmandoEliminacion && (
+                <div
+                  role="alert"
+                  className="mb-4 rounded-xl border border-red-300/50 bg-red-50/60 p-3 text-sm text-bg-dark"
+                >
+                  ¿Eliminar esta muestra? Esta acción no se puede deshacer.
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2 border-t border-border-line/20 pt-4">
-                <button type="button" onClick={alEditar} className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">Editar</button>
-                <button type="button" onClick={alEliminar} disabled={eliminando} className="rounded-xl border border-red-300/60 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500">{eliminando ? "Eliminando…" : confirmandoEliminacion ? "Confirmar eliminación" : "Eliminar"}</button>
-                {confirmandoEliminacion && <button type="button" onClick={alCancelarEliminacion} className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary">Cancelar</button>}
+                <button
+                  type="button"
+                  onClick={alEditar}
+                  className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={alEliminar}
+                  disabled={eliminando}
+                  className="rounded-xl border border-red-300/60 px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                >
+                  {eliminando
+                    ? "Eliminando…"
+                    : confirmandoEliminacion
+                      ? "Confirmar eliminación"
+                      : "Eliminar"}
+                </button>
+                {confirmandoEliminacion && (
+                  <button
+                    type="button"
+                    onClick={alCancelarEliminacion}
+                    className="rounded-xl border border-border-line/40 px-3 py-2.5 text-sm font-medium text-bg-dark hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
-              <AlertaGlobal tipo="error" mensaje={error} idBase="DetalleMuestraModal-error" />
+              <AlertaGlobal
+                tipo="error"
+                mensaje={error}
+                idBase="DetalleMuestraModal-error"
+              />
             </div>
           </motion.div>
         </FocusTrap>

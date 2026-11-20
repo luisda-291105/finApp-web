@@ -12,7 +12,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useCierreConEsc } from "../../hooks/useCierreConEsc";
 
-const pulsarEscape = () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+const pulsarEscape = () =>
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 
 describe("useCierreConEsc", () => {
   let originalAdd;
@@ -70,9 +71,15 @@ describe("useCierreConEsc", () => {
   });
 
   it("instala un único listener global aunque haya varias capas", () => {
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar: vi.fn() }));
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 60, alCerrar: vi.fn() }));
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 55, alCerrar: vi.fn() }));
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar: vi.fn() }),
+    );
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 60, alCerrar: vi.fn() }),
+    );
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 55, alCerrar: vi.fn() }),
+    );
 
     expect(addKeydown).toBe(1);
   });
@@ -80,8 +87,12 @@ describe("useCierreConEsc", () => {
   it("cierra solo la capa de mayor zIndex", () => {
     const inferior = vi.fn();
     const superior = vi.fn();
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar: inferior }));
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 60, alCerrar: superior }));
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar: inferior }),
+    );
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 60, alCerrar: superior }),
+    );
 
     pulsarEscape();
 
@@ -92,8 +103,12 @@ describe("useCierreConEsc", () => {
   it("en empate de zIndex cierra la capa montada más tarde", () => {
     const primera = vi.fn();
     const segunda = vi.fn();
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar: primera }));
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar: segunda }));
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar: primera }),
+    );
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar: segunda }),
+    );
 
     pulsarEscape();
 
@@ -104,8 +119,12 @@ describe("useCierreConEsc", () => {
   it("tras desmontar la capa superior, la siguiente pasa a ser la superior", () => {
     const inferior = vi.fn();
     const superior = vi.fn();
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar: inferior }));
-    const capaSuperior = renderHook(() => useCierreConEsc({ activo: true, zIndex: 60, alCerrar: superior }));
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar: inferior }),
+    );
+    const capaSuperior = renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 60, alCerrar: superior }),
+    );
 
     capaSuperior.unmount();
     pulsarEscape();
@@ -116,7 +135,9 @@ describe("useCierreConEsc", () => {
 
   it("retira el listener global al desmontar la última capa", () => {
     const alCerrar = vi.fn();
-    const { unmount } = renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar }));
+    const { unmount } = renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar }),
+    );
 
     unmount();
 
@@ -128,8 +149,12 @@ describe("useCierreConEsc", () => {
   it("no retira el listener global mientras queden capas registradas", () => {
     const primera = vi.fn();
     const segunda = vi.fn();
-    const capaUno = renderHook(() => useCierreConEsc({ activo: true, zIndex: 50, alCerrar: primera }));
-    renderHook(() => useCierreConEsc({ activo: true, zIndex: 60, alCerrar: segunda }));
+    const capaUno = renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 50, alCerrar: primera }),
+    );
+    renderHook(() =>
+      useCierreConEsc({ activo: true, zIndex: 60, alCerrar: segunda }),
+    );
 
     capaUno.unmount();
     pulsarEscape();

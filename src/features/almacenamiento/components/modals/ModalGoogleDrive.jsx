@@ -35,7 +35,8 @@ export default function ModalGoogleDrive({
     if (evento.target === evento.currentTarget) alCerrar();
   };
 
-  const correoCuenta = cuenta?.etiquetaCuenta || cuenta?.identificadorExterno || "";
+  const correoCuenta =
+    cuenta?.etiquetaCuenta || cuenta?.identificadorExterno || "";
   const urlDrive = correoCuenta
     ? `https://drive.google.com/drive/u/${encodeURIComponent(correoCuenta)}`
     : "https://drive.google.com";
@@ -43,7 +44,7 @@ export default function ModalGoogleDrive({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-bg-dark/70 p-3 sm:p-5"
+      className="modal-overlay-dashboard z-[100] flex items-end justify-center bg-bg-dark/70 p-0 sm:items-center sm:p-5"
       onClick={cerrarDesdeFondo}
     >
       <FocusTrap
@@ -61,7 +62,7 @@ export default function ModalGoogleDrive({
           aria-labelledby="modal-google-drive-titulo"
           aria-describedby="modal-google-drive-descripcion"
           tabIndex={-1}
-          className="glass-surface relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-border-line/30 bg-bg-cream/95 p-5 text-bg-dark shadow-xl outline-none sm:p-7"
+          className="glass-surface modal-sheet-mobile relative mb-[var(--bottom-nav-alto)] max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 p-5 text-bg-dark shadow-xl outline-none sm:mb-0 sm:max-h-[90vh] sm:rounded-3xl sm:p-7"
         >
           {/* Encabezado */}
           <header className="mb-5 flex items-start justify-between gap-4 border-b border-border-line/30 pb-4">
@@ -109,7 +110,9 @@ export default function ModalGoogleDrive({
                 >
                   Google Drive
                 </h2>
-                <p className="text-xs text-slate-text">Almacenamiento en la nube</p>
+                <p className="text-xs text-slate-text">
+                  Almacenamiento en la nube
+                </p>
               </div>
             </div>
             <BotonCerrar
@@ -132,28 +135,47 @@ export default function ModalGoogleDrive({
               <div className="rounded-2xl border border-border-line/40 bg-white/70 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-text">Cuenta vinculada</p>
-                    <p className="truncate font-semibold text-bg-dark">{correoCuenta}</p>
+                    <p className="text-xs font-medium text-slate-text">
+                      Cuenta vinculada
+                    </p>
+                    <p className="truncate font-semibold text-bg-dark">
+                      {correoCuenta}
+                    </p>
                   </div>
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${requiereReconexion ? "bg-amber-500/10 text-amber-700" : "bg-emerald-primary/10 text-emerald-primary"}`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${requiereReconexion ? "bg-amber-500/10 text-amber-700" : "bg-emerald-primary/10 text-emerald-primary"}`}
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                     {requiereReconexion ? "Requiere reconexión" : "Conectada"}
                   </span>
                 </div>
-                {requiereReconexion && <p className="mt-3 text-xs text-amber-700">Reconecta esta cuenta para autorizar el alcance actualizado y recuperar el acceso a tus archivos.</p>}
+                {requiereReconexion && (
+                  <p className="mt-3 text-xs text-amber-700">
+                    Reconecta esta cuenta para autorizar el alcance actualizado
+                    y recuperar el acceso a tus archivos.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="rounded-2xl border border-border-line/40 bg-white/70 p-4">
                 <div className="flex items-center gap-3 text-slate-text">
-                  <HardDrive className="h-5 w-5 shrink-0 text-emerald-primary" aria-hidden="true" />
+                  <HardDrive
+                    className="h-5 w-5 shrink-0 text-emerald-primary"
+                    aria-hidden="true"
+                  />
                   <p className="text-xs">
-                    Se abrirá la aplicación web de Google Drive en una nueva pestaña.
+                    Se abrirá la aplicación web de Google Drive en una nueva
+                    pestaña.
                   </p>
                 </div>
               </div>
             )}
 
-            <p className="text-xs text-slate-text">Si se cambió el alcance de acceso de Google Drive, vuelve a conectar la cuenta desde Configuración o el selector de almacenamiento.</p>
+            <p className="text-xs text-slate-text">
+              Si se cambió el alcance de acceso de Google Drive, vuelve a
+              conectar la cuenta desde Configuración o el selector de
+              almacenamiento.
+            </p>
           </div>
 
           {/* Acciones */}
@@ -179,6 +201,6 @@ export default function ModalGoogleDrive({
         </section>
       </FocusTrap>
     </div>,
-    document.body
+    document.body,
   );
 }

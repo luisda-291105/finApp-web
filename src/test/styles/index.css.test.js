@@ -3,9 +3,21 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const rutaCss = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "styles", "index.css");
+const rutaCss = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "styles",
+  "index.css",
+);
 const css = readFileSync(rutaCss, "utf8");
-const rutaHtml = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "index.html");
+const rutaHtml = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "..",
+  "index.html",
+);
 const html = readFileSync(rutaHtml, "utf8");
 
 describe("RF2 — prefers-reduced-transparency en index.css", () => {
@@ -14,7 +26,9 @@ describe("RF2 — prefers-reduced-transparency en index.css", () => {
   });
 
   it("fija fondo semisólido y desactiva backdrop-filter en .glass-hero", () => {
-    const bloque = css.match(/@media \(prefers-reduced-transparency: reduce\)\s*\{([\s\S]*?)\n\}/);
+    const bloque = css.match(
+      /@media \(prefers-reduced-transparency: reduce\)\s*\{([\s\S]*?)\n\}/,
+    );
     expect(bloque?.[1]).toContain(".glass-hero");
     expect(bloque?.[1]).toContain("rgba(15, 17, 23, 0.92)");
     expect(bloque?.[1]).toContain("backdrop-filter: none");
@@ -28,7 +42,9 @@ describe("RF4 — prefers-reduced-motion en index.css", () => {
   });
 
   it("muestra .reveal, .reveal-left y .reveal-stagger > * sin transformaciones ni transiciones", () => {
-    const bloque = css.match(/@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?)\n\}/);
+    const bloque = css.match(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?)\n\}/,
+    );
     expect(bloque).not.toBeNull();
     expect(bloque?.[1]).toContain(".reveal");
     expect(bloque?.[1]).toContain(".reveal-left");
@@ -50,7 +66,10 @@ describe("RF3 — hover de glass-card solo en dispositivos con hover", () => {
     expect(bloque?.[1]).toContain(".glass-card:hover");
     expect(bloque?.[1]).toContain("transform: translateY(-4px)");
     // Sin hover suelto fuera de la media query
-    const sinBloque = css.replace(/@media \(hover: hover\)\s*\{[\s\S]*?\n\}/, "");
+    const sinBloque = css.replace(
+      /@media \(hover: hover\)\s*\{[\s\S]*?\n\}/,
+      "",
+    );
     expect(sinBloque).not.toContain(".glass-card:hover");
   });
 });
@@ -64,8 +83,12 @@ describe("RF5 — blur reducido ≤ 640px en index.css", () => {
     const bloque = css.match(/@media \(max-width: 640px\)\s*\{([\s\S]*?)\n\}/);
     expect(bloque).not.toBeNull();
     expect(bloque?.[1]).toContain(".glass-hero");
-    expect(bloque?.[1]).toMatch(/backdrop-filter: blur\((1[2-6])px\) saturate\(180%\)/);
-    expect(bloque?.[1]).toMatch(/-webkit-backdrop-filter: blur\((1[2-6])px\) saturate\(180%\)/);
+    expect(bloque?.[1]).toMatch(
+      /backdrop-filter: blur\((1[2-6])px\) saturate\(180%\)/,
+    );
+    expect(bloque?.[1]).toMatch(
+      /-webkit-backdrop-filter: blur\((1[2-6])px\) saturate\(180%\)/,
+    );
   });
 });
 
@@ -75,7 +98,9 @@ describe("RF7 — escalonado con --i en index.css", () => {
   });
 
   it("aplica transition-delay: calc(var(--i, 0) * 90ms) en el estado revelado", () => {
-    const bloque = css.match(/\.reveal-stagger\.revealed > \*\s*\{([\s\S]*?)\}/);
+    const bloque = css.match(
+      /\.reveal-stagger\.revealed > \*\s*\{([\s\S]*?)\}/,
+    );
     expect(bloque).not.toBeNull();
     expect(bloque?.[1]).toContain("transition-delay: calc(var(--i, 0) * 90ms)");
   });
@@ -83,7 +108,9 @@ describe("RF7 — escalonado con --i en index.css", () => {
 
 describe("RF8 — fallback sin JS en index.css e index.html", () => {
   it("index.html añade la clase js en <html> con un script inline", () => {
-    expect(html).toMatch(/<script>[^<]*classList\.add\(\s*["']js["']\s*\)[^<]*<\/script>/);
+    expect(html).toMatch(
+      /<script>[^<]*classList\.add\(\s*["']js["']\s*\)[^<]*<\/script>/,
+    );
   });
 
   it("las reglas de ocultamiento de reveal solo aplican bajo .js", () => {
@@ -115,8 +142,9 @@ describe("RF9 — :focus-visible con tokens en interactivos Glass", () => {
 
 describe("RF1 — fallback @supports not en index.css", () => {
   it("aplica el fallback solo cuando ni backdrop-filter ni -webkit-backdrop-filter soportan", () => {
-    expect(css).toContain(
-      "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))",
+    const compacto = css.replace(/\s+/g, "");
+    expect(compacto).toContain(
+      "@supportsnot((backdrop-filter:blur(1px))or(-webkit-backdrop-filter:blur(1px)))",
     );
   });
 
@@ -149,7 +177,9 @@ describe("BottomNav — etiquetas en landscape (CSS global en index.css)", () =>
   });
 
   it("oculta .bottom-nav-label dentro de @media (orientation: landscape)", () => {
-    const bloque = css.match(/@media \(orientation: landscape\)\s*\{([\s\S]*?)\n\}/);
+    const bloque = css.match(
+      /@media \(orientation: landscape\)\s*\{([\s\S]*?)\n\}/,
+    );
     expect(bloque).not.toBeNull();
     expect(bloque?.[1]).toContain(".bottom-nav-label");
     expect(bloque?.[1]).toContain("display: none");
@@ -170,7 +200,9 @@ describe("013 — superficies de vidrio y H-1", () => {
   const bloquePequeno = () =>
     css.match(/@media \(max-width: 640px\)\s*\{([\s\S]*?)\n\}/)?.[1];
   const bloqueTransparencia = () =>
-    css.match(/@media \(prefers-reduced-transparency: reduce\)\s*\{([\s\S]*?)\n\}/)?.[1];
+    css.match(
+      /@media \(prefers-reduced-transparency: reduce\)\s*\{([\s\S]*?)\n\}/,
+    )?.[1];
 
   it(".glass-surface existe y declara solo el filtro, sin fondo, radio ni sombra", () => {
     const regla = reglaDe(css, ".glass-surface");
@@ -181,59 +213,84 @@ describe("013 — superficies de vidrio y H-1", () => {
   });
 
   it(">640px: backdrop-filter de .glass-surface usa blur 20–30px y saturación 160–200 %", () => {
-    const filtro = declaracion(reglaDe(css, ".glass-surface"), "backdrop-filter");
+    const filtro = declaracion(
+      reglaDe(css, ".glass-surface"),
+      "backdrop-filter",
+    );
     expect(filtro).not.toBe("");
     expect(filtro).toMatch(/blur\((?:2\d|30)px\)/);
     expect(filtro).toMatch(/saturate\((?:1[6-9]\d|200)%\)/);
   });
 
   it(">640px: -webkit-backdrop-filter de .glass-surface usa blur 20–30px y saturación 160–200 %", () => {
-    const filtro = declaracion(reglaDe(css, ".glass-surface"), "-webkit-backdrop-filter");
+    const filtro = declaracion(
+      reglaDe(css, ".glass-surface"),
+      "-webkit-backdrop-filter",
+    );
     expect(filtro).not.toBe("");
     expect(filtro).toMatch(/blur\((?:2\d|30)px\)/);
     expect(filtro).toMatch(/saturate\((?:1[6-9]\d|200)%\)/);
   });
 
   it("≤640px: .glass-surface reduce el blur a 12–16px en ambos prefijos", () => {
-    const filtros = reglaDe(bloquePequeno(), ".glass-surface")?.match(
-      /backdrop-filter:\s*blur\([^)]+\)\s+saturate\([^)]+\)/g,
-    ) ?? [];
+    const filtros =
+      reglaDe(bloquePequeno(), ".glass-surface")?.match(
+        /backdrop-filter:\s*blur\([^)]+\)\s+saturate\([^)]+\)/g,
+      ) ?? [];
     expect(filtros).toHaveLength(2);
     filtros.forEach((filtro) => expect(filtro).toMatch(/blur\((?:1[2-6])px\)/));
   });
 
   it("≤640px: .glass-surface mantiene saturate(180%) intacta", () => {
-    const filtros = reglaDe(bloquePequeno(), ".glass-surface")?.match(
-      /backdrop-filter:\s*blur\([^)]+\)\s+saturate\([^)]+\)/g,
-    ) ?? [];
+    const filtros =
+      reglaDe(bloquePequeno(), ".glass-surface")?.match(
+        /backdrop-filter:\s*blur\([^)]+\)\s+saturate\([^)]+\)/g,
+      ) ?? [];
     expect(filtros).toHaveLength(2);
     filtros.forEach((filtro) => expect(filtro).toContain("saturate(180%)"));
   });
 
   it("la transparencia reducida se declara después del ajuste de ≤640px (prevalece)", () => {
-    expect(css.indexOf("@media (max-width: 640px)"))
-      .toBeLessThan(css.indexOf("@media (prefers-reduced-transparency: reduce)"));
+    expect(css.indexOf("@media (max-width: 640px)")).toBeLessThan(
+      css.indexOf("@media (prefers-reduced-transparency: reduce)"),
+    );
   });
 
   it("la transparencia reducida desactiva el blur de .glass-surface", () => {
-    expect(declaracion(reglaDe(bloqueTransparencia(), ".glass-surface"), "backdrop-filter"))
-      .toBe("backdrop-filter: none;");
+    expect(
+      declaracion(
+        reglaDe(bloqueTransparencia(), ".glass-surface"),
+        "backdrop-filter",
+      ),
+    ).toBe("backdrop-filter: none;");
   });
 
   it("la transparencia reducida desactiva también el prefijo -webkit- de .glass-surface", () => {
-    expect(declaracion(reglaDe(bloqueTransparencia(), ".glass-surface"), "-webkit-backdrop-filter"))
-      .toBe("-webkit-backdrop-filter: none;");
+    expect(
+      declaracion(
+        reglaDe(bloqueTransparencia(), ".glass-surface"),
+        "-webkit-backdrop-filter",
+      ),
+    ).toBe("-webkit-backdrop-filter: none;");
   });
 
   it("el none de transparencia reducida queda después de los contextos >640px y ≤640px", () => {
     const reglaBase = css.match(/\.glass-surface\s*\{[\s\S]*?\}/)?.[0];
-    const mediaPequena = css.match(/@media \(max-width: 640px\)\s*\{[\s\S]*?\n\}/)?.[0];
-    const mediaTransparencia = css.match(/@media \(prefers-reduced-transparency: reduce\)\s*\{[\s\S]*?\n\}/)?.[0];
+    const mediaPequena = css.match(
+      /@media \(max-width: 640px\)\s*\{[\s\S]*?\n\}/,
+    )?.[0];
+    const mediaTransparencia = css.match(
+      /@media \(prefers-reduced-transparency: reduce\)\s*\{[\s\S]*?\n\}/,
+    )?.[0];
     expect(reglaBase).toBeDefined();
     expect(mediaPequena).toBeDefined();
     expect(mediaTransparencia).toBeDefined();
-    expect(css.indexOf(mediaTransparencia)).toBeGreaterThan(css.indexOf(reglaBase));
-    expect(css.indexOf(mediaTransparencia)).toBeGreaterThan(css.indexOf(mediaPequena));
+    expect(css.indexOf(mediaTransparencia)).toBeGreaterThan(
+      css.indexOf(reglaBase),
+    );
+    expect(css.indexOf(mediaTransparencia)).toBeGreaterThan(
+      css.indexOf(mediaPequena),
+    );
   });
 });
 
@@ -282,10 +339,10 @@ describe("013 — tokens, literales y tarjeta sólida", () => {
   });
 
   it(".glass-card es sólida: declara #ffffff y no usa backdrop-filter", () => {
-      // Match solo la regla base .glass-card (no la de dark mode :root[data-tema="oscuro"] .glass-card)
-      const reglaBase = css.match(/(^|\n)\.glass-card\s*\{([\s\S]*?)\}/)?.[2];
-      expect(reglaBase).toBeDefined();
-      expect(reglaBase).toContain("background: #ffffff;");
-      expect(reglaBase).not.toContain("backdrop-filter");
-    });
+    // Match solo la regla base .glass-card (no la de dark mode :root[data-tema="oscuro"] .glass-card)
+    const reglaBase = css.match(/(^|\n)\.glass-card\s*\{([\s\S]*?)\}/)?.[2];
+    expect(reglaBase).toBeDefined();
+    expect(reglaBase).toContain("background: #ffffff;");
+    expect(reglaBase).not.toContain("backdrop-filter");
+  });
 });

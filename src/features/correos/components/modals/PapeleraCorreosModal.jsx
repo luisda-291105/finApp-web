@@ -1,0 +1,171 @@
+/**
+ * @uso        Vista modal de la Papelera de Gmail (multi-cuenta) con restaurar por fila
+ * @funciones  PapeleraCorreosModal({ abierto, alCerrar, secciones, ... })
+ * @datos      Secciones por cuenta con los correos en vivo de la papelera
+ * @eventos    Restaurar por fila, autorizar el permiso ampliado, reintentar una cuenta y cerrar avisos
+ * @estados    Ninguno propio; recibe el estado de usePapelera por props
+ * @usadoPor   CorreosPage
+ */
+import { useState } from "react";
+import { ChevronRight, Trash2, X } from "lucide-react";
+import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
+import AvisoPermisoPapelera from "./papelera/AvisoPermisoPapelera";
+import ListaPapeleraCorreos from "./papelera/ListaPapeleraCorreos";
+
+const ESTILOS_AVISO = {
+  exito:
+    "border-emerald-primary/40 bg-emerald-primary/10 text-emerald-primary",
+  info: "border-sky-300/70 bg-sky-50 text-sky-900",
+  error: "border-red-300/70 bg-red-50 text-red-800",
+};
+
+/** Presenta la papelera de cada cuenta conectada, distinguiendo vacío, error y permiso. */
+export default function PapeleraCorreosModal({
+  abierto,
+  alCerrar,
+  triggerRef,
+  gmailConectado = false,
+  secciones = [],
+  cargando = false,
+  restaurando = {},
+  autorizando = null,
+  aviso = null,
+  alRestaurar,
+  alAutorizar,
+  alReintentar,
+  alCerrarAviso,
+}) {
+  const hayProblema = secciones.some(
+    (seccion) =>
+      Boolean(seccion.error) ||
+      seccion.requierePermiso ||
+      seccion.requiereReconexion,
+  );
+  const hayCorreos = secciones.some(
+    (seccion) => (seccion.correos?.length || 0) > 0,
+  );
+  // El estado vacío es propio de la papelera y NO se confunde con un error ni
+  // con la falta de permiso de una cuenta.
+  const vaciaGlobal =
+    gmailConectado && !cargando && !hayProblema && !hayCorreos;
+  const [minimizadas, setMinimizadas] = useState(() => new Set());
+  const alternarMinimizada = (cuentaId) =>
+    setMinimizadas((actuales) => {
+      const siguiente = new Set(actuales);
+      const clave = String(cuentaId);
+      if (siguiente.has(clave)) siguiente.delete(clave);
+      else siguiente.add(clave);
+      return siguiente;
+    });
+
+  return (
+    <ModalDetalleRegistro
+      abierto={abierto}
+      titulo="Papelera de correos"
+      alCerrar={alCerrar}
+      triggerRef={triggerRef}
+      ancho="max-w-3xl"
+      etiquetaCerrar="Cerrar la papelera de correos"
+      icono={Trash2}
+    >
+      <div className="space-y-4">
+        
+
+        {aviso && (
+          <div
+            role={aviso.tipo === "error" ? "alert" : "status"}
+            className={`flex items-start justify-between gap-3 rounded-2xl border p-3 text-sm ${ESTILOS_AVISO[aviso.tipo] || ESTILOS_AVISO.info}`}
+          >
+            <span>{aviso.mensaje}</span>
+            {alCerrarAviso && (
+              <button
+                type="button"
+                onClick={alCerrarAviso}
+                aria-label="Cerrar aviso"
+                className="shrink-0 rounded-lg p-1 hover:bg-black/5"
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {!gmailConectado && (
+          <p className="rounded-2xl border border-border-line/50 bg-bg-cream/70 p-4 text-sm text-slate-text">
+            Conecta una cuenta Gmail para ver su papelera.
+          </p>
+        )}
+
+        {gmailConectado && cargando && secciones.length === 0 && (
+          <p role="status" className="text-sm text-slate-text">
+            Consultando la papelera de Gmail...
+          </p>
+        )}
+
+        {vaciaGlobal && (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border-line/50 bg-bg-cream/70 px-6 py-8 text-center">
+            <Trash2
+              aria-hidden="true"
+              className="h-8 w-8 text-slate-text"
+              strokeWidth={1.5}
+            />
+            <p className="text-sm font-semibold text-bg-dark">
+              La papelera está vacía
+            </p>
+            <p className="max-w-sm text-xs text-slate-text">
+              Cuando muevas un correo a la papelera aparecerá aquí, listo para
+              restaurarlo.
+            </p>
+          </div>
+        )}
+
+        {gmailConectado &&
+          !vaciaGlobal &&
+          secciones.map((seccion) => {
+            const cuentaId = String(seccion.cuentaId);
+            const abierta = !minimizadas.has(cuentaId);
+            const etiquetaCuenta = seccion.email || "esta cuenta";
+            return (
+              <section key={cuentaId} className="space-y-2">
+                <h3 className="font-display text-sm font-semibold text-bg-dark">
+                  <button
+                    type="button"
+                    onClick={() => alternarMinimizada(cuentaId)}
+                    aria-expanded={abierta}
+                    aria-label={`${abierta ? "Minimizar" : "Expandir"} la papelera de ${etiquetaCuenta}`}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-left transition-colors hover:bg-bg-cream/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                  >
+                    <span className="truncate">{etiquetaCuenta}</span>
+                    <ChevronRight
+                      aria-hidden="true"
+                      className={`h-4 w-4 shrink-0 text-slate-text transition-transform ${abierta ? "rotate-90" : ""}`}
+                    />
+                  </button>
+                </h3>
+                {abierta &&
+                  (seccion.requierePermiso || seccion.requiereReconexion ? (
+                    <AvisoPermisoPapelera
+                      cuentaId={seccion.cuentaId}
+                      email={seccion.email}
+                      requiereReconexion={seccion.requiereReconexion}
+                      autorizando={
+                        String(autorizando) === String(seccion.cuentaId)
+                      }
+                      alAutorizar={alAutorizar}
+                    />
+                  ) : (
+                    <ListaPapeleraCorreos
+                      seccion={seccion}
+                      restaurando={restaurando}
+                      alRestaurar={alRestaurar}
+                      alReintentar={alReintentar}
+                    />
+                  ))}
+              </section>
+            );
+          })}
+
+      </div>
+    </ModalDetalleRegistro>
+  );
+}

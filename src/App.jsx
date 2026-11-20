@@ -11,24 +11,61 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute, PublicRoute } from "./components/auth";
 import { LandingPage } from "./features/landing";
-import { ErrorPage } from "./features/error";
-import { LimiteDeError } from "./components/ui";
+import { ErrorPage, LimiteDeError } from "./features/error";
 import { UsuarioActivoProvider } from "./context/UsuarioActivoContext";
 import { TemaProvider } from "./context/TemaContext";
 import { GmailProvider } from "./context/GmailContext";
 import { AlertasProvider } from "./context/AlertasContext";
 
-const PaginaLogin = lazy(() => import("./features/auth").then(({ LoginPage }) => ({ default: LoginPage })));
+const PaginaLogin = lazy(() =>
+  import("./features/auth").then(({ LoginPage }) => ({ default: LoginPage })),
+);
 const DashboardLayout = lazy(() => import("./layout/DashboardLayout"));
-const PaginaDashboardInicio = lazy(() => import("./features/inicio").then(({ InicioPage }) => ({ default: InicioPage })));
-const PaginaDashboardTarjetas = lazy(() => import("./features/tarjetas").then(({ TarjetasPage }) => ({ default: TarjetasPage })));
-const PaginaDashboardConfiguracion = lazy(() => import("./features/configuracion").then(({ ConfiguracionPage }) => ({ default: ConfiguracionPage })));
-const PaginaDashboardBolsillos = lazy(() => import("./features/grupo").then(({ GruposPage }) => ({ default: GruposPage })));
-const PaginaDashboardContactos = lazy(() => import("./features/contactos").then(({ ContactosPage }) => ({ default: ContactosPage })));
-const PaginaDashboardCorreos = lazy(() => import("./features/correos").then(({ CorreosPage }) => ({ default: CorreosPage })));
-const PaginaDashboardContabilidad = lazy(() => import("./features/contabilidad").then(({ ContabilidadPage }) => ({ default: ContabilidadPage })));
-const PaginaDashboardSuscripciones = lazy(() => import("./features/suscripciones").then(({ SuscripcionesPage }) => ({ default: SuscripcionesPage })));
-const PaginaDashboardAlmacenamiento = lazy(() => import("./features/almacenamiento").then(({ AlmacenamientoPage }) => ({ default: AlmacenamientoPage })));
+const PaginaDashboardInicio = lazy(() =>
+  import("./features/inicio").then(({ InicioPage }) => ({
+    default: InicioPage,
+  })),
+);
+const PaginaDashboardTarjetas = lazy(() =>
+  import("./features/tarjetas").then(({ TarjetasPage }) => ({
+    default: TarjetasPage,
+  })),
+);
+const PaginaDashboardConfiguracion = lazy(() =>
+  import("./features/configuracion").then(({ ConfiguracionPage }) => ({
+    default: ConfiguracionPage,
+  })),
+);
+const PaginaDashboardBolsillos = lazy(() =>
+  import("./features/grupo").then(({ GruposPage }) => ({
+    default: GruposPage,
+  })),
+);
+const PaginaDashboardContactos = lazy(() =>
+  import("./features/contactos").then(({ ContactosPage }) => ({
+    default: ContactosPage,
+  })),
+);
+const PaginaDashboardCorreos = lazy(() =>
+  import("./features/correos").then(({ CorreosPage }) => ({
+    default: CorreosPage,
+  })),
+);
+const PaginaDashboardContabilidad = lazy(() =>
+  import("./features/contabilidad").then(({ ContabilidadPage }) => ({
+    default: ContabilidadPage,
+  })),
+);
+const PaginaDashboardSuscripciones = lazy(() =>
+  import("./features/suscripciones").then(({ SuscripcionesPage }) => ({
+    default: SuscripcionesPage,
+  })),
+);
+const PaginaDashboardAlmacenamiento = lazy(() =>
+  import("./features/almacenamiento").then(({ AlmacenamientoPage }) => ({
+    default: AlmacenamientoPage,
+  })),
+);
 
 /**
  * CargandoRuta
@@ -82,25 +119,82 @@ export default function App() {
         <GmailProvider>
           <AlertasProvider>
             <Routes>
-            <Route path="/" element={<PublicRoute><LimiteDeError><LandingPage /></LimiteDeError></PublicRoute>} />
-            <Route path="/inicio" element={<Navigate to="/" replace />} />
-            <Route path="/login" element={<PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>} />
+              <Route
+                path="/"
+                element={
+                  <PublicRoute>
+                    <LimiteDeError>
+                      <LandingPage />
+                    </LimiteDeError>
+                  </PublicRoute>
+                }
+              />
+              <Route path="/inicio" element={<Navigate to="/" replace />} />
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>{envolver(<PaginaLogin />, false)}</PublicRoute>
+                }
+              />
 
-            <Route element={<ProtectedRoute>{envolver(<DashboardLayout />, false)}</ProtectedRoute>}>
-              <Route path="/dashboard" element={<PaginaDashboardInicio />} />
-              <Route path="/dashboard/tarjetas" element={<PaginaDashboardTarjetas />} />
-              <Route path="/dashboard/configuracion" element={<PaginaDashboardConfiguracion />} />
-              <Route path="/dashboard/bolsillos" element={<Navigate to="/dashboard/grupos" replace />} />
-              <Route path="/dashboard/grupos" element={<PaginaDashboardBolsillos />} />
-              <Route path="/dashboard/contactos" element={<PaginaDashboardContactos />} />
-              <Route path="/dashboard/correos" element={<PaginaDashboardCorreos />} />
-              <Route path="/dashboard/contabilidad" element={<PaginaDashboardContabilidad />} />
-              <Route path="/dashboard/suscripciones" element={<PaginaDashboardSuscripciones />} />
-              <Route path="/dashboard/almacenamiento" element={<PaginaDashboardAlmacenamiento />} />
-              <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
+              <Route
+                element={
+                  <ProtectedRoute>
+                    {envolver(<DashboardLayout />, false)}
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/dashboard" element={<PaginaDashboardInicio />} />
+                <Route
+                  path="/dashboard/tarjetas"
+                  element={<PaginaDashboardTarjetas />}
+                />
+                <Route
+                  path="/dashboard/configuracion"
+                  element={<PaginaDashboardConfiguracion />}
+                />
+                <Route
+                  path="/dashboard/bolsillos"
+                  element={<Navigate to="/dashboard/grupos" replace />}
+                />
+                <Route
+                  path="/dashboard/grupos"
+                  element={<PaginaDashboardBolsillos />}
+                />
+                <Route
+                  path="/dashboard/contactos"
+                  element={<PaginaDashboardContactos />}
+                />
+                <Route
+                  path="/dashboard/correos"
+                  element={<PaginaDashboardCorreos />}
+                />
+                <Route
+                  path="/dashboard/contabilidad"
+                  element={<PaginaDashboardContabilidad />}
+                />
+                <Route
+                  path="/dashboard/suscripciones"
+                  element={<PaginaDashboardSuscripciones />}
+                />
+                <Route
+                  path="/dashboard/almacenamiento"
+                  element={<PaginaDashboardAlmacenamiento />}
+                />
+                <Route
+                  path="/dashboard/*"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+              </Route>
 
-            <Route path="*" element={<LimiteDeError><ErrorPage /></LimiteDeError>} />
+              <Route
+                path="*"
+                element={
+                  <LimiteDeError>
+                    <ErrorPage />
+                  </LimiteDeError>
+                }
+              />
             </Routes>
           </AlertasProvider>
         </GmailProvider>

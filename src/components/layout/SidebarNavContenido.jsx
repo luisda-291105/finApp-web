@@ -8,8 +8,17 @@
  * @usadoPor   SidebarResponsive (avatar al pie), DashboardDrawer (avatar tras los enlaces)
  */
 
-import { NavLink } from "react-router-dom";
-import { Home, CreditCard, Users, Contact, Mail, Wallet, Repeat, HardDrive } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  Home,
+  CreditCard,
+  Users,
+  Contact,
+  Mail,
+  Wallet,
+  Repeat,
+  HardDrive,
+} from "lucide-react";
 import { useUsuarioActivo } from "../../context/UsuarioActivoContext";
 import clsx from "clsx";
 
@@ -60,6 +69,19 @@ export default function SidebarNavContenido({
   temaClaro = false,
 }) {
   const { usuario } = useUsuarioActivo();
+  const location = useLocation();
+  const esEnlaceActivo = (ruta, exacto) =>
+    exacto ? location.pathname === ruta : location.pathname.startsWith(ruta);
+  const volverArribaSiPaginaActual = (ruta, exacto) => {
+    if (!esEnlaceActivo(ruta, exacto)) return;
+    const reducirMovimiento = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    )?.matches;
+    window.scrollTo({
+      top: 0,
+      behavior: reducirMovimiento ? "auto" : "smooth",
+    });
+  };
   const nombreUsuario = String(usuario?.nombre || "").trim();
   const nombre = nombreUsuario || NOMBRE_RESPALDO;
   const iniciales = nombreUsuario ? calcularIniciales(nombreUsuario) : "UD";
@@ -72,38 +94,59 @@ export default function SidebarNavContenido({
     { ruta: "/dashboard/grupos", icono: Users, etiqueta: "Grupos" },
     { ruta: "/dashboard/contactos", icono: Contact, etiqueta: "Contactos" },
     { ruta: "/dashboard/correos", icono: Mail, etiqueta: "Correos" },
-    { ruta: "/dashboard/contabilidad", icono: Wallet, etiqueta: "Contabilidad" },
-    { ruta: "/dashboard/suscripciones", icono: Repeat, etiqueta: "Suscripciones" },
-    { ruta: "/dashboard/almacenamiento", icono: HardDrive, etiqueta: "Almacenamiento" },
+    {
+      ruta: "/dashboard/contabilidad",
+      icono: Wallet,
+      etiqueta: "Contabilidad",
+    },
+    {
+      ruta: "/dashboard/suscripciones",
+      icono: Repeat,
+      etiqueta: "Suscripciones",
+    },
+    {
+      ruta: "/dashboard/almacenamiento",
+      icono: HardDrive,
+      etiqueta: "Almacenamiento",
+    },
   ];
 
-  const enlacesNavegacion = enlaces.map(({ ruta, icono: Icono, etiqueta, exacto }) => (
-    <NavLink
-      key={ruta}
-      to={ruta}
-      end={Boolean(exacto)}
-      aria-label={etiqueta}
-      onClick={() => {
-        if (alCerrarSidebar) alCerrarSidebar();
-      }}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors min-w-0 ${
-          isActive
-            ? temaClaro ? "bg-emerald-primary/10 text-emerald-primary font-medium" : "bg-emerald-primary/10 text-mint-accent font-medium"
-            : temaClaro ? "text-slate-text hover:bg-emerald-primary/5" : "text-bg-cream hover:bg-emerald-primary/5"
-        }`
-      }
-    >
-      <Icono className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-      <span className={clsx("truncate min-w-0", colapsada && "hidden")}>{etiqueta}</span>
-    </NavLink>
-  ));
+  const enlacesNavegacion = enlaces.map(
+    ({ ruta, icono: Icono, etiqueta, exacto }) => (
+      <NavLink
+        key={ruta}
+        to={ruta}
+        end={Boolean(exacto)}
+        aria-label={etiqueta}
+        onClick={() => {
+          volverArribaSiPaginaActual(ruta, exacto);
+          if (alCerrarSidebar) alCerrarSidebar();
+        }}
+        className={({ isActive }) =>
+          `flex items-center ${colapsada ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg transition-colors min-w-0 ${
+            isActive
+              ? temaClaro
+                ? "bg-emerald-primary/10 text-emerald-primary font-medium"
+                : "bg-emerald-primary/10 text-mint-accent font-medium"
+              : temaClaro
+                ? "text-slate-text hover:bg-emerald-primary/5"
+                : "text-bg-cream hover:bg-emerald-primary/5"
+          }`
+        }
+      >
+        <Icono className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        <span className={clsx("truncate min-w-0", colapsada && "hidden")}>
+          {etiqueta}
+        </span>
+      </NavLink>
+    ),
+  );
 
   const bloqueAvatar = (
     <button
       type="button"
       onClick={alAbrirUserModal}
-      className="flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5"
+      className={`mt-auto flex items-center ${colapsada ? "justify-center px-2" : "gap-3 px-3"} py-2 rounded-lg w-full transition-colors hover:bg-emerald-primary/5`}
       aria-label={nombreUsuario ? `Cuenta de ${nombre}` : nombre}
     >
       <div
@@ -112,10 +155,36 @@ export default function SidebarNavContenido({
       >
         {iniciales}
       </div>
-      <div className={clsx("flex-1 min-w-0 truncate text-left", colapsada && "hidden")}>
-        <p className={clsx("font-medium truncate", temaClaro ? "text-bg-dark" : "text-white")}>{nombre}</p>
-        <p className={clsx("text-xs truncate", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>{correo || "correo No registrado"}</p>
-        <p className={clsx("text-xs truncate", temaClaro ? "text-slate-text" : "text-bg-cream/70")}>{telefono || "teléfono No registrado"}</p>
+      <div
+        className={clsx(
+          "flex-1 min-w-0 truncate text-left",
+          colapsada && "hidden",
+        )}
+      >
+        <p
+          className={clsx(
+            "font-medium truncate",
+            temaClaro ? "text-bg-dark" : "text-white",
+          )}
+        >
+          {nombre}
+        </p>
+        <p
+          className={clsx(
+            "text-xs truncate",
+            temaClaro ? "text-slate-text" : "text-bg-cream/70",
+          )}
+        >
+          {correo || "correo No registrado"}
+        </p>
+        <p
+          className={clsx(
+            "text-xs truncate",
+            temaClaro ? "text-slate-text" : "text-bg-cream/70",
+          )}
+        >
+          {telefono || "teléfono No registrado"}
+        </p>
       </div>
     </button>
   );
@@ -130,7 +199,14 @@ export default function SidebarNavContenido({
           {enlacesNavegacion}
         </nav>
         <div className="shrink-0">
-          <hr role="separator" className={clsx("my-3", temaClaro ? "border-border-line/70" : "border-border-line/20")} aria-hidden="true" />
+          <hr
+            role="separator"
+            className={clsx(
+              "my-3",
+              temaClaro ? "border-border-line/70" : "border-border-line/20",
+            )}
+            aria-hidden="true"
+          />
           {bloqueAvatar}
         </div>
       </>
@@ -138,9 +214,19 @@ export default function SidebarNavContenido({
   }
 
   return (
-    <nav className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll" aria-label="Navegación principal del dashboard">
+    <nav
+      className="flex flex-col flex-1 min-h-0 overflow-y-auto sidebar-scroll"
+      aria-label="Navegación principal del dashboard"
+    >
       {enlacesNavegacion}
-      <hr role="separator" className={clsx("my-3", temaClaro ? "border-border-line/70" : "border-border-line/20")} aria-hidden="true" />
+      <hr
+        role="separator"
+        className={clsx(
+          "my-3",
+          temaClaro ? "border-border-line/70" : "border-border-line/20",
+        )}
+        aria-hidden="true"
+      />
       {bloqueAvatar}
     </nav>
   );

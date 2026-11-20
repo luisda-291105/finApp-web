@@ -12,17 +12,20 @@ const PASOS = [
   {
     numero: "01",
     titulo: "Crea tu cuenta en minutos",
-    descripcion: "Regístrate de forma simple y segura. Sin tarjetas de crédito ni costos ocultos.",
+    descripcion:
+      "Regístrate de forma simple y segura. Sin tarjetas de crédito ni costos ocultos.",
   },
   {
     numero: "02",
     titulo: "Registra tus movimientos",
-    descripcion: "Categoriza ingresos, salidas y ahorros con una interfaz ágil pensada para tu día a día.",
+    descripcion:
+      "Categoriza ingresos, salidas y ahorros con una interfaz ágil pensada para tu día a día.",
   },
   {
     numero: "03",
     titulo: "Toma el control financiero",
-    descripcion: "Monitorea tu resumen mensual y toma decisiones con datos claros y actualizados.",
+    descripcion:
+      "Monitorea tu resumen mensual y toma decisiones con datos claros y actualizados.",
   },
 ];
 
@@ -34,13 +37,16 @@ export default function HowItWorks() {
   const { ref, visible } = useReveal();
 
   return (
-    <section className="bg-white py-24 px-6 border-b border-[#e0ddd8]/60">
+    <section id="como-funciona" className="bg-white py-24 pl-6 pr-16 sm:pr-24 border-b border-[#e0ddd8]/60">
       <div className="max-w-7xl mx-auto">
         <div className="mb-16">
           <span className="text-[#1a7a5e] text-xs font-semibold tracking-widest uppercase block mb-3">
             PASO A PASO
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl text-[#0f1117] font-normal tracking-tight">
+          <h2
+            id="titulo-como-funciona"
+            className="font-display text-4xl sm:text-5xl text-[#0f1117] font-normal tracking-tight"
+          >
             Cómo funciona
           </h2>
         </div>
@@ -52,7 +58,10 @@ export default function HowItWorks() {
           }`}
         >
           {PASOS.map((paso) => (
-            <div key={paso.numero} className="relative flex flex-col justify-between pt-6">
+            <div
+              key={paso.numero}
+              className="relative flex flex-col justify-between pt-6"
+            >
               <div className="font-display text-6xl sm:text-7xl font-bold text-[#e0ddd8]/70 select-none mb-3">
                 {paso.numero}
               </div>

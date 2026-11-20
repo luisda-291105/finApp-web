@@ -8,7 +8,11 @@
  */
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { cerrarSesionServidor, obtenerUsuarioActivo } from "../features/auth/services";
+import {
+  cerrarSesionServidor,
+  hayUsuariosRegistrados,
+  obtenerUsuarioActivo,
+} from "../features/auth/services";
 
 /** Valor seguro cuando un componente se monta sin `UsuarioActivoProvider` (pruebas/aislados). */
 const contextoPorDefecto = {
@@ -28,7 +32,11 @@ export function UsuarioActivoProvider({ children }) {
   // El proveedor también se monta en vistas/pruebas aisladas fuera de un Router.
   // Conserva una ruta neutral en ese caso; dentro de la app usa la ruta real.
   let location = { pathname: "/" };
-  try { location = useLocation(); } catch { /* No hay router en este montaje. */ }
+  try {
+    location = useLocation();
+  } catch {
+    /* No hay router en este montaje. */
+  }
   const [usuario, setUsuario] = useState(null);
   const [estadoSesion, setEstadoSesion] = useState("verificando");
   const revisionSesion = useRef(0);
@@ -37,33 +45,90 @@ export function UsuarioActivoProvider({ children }) {
     let activo = true;
     const revisionInicial = revisionSesion.current;
     let sesionMarcada = false;
-    try { sesionMarcada = localStorage.getItem(CLAVE_SESION_AUTENTICADA) === "activa"; }
-    catch { sesionMarcada = false; }
+    try {
+      sesionMarcada =
+        localStorage.getItem(CLAVE_SESION_AUTENTICADA) === "activa";
+    } catch {
+      sesionMarcada = false;
+    }
+
+    const limpiarMarcasLocales = () => {
+      try {
+        localStorage.removeItem(CLAVE_SESION_AUTENTICADA);
+      } catch {
+        /* Almacenamiento opcional. */
+      }
+      try {
+        localStorage.removeItem(CLAVE_ALMACEN);
+      } catch {
+        /* Almacenamiento opcional. */
+      }
+    };
+
+    const comprobarSesion = () => {
+      obtenerUsuarioActivo()
+        .then((respuesta) => {
+          const datos = respuesta?.datos || respuesta;
+          if (!activo || revisionSesion.current !== revisionInicial) return;
+          if (datos?.idUsuario) {
+            setUsuario(datos);
+            setEstadoSesion("autenticado");
+            try {
+              localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos));
+            } catch {
+              /* La sesión no depende de localStorage. */
+            }
+          } else {
+            setUsuario(null);
+            setEstadoSesion("sin-sesion");
+          }
+        })
+        .catch(() => {
+          if (!activo || revisionSesion.current !== revisionInicial) return;
+          setUsuario(null);
+          setEstadoSesion("sin-sesion");
+          limpiarMarcasLocales();
+        });
+    };
+
     if (!sesionMarcada) {
       setUsuario(null);
       setEstadoSesion("sin-sesion");
-      try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
-      return () => { activo = false; };
+      limpiarMarcasLocales();
+      return () => {
+        activo = false;
+      };
     }
-    obtenerUsuarioActivo().then((respuesta) => {
-      const datos = respuesta?.datos || respuesta;
-      if (!activo || revisionSesion.current !== revisionInicial) return;
-      if (datos?.idUsuario) {
-        setUsuario(datos);
-        setEstadoSesion("autenticado");
-        try { localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(datos)); } catch { /* La sesión no depende de localStorage. */ }
-      } else {
-        setUsuario(null);
-        setEstadoSesion("sin-sesion");
-      }
-    }).catch(() => {
-      if (!activo || revisionSesion.current !== revisionInicial) return;
-      setUsuario(null);
-      setEstadoSesion("sin-sesion");
-      try { localStorage.removeItem(CLAVE_SESION_AUTENTICADA); } catch { /* Almacenamiento opcional. */ }
-      try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
-    });
-    return () => { activo = false; };
+
+    // Sin cuentas registradas no existe sesión posible: evitar la consulta a
+    // /usuario/activo (y su 401) para no dejar errores en la consola del navegador.
+    if (typeof hayUsuariosRegistrados !== "function") {
+      comprobarSesion();
+      return () => {
+        activo = false;
+      };
+    }
+    hayUsuariosRegistrados()
+      .then((hayUsuarios) => {
+        if (!activo || revisionSesion.current !== revisionInicial) return;
+        if (!hayUsuarios) {
+          setUsuario(null);
+          setEstadoSesion("sin-sesion");
+          limpiarMarcasLocales();
+          return;
+        }
+        comprobarSesion();
+      })
+      .catch(() => {
+        // Si el estado del registro no está disponible, se conserva el flujo anterior.
+        if (activo && revisionSesion.current === revisionInicial) {
+          comprobarSesion();
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
   }, []);
 
   const rutaAnterior = useRef(location.pathname);
@@ -75,13 +140,22 @@ export function UsuarioActivoProvider({ children }) {
       revisionSesion.current += 1;
       setUsuario(null);
       setEstadoSesion("sin-sesion");
-      try { localStorage.removeItem(CLAVE_SESION_AUTENTICADA); } catch { /* Almacenamiento opcional. */ }
-      try { localStorage.removeItem(CLAVE_ALMACEN); } catch { /* Almacenamiento opcional. */ }
+      try {
+        localStorage.removeItem(CLAVE_SESION_AUTENTICADA);
+      } catch {
+        /* Almacenamiento opcional. */
+      }
+      try {
+        localStorage.removeItem(CLAVE_ALMACEN);
+      } catch {
+        /* Almacenamiento opcional. */
+      }
     }
   }, [location.pathname]);
 
   const guardarUsuario = (usuarioNuevo) => {
-    const id = usuarioNuevo?.idUsuario || usuarioNuevo?.id || usuarioNuevo?.id_usuario;
+    const id =
+      usuarioNuevo?.idUsuario || usuarioNuevo?.id || usuarioNuevo?.id_usuario;
     if (!id) {
       return;
     }
@@ -95,7 +169,9 @@ export function UsuarioActivoProvider({ children }) {
     try {
       localStorage.setItem(CLAVE_SESION_AUTENTICADA, "activa");
       localStorage.setItem(CLAVE_ALMACEN, JSON.stringify(normalizado));
-    } catch { /* El JWT HttpOnly sigue validándose en el servidor. */ }
+    } catch {
+      /* El JWT HttpOnly sigue validándose en el servidor. */
+    }
   };
 
   const limpiarUsuario = () => {
@@ -104,25 +180,42 @@ export function UsuarioActivoProvider({ children }) {
     setEstadoSesion("sin-sesion");
     try {
       localStorage.removeItem(CLAVE_SESION_AUTENTICADA);
-    } catch { /* El almacenamiento local es opcional. */ }
-    try { localStorage.removeItem(CLAVE_ALMACEN); }
-    catch { /* El almacenamiento local es opcional. */ }
+    } catch {
+      /* El almacenamiento local es opcional. */
+    }
+    try {
+      localStorage.removeItem(CLAVE_ALMACEN);
+    } catch {
+      /* El almacenamiento local es opcional. */
+    }
   };
 
   const cerrarSesion = async () => {
-    try { await cerrarSesionServidor(); }
-    catch { /* Se limpia la sesión local incluso si el servidor no responde. */ }
+    try {
+      await cerrarSesionServidor();
+    } catch {
+      /* Se limpia la sesión local incluso si el servidor no responde. */
+    }
     limpiarUsuario();
   };
 
   useEffect(() => {
     const exigirSesion = () => limpiarUsuario();
     window.addEventListener("finapp:sesion-requerida", exigirSesion);
-    return () => window.removeEventListener("finapp:sesion-requerida", exigirSesion);
+    return () =>
+      window.removeEventListener("finapp:sesion-requerida", exigirSesion);
   }, []);
 
   return (
-    <UsuarioActivoContext.Provider value={{ usuario, estadoSesion, guardarUsuario, limpiarUsuario, cerrarSesion }}>
+    <UsuarioActivoContext.Provider
+      value={{
+        usuario,
+        estadoSesion,
+        guardarUsuario,
+        limpiarUsuario,
+        cerrarSesion,
+      }}
+    >
       {children}
     </UsuarioActivoContext.Provider>
   );

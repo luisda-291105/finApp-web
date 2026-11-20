@@ -18,8 +18,18 @@ const FUNCIONALIDADES = [
     colorIcono: "text-[#1a7a5e]",
     fondoIcono: "bg-[#e8f5e9]",
     icono: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        />
       </svg>
     ),
   },
@@ -31,7 +41,13 @@ const FUNCIONALIDADES = [
     colorIcono: "text-[#1a7a5e]",
     fondoIcono: "bg-[#e6f9f2]",
     icono: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.5}
+      >
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
       </svg>
     ),
@@ -44,7 +60,13 @@ const FUNCIONALIDADES = [
     colorIcono: "text-[#d94838]",
     fondoIcono: "bg-[#fdeeed]",
     icono: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.5}
+      >
         <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
       </svg>
     ),
@@ -57,8 +79,18 @@ const FUNCIONALIDADES = [
     colorIcono: "text-[#2563eb]",
     fondoIcono: "bg-[#eff6ff]",
     icono: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+        />
       </svg>
     ),
   },
@@ -70,8 +102,18 @@ const FUNCIONALIDADES = [
     colorIcono: "text-[#7c3aed]",
     fondoIcono: "bg-[#f5f3ff]",
     icono: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
   },
@@ -85,15 +127,22 @@ export default function Features() {
   const { ref, visible } = useReveal();
 
   return (
-    <section id="funcionalidades" className="bg-[#f7f6f2] py-24 px-6 border-b border-[#e0ddd8]/60">
+    <section
+      id="funcionalidades"
+      className="bg-[#f7f6f2] py-24 pl-6 pr-16 sm:pr-24 border-b border-[#e0ddd8]/60"
+    >
       <div className="max-w-7xl mx-auto">
         {/* Cabecera de sección */}
         <div className="mb-14">
           <span className="text-[#1a7a5e] text-xs font-semibold tracking-widest uppercase block mb-3">
             FUNCIONALIDADES
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#0f1117] font-normal tracking-tight leading-[1.15]">
-            Todo lo que necesitas,<br />
+          <h2
+            id="titulo-funcionalidades"
+            className="font-display text-4xl sm:text-5xl lg:text-6xl text-[#0f1117] font-normal tracking-tight leading-[1.15]"
+          >
+            Todo lo que necesitas,
+            <br />
             nada que no uses
           </h2>
         </div>
@@ -106,7 +155,10 @@ export default function Features() {
           }`}
         >
           {FUNCIONALIDADES.map((func) => (
-            <Card key={func.id} className="p-7 sm:p-8 flex flex-col justify-between">
+            <Card
+              key={func.id}
+              className="p-7 sm:p-8 flex flex-col justify-between"
+            >
               <div>
                 <div
                   className={`w-11 h-11 rounded-xl ${func.fondoIcono} ${func.colorIcono} flex items-center justify-center mb-6 shadow-xs`}

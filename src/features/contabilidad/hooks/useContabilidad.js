@@ -1,15 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
-import { actualizarBolsillo, crearBolsillo, eliminarBolsillo, listarBolsillos } from "../services/bolsillosService";
-import { actualizarMovimiento, crearMovimiento, eliminarMovimiento, listarMovimientos, obtenerResumenGlobal, obtenerResumenesBolsillos } from "../services/movimientosService";
+import {
+  actualizarBolsillo,
+  crearBolsillo,
+  eliminarBolsillo,
+  listarBolsillos,
+} from "../services/bolsillosService";
+import {
+  actualizarMovimiento,
+  crearMovimiento,
+  eliminarMovimiento,
+  listarMovimientos,
+  obtenerResumenGlobal,
+  obtenerResumenesBolsillos,
+} from "../services/movimientosService";
 import { obtenerTarjetasPorUsuario } from "../../tarjetas/services/tarjetasService";
+import { moverCorreoAPapelera } from "../../correos/services/papeleraService";
+import { mesActual, referenciaGmailMovimiento } from "../utils/contabilidadHelpers";
 
-const listaDe = (respuesta) => Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
-const mesActual = () => {
-  const ahora = new Date();
-  return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
-};
+const listaDe = (respuesta) =>
+  Array.isArray(respuesta)
+    ? respuesta
+    : respuesta?.data || respuesta?.content || [];
 
 export default function useContabilidad() {
   const navigate = useNavigate();
@@ -34,53 +47,158 @@ export default function useContabilidad() {
   const [tarjetas, setTarjetas] = useState([]);
   const [cargandoBolsillos, setCargandoBolsillos] = useState(true);
   const [errorBolsillos, setErrorBolsillos] = useState("");
-  const [modalBolsillo, setModalBolsillo] = useState({ abierto: false, modo: "crear", bolsillo: null });
+  const [modalBolsillo, setModalBolsillo] = useState({
+    abierto: false,
+    modo: "crear",
+    bolsillo: null,
+  });
   const disparadorBolsilloRef = useRef(null);
   const disparadorMovimientoRef = useRef(null);
 
   useEffect(() => {
     let vigente = true;
-    if (!usuario?.idUsuario) { setBolsillos([]); setCargandoBolsillos(false); return () => { vigente = false; }; }
+    if (!usuario?.idUsuario) {
+      setBolsillos([]);
+      setCargandoBolsillos(false);
+      return () => {
+        vigente = false;
+      };
+    }
     setCargandoBolsillos(true);
-    listarBolsillos().then((data) => { if (vigente) { setBolsillos(listaDe(data)); setErrorBolsillos(""); } })
-      .catch((fallo) => { if (vigente) { setBolsillos([]); setErrorBolsillos(fallo?.message || "No se pudieron cargar los bolsillos."); } })
-      .finally(() => { if (vigente) setCargandoBolsillos(false); });
-    return () => { vigente = false; };
+    listarBolsillos()
+      .then((data) => {
+        if (vigente) {
+          setBolsillos(listaDe(data));
+          setErrorBolsillos("");
+        }
+      })
+      .catch((fallo) => {
+        if (vigente) {
+          setBolsillos([]);
+          setErrorBolsillos(
+            fallo?.message || "No se pudieron cargar los bolsillos.",
+          );
+        }
+      })
+      .finally(() => {
+        if (vigente) setCargandoBolsillos(false);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [usuario?.idUsuario]);
 
   useEffect(() => {
     let vigente = true;
-    if (!usuario?.idUsuario) { setTarjetas([]); return () => { vigente = false; }; }
-    obtenerTarjetasPorUsuario(usuario.idUsuario).then((data) => { if (vigente) setTarjetas(listaDe(data)); })
-      .catch(() => { if (vigente) setTarjetas([]); });
-    return () => { vigente = false; };
+    if (!usuario?.idUsuario) {
+      setTarjetas([]);
+      return () => {
+        vigente = false;
+      };
+    }
+    obtenerTarjetasPorUsuario(usuario.idUsuario)
+      .then((data) => {
+        if (vigente) setTarjetas(listaDe(data));
+      })
+      .catch(() => {
+        if (vigente) setTarjetas([]);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [usuario?.idUsuario]);
 
   useEffect(() => {
     let vigente = true;
     if (!usuario?.idUsuario || cargandoBolsillos) {
-      setMovimientos([]); setCargandoMovimientos(Boolean(usuario?.idUsuario && cargandoBolsillos));
-      return () => { vigente = false; };
+      setMovimientos([]);
+      setCargandoMovimientos(Boolean(usuario?.idUsuario && cargandoBolsillos));
+      return () => {
+        vigente = false;
+      };
     }
     setCargandoMovimientos(true);
-    listarMovimientos(null, filtroMovimiento).then((data) => { if (vigente) { setMovimientos(listaDe(data)); setErrorMovimientos(""); } })
-      .catch((fallo) => { if (vigente) { setMovimientos([]); setErrorMovimientos(fallo?.message || "No se pudieron cargar los movimientos."); } })
-      .finally(() => { if (vigente) setCargandoMovimientos(false); });
-    return () => { vigente = false; };
-  }, [usuario?.idUsuario, cargandoBolsillos, filtroMovimiento, revisionMovimientos]);
+    // «Gastos» incluye las transferencias (mismo criterio que el bolsillo Gastos):
+    // se trae la lista completa y se filtra en cliente para no tocar otros consumidores del API.
+    const filtroServidor = filtroMovimiento === "GASTO" ? "TODOS" : filtroMovimiento;
+    listarMovimientos(null, filtroServidor)
+      .then((data) => {
+        if (vigente) {
+          // "Por revisar" va a su propia bandeja; nunca se incluye en las pestañas normales
+          const confirmados = listaDe(data).filter(
+            (item) =>
+              String(item?.estadoRevision ?? "").toUpperCase() !==
+              "POR_REVISAR",
+          );
+          const gastosCompleto = (item) =>
+            ["GASTO", "TRANSFERENCIA"].includes(
+              String(item?.tipo ?? "").trim().toUpperCase(),
+            );
+          setMovimientos(
+            filtroMovimiento === "GASTO"
+              ? confirmados.filter(gastosCompleto)
+              : confirmados,
+          );
+          setErrorMovimientos("");
+        }
+      })
+      .catch((fallo) => {
+        if (vigente) {
+          setMovimientos([]);
+          setErrorMovimientos(
+            fallo?.message || "No se pudieron cargar los movimientos.",
+          );
+        }
+      })
+      .finally(() => {
+        if (vigente) setCargandoMovimientos(false);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [
+    usuario?.idUsuario,
+    cargandoBolsillos,
+    filtroMovimiento,
+    revisionMovimientos,
+  ]);
 
   useEffect(() => {
     let vigente = true;
     if (!usuario?.idUsuario || bolsillos.length === 0) {
-      setResumenesBolsillos({}); setErrorResumenes(""); setCargandoResumenes(false);
-      return () => { vigente = false; };
+      setResumenesBolsillos({});
+      setErrorResumenes("");
+      setCargandoResumenes(false);
+      return () => {
+        vigente = false;
+      };
     }
     setCargandoResumenes(true);
-    obtenerResumenesBolsillos().then((data) => {
-      if (vigente) { setResumenesBolsillos(Object.fromEntries(listaDe(data).map((resumen) => [resumen.idBolsillo, resumen]))); setErrorResumenes(""); }
-    }).catch(() => { if (vigente) { setResumenesBolsillos({}); setErrorResumenes("No se pudieron cargar las métricas de este bolsillo."); } })
-      .finally(() => { if (vigente) setCargandoResumenes(false); });
-    return () => { vigente = false; };
+    obtenerResumenesBolsillos()
+      .then((data) => {
+        if (vigente) {
+          setResumenesBolsillos(
+            Object.fromEntries(
+              listaDe(data).map((resumen) => [resumen.idBolsillo, resumen]),
+            ),
+          );
+          setErrorResumenes("");
+        }
+      })
+      .catch(() => {
+        if (vigente) {
+          setResumenesBolsillos({});
+          setErrorResumenes(
+            "No se pudieron cargar las métricas de este bolsillo.",
+          );
+        }
+      })
+      .finally(() => {
+        if (vigente) setCargandoResumenes(false);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [usuario?.idUsuario, bolsillos, revisionMovimientos]);
 
   useEffect(() => {
@@ -88,15 +206,24 @@ export default function useContabilidad() {
     if (!usuario?.idUsuario) {
       setResumenMensual(null);
       setCargandoResumenMensual(false);
-      return () => { vigente = false; };
+      return () => {
+        vigente = false;
+      };
     }
     setCargandoResumenMensual(true);
-    obtenerResumenGlobal(mesActual()).then((data) => {
-      if (vigente) setResumenMensual(data);
-    }).catch(() => {
-      if (vigente) setResumenMensual(null);
-    }).finally(() => { if (vigente) setCargandoResumenMensual(false); });
-    return () => { vigente = false; };
+    obtenerResumenGlobal(mesActual())
+      .then((data) => {
+        if (vigente) setResumenMensual(data);
+      })
+      .catch(() => {
+        if (vigente) setResumenMensual(null);
+      })
+      .finally(() => {
+        if (vigente) setCargandoResumenMensual(false);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [usuario?.idUsuario, revisionMovimientos]);
 
   useEffect(() => {
@@ -106,51 +233,129 @@ export default function useContabilidad() {
   }, [respuesta]);
 
   const abrirModalBolsillo = (modo, bolsillo, evento) => {
-    if (evento?.currentTarget) disparadorBolsilloRef.current = evento.currentTarget;
-    setErrorBolsillos(""); setModalBolsillo({ abierto: true, modo, bolsillo });
+    if (evento?.currentTarget)
+      disparadorBolsilloRef.current = evento.currentTarget;
+    setErrorBolsillos("");
+    setModalBolsillo({ abierto: true, modo, bolsillo });
   };
   const guardarBolsillo = async (datos) => {
     if (modalBolsillo.modo === "crear") {
-      const creado = await crearBolsillo(datos); setBolsillos((actuales) => [creado?.data || creado, ...actuales]);
+      const creado = await crearBolsillo(datos);
+      setBolsillos((actuales) => [creado?.data || creado, ...actuales]);
     } else {
-      const actualizado = await actualizarBolsillo(modalBolsillo.bolsillo.idBolsillo, datos);
-      const bolsillo = actualizado?.data || actualizado || { ...modalBolsillo.bolsillo, ...datos };
-      setBolsillos((actuales) => actuales.map((item) => item.idBolsillo === bolsillo.idBolsillo ? { ...item, ...bolsillo } : item));
+      const actualizado = await actualizarBolsillo(
+        modalBolsillo.bolsillo.idBolsillo,
+        datos,
+      );
+      const bolsillo = actualizado?.data ||
+        actualizado || { ...modalBolsillo.bolsillo, ...datos };
+      setBolsillos((actuales) =>
+        actuales.map((item) =>
+          item.idBolsillo === bolsillo.idBolsillo
+            ? { ...item, ...bolsillo }
+            : item,
+        ),
+      );
     }
   };
   const borrarBolsillo = async (idBolsillo) => {
-    await eliminarBolsillo(idBolsillo); setBolsillos((actuales) => actuales.filter((item) => item.idBolsillo !== idBolsillo));
+    await eliminarBolsillo(idBolsillo);
+    setBolsillos((actuales) =>
+      actuales.filter((item) => item.idBolsillo !== idBolsillo),
+    );
   };
   const guardarMovimiento = async (movimiento) => {
-    if (!usuario?.idUsuario) { navigate("/", { replace: true }); return; }
-    if (movimientoEditando) await actualizarMovimiento(movimientoEditando.idMovimiento, movimiento);
+    if (!usuario?.idUsuario) {
+      navigate("/", { replace: true });
+      return;
+    }
+    if (movimientoEditando)
+      await actualizarMovimiento(movimientoEditando.idMovimiento, movimiento);
     else await crearMovimiento(movimiento);
-    setRespuesta({ tipo: "exito", mensaje: movimientoEditando ? "Movimiento actualizado correctamente." : "Movimiento guardado correctamente en el bolsillo." });
+    setRespuesta({
+      tipo: "exito",
+      mensaje: movimientoEditando
+        ? "Movimiento actualizado correctamente."
+        : "Movimiento guardado correctamente en el bolsillo.",
+    });
     setRevisionMovimientos((revision) => revision + 1);
   };
-  const recargarMovimientos = () => setRevisionMovimientos((revision) => revision + 1);
+  const recargarMovimientos = () =>
+    setRevisionMovimientos((revision) => revision + 1);
   const editarMovimiento = (movimiento, evento) => {
-    disparadorMovimientoRef.current = evento.currentTarget; setMovimientoEditando(movimiento); setCrearMovimientoAbierto(true);
+    disparadorMovimientoRef.current = evento.currentTarget;
+    setMovimientoEditando(movimiento);
+    setCrearMovimientoAbierto(true);
   };
   const confirmarEliminarMovimiento = async () => {
-    if (!movimientoEliminando) return;
-    setEliminandoMovimiento(true); setErrorEliminarMovimiento("");
+    if (!movimientoEliminando) return false;
+    setEliminandoMovimiento(true);
+    setErrorEliminarMovimiento("");
     try {
+      const gmail = referenciaGmailMovimiento(movimientoEliminando);
+      if (gmail) {
+        // Primero la papelera: si falla, el movimiento pendiente sigue disponible para reintentar.
+        await moverCorreoAPapelera(gmail.cuentaId, gmail.mensajeId);
+      }
       await eliminarMovimiento(movimientoEliminando.idMovimiento);
-      setRespuesta({ tipo: "exito", mensaje: "Movimiento eliminado." }); setMovimientoEliminando(null);
+      setRespuesta({
+        tipo: "exito",
+        mensaje: gmail
+          ? "Correo movido a la papelera y movimiento eliminado."
+          : "Movimiento eliminado.",
+      });
+      setMovimientoEliminando(null);
       setRevisionMovimientos((revision) => revision + 1);
-    } catch (fallo) { setErrorEliminarMovimiento(fallo?.message || "No se pudo eliminar el movimiento."); }
-    finally { setEliminandoMovimiento(false); }
+      return true;
+    } catch (fallo) {
+      setErrorEliminarMovimiento(
+        fallo?.message || "No se pudo eliminar el movimiento.",
+      );
+      return false;
+    } finally {
+      setEliminandoMovimiento(false);
+    }
   };
 
   return {
-    navigate, usuario, movimientos, filtroMovimiento, setFiltroMovimiento, cargandoMovimientos, errorMovimientos,
-    resumenesBolsillos, cargandoResumenes, errorResumenes, crearMovimientoAbierto, setCrearMovimientoAbierto,
-    resumenMensual, cargandoResumenMensual,
-    movimientoEditando, setMovimientoEditando, movimientoEliminando, setMovimientoEliminando,
-    eliminandoMovimiento, errorEliminarMovimiento, setErrorEliminarMovimiento, respuesta, setRespuesta, bolsillos, tarjetas,
-    cargandoBolsillos, errorBolsillos, modalBolsillo, setModalBolsillo,
-    disparadorBolsilloRef, disparadorMovimientoRef, abrirModalBolsillo, guardarBolsillo,
-    borrarBolsillo, guardarMovimiento, editarMovimiento, confirmarEliminarMovimiento, recargarMovimientos,
+    navigate,
+    usuario,
+    movimientos,
+    filtroMovimiento,
+    setFiltroMovimiento,
+    cargandoMovimientos,
+    errorMovimientos,
+    resumenesBolsillos,
+    cargandoResumenes,
+    errorResumenes,
+    crearMovimientoAbierto,
+    setCrearMovimientoAbierto,
+    resumenMensual,
+    cargandoResumenMensual,
+    revisionMovimientos,
+    movimientoEditando,
+    setMovimientoEditando,
+    movimientoEliminando,
+    setMovimientoEliminando,
+    eliminandoMovimiento,
+    errorEliminarMovimiento,
+    setErrorEliminarMovimiento,
+    respuesta,
+    setRespuesta,
+    bolsillos,
+    tarjetas,
+    cargandoBolsillos,
+    errorBolsillos,
+    modalBolsillo,
+    setModalBolsillo,
+    disparadorBolsilloRef,
+    disparadorMovimientoRef,
+    abrirModalBolsillo,
+    guardarBolsillo,
+    borrarBolsillo,
+    guardarMovimiento,
+    editarMovimiento,
+    confirmarEliminarMovimiento,
+    recargarMovimientos,
   };
 }

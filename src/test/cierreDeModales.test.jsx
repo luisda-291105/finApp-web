@@ -13,7 +13,14 @@
  * @estados    viewport explícito (innerWidth + matchMedia) por caso
  * @usadoPor   Vitest
  */
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -40,23 +47,51 @@ vi.mock("framer-motion", async () => {
   const actual = await vi.importActual("framer-motion");
   const React = await vi.importActual("react");
   const PROPS_DE_ANIMACION = new Set([
-    "initial", "animate", "exit", "transition", "variants", "custom",
-    "whileHover", "whileTap", "whileFocus", "whileDrag", "whileInView",
-    "layout", "layoutId", "layoutDependency", "layoutScroll",
-    "drag", "dragConstraints", "dragElastic", "dragMomentum", "dragPropagation",
-    "dragDirectionLock", "dragControls",
-    "onDragStart", "onDrag", "onDragEnd", "onAnimationStart", "onAnimationComplete",
-    "onUpdate", "transformTemplate", "viewport", "inherit",
+    "initial",
+    "animate",
+    "exit",
+    "transition",
+    "variants",
+    "custom",
+    "whileHover",
+    "whileTap",
+    "whileFocus",
+    "whileDrag",
+    "whileInView",
+    "layout",
+    "layoutId",
+    "layoutDependency",
+    "layoutScroll",
+    "drag",
+    "dragConstraints",
+    "dragElastic",
+    "dragMomentum",
+    "dragPropagation",
+    "dragDirectionLock",
+    "dragControls",
+    "onDragStart",
+    "onDrag",
+    "onDragEnd",
+    "onAnimationStart",
+    "onAnimationComplete",
+    "onUpdate",
+    "transformTemplate",
+    "viewport",
+    "inherit",
   ]);
   const propsDom = (props) =>
-    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
+    Object.fromEntries(
+      Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)),
+    );
   return {
     ...actual,
     useReducedMotion: () => false,
     AnimatePresence: ({ children }) => children,
     motion: {
       div: React.forwardRef(({ children, ...props }, ref) => (
-        <div ref={ref} {...propsDom(props)}>{children}</div>
+        <div ref={ref} {...propsDom(props)}>
+          {children}
+        </div>
       )),
     },
   };
@@ -111,7 +146,13 @@ const esperarFocoDentro = async (panel) => {
 /** Despacha un evento de puntero nativo con las propiedades que lee el gesto. */
 const dispararPuntero = (elemento, tipo, props = {}) => {
   const evento = new Event(tipo, { bubbles: true, cancelable: true });
-  Object.assign(evento, { isPrimary: true, pointerId: 7, clientX: 0, clientY: 0, ...props });
+  Object.assign(evento, {
+    isPrimary: true,
+    pointerId: 7,
+    clientX: 0,
+    clientY: 0,
+    ...props,
+  });
   elemento.dispatchEvent(evento);
 };
 
@@ -133,7 +174,7 @@ const renderCanario = () =>
           <button type="button">Dos</button>
         </div>
       </FocusTrap>
-    </>
+    </>,
   );
 
 /**
@@ -154,7 +195,9 @@ describe("cierreDeModales — andamiaje de geometría (canario de la Tarea 2)", 
     const panel = await esperarTrampaActiva();
 
     // La trampa se crea (no lanza "no tabbable nodes") y enfoca el primer tabulable del panel
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Uno" }));
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Uno" }),
+    );
     expect(panel.contains(document.activeElement)).toBe(true);
   });
 
@@ -208,12 +251,18 @@ const SUPERFICIES = [
     montar: (alCerrar) => {
       render(
         <MemoryRouter initialEntries={["/dashboard"]}>
-          <DashboardUserModal abierto alCerrar={alCerrar} triggerRef={{ current: null }} />
-        </MemoryRouter>
+          <DashboardUserModal
+            abierto
+            alCerrar={alCerrar}
+            triggerRef={{ current: null }}
+          />
+        </MemoryRouter>,
       );
       return {
         panel: document.body.querySelector("#dashboard-user-modal-panel"),
-        capaExterior: document.body.querySelector("div.fixed.inset-0.bg-bg-dark\\/80"),
+        capaExterior: document.body.querySelector(
+          "div.modal-overlay-dashboard.bg-bg-dark\\/80",
+        ),
       };
     },
   },
@@ -227,11 +276,13 @@ const SUPERFICIES = [
           <DashboardDrawer abierto alCerrar={alCerrar}>
             <SidebarNavContenido alAbrirUserModal={vi.fn()} />
           </DashboardDrawer>
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       return {
         panel: document.body.querySelector("#dashboard-drawer-panel"),
-        capaExterior: document.body.querySelector('div.fixed.inset-0[aria-hidden="true"]'),
+        capaExterior: document.body.querySelector(
+          'div.fixed.inset-0[aria-hidden="true"]',
+        ),
       };
     },
   },
@@ -248,7 +299,7 @@ const SUPERFICIES = [
   {
     nombre: "ModalTarjeta (detalle de tarjeta)",
     botonCerrar: "Cerrar Tarjeta de Ana Pérez",
-    gesto: false,
+    gesto: true,
     montar: (alCerrar) => {
       render(<ModalTarjeta tarjeta={TARJETA_REGISTRADA} onCerrar={alCerrar} />);
       const panel = screen.getByRole("dialog");
@@ -257,61 +308,69 @@ const SUPERFICIES = [
   },
 ];
 
-describe.each(SUPERFICIES)("matriz superficie × forma — $nombre", (superficie) => {
-  it("«X»: existe dentro del panel y cierra exactamente una vez", async () => {
-    const alCerrar = vi.fn();
-    const { panel } = superficie.montar(alCerrar);
-
-    const botonCerrar = screen.getByRole("button", { name: superficie.botonCerrar });
-    expect(panel.contains(botonCerrar)).toBe(true);
-
-    await userEvent.click(botonCerrar);
-    expect(alCerrar).toHaveBeenCalledTimes(1);
-  });
-
-  it("Esc: cierra exactamente una vez por pulsación (mecanismo único)", async () => {
-    const alCerrar = vi.fn();
-    superficie.montar(alCerrar);
-
-    await userEvent.keyboard("{Escape}");
-
-    expect(alCerrar).toHaveBeenCalledTimes(1);
-  });
-
-  it("clic fuera: cierra con la trampa real activa y una sola llamada", async () => {
-    const alCerrar = vi.fn();
-    const { panel, capaExterior } = superficie.montar(alCerrar);
-    await esperarFocoDentro(panel);
-
-    expect(capaExterior).toBeTruthy();
-    await userEvent.click(capaExterior);
-
-    expect(alCerrar).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe.each(SUPERFICIES)("gesto de deslizar hacia abajo — $nombre", (superficie) => {
-  it(
-    superficie.gesto
-      ? "en móvil: cierra al deslizar hacia abajo (>96px, vertical)"
-      : "en móvil: NO cierra al deslizar hacia abajo (DP-08: no aplica al menú)",
-    async () => {
-      fijarViewport(375);
+describe.each(SUPERFICIES)(
+  "matriz superficie × forma — $nombre",
+  (superficie) => {
+    it("«X»: existe dentro del panel y cierra exactamente una vez", async () => {
       const alCerrar = vi.fn();
       const { panel } = superficie.montar(alCerrar);
 
-      dispararPuntero(panel, "pointerdown", { clientY: 0 });
-      dispararPuntero(panel, "pointermove", { clientY: 180 });
-      dispararPuntero(panel, "pointerup", { clientY: 180 });
+      const botonCerrar = screen.getByRole("button", {
+        name: superficie.botonCerrar,
+      });
+      expect(panel.contains(botonCerrar)).toBe(true);
 
-      if (superficie.gesto) {
-        expect(alCerrar).toHaveBeenCalledTimes(1);
-      } else {
-        expect(alCerrar).not.toHaveBeenCalled();
-      }
-    }
-  );
-});
+      await userEvent.click(botonCerrar);
+      expect(alCerrar).toHaveBeenCalledTimes(1);
+    });
+
+    it("Esc: cierra exactamente una vez por pulsación (mecanismo único)", async () => {
+      const alCerrar = vi.fn();
+      superficie.montar(alCerrar);
+
+      await userEvent.keyboard("{Escape}");
+
+      expect(alCerrar).toHaveBeenCalledTimes(1);
+    });
+
+    it("clic fuera: cierra con la trampa real activa y una sola llamada", async () => {
+      const alCerrar = vi.fn();
+      const { panel, capaExterior } = superficie.montar(alCerrar);
+      await esperarFocoDentro(panel);
+
+      expect(capaExterior).toBeTruthy();
+      await userEvent.click(capaExterior);
+
+      expect(alCerrar).toHaveBeenCalledTimes(1);
+    });
+  },
+);
+
+describe.each(SUPERFICIES)(
+  "gesto de deslizar hacia abajo — $nombre",
+  (superficie) => {
+    it(
+      superficie.gesto
+        ? "en móvil: cierra al deslizar hacia abajo (>96px, vertical)"
+        : "en móvil: NO cierra al deslizar hacia abajo (DP-08: no aplica al menú)",
+      async () => {
+        fijarViewport(375);
+        const alCerrar = vi.fn();
+        const { panel } = superficie.montar(alCerrar);
+
+        dispararPuntero(panel, "pointerdown", { clientY: 0 });
+        dispararPuntero(panel, "pointermove", { clientY: 180 });
+        dispararPuntero(panel, "pointerup", { clientY: 180 });
+
+        if (superficie.gesto) {
+          expect(alCerrar).toHaveBeenCalledTimes(1);
+        } else {
+          expect(alCerrar).not.toHaveBeenCalled();
+        }
+      },
+    );
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Una sola superficie y una sola trampa, por diseño (RF-07, RF-13; AC-06)
@@ -326,7 +385,7 @@ describe("una sola superficie activa — integración con DashboardLayout real",
             <Route index element={<div>Inicio</div>} />
           </Route>
         </Routes>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
   it("abrir «Cuenta» desde el menú cierra el menú y deja una sola superficie y una sola trampa", async () => {
@@ -347,7 +406,9 @@ describe("una sola superficie activa — integración con DashboardLayout real",
     expect(document.body.querySelector("#dashboard-drawer-panel")).toBeNull();
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
 
-    const panelModal = document.body.querySelector("#dashboard-user-modal-panel");
+    const panelModal = document.body.querySelector(
+      "#dashboard-user-modal-panel",
+    );
     expect(panelModal).toBeTruthy();
 
     // Una sola trampa: el foco queda confinado en el modal (no en la superficie inferior)
@@ -364,9 +425,13 @@ describe("una sola superficie activa — integración con DashboardLayout real",
     // Abrir el menú superpuesto y, desde el avatar, «Cuenta» (el menú se cierra antes)
     await usuario.click(screen.getByRole("button", { name: "Abrir menú" }));
     const panelMenu = document.body.querySelector("#dashboard-drawer-panel");
-    await usuario.click(within(panelMenu).getByRole("button", { name: /Cuenta de/ }));
+    await usuario.click(
+      within(panelMenu).getByRole("button", { name: /Cuenta de/ }),
+    );
 
-    const panelModal = document.body.querySelector("#dashboard-user-modal-panel");
+    const panelModal = document.body.querySelector(
+      "#dashboard-user-modal-panel",
+    );
     expect(panelModal).toBeTruthy();
     await esperarFocoDentro(panelModal);
 
@@ -428,8 +493,12 @@ describe("Esc con dos capas forzadas — defensa CL-02", () => {
 
     expect(cerrarCuenta).toHaveBeenCalledTimes(1);
     expect(cerrarAcceso).not.toHaveBeenCalled();
-    expect(document.body.querySelector("#dashboard-user-modal-panel")).toBeNull();
-    expect(screen.getByRole("dialog", { name: "Ventana de acceso" })).toBeTruthy();
+    expect(
+      document.body.querySelector("#dashboard-user-modal-panel"),
+    ).toBeNull();
+    expect(
+      screen.getByRole("dialog", { name: "Ventana de acceso" }),
+    ).toBeTruthy();
 
     // Una segunda pulsación cierra la siguiente capa (el registro queda coherente)
     await userEvent.keyboard("{Escape}");
@@ -470,7 +539,9 @@ describe("Esc con dos capas forzadas — defensa CL-02", () => {
 
     expect(cerrarTarjeta).toHaveBeenCalledTimes(1);
     expect(cerrarAcceso).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog", { name: "Ventana de acceso" })).toBeTruthy();
+    expect(
+      screen.getByRole("dialog", { name: "Ventana de acceso" }),
+    ).toBeTruthy();
   });
 });
 
@@ -492,7 +563,7 @@ const renderControlesDeVersion = () =>
       <aside role="navigation" aria-label="Navegación de prueba">
         <button type="button">Navegación lateral</button>
       </aside>
-    </>
+    </>,
   );
 
 /**
@@ -519,7 +590,8 @@ const SUPERFICIES_PARIDAD = [
       }
       render(<Arnes />);
     },
-    cerrar: () => userEvent.click(screen.getByRole("button", { name: "Cerrar Cuenta" })),
+    cerrar: () =>
+      userEvent.click(screen.getByRole("button", { name: "Cerrar Cuenta" })),
   },
   {
     nombre: "DashboardDrawer (menú superpuesto)",
@@ -540,58 +612,72 @@ const SUPERFICIES_PARIDAD = [
       }
       render(<Arnes />);
     },
-    cerrar: () => userEvent.click(screen.getByRole("button", { name: "Cerrar menú" })),
+    cerrar: () =>
+      userEvent.click(screen.getByRole("button", { name: "Cerrar menú" })),
   },
   {
     nombre: "AuthModal (ventana de acceso)",
     montar: () => {
       function Arnes() {
         const [abierto, setAbierto] = useState(true);
-        return <AuthModal abierto={abierto} alCerrar={() => setAbierto(false)} />;
+        return (
+          <AuthModal abierto={abierto} alCerrar={() => setAbierto(false)} />
+        );
       }
       render(<Arnes />);
     },
     cerrar: () =>
-      userEvent.click(screen.getByRole("button", { name: "Cerrar ventana de acceso" })),
+      userEvent.click(
+        screen.getByRole("button", { name: "Cerrar ventana de acceso" }),
+      ),
   },
   {
     nombre: "ModalTarjeta (detalle de tarjeta)",
     montar: () => {
       function Arnes() {
         const [tarjeta, setTarjeta] = useState(TARJETA_REGISTRADA);
-        return <ModalTarjeta tarjeta={tarjeta} onCerrar={() => setTarjeta(null)} />;
+        return (
+          <ModalTarjeta tarjeta={tarjeta} onCerrar={() => setTarjeta(null)} />
+        );
       }
       render(<Arnes />);
     },
     cerrar: () =>
-      userEvent.click(screen.getByRole("button", { name: /Cerrar Tarjeta de/ })),
+      userEvent.click(
+        screen.getByRole("button", { name: /Cerrar Tarjeta de/ }),
+      ),
   },
 ];
 
-describe.each(SUPERFICIES_PARIDAD)("paridad de la regla común (AC-10) — $nombre", (superficie) => {
-  it.each([
-    ["móvil (375px)", 375, "Abrir menú"],
-    ["pantallas grandes (1024px)", 1024, "Navegación lateral"],
-  ])(
-    "disparador desconectado → el foco acaba en el respaldo de RF-05 en %s, nunca en body",
-    async (_etiqueta, ancho, nombreControl) => {
-      fijarViewport(ancho);
-      renderControlesDeVersion();
+describe.each(SUPERFICIES_PARIDAD)(
+  "paridad de la regla común (AC-10) — $nombre",
+  (superficie) => {
+    it.each([
+      ["móvil (375px)", 375, "Abrir menú"],
+      ["pantallas grandes (1024px)", 1024, "Navegación lateral"],
+    ])(
+      "disparador desconectado → el foco acaba en el respaldo de RF-05 en %s, nunca en body",
+      async (_etiqueta, ancho, nombreControl) => {
+        fijarViewport(ancho);
+        renderControlesDeVersion();
 
-      // Disparador desconectado del documento: la cadena lo descarta antes de invocar `focus()`
-      const triggerRef = { current: document.createElement("button") };
+        // Disparador desconectado del documento: la cadena lo descarta antes de invocar `focus()`
+        const triggerRef = { current: document.createElement("button") };
 
-      superficie.montar(triggerRef);
-      await esperarFocoDentro(screen.getByRole("dialog"));
+        superficie.montar(triggerRef);
+        await esperarFocoDentro(screen.getByRole("dialog"));
 
-      await superficie.cerrar();
+        await superficie.cerrar();
 
-      const controlEsperado = screen.getByRole("button", { name: nombreControl });
-      expect(document.activeElement).toBe(controlEsperado);
-      expect(document.activeElement).not.toBe(document.body);
-    }
-  );
-});
+        const controlEsperado = screen.getByRole("button", {
+          name: nombreControl,
+        });
+        expect(document.activeElement).toBe(controlEsperado);
+        expect(document.activeElement).not.toBe(document.body);
+      },
+    );
+  },
+);
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Convivencia real con el modal abierto al cruzar el corte (spec 011; D-11; AC-14)
@@ -628,9 +714,11 @@ const instalarMatchMediaControlable = (anchoInicial) => {
     return lista;
   };
 
-  window.matchMedia = vi.fn().mockImplementation(
-    (query) => listas.get(query)?.lista ?? crearLista(query)
-  );
+  window.matchMedia = vi
+    .fn()
+    .mockImplementation(
+      (query) => listas.get(query)?.lista ?? crearLista(query),
+    );
 
   const fijarAncho = (nuevoAncho) => {
     ancho = nuevoAncho;
@@ -658,7 +746,7 @@ const renderLayoutReal = () =>
           <Route index element={<div>Inicio</div>} />
         </Route>
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 
 describe("convivencia real: cruce con el modal de Cuenta real abierto (AC-14)", () => {
@@ -670,9 +758,13 @@ describe("convivencia real: cruce con el modal de Cuenta real abierto (AC-14)", 
     // Abrir «Cuenta» desde el menú superpuesto (móvil): el modal real queda abierto con su trampa
     await usuario.click(screen.getByRole("button", { name: "Abrir menú" }));
     const panelMenu = document.body.querySelector("#dashboard-drawer-panel");
-    await usuario.click(within(panelMenu).getByRole("button", { name: /Cuenta de/ }));
+    await usuario.click(
+      within(panelMenu).getByRole("button", { name: /Cuenta de/ }),
+    );
 
-    const panelModal = document.body.querySelector("#dashboard-user-modal-panel");
+    const panelModal = document.body.querySelector(
+      "#dashboard-user-modal-panel",
+    );
     expect(panelModal).toBeTruthy();
     await esperarFocoDentro(panelModal);
     const focoAntes = document.activeElement;
@@ -689,7 +781,9 @@ describe("convivencia real: cruce con el modal de Cuenta real abierto (AC-14)", 
     expect(document.querySelector('aside[role="navigation"]')).toBeTruthy();
 
     // El modal real sigue abierto, con su foco y su trampa intactos: el cruce no le roba el foco
-    expect(document.body.querySelector("#dashboard-user-modal-panel")).toBeTruthy();
+    expect(
+      document.body.querySelector("#dashboard-user-modal-panel"),
+    ).toBeTruthy();
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(document.activeElement).toBe(focoAntes);
     expect(panelModal.contains(document.activeElement)).toBe(true);

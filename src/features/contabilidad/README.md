@@ -10,6 +10,7 @@ Administra los bolsillos del usuario, sus resúmenes y los movimientos financier
 - `components/cards/BolsilloCard`: plantilla visual reutilizable para mostrar bolsillo, resumen y acciones.
 - `components/cards/MovimientoItem`: presentación individual de un movimiento y sus acciones.
 - `components/modals/DetalleMovimientoModal`: modal de lectura con la información del movimiento seleccionado.
+- - El detalle del bolsillo integra directamente la lista de movimientos agrupada por año y mes, con bloques plegables de año y de mes (`DetalleBolsilloModal`).
 - `hooks/useContabilidad`: carga datos y coordina filtros, formularios y acciones CRUD.
 - `utils/contabilidadHelpers`: tipos base, etiquetas, filtros y saldos presentados por la vista.
 - `components/modals/ModalBolsillo`: crea, edita y elimina bolsillos.

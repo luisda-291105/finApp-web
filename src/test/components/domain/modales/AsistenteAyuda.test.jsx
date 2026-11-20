@@ -7,7 +7,13 @@
  * @usadoPor   Vitest
  */
 import { useRef, useState } from "react";
-import { render, screen, waitFor, within, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AsistenteAyuda from "../../../../features/asistenteia/components/modals/AsistenteAyudaModal";
@@ -104,15 +110,15 @@ describe("AsistenteAyuda — montaje, alcance y disparador", () => {
     expect(screen.queryByRole("dialog", { name: TITULO })).toBeInTheDocument();
 
     // No hay un segundo diálogo con el mismo nombre
-    expect(
-      screen.queryAllByRole("dialog", { name: TITULO })
-    ).toHaveLength(1);
+    expect(screen.queryAllByRole("dialog", { name: TITULO })).toHaveLength(1);
   });
 
   it("no renderiza nada si `abierto` es false", () => {
     render(<AsistenteAyuda abierto={false} alCerrar={vi.fn()} />);
 
-    expect(screen.queryByRole("dialog", { name: TITULO })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: TITULO }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -124,30 +130,29 @@ describe("AsistenteAyuda — panel, scrim y cabecera (T2)", () => {
     const scrim = dialogo.parentElement;
 
     expect(dialogo).toHaveClass(
-          "relative",
-          "w-[90vw]",
-          "max-w-md",
-          "max-h-[85vh]",
-          "overflow-hidden",
-          "outline-none",
-          "bg-bg-cream/95",
-          "glass-surface",
-          "border",
-          "border-border-line/30",
-          "rounded-3xl",
-          "shadow-xl",
-          "flex",
-          "flex-col"
-        );
-    expect(scrim).toHaveClass(
-      "fixed",
-      "inset-0",
-      "z-50",
+      "relative",
+      "w-[90vw]",
+      "max-w-md",
+      "max-h-[85dvh]",
+      "overflow-hidden",
+      "outline-none",
+      "bg-bg-cream/95",
+      "glass-surface",
+      "border",
+      "border-border-line/30",
+      "rounded-t-[1.75rem]",
+      "shadow-xl",
       "flex",
-      "items-center",
+      "flex-col",
+    );
+    expect(scrim).toHaveClass(
+      "modal-overlay-dashboard",
+      "z-[100]",
+      "flex",
+      "items-end",
       "justify-center",
-      "p-4",
-      "bg-bg-dark/70"
+      "p-0",
+      "bg-bg-dark/70",
     );
   });
 
@@ -170,7 +175,7 @@ describe("AsistenteAyuda — panel, scrim y cabecera (T2)", () => {
     expect(header).toHaveClass("shrink-0");
     expect(screen.getByText(SUBTITULO)).toBeInTheDocument();
     expect(header).toContainElement(
-      screen.getByRole("button", { name: ARIA_CERRAR })
+      screen.getByRole("button", { name: ARIA_CERRAR }),
     );
   });
 
@@ -199,60 +204,62 @@ describe("AsistenteAyuda — sin promesa de IA real (T2)", () => {
 
 describe("AsistenteAyuda — estado vacío: aviso, sugerencias y chips (T3)", () => {
   it("muestra el texto de vacío y las tres sugerencias como chips", () => {
-      renderizar();
+    renderizar();
 
-      expect(screen.getByText(TEXTO_VACIO)).toBeInTheDocument();
+    expect(screen.getByText(TEXTO_VACIO)).toBeInTheDocument();
 
-      SUGERENCIAS.forEach((sugerencia) => {
-        const chip = screen.getByRole("button", { name: sugerencia });
+    SUGERENCIAS.forEach((sugerencia) => {
+      const chip = screen.getByRole("button", { name: sugerencia });
 
-        expect(chip).toBeInTheDocument();
-        // Los chips no están deshabilitados inicialmente (solo cuando cargando=true)
-        expect(chip).not.toHaveAttribute("disabled");
-      });
+      expect(chip).toBeInTheDocument();
+      // Los chips no están deshabilitados inicialmente (solo cuando cargando=true)
+      expect(chip).not.toHaveAttribute("disabled");
     });
+  });
 
   it("el log existe desde la apertura con sus atributos ARIA y con el texto de vacío", () => {
-      renderizar();
+    renderizar();
 
-      const log = screen.getByRole("log");
+    const log = screen.getByRole("log");
 
-      expect(log).toHaveAttribute("aria-live", "polite");
-      expect(log).toHaveAttribute("aria-relevant", "additions");
-      expect(log).toHaveAttribute("aria-atomic", "false");
-      expect(log).toHaveAttribute("aria-label", ARIA_LOG);
-      // El log tiene 1 hijo directo (wrapper) que contiene texto + botones
-      expect(log.childElementCount).toBe(1);
+    expect(log).toHaveAttribute("aria-live", "polite");
+    expect(log).toHaveAttribute("aria-relevant", "additions");
+    expect(log).toHaveAttribute("aria-atomic", "false");
+    expect(log).toHaveAttribute("aria-label", ARIA_LOG);
+    // El log tiene 1 hijo directo (wrapper) que contiene texto + botones
+    expect(log.childElementCount).toBe(1);
+  });
+
+  it("los chips de sugerencia quedan dentro del log", () => {
+    renderizar();
+
+    const log = screen.getByRole("log");
+
+    SUGERENCIAS.forEach((sugerencia) => {
+      expect(
+        within(log).getByRole("button", { name: sugerencia }),
+      ).toBeInTheDocument();
     });
+  });
 
-    it("los chips de sugerencia quedan dentro del log", () => {
-      renderizar();
+  it("pulsar un chip envía la sugerencia como mensaje de usuario", async () => {
+    const usuario = userEvent.setup();
 
-      const log = screen.getByRole("log");
+    renderizar();
 
-      SUGERENCIAS.forEach((sugerencia) => {
-        expect(within(log).getByRole("button", { name: sugerencia })).toBeInTheDocument();
-      });
+    const log = screen.getByRole("log");
+
+    // Inicialmente: 1 wrapper con texto + 3 botones
+    expect(log.childElementCount).toBe(1);
+
+    // Click en el primer chip
+    await usuario.click(screen.getByRole("button", { name: SUGERENCIAS[0] }));
+
+    // Se añade mensaje de usuario + indicador de carga
+    await waitFor(() => {
+      expect(log.childElementCount).toBeGreaterThanOrEqual(1);
     });
-
-    it("pulsar un chip envía la sugerencia como mensaje de usuario", async () => {
-      const usuario = userEvent.setup();
-
-      renderizar();
-
-      const log = screen.getByRole("log");
-
-      // Inicialmente: 1 wrapper con texto + 3 botones
-      expect(log.childElementCount).toBe(1);
-
-      // Click en el primer chip
-      await usuario.click(screen.getByRole("button", { name: SUGERENCIAS[0] }));
-
-      // Se añade mensaje de usuario + indicador de carga
-      await waitFor(() => {
-        expect(log.childElementCount).toBeGreaterThanOrEqual(1);
-      });
-    });
+  });
 });
 
 describe("AsistenteAyuda — pie: aviso, campo y «Enviar» (T5)", () => {
@@ -285,60 +292,60 @@ describe("AsistenteAyuda — pie: aviso, campo y «Enviar» (T5)", () => {
   });
 
   it("el campo es controlado, tiene maxLength 2000 y escribir no altera el log", async () => {
-      const usuario = userEvent.setup();
+    const usuario = userEvent.setup();
 
-      renderizar();
+    renderizar();
 
-      const entrada = screen.getByLabelText(LABEL_ENTRADA);
-      const log = screen.getByRole("log");
+    const entrada = screen.getByLabelText(LABEL_ENTRADA);
+    const log = screen.getByRole("log");
 
-      expect(entrada).toHaveAttribute("maxLength", "2000");
-      expect(entrada).toHaveValue("");
+    expect(entrada).toHaveAttribute("maxLength", "2000");
+    expect(entrada).toHaveValue("");
 
-      await usuario.type(entrada, "¿Cómo salgo del demo?");
+    await usuario.type(entrada, "¿Cómo salgo del demo?");
 
-      expect(entrada).toHaveFocus();
-      expect(entrada).toHaveValue("¿Cómo salgo del demo?");
-      // Escribir en el campo no añade mensajes al log (inicial: 1 wrapper)
-      expect(log.childElementCount).toBe(1);
+    expect(entrada).toHaveFocus();
+    expect(entrada).toHaveValue("¿Cómo salgo del demo?");
+    // Escribir en el campo no añade mensajes al log (inicial: 1 wrapper)
+    expect(log.childElementCount).toBe(1);
+  });
+
+  it("el botón «Enviar» está deshabilitado cuando el campo está vacío", () => {
+    renderizar();
+
+    const enviar = screen.getByRole("button", { name: BOTON_ENVIAR });
+    const log = screen.getByRole("log");
+
+    expect(enviar).toHaveAttribute("disabled", "");
+    expect(enviar).toHaveAttribute("type", "submit");
+
+    fireEvent.click(enviar);
+
+    // Click en botón deshabilitado no hace nada (inicial: 1 wrapper)
+    expect(log.childElementCount).toBe(1);
+  });
+
+  it("el pie usa <form> y el campo envía con Enter cuando hay texto", async () => {
+    const usuario = userEvent.setup();
+    const alCerrar = vi.fn();
+
+    renderizar({ alCerrar });
+
+    const entrada = screen.getByLabelText(LABEL_ENTRADA);
+    const log = screen.getByRole("log");
+
+    expect(obtenerDialogo().querySelector("form")).not.toBeNull();
+
+    await usuario.type(entrada, "¿Se guardan mis datos?");
+    await usuario.keyboard("[Enter]");
+
+    // El formulario se envía: se añade el mensaje de usuario al log
+    // (sin backend muestra error de conexión, pero el mensaje de usuario está en el log)
+    await waitFor(() => {
+      expect(log.childElementCount).toBeGreaterThanOrEqual(1);
     });
-
-    it("el botón «Enviar» está deshabilitado cuando el campo está vacío", () => {
-      renderizar();
-
-      const enviar = screen.getByRole("button", { name: BOTON_ENVIAR });
-      const log = screen.getByRole("log");
-
-      expect(enviar).toHaveAttribute("disabled", "");
-      expect(enviar).toHaveAttribute("type", "submit");
-
-      fireEvent.click(enviar);
-
-      // Click en botón deshabilitado no hace nada (inicial: 1 wrapper)
-      expect(log.childElementCount).toBe(1);
-    });
-
-    it("el pie usa <form> y el campo envía con Enter cuando hay texto", async () => {
-      const usuario = userEvent.setup();
-      const alCerrar = vi.fn();
-
-      renderizar({ alCerrar });
-
-      const entrada = screen.getByLabelText(LABEL_ENTRADA);
-      const log = screen.getByRole("log");
-
-      expect(obtenerDialogo().querySelector("form")).not.toBeNull();
-
-      await usuario.type(entrada, "¿Se guardan mis datos?");
-      await usuario.keyboard("[Enter]");
-
-      // El formulario se envía: se añade el mensaje de usuario al log
-      // (sin backend muestra error de conexión, pero el mensaje de usuario está en el log)
-      await waitFor(() => {
-        expect(log.childElementCount).toBeGreaterThanOrEqual(1);
-      });
-      expect(screen.getByRole("dialog", { name: TITULO })).toBeInTheDocument();
-    });
+    expect(screen.getByRole("dialog", { name: TITULO })).toBeInTheDocument();
+  });
 });
 
 describe("AsistenteAyuda — cromo: «X», Esc, clic fuera y foco (T6)", () => {
@@ -405,53 +412,53 @@ describe("AsistenteAyuda — cromo: «X», Esc, clic fuera y foco (T6)", () => {
   });
 
   it("la trampa de foco contiene el Tab en el diálogo y cierra el ciclo por ambos extremos (AC-03)", async () => {
-      const usuario = userEvent.setup();
+    const usuario = userEvent.setup();
 
-      renderizar();
+    renderizar();
 
-      const dialogo = obtenerDialogo();
+    const dialogo = obtenerDialogo();
 
-      // El foco inicial está en el dialogo
-      await waitFor(() => expect(document.activeElement).toBe(dialogo));
+    // El foco inicial está en el dialogo
+    await waitFor(() => expect(document.activeElement).toBe(dialogo));
 
-      // Tab desde el diálogo va al primer elemento enfocable (botón cerrar en header)
+    // Tab desde el diálogo va al primer elemento enfocable (botón cerrar en header)
+    await usuario.tab();
+    const primero = screen.getByRole("button", { name: ARIA_CERRAR });
+    expect(primero).toHaveFocus();
+    expect(dialogo.contains(document.activeElement)).toBe(true);
+
+    // Tab avanza por los chips de sugerencia (4), luego input
+    await usuario.tab(); // chip 1
+    await usuario.tab(); // chip 2
+    await usuario.tab(); // chip 3
+    await usuario.tab(); // chip 4
+    const entrada = screen.getByLabelText(LABEL_ENTRADA);
+    await usuario.tab(); // input
+    expect(entrada).toHaveFocus();
+
+    // Escribir en el input habilita el botón Enviar
+    await usuario.type(entrada, "test");
+    const ultimo = screen.getByRole("button", { name: BOTON_ENVIAR });
+    await usuario.tab(); // botón enviar (ahora habilitado)
+    expect(ultimo).toHaveFocus();
+    expect(dialogo.contains(document.activeElement)).toBe(true);
+
+    // Del último control se vuelve al primero (Tab) y del primero al último (Shift+Tab):
+    // el ciclo es circular y no escapa del panel.
+    await usuario.tab();
+    expect(primero).toHaveFocus();
+    expect(dialogo.contains(document.activeElement)).toBe(true);
+
+    await usuario.tab({ shift: true });
+    expect(ultimo).toHaveFocus();
+    expect(dialogo.contains(document.activeElement)).toBe(true);
+
+    // Varios Tab seguidos nunca colocan el foco fuera del panel.
+    for (let indice = 0; indice < 8; indice += 1) {
       await usuario.tab();
-      const primero = screen.getByRole("button", { name: ARIA_CERRAR });
-      expect(primero).toHaveFocus();
       expect(dialogo.contains(document.activeElement)).toBe(true);
-
-      // Tab avanza por los chips de sugerencia (4), luego input
-      await usuario.tab(); // chip 1
-      await usuario.tab(); // chip 2
-      await usuario.tab(); // chip 3
-      await usuario.tab(); // chip 4
-      const entrada = screen.getByLabelText(LABEL_ENTRADA);
-      await usuario.tab(); // input
-      expect(entrada).toHaveFocus();
-
-      // Escribir en el input habilita el botón Enviar
-      await usuario.type(entrada, "test");
-      const ultimo = screen.getByRole("button", { name: BOTON_ENVIAR });
-      await usuario.tab(); // botón enviar (ahora habilitado)
-      expect(ultimo).toHaveFocus();
-      expect(dialogo.contains(document.activeElement)).toBe(true);
-
-      // Del último control se vuelve al primero (Tab) y del primero al último (Shift+Tab):
-      // el ciclo es circular y no escapa del panel.
-      await usuario.tab();
-      expect(primero).toHaveFocus();
-      expect(dialogo.contains(document.activeElement)).toBe(true);
-
-      await usuario.tab({ shift: true });
-      expect(ultimo).toHaveFocus();
-      expect(dialogo.contains(document.activeElement)).toBe(true);
-
-      // Varios Tab seguidos nunca colocan el foco fuera del panel.
-      for (let indice = 0; indice < 8; indice += 1) {
-        await usuario.tab();
-        expect(dialogo.contains(document.activeElement)).toBe(true);
-      }
-    });
+    }
+  });
 
   it("devuelve el foco al disparador al cerrar (transición abierta → cerrada)", async () => {
     const usuario = userEvent.setup();
@@ -480,7 +487,9 @@ describe("AsistenteAyuda — cromo: «X», Esc, clic fuera y foco (T6)", () => {
 
     render(<ArnesRetorno />);
 
-    const disparador = screen.getByRole("button", { name: "Disparador de prueba" });
+    const disparador = screen.getByRole("button", {
+      name: "Disparador de prueba",
+    });
 
     await usuario.click(disparador);
     expect(obtenerDialogo()).toBeInTheDocument();
@@ -499,7 +508,7 @@ describe("AsistenteAyuda — cromo: «X», Esc, clic fuera y foco (T6)", () => {
     const espiaFocoBody = vi.spyOn(document.body, "focus");
 
     expect(() =>
-      rerender(<AsistenteAyuda abierto={false} alCerrar={alCerrar} />)
+      rerender(<AsistenteAyuda abierto={false} alCerrar={alCerrar} />),
     ).not.toThrow();
 
     expect(espiaFocoBody).not.toHaveBeenCalled();

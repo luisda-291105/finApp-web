@@ -9,7 +9,11 @@ const httpMocks = vi.hoisted(() => ({
 
 vi.mock("../../../services/httpServicio", () => httpMocks);
 
-import { actualizarOrdenMuestras, crearMuestra, listarMuestras } from "../../../features/inicio/services/muestrasService";
+import {
+  actualizarOrdenMuestras,
+  crearMuestra,
+  listarMuestras,
+} from "../../../features/inicio/services/muestrasService";
 
 describe("muestrasService sample settings", () => {
   beforeEach(() => {
@@ -22,7 +26,13 @@ describe("muestrasService sample settings", () => {
         id: "muestra-1",
         titulo: "Correo personal",
         tipo: "TARJETA",
-        datos: JSON.stringify({ fuente: "correo", cuentaCorreo: "cuenta-1", cuentasCorreo: ["cuenta-1"], fuentes: ["correo"], columnasDashboard: 1 }),
+        datos: JSON.stringify({
+          fuente: "correo",
+          cuentaCorreo: "cuenta-1",
+          cuentasCorreo: ["cuenta-1"],
+          fuentes: ["correo"],
+          columnasDashboard: 1,
+        }),
       },
     });
 
@@ -36,22 +46,42 @@ describe("muestrasService sample settings", () => {
     expect(httpMocks.crear).toHaveBeenCalledWith("/api/muestras", {
       tipo: "TARJETA",
       titulo: "Correo personal",
-      datos: JSON.stringify({ fuente: "correo", segmentoContable: null, cuentaCorreo: "cuenta-1", cuentasCorreo: ["cuenta-1"], fuentes: ["correo"], columnasDashboard: 1 }),
+      datos: JSON.stringify({
+        fuente: "correo",
+        segmentoContable: null,
+        cuentaCorreo: "cuenta-1",
+        cuentasCorreo: ["cuenta-1"],
+        fuentes: ["correo"],
+        columnasDashboard: 1,
+      }),
     });
   });
 
   it("restores the selected Gmail account when loading a saved sample", async () => {
     httpMocks.obtener.mockResolvedValue({
-      datos: [{
-        id: "muestra-1",
-        titulo: "Correo personal",
-        tipo: "TARJETA",
-        datos: { fuente: "correo", cuentaCorreo: "cuenta-1", cuentasCorreo: ["cuenta-1"], fuentes: ["correo"], columnasDashboard: 2 },
-      }],
+      datos: [
+        {
+          id: "muestra-1",
+          titulo: "Correo personal",
+          tipo: "TARJETA",
+          datos: {
+            fuente: "correo",
+            cuentaCorreo: "cuenta-1",
+            cuentasCorreo: ["cuenta-1"],
+            fuentes: ["correo"],
+            columnasDashboard: 2,
+          },
+        },
+      ],
     });
 
     await expect(listarMuestras()).resolves.toEqual([
-      expect.objectContaining({ cuentaCorreo: "cuenta-1", cuentasCorreo: ["cuenta-1"], fuentes: ["correo"], columnasDashboard: 2 }),
+      expect.objectContaining({
+        cuentaCorreo: "cuenta-1",
+        cuentasCorreo: ["cuenta-1"],
+        fuentes: ["correo"],
+        columnasDashboard: 2,
+      }),
     ]);
   });
 
@@ -61,7 +91,10 @@ describe("muestrasService sample settings", () => {
         id: "muestra-2",
         titulo: "Fuentes combinadas",
         tipo: "GRAFICA",
-        datos: JSON.stringify({ fuente: "contabilidad", fuentes: ["contabilidad", "contactos"] }),
+        datos: JSON.stringify({
+          fuente: "contabilidad",
+          fuentes: ["contabilidad", "contactos"],
+        }),
       },
     });
 
@@ -93,7 +126,13 @@ describe("muestrasService sample settings", () => {
         id: "muestra-3",
         titulo: "Correos personales y de trabajo",
         tipo: "TARJETA",
-        datos: JSON.stringify({ fuente: "correo", cuentaCorreo: "todas", cuentasCorreo: ["cuenta-1", "cuenta-2"], fuentes: ["correo"], columnasDashboard: 1 }),
+        datos: JSON.stringify({
+          fuente: "correo",
+          cuentaCorreo: "todas",
+          cuentasCorreo: ["cuenta-1", "cuenta-2"],
+          fuentes: ["correo"],
+          columnasDashboard: 1,
+        }),
       },
     });
 
@@ -126,7 +165,11 @@ describe("muestrasService sample settings", () => {
         id: "muestra-4",
         titulo: "Fuentes anchas",
         tipo: "TARJETA",
-        datos: JSON.stringify({ fuente: "contabilidad", fuentes: ["contabilidad", "contactos"], columnasDashboard: 2 }),
+        datos: JSON.stringify({
+          fuente: "contabilidad",
+          fuentes: ["contabilidad", "contactos"],
+          columnasDashboard: 2,
+        }),
       },
     });
 
@@ -156,17 +199,21 @@ describe("muestrasService sample settings", () => {
   it("saves the order of dashboard samples", async () => {
     await actualizarOrdenMuestras([3, 1, 2]);
 
-    expect(httpMocks.actualizar).toHaveBeenCalledWith("/api/muestras/orden", { ids: [3, 1, 2] });
+    expect(httpMocks.actualizar).toHaveBeenCalledWith("/api/muestras/orden", {
+      ids: [3, 1, 2],
+    });
   });
 
   it("restores the saved position for a dashboard sample", async () => {
     httpMocks.obtener.mockResolvedValue({
-      datos: [{
-        id: "muestra-ordenada",
-        titulo: "Muestra ordenada",
-        tipo: "TARJETA",
-        datos: JSON.stringify({ fuente: "contactos", ordenDashboard: 4 }),
-      }],
+      datos: [
+        {
+          id: "muestra-ordenada",
+          titulo: "Muestra ordenada",
+          tipo: "TARJETA",
+          datos: JSON.stringify({ fuente: "contactos", ordenDashboard: 4 }),
+        },
+      ],
     });
 
     await expect(listarMuestras()).resolves.toEqual([

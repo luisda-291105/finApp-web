@@ -36,7 +36,10 @@ function fechaLocalISO() {
 
 /** Genera un UUID v4 seguro para idFuente local. */
 function generarId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -66,7 +69,21 @@ function crearOpcionesTrampa(refPanel) {
  * @param {React.RefObject<HTMLElement>} [props.triggerRef] - Elemento al cual devolver el foco.
  * @param {(fuente: Object) => void} [props.alGuardar] - Callback invocado tras crear exitosamente la fuente.
  */
-export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuardar, fuentesExistentes = [], tipoInicial = "CORREO", tiposPermitidos = TIPOS_FUENTE.map((opcion) => opcion.valor), estadoInicial = true, alConectarGmail, gmailConfigurado, gmailListo, conexionGmailCargando, gmailConectado }) {
+export default function CrearFuenteModal({
+  abierto,
+  alCerrar,
+  triggerRef,
+  alGuardar,
+  fuentesExistentes = [],
+  tipoInicial = "CORREO",
+  tiposPermitidos = TIPOS_FUENTE.map((opcion) => opcion.valor),
+  estadoInicial = true,
+  alConectarGmail,
+  gmailConfigurado,
+  gmailListo,
+  conexionGmailCargando,
+  gmailConectado,
+}) {
   const panelRef = useRef(null);
   const { usuario } = useUsuarioActivo();
   const [tipo, setTipo] = useState(tipoInicial);
@@ -121,12 +138,18 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
     }
 
     const contenidoNormalizado = contenidoLimpio.toLocaleLowerCase("es");
-    const existeFuente = fuentesExistentes.some((fuente) =>
-      fuente.tipo?.toLocaleUpperCase("es") === tipo.toLocaleUpperCase("es") &&
-      fuente.contenido?.trim().toLocaleLowerCase("es") === contenidoNormalizado
+    const existeFuente = fuentesExistentes.some(
+      (fuente) =>
+        fuente.tipo?.toLocaleUpperCase("es") === tipo.toLocaleUpperCase("es") &&
+        fuente.contenido?.trim().toLocaleLowerCase("es") ===
+          contenidoNormalizado,
     );
     if (existeFuente) {
-      setError(tipo === "CORREO" ? "Este correo ya está registrado en tu cuenta." : "Esta fuente ya está registrada en tu cuenta.");
+      setError(
+        tipo === "CORREO"
+          ? "Este correo ya está registrado en tu cuenta."
+          : "Esta fuente ya está registrada en tu cuenta.",
+      );
       return;
     }
 
@@ -172,7 +195,7 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-bg-dark/70"
+      className="absolute inset-0 z-50 flex items-end justify-center bg-bg-dark/70 px-4 pb-[var(--bottom-nav-alto)] sm:items-center sm:pb-4 sm:pt-4"
       onClick={manejarClicExterior}
     >
       <FocusTrap focusTrapOptions={crearOpcionesTrampa(panelRef)}>
@@ -183,7 +206,7 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
           aria-labelledby="fuentes-titulo"
           aria-describedby="fuentes-descripcion"
           tabIndex={-1}
-          className="relative z-60 w-[90vw] max-w-md max-h-[85vh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-3xl shadow-xl inset-shadow-[0_1px_1px_0_rgba(255,255,255,0.25)]"
+          className="relative z-60 modal-sheet-mobile w-[90vw] max-w-md max-h-[85dvh] overflow-y-auto outline-none bg-bg-cream/95 glass-surface border border-border-line/30 rounded-t-[1.75rem] shadow-xl inset-shadow-[0_1px_1px_0_rgba(255,255,255,0.25)] sm:max-h-[85vh] sm:rounded-3xl"
         >
           <header className="flex items-start justify-between gap-4 px-5 py-4 border-b border-border-line/30">
             <div className="flex flex-col gap-1">
@@ -204,7 +227,10 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
             />
           </header>
 
-          <form onSubmit={manejarSubmit} className="flex flex-col gap-4 px-5 py-5">
+          <form
+            onSubmit={manejarSubmit}
+            className="flex flex-col gap-4 px-5 py-5"
+          >
             {error && (
               <div
                 role="alert"
@@ -214,11 +240,18 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
               </div>
             )}
 
-            {usuario?.nombre && <p className="text-xs font-medium text-emerald-primary">Usuario activo: {usuario.nombre}</p>}
+            {usuario?.nombre && (
+              <p className="text-xs font-medium text-emerald-primary">
+                Usuario activo: {usuario.nombre}
+              </p>
+            )}
 
             {/* Selector de Tipo de Fuente */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="fuentes-tipo" className="text-sm font-medium text-bg-dark">
+              <label
+                htmlFor="fuentes-tipo"
+                className="text-sm font-medium text-bg-dark"
+              >
                 Tipo de fuente
               </label>
               <select
@@ -228,7 +261,9 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
                 disabled={cargando}
                 className="w-full rounded-xl border border-border-line bg-bg-cream px-3 py-2 text-bg-dark outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50 cursor-pointer"
               >
-                {TIPOS_FUENTE.filter((opcion) => tiposPermitidos.includes(opcion.valor)).map((opcion) => (
+                {TIPOS_FUENTE.filter((opcion) =>
+                  tiposPermitidos.includes(opcion.valor),
+                ).map((opcion) => (
                   <option key={opcion.valor} value={opcion.valor}>
                     {opcion.etiqueta}
                   </option>
@@ -238,7 +273,10 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
 
             {/* Input de Contenido de la Fuente */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="fuentes-contenido" className="text-sm font-medium text-bg-dark">
+              <label
+                htmlFor="fuentes-contenido"
+                className="text-sm font-medium text-bg-dark"
+              >
                 Contenido de la fuente
               </label>
               <input
@@ -270,19 +308,43 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
           </form>
           {tipo === "CORREO" && (
             <div className="flex flex-col gap-2 px-5 pb-5">
-              <div className="flex items-center gap-3 text-xs text-slate-text" aria-hidden="true">
+              <div
+                className="flex items-center gap-3 text-xs text-slate-text"
+                aria-hidden="true"
+              >
                 <span className="h-px flex-1 bg-border-line" />
                 <span>o conecta con</span>
                 <span className="h-px flex-1 bg-border-line" />
               </div>
               <BotonServicioExterno
                 onClick={alConectarGmail}
-                disabled={!gmailConfigurado || !gmailListo || conexionGmailCargando}
+                disabled={
+                  !gmailConfigurado || !gmailListo || conexionGmailCargando
+                }
               >
-                {!gmailConfigurado ? "Configura Gmail" : conexionGmailCargando ? "Conectando con Google…" : !gmailListo ? "Preparando Google…" : gmailConectado ? "Conectar otra cuenta de Gmail" : "Conectar Gmail con Google"}
+                {!gmailConfigurado
+                  ? "Configura Gmail"
+                  : conexionGmailCargando
+                    ? "Conectando con Google…"
+                    : !gmailListo
+                      ? "Preparando Google…"
+                      : gmailConectado
+                        ? "Conectar otra cuenta de Gmail"
+                        : "Conectar Gmail con Google"}
               </BotonServicioExterno>
-              {gmailConectado && <p className="text-center text-xs text-slate-text">Puedes agregar otra cuenta sin desconectar la actual.</p>}
-              {gmailConfigurado === false && <p role="status" className="text-center text-xs text-slate-text">Google no está configurado para este entorno.</p>}
+              {gmailConectado && (
+                <p className="text-center text-xs text-slate-text">
+                  Puedes agregar otra cuenta sin desconectar la actual.
+                </p>
+              )}
+              {gmailConfigurado === false && (
+                <p
+                  role="status"
+                  className="text-center text-xs text-slate-text"
+                >
+                  Google no está configurado para este entorno.
+                </p>
+              )}
             </div>
           )}
         </section>
@@ -290,4 +352,3 @@ export default function CrearFuenteModal({ abierto, alCerrar, triggerRef, alGuar
     </div>
   );
 }
-

@@ -7,13 +7,20 @@
  * @usadoPor   CorreosPage
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { guardarCorreoPorRevisar, listarCorreosImportados } from "../../contabilidad/services/movimientosService";
+import {
+  guardarCorreoPorRevisar,
+  listarCorreosImportados,
+} from "../../contabilidad/services/movimientosService";
 import {
   confirmarNotificacionesMovimientosGmail,
   listarNotificacionesMovimientosGmail,
   obtenerContenidoCorreosFinancierosGmail,
 } from "../../../services/gmailServicio";
-import { esCandidatoFinanciero, extraerMovimientoSugerido } from "../utils/correoFinancieroHelpers";
+import {
+  correoEnPapelera,
+  esCandidatoFinanciero,
+  extraerMovimientoSugerido,
+} from "../utils/correoFinancieroHelpers";
 
 const CLAVE_BANDEJA = "finapp_bandeja_notificaciones_correos";
 const LIMITE_BANDEJA = 100;
@@ -29,13 +36,20 @@ function leerBandeja() {
 
 function guardarBandeja(notificaciones) {
   try {
-    localStorage.setItem(CLAVE_BANDEJA, JSON.stringify(notificaciones.slice(0, LIMITE_BANDEJA)));
+    localStorage.setItem(
+      CLAVE_BANDEJA,
+      JSON.stringify(notificaciones.slice(0, LIMITE_BANDEJA)),
+    );
   } catch {
     // Sin almacenamiento disponible: se mantiene solo en memoria.
   }
 }
 
-export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], mensajes = [] }) {
+export function useNotificacionesCorreos({
+  gmailConectado,
+  cuentasGmail = [],
+  mensajes = [],
+}) {
   const [notificaciones, setNotificaciones] = useState(() => leerBandeja());
   const [toast, setToast] = useState(null);
   const [sincronizando, setSincronizando] = useState(false);
@@ -43,35 +57,41 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
   const idsConocidosRef = useRef(new Set(leerBandeja().map((n) => n.id)));
   const toastTimerRef = useRef(null);
 
-  const agregarNotificaciones = useCallback((nuevas, origen = "gmail", cuentaGmailNotificacion = "") => {
-    if (!nuevas.length) return;
-    setNotificaciones((actuales) => {
-      const existentes = new Set(actuales.map((n) => n.id));
-      const entrantes = nuevas
-        .filter((n) => n && n.id && !existentes.has(n.id))
-        .map((n) => ({
-          id: n.id,
-          asunto: n.asunto || n.mensaje || "Notificación Gmail",
-          mensaje: n.mensaje || "",
-          fecha: n.fecha || new Date().toISOString(),
-          leida: false,
-          origen,
-          cuentaGmail: cuentaGmailNotificacion || "",
-        }));
-      if (!entrantes.length) return actuales;
-      entrantes.forEach((n) => idsConocidosRef.current.add(n.id));
-      const actualizadas = [...entrantes, ...actuales].slice(0, LIMITE_BANDEJA);
-      guardarBandeja(actualizadas);
-      const textoToast =
-        entrantes.length === 1
-          ? entrantes[0].asunto
-          : `${entrantes.length} nuevas notificaciones de movimientos Gmail`;
-      window.clearTimeout(toastTimerRef.current);
-      setToast({ mensaje: textoToast, cantidad: entrantes.length });
-      toastTimerRef.current = window.setTimeout(() => setToast(null), 5000);
-      return actualizadas;
-    });
-  }, []);
+  const agregarNotificaciones = useCallback(
+    (nuevas, origen = "gmail", cuentaGmailNotificacion = "") => {
+      if (!nuevas.length) return;
+      setNotificaciones((actuales) => {
+        const existentes = new Set(actuales.map((n) => n.id));
+        const entrantes = nuevas
+          .filter((n) => n && n.id && !existentes.has(n.id))
+          .map((n) => ({
+            id: n.id,
+            asunto: n.asunto || n.mensaje || "Notificación Gmail",
+            mensaje: n.mensaje || "",
+            fecha: n.fecha || new Date().toISOString(),
+            leida: false,
+            origen,
+            cuentaGmail: cuentaGmailNotificacion || "",
+          }));
+        if (!entrantes.length) return actuales;
+        entrantes.forEach((n) => idsConocidosRef.current.add(n.id));
+        const actualizadas = [...entrantes, ...actuales].slice(
+          0,
+          LIMITE_BANDEJA,
+        );
+        guardarBandeja(actualizadas);
+        const textoToast =
+          entrantes.length === 1
+            ? entrantes[0].asunto
+            : `${entrantes.length} nuevas notificaciones de movimientos Gmail`;
+        window.clearTimeout(toastTimerRef.current);
+        setToast({ mensaje: textoToast, cantidad: entrantes.length });
+        toastTimerRef.current = window.setTimeout(() => setToast(null), 5000);
+        return actualizadas;
+      });
+    },
+    [],
+  );
 
   const cerrarToast = useCallback(() => {
     window.clearTimeout(toastTimerRef.current);
@@ -89,7 +109,9 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
         const respuesta = await listarNotificacionesMovimientosGmail();
         if (!vigente) return;
         const alertas = Array.isArray(respuesta) ? respuesta : [];
-        const nuevas = alertas.filter((a) => a?.id && !idsConocidosRef.current.has(a.id));
+        const nuevas = alertas.filter(
+          (a) => a?.id && !idsConocidosRef.current.has(a.id),
+        );
         if (nuevas.length) agregarNotificaciones(nuevas, "movimiento-gmail");
       } catch {
         // Error silencioso en polling; la bandeja conserva lo ya guardado.
@@ -114,25 +136,46 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
         const cuentasIds = cuentasGmail.map((c) => c.id).filter(Boolean);
         let totalGuardados = 0;
         for (const cuentaId of cuentasIds) {
-          const cuenta = cuentasGmail.find((c) => String(c.id) === String(cuentaId));
+          const cuenta = cuentasGmail.find(
+            (c) => String(c.id) === String(cuentaId),
+          );
           const candidatosCuenta = mensajes
-            .filter((correo) => String(correo.cuentaGmailId || "") === String(cuentaId))
+            .filter(
+              (correo) =>
+                String(correo.cuentaGmailId || "") === String(cuentaId),
+            )
+            .filter((correo) => !correoEnPapelera(correo))
             .filter(esCandidatoFinanciero)
             .slice(0, 5)
             .map((correo) => ({ ...correo, cuentaGmailId: cuentaId }));
           if (candidatosCuenta.length === 0) continue;
 
-          const respuestaCorreos = await obtenerContenidoCorreosFinancierosGmail(cuentaId, candidatosCuenta);
+          const respuestaCorreos =
+            await obtenerContenidoCorreosFinancierosGmail(
+              cuentaId,
+              candidatosCuenta,
+            );
           if (!vigente) return;
           const cuentasMap = new Map(
-            (respuestaCorreos || []).map((correo) => [correo.id, { ...correo, cuentaGmailId: cuentaId }]),
+            (respuestaCorreos || []).map((correo) => [
+              correo.id,
+              { ...correo, cuentaGmailId: cuentaId },
+            ]),
           );
-          const candidatas = [...cuentasMap.values()].map(extraerMovimientoSugerido).filter(Boolean);
+          const candidatas = [...cuentasMap.values()]
+            .map(extraerMovimientoSugerido)
+            .filter(Boolean);
           if (!candidatas.length) continue;
-          const importados = await listarCorreosImportados(candidatas.map((item) => item.origenId));
-          const origenesImportados = new Set(Array.isArray(importados) ? importados : importados?.data || []);
+          const importados = await listarCorreosImportados(
+            candidatas.map((item) => item.origenId),
+          );
+          const origenesImportados = new Set(
+            Array.isArray(importados) ? importados : importados?.data || [],
+          );
           let guardados = 0;
-          for (const item of candidatas.filter((candidata) => !origenesImportados.has(candidata.origenId))) {
+          for (const item of candidatas.filter(
+            (candidata) => !origenesImportados.has(candidata.origenId),
+          )) {
             try {
               await guardarCorreoPorRevisar({
                 idBolsillo: null,
@@ -141,6 +184,12 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
                 monto: item.monto,
                 categoria: item.categoria,
                 concepto: item.concepto,
+                banco: item.banco || null,
+                operacion: item.operacion || null,
+                cuentaOrigen: item.cuentaOrigen || null,
+                cuentaDestino: item.cuentaDestino || null,
+                hora: item.hora || null,
+                encabezado: item.encabezado || null,
                 origenTipo: "GMAIL",
                 origenId: item.origenId,
                 origenNombre: item.remitente,
@@ -153,11 +202,13 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
           totalGuardados += guardados;
           if (vigente && guardados > 0) {
             agregarNotificaciones(
-              [{
-                id: `sync-${cuentaId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                asunto: `${guardados} movimiento${guardados === 1 ? "" : "s"} enviado${guardados === 1 ? "" : "s"} a Contabilidad · Por revisar`,
-                fecha: new Date().toISOString(),
-              }],
+              [
+                {
+                  id: `sync-${cuentaId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                  asunto: `${guardados} movimiento${guardados === 1 ? "" : "s"} enviado${guardados === 1 ? "" : "s"} a Contabilidad · Por revisar`,
+                  fecha: new Date().toISOString(),
+                },
+              ],
               "sincronizacion",
               cuenta?.email || "",
             );
@@ -165,7 +216,10 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
         }
         if (!vigente && totalGuardados === 0) return;
       } catch (fallo) {
-        if (vigente) setErrorSincronizacion(fallo?.message || "No se pudo analizar Gmail.");
+        if (vigente)
+          setErrorSincronizacion(
+            fallo?.message || "No se pudo analizar Gmail.",
+          );
       } finally {
         if (vigente) setSincronizando(false);
       }
@@ -178,7 +232,12 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
 
   const marcarTodasLeidas = useCallback(async () => {
     const idsGmail = notificaciones
-      .filter((n) => !n.leida && n.origen === "movimiento-gmail" && !String(n.id).startsWith("sync-"))
+      .filter(
+        (n) =>
+          !n.leida &&
+          n.origen === "movimiento-gmail" &&
+          !String(n.id).startsWith("sync-"),
+      )
       .map((n) => n.id);
     if (idsGmail.length) {
       try {
@@ -194,12 +253,38 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
     });
   }, [notificaciones]);
 
+  const marcarComoLeida = useCallback(
+    (id) => {
+      const objetivo = notificaciones.find((n) => n.id === id);
+      if (!objetivo || objetivo.leida) return;
+      setNotificaciones((actuales) => {
+        const actualizadas = actuales.map((n) =>
+          n.id === id ? { ...n, leida: true } : n,
+        );
+        guardarBandeja(actualizadas);
+        return actualizadas;
+      });
+      if (
+        objetivo.origen === "movimiento-gmail" &&
+        !String(objetivo.id).startsWith("sync-")
+      ) {
+        confirmarNotificacionesMovimientosGmail([id]).catch(() => {
+          // Se conserva el marcado local aunque falle la confirmación remota.
+        });
+      }
+    },
+    [notificaciones],
+  );
+
   const limpiarBandeja = useCallback(() => {
     setNotificaciones([]);
     guardarBandeja([]);
   }, []);
 
-  const noLeidas = useMemo(() => notificaciones.filter((n) => !n.leida).length, [notificaciones]);
+  const noLeidas = useMemo(
+    () => notificaciones.filter((n) => !n.leida).length,
+    [notificaciones],
+  );
 
   return {
     notificaciones,
@@ -207,6 +292,7 @@ export function useNotificacionesCorreos({ gmailConectado, cuentasGmail = [], me
     toast,
     cerrarToast,
     marcarTodasLeidas,
+    marcarComoLeida,
     limpiarBandeja,
     sincronizando,
     errorSincronizacion,

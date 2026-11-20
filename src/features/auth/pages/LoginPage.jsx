@@ -23,12 +23,18 @@ export default function PaginaLogin() {
     <main className="grid min-h-screen place-items-center bg-bg-dark px-5 text-white">
       <div className="text-center">
         <p className="font-display text-3xl">FinApp</p>
-        <p className="mt-2 text-sm text-white/60">Tu vida financiera, más clara.</p>
+        <p className="mt-2 text-sm text-white/60">
+          Tu vida financiera, más clara.
+        </p>
       </div>
       <AuthModal
         abierto
         modoInicial="login"
-        alCerrar={() => navigate(TRIAL_MODE ? "/dashboard" : "/", { state: { focoEnDestino: true } })}
+        alCerrar={() =>
+          navigate(TRIAL_MODE ? "/dashboard" : "/", {
+            state: { focoEnDestino: true },
+          })
+        }
       />
     </main>
   );

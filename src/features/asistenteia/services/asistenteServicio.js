@@ -21,7 +21,9 @@ async function enviarPeticion(ruta, peticion, signal) {
     });
   } catch (error) {
     if (error.name === "AbortError") throw error;
-    throw new Error("No se pudo conectar con FinApp. Comprueba que el backend esté disponible.");
+    throw new Error(
+      "No se pudo conectar con FinApp. Comprueba que el backend esté disponible.",
+    );
   }
 
   const texto = await respuesta.text().catch(() => "");
@@ -34,7 +36,12 @@ async function enviarPeticion(ruta, peticion, signal) {
 
   if (!respuesta.ok) {
     console.error("[Asistente][Error respuesta]", respuesta.status, datos);
-    const detalle = datos.mensaje || datos.error || datos.message || texto || `Error HTTP ${respuesta.status}`;
+    const detalle =
+      datos.mensaje ||
+      datos.error ||
+      datos.message ||
+      texto ||
+      `Error HTTP ${respuesta.status}`;
     throw new Error(detalle);
   }
   return datos;
@@ -53,4 +60,3 @@ export function conversarConAsistentePublico(peticion, signal) {
 export function confirmarAccionAsistente(token, signal) {
   return enviarPeticion("asistente.confirmar", { token }, signal);
 }
-

@@ -7,7 +7,13 @@
  * @usadoPor   Vitest
  */
 import { useRef, useState } from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ModalFuentes from "../../../../features/configuracion/components/modals/CrearFuenteModal";
@@ -17,6 +23,7 @@ import { obtenerUsuarioActivo } from "../../../../features/auth/services";
 
 vi.mock("../../../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   obtenerUsuarioActivo: vi.fn(),
 }));
 
@@ -75,7 +82,7 @@ beforeEach(() => {
   window.localStorage.getItem.mockReturnValue(JSON.stringify(USUARIO));
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
   window.localStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_autenticada" ? "activa" : null
+    key === "finapp_sesion_autenticada" ? "activa" : null,
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO });
@@ -88,7 +95,9 @@ describe("ModalFuentes", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    await usuario.click(screen.getByRole("button", { name: "Abrir registro de fuentes" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Abrir registro de fuentes" }),
+    );
 
     const dialogo = screen.getByRole("dialog", { name: "Registro de fuentes" });
     expect(dialogo).toHaveAttribute("aria-modal", "true");
@@ -101,10 +110,14 @@ describe("ModalFuentes", () => {
   it("asocia etiquetas accesibles a selector de tipo y campo de contenido", async () => {
     const usuario = userEvent.setup();
     render(<ArnésModalFuentes />);
-    await usuario.click(screen.getByRole("button", { name: "Abrir registro de fuentes" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Abrir registro de fuentes" }),
+    );
 
     const tipoSelect = screen.getByRole("combobox", { name: "Tipo de fuente" });
-    const contenidoInput = screen.getByRole("textbox", { name: "Contenido de la fuente" });
+    const contenidoInput = screen.getByRole("textbox", {
+      name: "Contenido de la fuente",
+    });
 
     expect(tipoSelect).toBeInTheDocument();
     expect(contenidoInput).toBeInTheDocument();
@@ -119,11 +132,29 @@ describe("ModalFuentes", () => {
   it("muestra el botón de Gmail con el patrón externo de Google fuera del formulario", async () => {
     const usuario = userEvent.setup();
     const alConectarGmail = vi.fn();
-    render(<ArnésModalFuentes modalProps={{ gmailConfigurado: true, gmailListo: true, alConectarGmail }} />);
-    await usuario.click(screen.getByRole("button", { name: "Abrir registro de fuentes" }));
+    render(
+      <ArnésModalFuentes
+        modalProps={{
+          gmailConfigurado: true,
+          gmailListo: true,
+          alConectarGmail,
+        }}
+      />,
+    );
+    await usuario.click(
+      screen.getByRole("button", { name: "Abrir registro de fuentes" }),
+    );
 
-    const boton = screen.getByRole("button", { name: "Conectar Gmail con Google" });
-    expect(boton).toHaveClass("google-auth-button", "w-full", "rounded-xl", "px-4", "py-3");
+    const boton = screen.getByRole("button", {
+      name: "Conectar Gmail con Google",
+    });
+    expect(boton).toHaveClass(
+      "google-auth-button",
+      "w-full",
+      "rounded-xl",
+      "px-4",
+      "py-3",
+    );
     expect(boton.closest("form")).toBeNull();
     expect(boton.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
 
@@ -143,13 +174,19 @@ describe("ModalFuentes", () => {
     const alGuardarSpy = vi.fn();
 
     render(<ArnésModalFuentes alGuardar={alGuardarSpy} />);
-    await usuario.click(screen.getByRole("button", { name: "Abrir registro de fuentes" }));
+    await usuario.click(
+      screen.getByRole("button", { name: "Abrir registro de fuentes" }),
+    );
 
     const dialogo = screen.getByRole("dialog", { name: "Registro de fuentes" });
-    const contenido = within(dialogo).getByRole("textbox", { name: "Contenido de la fuente" });
+    const contenido = within(dialogo).getByRole("textbox", {
+      name: "Contenido de la fuente",
+    });
     await usuario.type(contenido, "test@correo.com");
 
-    const botonSubmit = within(dialogo).getByRole("button", { name: "Registrar fuente" });
+    const botonSubmit = within(dialogo).getByRole("button", {
+      name: "Registrar fuente",
+    });
     await usuario.click(botonSubmit);
 
     await waitFor(() => {
@@ -170,9 +207,14 @@ describe("ModalFuentes", () => {
     const usuario = userEvent.setup();
     render(<ArnésModalFuentes />);
 
-    const abrir = screen.getByRole("button", { name: "Abrir registro de fuentes" });
+    const abrir = screen.getByRole("button", {
+      name: "Abrir registro de fuentes",
+    });
     await usuario.click(abrir);
-    await usuario.type(screen.getByRole("textbox", { name: "Contenido de la fuente" }), "uno@ejemplo.test");
+    await usuario.type(
+      screen.getByRole("textbox", { name: "Contenido de la fuente" }),
+      "uno@ejemplo.test",
+    );
     await usuario.keyboard("{Escape}");
 
     await waitFor(() => {
@@ -181,16 +223,25 @@ describe("ModalFuentes", () => {
     expect(abrir).toHaveFocus();
 
     await usuario.click(abrir);
-    expect(screen.getByRole("textbox", { name: "Contenido de la fuente" })).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", { name: "Contenido de la fuente" }),
+    ).toHaveValue("");
 
-    await usuario.type(screen.getByRole("textbox", { name: "Contenido de la fuente" }), "dos@ejemplo.test");
-    await usuario.click(screen.getByRole("button", { name: "Cerrar registro de fuentes" }));
+    await usuario.type(
+      screen.getByRole("textbox", { name: "Contenido de la fuente" }),
+      "dos@ejemplo.test",
+    );
+    await usuario.click(
+      screen.getByRole("button", { name: "Cerrar registro de fuentes" }),
+    );
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
     await usuario.click(abrir);
-    expect(screen.getByRole("textbox", { name: "Contenido de la fuente" })).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", { name: "Contenido de la fuente" }),
+    ).toHaveValue("");
   });
 });

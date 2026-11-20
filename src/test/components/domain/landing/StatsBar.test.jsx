@@ -26,7 +26,7 @@ describe("StatsBar", () => {
     ["Usuarios activos", "Satisfacción", "Gestionados", "Para empezar"].forEach(
       (etiqueta) => {
         expect(screen.getByText(etiqueta)).toBeDefined();
-      }
+      },
     );
   });
 
@@ -38,7 +38,7 @@ describe("StatsBar", () => {
         const nodo = screen.getByText(etiqueta);
         expect(nodo).toHaveClass("text-white");
         expect(nodo).not.toHaveClass("text-white/80");
-      }
+      },
     );
     expect(document.querySelector(".text-white\\/80")).toBeNull();
   });

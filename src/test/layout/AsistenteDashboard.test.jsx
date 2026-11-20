@@ -6,7 +6,15 @@
  * @estados    ayudaAbierta, mobileMenuAbierto, userModalAbierto y detalle de tarjeta
  * @usadoPor   Vitest suite
  */
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -23,6 +31,7 @@ vi.mock("../../hooks/useBreakpoint", () => ({
 
 vi.mock("../../features/auth/services", async (importOriginal) => ({
   ...(await importOriginal()),
+  hayUsuariosRegistrados: vi.fn().mockResolvedValue(true),
   obtenerUsuarioActivo: vi.fn(),
 }));
 
@@ -39,7 +48,7 @@ afterEach(() => {
 beforeEach(() => {
   // Mock sessionStorage para que UsuarioActivoProvider crea que hay sesión activa
   window.localStorage.getItem.mockImplementation((key) =>
-    key === "finapp_sesion_autenticada" ? "activa" : null
+    key === "finapp_sesion_autenticada" ? "activa" : null,
   );
   // Mock obtenerUsuarioActivo para que devuelva el usuario
   obtenerUsuarioActivo.mockResolvedValue({ datos: USUARIO_DASHBOARD });
@@ -96,7 +105,9 @@ vi.mock("framer-motion", async () => {
     "inherit",
   ]);
   const propsDom = (props) =>
-    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
+    Object.fromEntries(
+      Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)),
+    );
 
   return {
     ...actual,
@@ -136,9 +147,18 @@ function LayoutTree({ initialPath = "/dashboard" }) {
       <Routes>
         <Route path="/dashboard/*" element={<DashboardLayout />}>
           <Route index element={<ContenidoDashboard etiqueta="Inicio" />} />
-          <Route path="contabilidad" element={<ContenidoDashboard etiqueta="Contabilidad" />} />
-          <Route path="tarjetas" element={<ContenidoDashboard etiqueta="Tarjetas" />} />
-          <Route path="configuracion" element={<ContenidoDashboard etiqueta="Configuración" />} />
+          <Route
+            path="contabilidad"
+            element={<ContenidoDashboard etiqueta="Contabilidad" />}
+          />
+          <Route
+            path="tarjetas"
+            element={<ContenidoDashboard etiqueta="Tarjetas" />}
+          />
+          <Route
+            path="configuracion"
+            element={<ContenidoDashboard etiqueta="Configuración" />}
+          />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -162,10 +182,12 @@ function renderDashboard(initialPath = "/dashboard", version = VERSION_MOVIL) {
 }
 
 async function abrirAsistente(user = userEvent.setup()) {
-  await user.click(screen.getByRole("button", {
-    name: "Abrir el asistente de ayuda",
-    exact: true,
-  }));
+  await user.click(
+    screen.getByRole("button", {
+      name: "Abrir el asistente de ayuda",
+      exact: true,
+    }),
+  );
   return screen.getByRole("dialog", { name: "Asistente de FinApp" });
 }
 
@@ -211,10 +233,14 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
     renderDashboard();
     await abrirAsistente(user);
 
-    const nav = screen.getByRole("navigation", { name: "Navegación principal móvil" });
+    const nav = screen.getByRole("navigation", {
+      name: "Navegación principal móvil",
+    });
     const scrim = obtenerScrim();
-    expect(nav.compareDocumentPosition(scrim) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(scrim.className).toMatch(/\bz-50\b/);
+    expect(
+      nav.compareDocumentPosition(scrim) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(scrim.className).toMatch(/z-\[100\]/);
     expect(scrim.className).not.toMatch(/backdrop-(blur|filter)|glass-surface/);
   });
 
@@ -241,7 +267,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
     expect(disparador.className).toContain("focus-visible:ring-2");
     expect(disparador.className).toContain("focus-visible:ring-mint-accent/60");
     expect(disparador.className).not.toMatch(
-      /#|backdrop-|glass-|text-(?:white|black|slate-\d+)|bg-(?:black|white|slate-\d+)/
+      /#|backdrop-|glass-|text-(?:white|black|slate-\d+)|bg-(?:black|white|slate-\d+)/,
     );
   });
 
@@ -251,7 +277,7 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
 
     expect(disparador.className).toContain("right-6");
     expect(disparador.className).toContain(
-      "bottom-[calc(60px_+_env(safe-area-inset-bottom,0px)_+_16px)]"
+      "bottom-[calc(60px_+_env(safe-area-inset-bottom,0px)_+_16px)]",
     );
     expect(disparador.className).not.toContain("safe-bottom");
     expect(disparador.getAttribute("style") ?? "").toBe("");
@@ -269,13 +295,18 @@ describe("Asistente en dashboard — montaje, alcance y disparador", () => {
 
     expect(obtenerDisparador()).toBeInTheDocument();
     if (ruta !== "/dashboard/tarjetas") {
-      expect(screen.getByRole("heading", { name: contenido })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: contenido }),
+      ).toBeInTheDocument();
     }
     await abrirAsistente(user);
 
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     expect(document.querySelectorAll("#asistente-titulo")).toHaveLength(1);
-    if (ruta === "/dashboard/contabilidad" || ruta === "/dashboard/configuracion") {
+    if (
+      ruta === "/dashboard/contabilidad" ||
+      ruta === "/dashboard/configuracion"
+    ) {
       expect(errorSpy).not.toHaveBeenCalled();
     }
   });
@@ -287,42 +318,64 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
   });
 
   it("presenta únicamente ayuda informativa, sin consultas personales ni CRUD", async () => {
-      const user = userEvent.setup();
-      renderDashboard();
-      const dialogo = await abrirAsistente(user);
+    const user = userEvent.setup();
+    renderDashboard();
+    const dialogo = await abrirAsistente(user);
 
-      // Textos únicos que aparecen en un solo elemento (versión actual del componente)
-      [
-        "Asistente de FinApp",
-        "Pregunta cómo funciona FinApp y cómo usar sus funciones.",
-        "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios.",
-        "¿Para qué sirven los bolsillos?",
-        "¿Cómo registro un gasto?",
-        "¿Cómo conecto Gmail?",
-        "¿Dónde administro mis tarjetas?",
-        "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No consulta datos personales ni realiza cambios.",
-        "Tu pregunta",
-        "Enviar",
-      ].forEach((texto) => expect(within(dialogo).getByText(texto)).toBeInTheDocument());
+    // Textos únicos que aparecen en un solo elemento (versión actual del componente)
+    [
+      "Asistente de FinApp",
+      "Pregunta cómo funciona FinApp y cómo usar sus funciones.",
+      "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios.",
+      "¿Para qué sirven los bolsillos?",
+      "¿Cómo registro un gasto?",
+      "¿Cómo conecto Gmail?",
+      "¿Dónde administro mis tarjetas?",
+      "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No consulta datos personales ni realiza cambios.",
+      "Tu pregunta",
+      "Enviar",
+    ].forEach((texto) =>
+      expect(within(dialogo).getByText(texto)).toBeInTheDocument(),
+    );
 
-      expect(within(dialogo).getByLabelText("Tu pregunta")).toBeInTheDocument();
-      expect(within(dialogo).getByPlaceholderText("Escribe una pregunta sobre FinApp…")).toBeInTheDocument();
-      expect(within(dialogo).queryByRole("tab", { name: /sesiones pasadas/i })).not.toBeInTheDocument();
-      expect(within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })).toBeInTheDocument();
-      expect(within(dialogo).getByRole("log", { name: "Mensajes del asistente" })).toBeInTheDocument();
-      expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
-    });
+    expect(within(dialogo).getByLabelText("Tu pregunta")).toBeInTheDocument();
+    expect(
+      within(dialogo).getByPlaceholderText(
+        "Escribe una pregunta sobre FinApp…",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).queryByRole("tab", { name: /sesiones pasadas/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialogo).getByRole("button", {
+        name: "Cerrar asistente de ayuda",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).getByRole("log", { name: "Mensajes del asistente" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialogo).queryByText("Conversación de ejemplo"),
+    ).not.toBeInTheDocument();
+  });
 
   it("abre únicamente el estado vacío, sin control de cambio de variante", async () => {
-      const user = userEvent.setup();
-      renderDashboard();
-      const dialogo = await abrirAsistente(user);
+    const user = userEvent.setup();
+    renderDashboard();
+    const dialogo = await abrirAsistente(user);
 
-      // En estado vacío el componente muestra las sugerencias y el texto de aviso
-      expect(dialogo).toHaveTextContent("El asistente público no consulta datos personales ni realiza cambios.");
-      expect(within(dialogo).queryByText("Conversación de ejemplo")).not.toBeInTheDocument();
-      expect(within(dialogo).queryByRole("tab", { name: /sesiones pasadas/i })).not.toBeInTheDocument();
-    });
+    // En estado vacío el componente muestra las sugerencias y el texto de aviso
+    expect(dialogo).toHaveTextContent(
+      "El asistente público no consulta datos personales ni realiza cambios.",
+    );
+    expect(
+      within(dialogo).queryByText("Conversación de ejemplo"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialogo).queryByRole("tab", { name: /sesiones pasadas/i }),
+    ).not.toBeInTheDocument();
+  });
 
   it("cumple el contrato ARIA, desactiva Enviar y cierra con Escape", async () => {
     const user = userEvent.setup();
@@ -332,34 +385,53 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
 
     expect(dialogo).toHaveAttribute("aria-modal", "true");
     expect(dialogo).toHaveAttribute("aria-labelledby", "asistente-titulo");
-    expect(dialogo).toHaveAttribute(
-          "aria-describedby",
-          "asistente-aviso"
-        );
+    expect(dialogo).toHaveAttribute("aria-describedby", "asistente-aviso");
     expect(log).toHaveAttribute("aria-live", "polite");
     expect(log).toHaveAttribute("aria-relevant", "additions");
     expect(log).toHaveAttribute("aria-atomic", "false");
-    expect(within(dialogo).getByLabelText("Tu pregunta")).toHaveAttribute("id", "asistente-entrada");
-    expect(within(dialogo).getByRole("button", { name: "Enviar" })).toHaveAttribute("disabled", "");
+    expect(within(dialogo).getByLabelText("Tu pregunta")).toHaveAttribute(
+      "id",
+      "asistente-entrada",
+    );
+    expect(
+      within(dialogo).getByRole("button", { name: "Enviar" }),
+    ).toHaveAttribute("disabled", "");
     expect(document.activeElement).toBe(dialogo);
     expect(document.activeElement).not.toBe(
-      within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" })
+      within(dialogo).getByRole("button", {
+        name: "Cerrar asistente de ayuda",
+      }),
     );
 
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: "Asistente de FinApp" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Asistente de FinApp" }),
+    ).not.toBeInTheDocument();
   });
 
   it.each([
-    ["la X", async (dialogo) => {
-      fireEvent.click(within(dialogo).getByRole("button", { name: "Cerrar asistente de ayuda" }));
-    }],
-    ["Escape", async () => {
-      fireEvent.keyDown(document, { key: "Escape" });
-    }],
-    ["el scrim", async () => {
-      fireEvent.click(obtenerScrim());
-    }],
+    [
+      "la X",
+      async (dialogo) => {
+        fireEvent.click(
+          within(dialogo).getByRole("button", {
+            name: "Cerrar asistente de ayuda",
+          }),
+        );
+      },
+    ],
+    [
+      "Escape",
+      async () => {
+        fireEvent.keyDown(document, { key: "Escape" });
+      },
+    ],
+    [
+      "el scrim",
+      async () => {
+        fireEvent.click(obtenerScrim());
+      },
+    ],
   ])("devuelve el foco al robot al cerrar por %s", async (_metodo, cerrar) => {
     const user = userEvent.setup();
     renderDashboard();
@@ -367,7 +439,9 @@ describe("Asistente en dashboard — contenido, ARIA y foco", () => {
 
     await cerrar(dialogo);
 
-    await waitFor(() => expect(document.activeElement).toBe(obtenerDisparador()));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(obtenerDisparador()),
+    );
   });
 });
 
@@ -389,34 +463,46 @@ describe("Asistente en dashboard — superficies y cruce de foco", () => {
     const user = userEvent.setup();
     renderDashboard();
     await user.click(screen.getByRole("button", { name: "Abrir menú" }));
-    expect(screen.getByRole("dialog", { name: "Menú de navegación" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "Menú de navegación" }),
+    ).toBeInTheDocument();
 
     fireEvent.click(obtenerDisparador());
 
     await waitFor(() => {
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
-      expect(screen.getByRole("dialog", { name: "Asistente de FinApp" })).toContainElement(
-        document.activeElement
-      );
+      expect(
+        screen.getByRole("dialog", { name: "Asistente de FinApp" }),
+      ).toContainElement(document.activeElement);
     });
-    expect(screen.queryByRole("dialog", { name: "Menú de navegación" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Menú de navegación" }),
+    ).not.toBeInTheDocument();
   });
 
   it("al abrir el asistente cierra el modal de Cuenta y deja foco dentro del chat", async () => {
     const user = userEvent.setup();
     renderDashboard();
     await user.click(screen.getByRole("button", { name: "Abrir menú" }));
-    await user.click(screen.getByRole("button", { name: "Cuenta de Usuario Demo" }));
-    expect(screen.getByRole("dialog", { name: "Cuenta de Usuario Demo" })).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Cuenta de Usuario Demo" }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Cuenta de Usuario Demo" }),
+    ).toBeInTheDocument();
 
     fireEvent.click(obtenerDisparador());
 
     await waitFor(() => {
-      const dialogo = screen.getByRole("dialog", { name: "Asistente de FinApp" });
+      const dialogo = screen.getByRole("dialog", {
+        name: "Asistente de FinApp",
+      });
       expect(screen.getAllByRole("dialog")).toHaveLength(1);
       expect(dialogo).toContainElement(document.activeElement);
     });
-    expect(screen.queryByRole("dialog", { name: "Cuenta de Usuario Demo" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Cuenta de Usuario Demo" }),
+    ).not.toBeInTheDocument();
   });
 
   it("excluye el robot del respaldo de foco al cruzar de móvil a escritorio", () => {

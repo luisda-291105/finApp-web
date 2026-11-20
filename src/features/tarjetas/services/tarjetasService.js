@@ -7,7 +7,12 @@
  * @usadoPor   useTarjetas y CrearTarjetaModal
  */
 import { getEndpoint } from "../../../config/api.config";
-import { crear, obtener, actualizar, eliminar } from "../../../services/httpServicio";
+import {
+  crear,
+  obtener,
+  actualizar,
+  eliminar,
+} from "../../../services/httpServicio";
 
 /** @param {object} tarjeta */
 export function crearTarjeta(tarjeta) {
@@ -16,15 +21,33 @@ export function crearTarjeta(tarjeta) {
 
 /** @param {string|number} idUsuario */
 export function obtenerTarjetasPorUsuario(idUsuario) {
-  return obtener(`${getEndpoint("tarjeta.porUsuario")}/${encodeURIComponent(idUsuario)}`);
+  return obtener(
+    `${getEndpoint("tarjeta.porUsuario")}/${encodeURIComponent(idUsuario)}`,
+  );
 }
 
 /** @param {string|number} idTarjeta @param {object} tarjeta */
 export function actualizarTarjeta(idTarjeta, tarjeta) {
-  return actualizar(`${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}`, tarjeta);
+  return actualizar(
+    `${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}`,
+    tarjeta,
+  );
 }
 
 /** @param {string|number} idTarjeta */
 export function eliminarTarjeta(idTarjeta) {
-  return eliminar(`${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}`);
+  return eliminar(
+    `${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}`,
+  );
+}
+
+/**
+ * @uso        Historial de movimientos de contabilidad vinculados a una tarjeta
+ * @param {string|number} idTarjeta
+ * @datos      Devuelve fecha, monto, tipo, categoría, concepto, origen y estado de revisión, ordenados por fecha desc
+ */
+export function obtenerMovimientosTarjeta(idTarjeta) {
+  return obtener(
+    `${getEndpoint("tarjeta.base")}/${encodeURIComponent(idTarjeta)}/movimientos`,
+  );
 }

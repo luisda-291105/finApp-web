@@ -6,7 +6,14 @@
  * @estados    Ninguno
  * @usadoPor   AlmacenamientoArchivoItem
  */
-import { File, FileSpreadsheet, FileText, Folder, Image as IconoImagen, Presentation } from "lucide-react";
+import {
+  File,
+  FileSpreadsheet,
+  FileText,
+  Folder,
+  Image as IconoImagen,
+  Presentation,
+} from "lucide-react";
 import { iconoArchivo } from "../../utils/archivos";
 
 const ICONOS_POR_CLAVE = {
@@ -36,11 +43,13 @@ const COLORES_POR_CLAVE = {
  * @returns {JSX.Element}
  */
 export default function AlmacenamientoArchivoIcono({ item, className = "" }) {
-  const clave = item?.tipo === "carpeta" ? "carpeta" : iconoArchivo(item?.nombre || "");
+  const clave =
+    item?.tipo === "carpeta" ? "carpeta" : iconoArchivo(item?.nombre || "");
   const Icono = clave === "carpeta" ? Folder : ICONOS_POR_CLAVE[clave] || File;
-  const clases = clave === "carpeta"
-    ? "bg-emerald-primary/10 text-emerald-primary"
-    : COLORES_POR_CLAVE[clave] || COLORES_POR_CLAVE.archivo;
+  const clases =
+    clave === "carpeta"
+      ? "bg-emerald-primary/10 text-emerald-primary"
+      : COLORES_POR_CLAVE[clave] || COLORES_POR_CLAVE.archivo;
   return (
     <span
       aria-hidden="true"

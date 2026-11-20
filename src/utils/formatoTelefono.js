@@ -9,7 +9,8 @@ function soloDigitos(valor) {
 export function normalizarTelefonoColombia(valor) {
   let digitos = soloDigitos(valor);
   if (digitos.startsWith("00")) digitos = digitos.slice(2);
-  if (digitos.startsWith(INDICATIVO_COLOMBIA) && digitos.length === 12) return digitos.slice(2);
+  if (digitos.startsWith(INDICATIVO_COLOMBIA) && digitos.length === 12)
+    return digitos.slice(2);
   return digitos;
 }
 

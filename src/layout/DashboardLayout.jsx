@@ -13,7 +13,7 @@ import SidebarNavContenido from "../components/layout/SidebarNavContenido";
 import Container from "../components/layout/Container";
 import { AsistenteAyudaModal } from "../features/asistenteia";
 import { useTema } from "../context/TemaContext";
-import { LimiteDeError } from "../components/ui";
+import { LimiteDeError } from "../features/error";
 
 /** Selectores del cruce (tabla M8 del plan 011): navegación por versión de vista. */
 const SELECTOR_NAVEGACION_LATERAL = 'aside[role="navigation"]';
@@ -42,8 +42,10 @@ function clasificarOrigenDeFoco(nodo) {
   if (!(nodo instanceof HTMLElement) || nodo.closest(SELECTOR_DIALOGO)) {
     return { origen: null, nodo: null };
   }
-  if (nodo.closest(SELECTOR_NAVEGACION_LATERAL)) return { origen: "escritorio", nodo };
-  if (nodo.closest(SELECTOR_NAVEGACION_INFERIOR)) return { origen: "movil", nodo };
+  if (nodo.closest(SELECTOR_NAVEGACION_LATERAL))
+    return { origen: "escritorio", nodo };
+  if (nodo.closest(SELECTOR_NAVEGACION_INFERIOR))
+    return { origen: "movil", nodo };
   return { origen: null, nodo: null };
 }
 
@@ -116,11 +118,11 @@ function trasladarFocoDeCruce(esMovil) {
  * @returns {JSX.Element} Layout completo del dashboard
  */
 
-
 export default function DashboardLayout() {
   const { tema } = useTema();
   const temaClaro = tema === "claro";
-  const { isMobile, isDesktop, sidebarColapsada, toggleSidebar } = useBreakpoint();
+  const { isMobile, isDesktop, sidebarColapsada, toggleSidebar } =
+    useBreakpoint();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -196,9 +198,19 @@ export default function DashboardLayout() {
     trasladarFocoDeCruce(isMobile);
   }, [isMobile, mobileMenuAbierto]);
 
+  // Los modales montados vía portal deben encuadrar solo el contenido del dashboard; el overlay deja
+  // visible la navegación lateral (expandida o colapsada) y ocupa desde su borde derecho hasta el final.
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.style.setProperty(
+      "--dashboard-sidebar-width",
+      isDesktop ? (sidebarColapsada ? "72px" : "256px") : "0px",
+    );
+    return () => raiz.style.removeProperty("--dashboard-sidebar-width");
+  }, [isDesktop, sidebarColapsada]);
+
   return (
     <>
-      
       {/* Navegación lateral permanente (pantallas grandes ≥768px) */}
       {isDesktop && (
         <SidebarResponsive
@@ -212,14 +224,23 @@ export default function DashboardLayout() {
       {/* `relative`: contextos de posicionamiento para los modales (scrim `absolute inset-0` = solo la página, no la sidebar) */}
       <div
         className={clsx(
-          "relative min-h-screen bg-bg-cream transition-all duration-300",
-          isDesktop ? (sidebarColapsada ? "ml-[72px]" : "ml-64") : "ml-0"
+          "relative min-h-screen overflow-x-hidden bg-bg-cream transition-all duration-300",
+          isDesktop ? (sidebarColapsada ? "ml-[72px]" : "ml-64") : "ml-0",
         )}
       >
         <Container>
-          <main className="pb-20">
+          <main className="pb-20 overflow-x-hidden">
             <LimiteDeError key={location.pathname}>
-              <Suspense fallback={<div role="status" className="flex min-h-[40vh] items-center justify-center text-sm text-slate-text">Cargando…</div>}>
+              <Suspense
+                fallback={
+                  <div
+                    role="status"
+                    className="flex min-h-[40vh] items-center justify-center text-sm text-slate-text"
+                  >
+                    Cargando…
+                  </div>
+                }
+              >
                 <Outlet context={{ registrarCierreDetalle }} />
               </Suspense>
             </LimiteDeError>
@@ -233,6 +254,8 @@ export default function DashboardLayout() {
           itemActivo={location.pathname}
           alNavegar={(ruta) => navigate(ruta)}
           alAbrirMenu={() => setMobileMenuAbierto(true)}
+          alCerrarMenu={() => setMobileMenuAbierto(false)}
+          menuAbierto={mobileMenuAbierto}
           menuTriggerRef={bottomNavMenuRef}
         />
       )}

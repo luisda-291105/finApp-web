@@ -25,7 +25,11 @@ Object.defineProperty(window, "matchMedia", {
     };
   },
 });
-Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+Object.defineProperty(window, "innerWidth", {
+  writable: true,
+  configurable: true,
+  value: 1024,
+});
 
 // Mocks de servicios - DEBEN ir ANTES de imports (vitest hoistea)
 vi.mock("../services/fuenteServicio", () => ({
@@ -70,7 +74,11 @@ vi.mock("../services/gmailServicio", () => ({
 
 // Mock contextos
 vi.mock("../context/UsuarioActivoContext", () => {
-  const USUARIO = { idUsuario: "12345678", nombre: "Ana Pérez", fechaCreacion: "2026-01-01" };
+  const USUARIO = {
+    idUsuario: "12345678",
+    nombre: "Ana Pérez",
+    fechaCreacion: "2026-01-01",
+  };
   return {
     UsuarioActivoProvider: ({ children }) => children,
     useUsuarioActivo: () => ({
@@ -100,6 +108,7 @@ vi.mock("../context/GmailContext", () => ({
     errorGmail: "",
     conectarGmail: vi.fn(),
     desconectarGmail: vi.fn(),
+    recargarCuentasGmail: vi.fn(),
     seleccionarCuentaGmail: vi.fn(),
     limpiarErrorGmail: vi.fn(),
   }),
@@ -114,13 +123,22 @@ describe("rutas informativas de la spec 016", () => {
   it.each([
     ["/dashboard/contactos", "Contactos"],
     ["/dashboard/correos", "Correos"],
-  ])("muestra %s dentro del dashboard de demostración", async (ruta, titulo) => {
-    render(
-      <MemoryRouter initialEntries={[ruta]}>
-        <App />
-      </MemoryRouter>
-    );
+  ])(
+    "muestra %s dentro del dashboard de demostración",
+    async (ruta, titulo) => {
+      render(
+        <MemoryRouter initialEntries={[ruta]}>
+          <App />
+        </MemoryRouter>,
+      );
 
-    expect(await screen.findByRole("heading", { name: titulo, level: 1 }, { timeout: 5000 })).toBeInTheDocument();
-  });
+      expect(
+        await screen.findByRole(
+          "heading",
+          { name: titulo, level: 1 },
+          { timeout: 5000 },
+        ),
+      ).toBeInTheDocument();
+    },
+  );
 });

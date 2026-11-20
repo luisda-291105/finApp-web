@@ -9,7 +9,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, renderHook } from "@testing-library/react";
 import { StrictMode } from "react";
-import { useRetornoDeFoco, resolverControlDeVista } from "../../hooks/useRetornoDeFoco";
+import {
+  useRetornoDeFoco,
+  resolverControlDeVista,
+} from "../../hooks/useRetornoDeFoco";
 
 /** Corte único de versión de vista (spec 009), coherente con useBreakpoint. */
 const QUERY_PANTALLAS_GRANDES = "(min-width: 768px)";
@@ -40,7 +43,11 @@ const configurarViewport = (ancho) => {
   }));
 };
 
-const crearBoton = ({ etiquetaAria, texto = "botón", disabled = false } = {}) => {
+const crearBoton = ({
+  etiquetaAria,
+  texto = "botón",
+  disabled = false,
+} = {}) => {
   const boton = document.createElement("button");
   boton.type = "button";
   boton.textContent = texto;
@@ -65,9 +72,12 @@ const montar = (...nodos) => {
 
 /** Superficie falsa controlable: la transición de `activo` dispara abrir/cerrar de la pieza. */
 const usar = (valorInicial) =>
-  renderHook(({ activo, triggerRef }) => useRetornoDeFoco({ activo, triggerRef }), {
-    initialProps: valorInicial,
-  });
+  renderHook(
+    ({ activo, triggerRef }) => useRetornoDeFoco({ activo, triggerRef }),
+    {
+      initialProps: valorInicial,
+    },
+  );
 
 /** Ejerce una transición real abre → cierra con el mismo `triggerRef`. */
 const ejercerTransicion = (triggerRef) => {
@@ -78,7 +88,10 @@ const ejercerTransicion = (triggerRef) => {
 
 beforeEach(() => {
   originalMatchMedia = window.matchMedia;
-  originalInnerWidthDescriptor = Object.getOwnPropertyDescriptor(window, "innerWidth");
+  originalInnerWidthDescriptor = Object.getOwnPropertyDescriptor(
+    window,
+    "innerWidth",
+  );
   escena = document.createElement("div");
   escena.id = "escena-011";
   document.body.appendChild(escena);
@@ -113,10 +126,16 @@ describe("useRetornoDeFoco — montaje y re-renders cerrados (RF-01/RF-02)", () 
     montar(disparador);
     const espia = vi.spyOn(disparador, "focus");
     const activoAntes = document.activeElement;
-    const { rerender } = usar({ activo: false, triggerRef: { current: disparador } });
+    const { rerender } = usar({
+      activo: false,
+      triggerRef: { current: disparador },
+    });
 
     rerender({ activo: false, triggerRef: { current: disparador } });
-    rerender({ activo: false, triggerRef: { current: { current: disparador } } });
+    rerender({
+      activo: false,
+      triggerRef: { current: { current: disparador } },
+    });
 
     expect(espia).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(activoAntes);
@@ -128,7 +147,10 @@ describe("useRetornoDeFoco — una devolución por cierre (RF-02/CL-14)", () => 
     const disparador = crearBoton({ texto: "avatar" });
     montar(disparador);
     const espia = vi.spyOn(disparador, "focus");
-    const { rerender } = usar({ activo: true, triggerRef: { current: disparador } });
+    const { rerender } = usar({
+      activo: true,
+      triggerRef: { current: disparador },
+    });
 
     rerender({ activo: false, triggerRef: { current: disparador } });
 
@@ -140,11 +162,17 @@ describe("useRetornoDeFoco — una devolución por cierre (RF-02/CL-14)", () => 
     const disparador = crearBoton({ texto: "avatar" });
     montar(disparador);
     const espia = vi.spyOn(disparador, "focus");
-    const { rerender } = usar({ activo: true, triggerRef: { current: disparador } });
+    const { rerender } = usar({
+      activo: true,
+      triggerRef: { current: disparador },
+    });
 
     rerender({ activo: false, triggerRef: { current: disparador } });
     rerender({ activo: false, triggerRef: { current: disparador } });
-    rerender({ activo: false, triggerRef: { current: { current: disparador } } });
+    rerender({
+      activo: false,
+      triggerRef: { current: { current: disparador } },
+    });
 
     expect(espia).toHaveBeenCalledTimes(1);
   });
@@ -153,7 +181,10 @@ describe("useRetornoDeFoco — una devolución por cierre (RF-02/CL-14)", () => 
     const disparador = crearBoton({ etiquetaAria: "Abrir menú" });
     montar(disparador);
     const espia = vi.spyOn(disparador, "focus");
-    const { rerender } = usar({ activo: false, triggerRef: { current: disparador } });
+    const { rerender } = usar({
+      activo: false,
+      triggerRef: { current: disparador },
+    });
 
     rerender({ activo: false, triggerRef: { current: disparador } });
 
@@ -169,7 +200,7 @@ describe("useRetornoDeFoco — una devolución por cierre (RF-02/CL-14)", () => 
       {
         initialProps: { activo: true, triggerRef: { current: disparador } },
         wrapper: StrictMode,
-      }
+      },
     );
 
     expect(espia).not.toHaveBeenCalled();
@@ -323,7 +354,7 @@ describe("useRetornoDeFoco — cadena determinista (RF-04/AC-24)", () => {
 });
 
 describe("useRetornoDeFoco — respaldo por versión de vista (RF-05/AC-06)", () => {
-  it("móvil del dashboard: enfoca button[aria-label=\"Abrir menú\"]", () => {
+  it('móvil del dashboard: enfoca button[aria-label="Abrir menú"]', () => {
     configurarViewport(375);
     const menu = crearBoton({ etiquetaAria: "Abrir menú" });
     montar(menu);
@@ -336,7 +367,7 @@ describe("useRetornoDeFoco — respaldo por versión de vista (RF-05/AC-06)", ()
     expect(document.activeElement).not.toBe(document.body);
   });
 
-  it("≥768px del dashboard: enfoca aside[role=\"navigation\"] button", () => {
+  it('≥768px del dashboard: enfoca aside[role="navigation"] button', () => {
     configurarViewport(1024);
     const { aside, boton } = crearLateral();
     montar(aside);
@@ -349,7 +380,7 @@ describe("useRetornoDeFoco — respaldo por versión de vista (RF-05/AC-06)", ()
     expect(document.activeElement).not.toBe(document.body);
   });
 
-  it("landing: primer control enfocable, excluyendo [role=\"dialog\"] y disabled", () => {
+  it('landing: primer control enfocable, excluyendo [role="dialog"] y disabled', () => {
     configurarViewport(1024);
     const dialogo = document.createElement("div");
     dialogo.setAttribute("role", "dialog");

@@ -1,13 +1,18 @@
 /**
  * @uso        Operaciones HTTP propias de grupos
- * @funciones  crearGrupo, obtenerGruposPorUsuario, actualizarGrupo, eliminarGrupo
+ * @funciones  crearGrupo, obtenerGruposPorUsuario, actualizarGrupo, eliminarGrupo, listarMensajesGrupo, enviarMensajeGrupo, listarMiembrosGrupo, agregarMiembroGrupo, eliminarMiembroGrupo, buscarUsuariosGrupo
  * @datos      Delega el transporte en httpServicio y las rutas en api.config
  * @eventos    Ninguno
  * @estados    Ninguno
- * @usadoPor   useGrupos y componentes del detalle de grupo
+ * @usadoPor   useGrupos, GrupoDetalleModal y componentes del detalle de grupo
  */
 import { getEndpoint } from "../../../config/api.config";
-import { crear, obtener, actualizar, eliminar } from "../../../services/httpServicio";
+import {
+  crear,
+  obtener,
+  actualizar,
+  eliminar,
+} from "../../../services/httpServicio";
 
 const rutaBase = getEndpoint("grupo.base");
 
@@ -28,27 +33,38 @@ export async function obtenerGrupos() {
 
 /** @param {string|number} idUsuario */
 export async function obtenerGrupoPorUsuario(idUsuario) {
-  return obtener(`${getEndpoint("grupo.porUsuario")}/${encodeURIComponent(idUsuario)}`);
+  return obtener(
+    `${getEndpoint("grupo.porUsuario")}/${encodeURIComponent(idUsuario)}`,
+  );
 }
 
 /** @param {string} nombre */
 export async function obtenerGrupoPorNombre(nombre) {
-  return obtener(`${getEndpoint("grupo.porNombre")}/${encodeURIComponent(nombre)}`);
+  return obtener(
+    `${getEndpoint("grupo.porNombre")}/${encodeURIComponent(nombre)}`,
+  );
 }
 
 /** @param {string|number} idGrupo */
 export async function obtenerGrupoPorId(idGrupo) {
-  return obtener(`${getEndpoint("grupo.porId")}/${encodeURIComponent(idGrupo)}`);
+  return obtener(
+    `${getEndpoint("grupo.porId")}/${encodeURIComponent(idGrupo)}`,
+  );
 }
 
 /** @param {string|number} idGrupo @param {object} grupo @param {string|number} idUsuario */
 export async function actualizarGrupo(idGrupo, grupo, idUsuario) {
-  return actualizar(`${rutaBase}/${encodeURIComponent(idGrupo)}?idUsuario=${encodeURIComponent(idUsuario)}`, grupo);
+  return actualizar(
+    `${rutaBase}/${encodeURIComponent(idGrupo)}?idUsuario=${encodeURIComponent(idUsuario)}`,
+    grupo,
+  );
 }
 
 /** @param {string|number} idGrupo @param {string|number} idUsuario */
 export async function eliminarGrupo(idGrupo, idUsuario) {
-  return eliminar(`${rutaBase}/${encodeURIComponent(idGrupo)}?idUsuario=${encodeURIComponent(idUsuario)}`);
+  return eliminar(
+    `${rutaBase}/${encodeURIComponent(idGrupo)}?idUsuario=${encodeURIComponent(idUsuario)}`,
+  );
 }
 
 /** @param {string|number} idGrupo @param {string|number} idFuente @param {string|number} idUsuario */
@@ -61,4 +77,42 @@ export async function vincularFuenteAGrupo(idGrupo, idFuente, idUsuario) {
 export async function desvincularFuenteDeGrupo(idGrupo, idFuente, idUsuario) {
   const ruta = `${rutaBase}/${encodeURIComponent(idGrupo)}/fuentes/${encodeURIComponent(idFuente)}?idUsuario=${encodeURIComponent(idUsuario)}`;
   return eliminar(ruta);
+}
+
+/** Lista los mensajes del chat del grupo, en orden cronológico. */
+export async function listarMensajesGrupo(idGrupo) {
+  return obtener(`${rutaBase}/${encodeURIComponent(idGrupo)}/mensajes`);
+}
+
+/** Envía un mensaje a la conversación del grupo (respuesta del miembro). */
+export async function enviarMensajeGrupo(idGrupo, texto) {
+  return crear(`${rutaBase}/${encodeURIComponent(idGrupo)}/mensajes`, {
+    texto,
+  });
+}
+
+/** Lista los integrantes del grupo (incluye al propietario aunque sea un grupo antiguo). */
+export async function listarMiembrosGrupo(idGrupo) {
+  return obtener(`${rutaBase}/${encodeURIComponent(idGrupo)}/miembros`);
+}
+
+/** Añade un integrante (por identificador, correo, teléfono o nombre, quizás con coincidencias). */
+export async function agregarMiembroGrupo(idGrupo, usuario) {
+  return crear(`${rutaBase}/${encodeURIComponent(idGrupo)}/miembros`, {
+    idUsuario: usuario,
+  });
+}
+
+/** Quita un integrante del grupo (no el propietario). */
+export async function eliminarMiembroGrupo(idGrupo, idUsuarioMiembro) {
+  return eliminar(
+    `${rutaBase}/${encodeURIComponent(idGrupo)}/miembros/${encodeURIComponent(idUsuarioMiembro)}`,
+  );
+}
+
+/** Busca usuarios registrados por fragmento (identificación, correo, teléfono o nombre). */
+export async function buscarUsuariosGrupo(q) {
+  const parametros = new URLSearchParams();
+  if (q) parametros.set("q", q);
+  return obtener(`${rutaBase}/usuarios/buscar?${parametros.toString()}`);
 }

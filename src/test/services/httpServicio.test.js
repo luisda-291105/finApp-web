@@ -7,16 +7,28 @@
  * @usadoPor   Vitest
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { actualizar, crear, eliminar, obtener } from "../../services/httpServicio";
+import {
+  actualizar,
+  crear,
+  eliminar,
+  obtener,
+} from "../../services/httpServicio";
 
 /** Construye una respuesta falsa de `fetch` con el estado y el cuerpo indicados. */
-const crearRespuesta = ({ status = 200, ok, statusText = "", cuerpo = "" } = {}) => ({
+const crearRespuesta = ({
+  status = 200,
+  ok,
+  statusText = "",
+  cuerpo = "",
+} = {}) => ({
   ok: ok ?? (status >= 200 && status < 300),
   status,
   statusText,
-  text: vi.fn().mockResolvedValue(
-    typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo),
-  ),
+  text: vi
+    .fn()
+    .mockResolvedValue(
+      typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo),
+    ),
 });
 
 describe("httpServicio", () => {
@@ -34,7 +46,10 @@ describe("httpServicio", () => {
 
   it("crear devuelve el cuerpo cuando el estado es 201", async () => {
     fetch.mockResolvedValue(
-      crearRespuesta({ status: 201, cuerpo: { idUsuario: "123", nombre: "Ana" } }),
+      crearRespuesta({
+        status: 201,
+        cuerpo: { idUsuario: "123", nombre: "Ana" },
+      }),
     );
 
     const resultado = await crear("/usuario", { nombre: "Ana" });
@@ -45,7 +60,10 @@ describe("httpServicio", () => {
 
   it("lanza el mensaje del backend cuando crear recibe 409 sin registrar credenciales en consola", async () => {
     fetch.mockResolvedValue(
-      crearRespuesta({ status: 409, cuerpo: { mensaje: "El usuario ya existe" } }),
+      crearRespuesta({
+        status: 409,
+        cuerpo: { mensaje: "El usuario ya existe" },
+      }),
     );
 
     await expect(crear("/usuario", { nombre: "Ana" })).rejects.toThrow(
@@ -56,7 +74,10 @@ describe("httpServicio", () => {
 
   it("lanza el mensaje del backend cuando actualizar recibe 500", async () => {
     fetch.mockResolvedValue(
-      crearRespuesta({ status: 500, cuerpo: { mensaje: "Fallo del servidor" } }),
+      crearRespuesta({
+        status: 500,
+        cuerpo: { mensaje: "Fallo del servidor" },
+      }),
     );
 
     await expect(actualizar("/usuario/123", { nombre: "Ana" })).rejects.toThrow(
@@ -81,10 +102,15 @@ describe("httpServicio", () => {
   it("notifica que la sesión expiró cuando Gmail responde 401", async () => {
     const notificarSesion = vi.spyOn(window, "dispatchEvent");
     fetch.mockResolvedValue(
-      crearRespuesta({ status: 401, cuerpo: { message: "No hay una sesión activa." } }),
+      crearRespuesta({
+        status: 401,
+        cuerpo: { message: "No hay una sesión activa." },
+      }),
     );
 
-    await expect(obtener("/api/gmail/suscripciones")).rejects.toThrow("No hay una sesión activa.");
+    await expect(obtener("/api/gmail/suscripciones")).rejects.toThrow(
+      "No hay una sesión activa.",
+    );
 
     expect(notificarSesion).toHaveBeenCalledWith(
       expect.objectContaining({ type: "finapp:sesion-requerida" }),
@@ -97,7 +123,9 @@ describe("httpServicio", () => {
       crearRespuesta({ status: 400, cuerpo: "Solicitud inválida" }),
     );
 
-    await expect(eliminar("/usuario/123")).rejects.toThrow("Solicitud inválida");
+    await expect(eliminar("/usuario/123")).rejects.toThrow(
+      "Solicitud inválida",
+    );
     expect(espiaError).toHaveBeenCalledWith(
       "[HTTP][ERROR]",
       expect.objectContaining({ metodo: "DELETE", status: 400 }),

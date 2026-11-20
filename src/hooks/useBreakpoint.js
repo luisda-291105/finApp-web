@@ -70,5 +70,10 @@ export function useBreakpoint() {
     }
   };
 
-  return { isMobile: !esDesktop, isDesktop: esDesktop, sidebarColapsada, toggleSidebar };
+  return {
+    isMobile: !esDesktop,
+    isDesktop: esDesktop,
+    sidebarColapsada,
+    toggleSidebar,
+  };
 }

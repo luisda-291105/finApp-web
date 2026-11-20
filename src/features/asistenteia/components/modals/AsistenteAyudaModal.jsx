@@ -14,7 +14,11 @@ import { useCierreConEsc } from "../../../../hooks/useCierreConEsc";
 import { useDeslizarParaCerrar } from "../../../../hooks/useDeslizarParaCerrar";
 import { useRetornoDeFoco } from "../../../../hooks/useRetornoDeFoco";
 import { useAsistenteHistorial } from "../../hooks/useAsistenteHistorial";
-import { conversarConAsistente, conversarConAsistentePublico, confirmarAccionAsistente } from "../../services/asistenteServicio";
+import {
+  conversarConAsistente,
+  conversarConAsistentePublico,
+  confirmarAccionAsistente,
+} from "../../services/asistenteServicio";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
 
 const SUGERENCIAS = [
@@ -40,7 +44,8 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
   const panelRef = useRef(null);
   const logRef = useRef(null);
   const peticionRef = useRef(null);
-  const { mensajes, setMensajes, sesiones, nuevaSesion, abrirSesion } = useAsistenteHistorial(usuario?.idUsuario);
+  const { mensajes, setMensajes, sesiones, nuevaSesion, abrirSesion } =
+    useAsistenteHistorial(usuario?.idUsuario);
   const [vista, setVista] = useState("conversacion");
   const [entrada, setEntrada] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -67,11 +72,17 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
 
   const enviarMensaje = async (texto, incluirEnConversacion = true) => {
     const pregunta = String(texto || "").trim();
-    if (!pregunta || cargando || pregunta.length > MAX_CARACTERES_PREGUNTA) return;
+    if (!pregunta || cargando || pregunta.length > MAX_CARACTERES_PREGUNTA)
+      return;
 
-    const historial = mensajes.slice(-20).map(({ rol, contenido }) => ({ rol, contenido }));
+    const historial = mensajes
+      .slice(-20)
+      .map(({ rol, contenido }) => ({ rol, contenido }));
     if (incluirEnConversacion) {
-      setMensajes((actuales) => [...actuales, { rol: "user", contenido: pregunta }]);
+      setMensajes((actuales) => [
+        ...actuales,
+        { rol: "user", contenido: pregunta },
+      ]);
     }
     setEntrada("");
     setError("");
@@ -81,15 +92,23 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
     const controlador = new AbortController();
     peticionRef.current = controlador;
     try {
-      const consultar = esPersonal ? conversarConAsistente : conversarConAsistentePublico;
-      const datos = await consultar({ mensaje: pregunta, historial }, controlador.signal);
-      setMensajes((actuales) => [...actuales, {
-        rol: "assistant",
-        contenido: datos.respuesta,
-        fuentes: datos.fuentes || [],
-        aviso: datos.aviso || "",
-        accionPendiente: datos.accionPendiente || null,
-      }]);
+      const consultar = esPersonal
+        ? conversarConAsistente
+        : conversarConAsistentePublico;
+      const datos = await consultar(
+        { mensaje: pregunta, historial },
+        controlador.signal,
+      );
+      setMensajes((actuales) => [
+        ...actuales,
+        {
+          rol: "assistant",
+          contenido: datos.respuesta,
+          fuentes: datos.fuentes || [],
+          aviso: datos.aviso || "",
+          accionPendiente: datos.accionPendiente || null,
+        },
+      ]);
     } catch (fallo) {
       if (fallo.name !== "AbortError") {
         setError(fallo.message || "No se pudo obtener una respuesta.");
@@ -109,14 +128,26 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
     setError("");
     try {
       const resultado = await confirmarAccionAsistente(token);
-      setMensajes((actuales) => actuales.map((mensaje, i) => i === indice
-        ? { ...mensaje, contenido: resultado.respuesta || "Operación completada.", accionPendiente: null }
-        : mensaje));
+      setMensajes((actuales) =>
+        actuales.map((mensaje, i) =>
+          i === indice
+            ? {
+                ...mensaje,
+                contenido: resultado.respuesta || "Operación completada.",
+                accionPendiente: null,
+              }
+            : mensaje,
+        ),
+      );
     } catch (fallo) {
       const detalle = fallo.message || "No se pudo confirmar la operación.";
-      setMensajes((actuales) => actuales.map((mensaje, i) => i === indice
-        ? { ...mensaje, contenido: detalle, accionPendiente: null }
-        : mensaje));
+      setMensajes((actuales) =>
+        actuales.map((mensaje, i) =>
+          i === indice
+            ? { ...mensaje, contenido: detalle, accionPendiente: null }
+            : mensaje,
+        ),
+      );
       setError("");
     } finally {
       setCargando(false);
@@ -139,13 +170,20 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
 
   const mostrarFechaSesion = (fecha) => {
     const valor = new Date(fecha);
-    return Number.isNaN(valor.getTime()) ? "Fecha desconocida" : valor.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+    return Number.isNaN(valor.getTime())
+      ? "Fecha desconocida"
+      : valor.toLocaleString("es-CO", {
+          dateStyle: "short",
+          timeStyle: "short",
+        });
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bg-dark/70 p-4"
-      onClick={(evento) => evento.target === evento.currentTarget && !cargando && alCerrar()}
+      className="modal-overlay-dashboard z-[100] flex items-end justify-center bg-bg-dark/70 p-0 sm:items-center sm:p-4"
+      onClick={(evento) =>
+        evento.target === evento.currentTarget && !cargando && alCerrar()
+      }
     >
       <FocusTrap focusTrapOptions={crearOpcionesTrampa(panelRef)}>
         <section
@@ -155,12 +193,21 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
           aria-labelledby="asistente-titulo"
           aria-describedby="asistente-aviso"
           tabIndex={-1}
-          className="asistente-modal glass-surface relative flex max-h-[85vh] w-[90vw] max-w-md flex-col overflow-hidden rounded-3xl border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none"
+          className="asistente-modal glass-surface modal-sheet-mobile relative mb-[var(--bottom-nav-alto)] flex max-h-[85dvh] w-[90vw] max-w-md flex-col overflow-hidden rounded-t-[1.75rem] border border-border-line/30 bg-bg-cream/95 text-bg-dark shadow-xl outline-none sm:mb-0 sm:rounded-3xl"
         >
           <header className="flex shrink-0 items-start justify-between gap-3 border-b border-border-line/30 px-5 py-4">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <h2 id="asistente-titulo" className="font-display text-lg font-semibold">Asistente de FinApp</h2>
-              <p className="text-xs text-slate-text">{esPersonal ? "Consulta tus datos y administra FinApp con tu sesión." : "Pregunta cómo funciona FinApp y cómo usar sus funciones."}</p>
+              <h2
+                id="asistente-titulo"
+                className="font-display text-lg font-semibold"
+              >
+                Asistente de FinApp
+              </h2>
+              <p className="text-xs text-slate-text">
+                {esPersonal
+                  ? "Consulta tus datos y administra FinApp con tu sesión."
+                  : "Pregunta cómo funciona FinApp y cómo usar sus funciones."}
+              </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               {mensajes.length > 0 && vista === "conversacion" && (
@@ -183,10 +230,32 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
             </div>
           </header>
 
-          {esPersonal && <nav aria-label="Vistas del asistente" className="flex shrink-0 gap-2 border-b border-border-line/30 px-5 py-2">
-            <button type="button" role="tab" aria-selected={vista === "conversacion"} onClick={() => setVista("conversacion")} className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${vista === "conversacion" ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10"}`}>Conversación</button>
-            <button type="button" role="tab" aria-selected={vista === "sesiones"} onClick={() => setVista("sesiones")} className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${vista === "sesiones" ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10"}`}><History className="h-3.5 w-3.5" aria-hidden="true" />Sesiones pasadas ({sesiones.length})</button>
-          </nav>}
+          {esPersonal && (
+            <nav
+              aria-label="Vistas del asistente"
+              className="flex shrink-0 gap-2 border-b border-border-line/30 px-5 py-2"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={vista === "conversacion"}
+                onClick={() => setVista("conversacion")}
+                className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${vista === "conversacion" ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10"}`}
+              >
+                Conversación
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={vista === "sesiones"}
+                onClick={() => setVista("sesiones")}
+                className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${vista === "sesiones" ? "bg-emerald-primary text-bg-cream" : "text-slate-text hover:bg-emerald-primary/10"}`}
+              >
+                <History className="h-3.5 w-3.5" aria-hidden="true" />
+                Sesiones pasadas ({sesiones.length})
+              </button>
+            </nav>
+          )}
 
           <div
             ref={logRef}
@@ -194,70 +263,156 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
             aria-live={vista === "sesiones" ? undefined : "polite"}
             aria-relevant={vista === "sesiones" ? undefined : "additions"}
             aria-atomic={vista === "sesiones" ? undefined : "false"}
-            aria-label={vista === "sesiones" ? "Sesiones anteriores del asistente" : "Mensajes del asistente"}
+            aria-label={
+              vista === "sesiones"
+                ? "Sesiones anteriores del asistente"
+                : "Mensajes del asistente"
+            }
             className="min-h-0 flex-1 overflow-y-auto px-5 py-4"
           >
             {vista === "sesiones" && esPersonal ? (
               <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3"><p className="text-sm text-slate-text">Tus conversaciones guardadas en este dispositivo.</p><button type="button" onClick={iniciarNuevaSesion} className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream"><Plus className="h-3.5 w-3.5" aria-hidden="true" />Nueva</button></div>
-                {sesiones.length ? <ul className="space-y-2">{sesiones.map((sesion) => <li key={sesion.id}><button type="button" onClick={() => { abrirSesion(sesion.id); setVista("conversacion"); setError(""); setConsultaFallida(""); }} className="w-full rounded-xl border border-border-line/60 bg-bg-cream/70 p-3 text-left hover:border-emerald-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"><span className="block truncate text-sm font-semibold text-bg-dark">{sesion.titulo || "Conversación"}</span><span className="mt-1 flex flex-wrap justify-between gap-2 text-[11px] text-slate-text"><time dateTime={sesion.actualizadaEn}>{mostrarFechaSesion(sesion.actualizadaEn)}</time><span>{sesion.mensajes?.length || 0} mensajes</span></span></button></li>)}</ul>
-                  : <p className="rounded-xl border border-border-line/50 p-4 text-sm text-slate-text">Todavía no tienes conversaciones guardadas.</p>}
-              </div>
-            ) : (
-            <>
-            {mensajes.length === 0 ? (
-              <div className="flex flex-col gap-4">
-                <p className="text-sm text-slate-text">
-                  {esPersonal
-                    ? "Consulta tus contactos, movimientos, bolsillos, grupos y fuentes. Puedes pedir cambios; el asistente te mostrará cada operación para que la confirmes."
-                    : "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios."}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {SUGERENCIAS.map((sugerencia) => (
-                    <button
-                      key={sugerencia}
-                      type="button"
-                      disabled={cargando}
-                      onClick={() => void enviarMensaje(sugerencia)}
-                      className="rounded-full border border-border-line/60 bg-bg-cream px-3 py-1.5 text-left text-xs text-bg-dark hover:border-emerald-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
-                    >
-                      {sugerencia}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-slate-text">
+                    Tus conversaciones guardadas en este dispositivo.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={iniciarNuevaSesion}
+                    className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream"
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                    Nueva
+                  </button>
                 </div>
+                {sesiones.length ? (
+                  <ul className="space-y-2">
+                    {sesiones.map((sesion) => (
+                      <li key={sesion.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            abrirSesion(sesion.id);
+                            setVista("conversacion");
+                            setError("");
+                            setConsultaFallida("");
+                          }}
+                          className="w-full rounded-xl border border-border-line/60 bg-bg-cream/70 p-3 text-left hover:border-emerald-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"
+                        >
+                          <span className="block truncate text-sm font-semibold text-bg-dark">
+                            {sesion.titulo || "Conversación"}
+                          </span>
+                          <span className="mt-1 flex flex-wrap justify-between gap-2 text-[11px] text-slate-text">
+                            <time dateTime={sesion.actualizadaEn}>
+                              {mostrarFechaSesion(sesion.actualizadaEn)}
+                            </time>
+                            <span>{sesion.mensajes?.length || 0} mensajes</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="rounded-xl border border-border-line/50 p-4 text-sm text-slate-text">
+                    Todavía no tienes conversaciones guardadas.
+                  </p>
+                )}
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {mensajes.map((mensaje, indice) => (
-                  <div key={`${mensaje.rol}-${indice}`} className={mensaje.rol === "user" ? "flex justify-end" : "flex justify-start"}>
-                    <div className={mensaje.rol === "user"
-                      ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream shadow-sm"
-                      : "asistente-mensaje-ia max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/70 bg-white px-3.5 py-2.5 text-sm text-bg-dark shadow-sm"}>
-                      {mensaje.rol !== "user" && (
-                        <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-primary">
-                          <BotMessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                          Asistente
-                        </p>
-                      )}
-                      <p className="whitespace-pre-line leading-relaxed">
-                        {mensaje.rol === "user" && <span className="sr-only">Tú: </span>}
-                        {mensaje.contenido}
-                      </p>
-                      {mensaje.accionPendiente && esPersonal && (
-                        <div className="mt-3 rounded-xl border border-emerald-primary/30 bg-emerald-primary/5 p-3">
-                          <p className="text-xs font-semibold text-emerald-primary">Revisa antes de confirmar</p>
-                          <p className="mt-1 text-sm">{mensaje.accionPendiente.descripcion}</p>
-                          <button type="button" disabled={cargando} onClick={() => void confirmarAccion(mensaje.accionPendiente.token, indice)} className="mt-2 rounded-lg bg-emerald-primary px-3 py-2 text-sm font-semibold text-bg-cream disabled:opacity-50">Confirmar operación</button>
-                        </div>
-                      )}
-                      {mensaje.aviso && <p className="mt-2 text-xs text-slate-text">{mensaje.aviso}</p>}
+              <>
+                {mensajes.length === 0 ? (
+                  <div className="flex flex-col gap-4">
+                    <p className="text-sm text-slate-text">
+                      {esPersonal
+                        ? "Consulta tus contactos, movimientos, bolsillos, grupos y fuentes. Puedes pedir cambios; el asistente te mostrará cada operación para que la confirmes."
+                        : "Pregunta cómo funciona FinApp y cómo usar sus secciones. El asistente público no consulta datos personales ni realiza cambios."}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {SUGERENCIAS.map((sugerencia) => (
+                        <button
+                          key={sugerencia}
+                          type="button"
+                          disabled={cargando}
+                          onClick={() => void enviarMensaje(sugerencia)}
+                          className="rounded-full border border-border-line/60 bg-bg-cream px-3 py-1.5 text-left text-xs text-bg-dark hover:border-emerald-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-50"
+                        >
+                          {sugerencia}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                ))}
-                {cargando && <p role="status" className="text-sm text-slate-text">Preparando respuesta…</p>}
-              </div>
-            )}
-            </>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {mensajes.map((mensaje, indice) => (
+                      <div
+                        key={`${mensaje.rol}-${indice}`}
+                        className={
+                          mensaje.rol === "user"
+                            ? "flex justify-end"
+                            : "flex justify-start"
+                        }
+                      >
+                        <div
+                          className={
+                            mensaje.rol === "user"
+                              ? "max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-emerald-primary px-3.5 py-2.5 text-sm text-bg-cream shadow-sm"
+                              : "asistente-mensaje-ia max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md border border-border-line/70 bg-white px-3.5 py-2.5 text-sm text-bg-dark shadow-sm"
+                          }
+                        >
+                          {mensaje.rol !== "user" && (
+                            <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-primary">
+                              <BotMessageSquare
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
+                              Asistente
+                            </p>
+                          )}
+                          <p className="whitespace-pre-line leading-relaxed">
+                            {mensaje.rol === "user" && (
+                              <span className="sr-only">Tú: </span>
+                            )}
+                            {mensaje.contenido}
+                          </p>
+                          {mensaje.accionPendiente && esPersonal && (
+                            <div className="mt-3 rounded-xl border border-emerald-primary/30 bg-emerald-primary/5 p-3">
+                              <p className="text-xs font-semibold text-emerald-primary">
+                                Revisa antes de confirmar
+                              </p>
+                              <p className="mt-1 text-sm">
+                                {mensaje.accionPendiente.descripcion}
+                              </p>
+                              <button
+                                type="button"
+                                disabled={cargando}
+                                onClick={() =>
+                                  void confirmarAccion(
+                                    mensaje.accionPendiente.token,
+                                    indice,
+                                  )
+                                }
+                                className="mt-2 rounded-lg bg-emerald-primary px-3 py-2 text-sm font-semibold text-bg-cream disabled:opacity-50"
+                              >
+                                Confirmar operación
+                              </button>
+                            </div>
+                          )}
+                          {mensaje.aviso && (
+                            <p className="mt-2 text-xs text-slate-text">
+                              {mensaje.aviso}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {cargando && (
+                      <p role="status" className="text-sm text-slate-text">
+                        Preparando respuesta…
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -268,20 +423,40 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
                 : "Asistente informativo: explica las funciones de FinApp y cómo usarlas. No consulta datos personales ni realiza cambios."}
             </p>
             {error && (
-              <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div
+                role="alert"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              >
                 <span>{error}</span>
-                {consultaFallida && <button type="button" onClick={() => void enviarMensaje(consultaFallida, false)} className="font-semibold underline">Reintentar</button>}
+                {consultaFallida && (
+                  <button
+                    type="button"
+                    onClick={() => void enviarMensaje(consultaFallida, false)}
+                    className="font-semibold underline"
+                  >
+                    Reintentar
+                  </button>
+                )}
               </div>
             )}
-            <form onSubmit={enviarFormulario} className="flex items-center gap-2">
-              <label htmlFor="asistente-entrada" className="sr-only">Tu pregunta</label>
+            <form
+              onSubmit={enviarFormulario}
+              className="flex items-center gap-2"
+            >
+              <label htmlFor="asistente-entrada" className="sr-only">
+                Tu pregunta
+              </label>
               <input
                 id="asistente-entrada"
                 type="text"
                 value={entrada}
                 maxLength={MAX_CARACTERES_PREGUNTA}
                 onChange={(evento) => setEntrada(evento.target.value)}
-                placeholder={esPersonal ? "Pregunta por tus datos o pide una operación…" : "Escribe una pregunta sobre FinApp…"}
+                placeholder={
+                  esPersonal
+                    ? "Pregunta por tus datos o pide una operación…"
+                    : "Escribe una pregunta sobre FinApp…"
+                }
                 disabled={cargando}
                 className="min-w-0 flex-1 rounded-xl border border-border-line/60 bg-bg-cream px-3 py-2 text-sm text-bg-dark placeholder:text-slate-text outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60"
               />
@@ -293,7 +468,9 @@ export default function AsistenteAyudaModal({ abierto, alCerrar, triggerRef }) {
                 {cargando ? "Enviando…" : "Enviar"}
               </button>
             </form>
-            <p className="text-right text-[11px] text-slate-text">{entrada.length}/{MAX_CARACTERES_PREGUNTA}</p>
+            <p className="text-right text-[11px] text-slate-text">
+              {entrada.length}/{MAX_CARACTERES_PREGUNTA}
+            </p>
           </footer>
         </section>
       </FocusTrap>

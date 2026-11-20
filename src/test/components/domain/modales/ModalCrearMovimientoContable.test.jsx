@@ -1,4 +1,11 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ModalCrearMovimientoContable from "../../../../features/contabilidad/components/modals/ModalCrearMovimientoContable";
@@ -6,11 +13,41 @@ import ModalCrearMovimientoContable from "../../../../features/contabilidad/comp
 afterEach(cleanup);
 
 const bolsillos = [
-  { idBolsillo: "destino-gasto", nombre: "Gastos diarios", tipo: "GASTO", estado: true, saldoDisponible: 0 },
-  { idBolsillo: "origen-ingreso", nombre: "Nómina", tipo: "INGRESO", estado: true, saldoDisponible: 500000 },
-  { idBolsillo: "origen-ahorro", nombre: "Ahorro disponible", tipo: "AHORRO", estado: true, saldoDisponible: 30000 },
-  { idBolsillo: "ahorro-vacio", nombre: "Ahorro vacío", tipo: "AHORRO", estado: true, saldoDisponible: 0 },
-  { idBolsillo: "origen-gasto", nombre: "Otro gasto", tipo: "GASTO", estado: true, saldoDisponible: 100000 },
+  {
+    idBolsillo: "destino-gasto",
+    nombre: "Gastos diarios",
+    tipo: "GASTO",
+    estado: true,
+    saldoDisponible: 0,
+  },
+  {
+    idBolsillo: "origen-ingreso",
+    nombre: "Nómina",
+    tipo: "INGRESO",
+    estado: true,
+    saldoDisponible: 500000,
+  },
+  {
+    idBolsillo: "origen-ahorro",
+    nombre: "Ahorro disponible",
+    tipo: "AHORRO",
+    estado: true,
+    saldoDisponible: 30000,
+  },
+  {
+    idBolsillo: "ahorro-vacio",
+    nombre: "Ahorro vacío",
+    tipo: "AHORRO",
+    estado: true,
+    saldoDisponible: 0,
+  },
+  {
+    idBolsillo: "origen-gasto",
+    nombre: "Otro gasto",
+    tipo: "GASTO",
+    estado: true,
+    saldoDisponible: 100000,
+  },
 ];
 
 function renderModal(props = {}) {
@@ -22,7 +59,7 @@ function renderModal(props = {}) {
       alCerrar={vi.fn()}
       alGuardar={vi.fn().mockResolvedValue(undefined)}
       {...props}
-    />
+    />,
   );
 }
 
@@ -32,14 +69,28 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
     renderModal();
 
     const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
-    await usuario.selectOptions(within(dialogo).getByLabelText("Bolsillo"), "destino-gasto");
-    await usuario.selectOptions(within(dialogo).getByLabelText("¿De dónde salió el dinero?"), "BOLSILLO");
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("Bolsillo"),
+      "destino-gasto",
+    );
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("¿De dónde salió el dinero?"),
+      "BOLSILLO",
+    );
 
     const origen = within(dialogo).getByLabelText("Bolsillo de origen");
-    expect(within(origen).getByRole("option", { name: /Nómina/ })).toBeInTheDocument();
-    expect(within(origen).getByRole("option", { name: /Ahorro disponible/ })).toBeInTheDocument();
-    expect(within(origen).queryByRole("option", { name: /Ahorro vacío/ })).not.toBeInTheDocument();
-    expect(within(origen).queryByRole("option", { name: /Otro gasto/ })).not.toBeInTheDocument();
+    expect(
+      within(origen).getByRole("option", { name: /Nómina/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(origen).getByRole("option", { name: /Ahorro disponible/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(origen).queryByRole("option", { name: /Ahorro vacío/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(origen).queryByRole("option", { name: /Otro gasto/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("pide el origen de llegada al registrar un ingreso", async () => {
@@ -47,23 +98,44 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
     renderModal();
 
     const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
-    await usuario.selectOptions(within(dialogo).getByLabelText("Bolsillo"), "origen-ingreso");
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("Bolsillo"),
+      "origen-ingreso",
+    );
 
-    const llegada = within(dialogo).getByLabelText("¿De dónde llegó el dinero?");
-    expect(within(llegada).getByRole("option", { name: "Efectivo" })).toBeInTheDocument();
-    expect(within(llegada).getByRole("option", { name: "Bolsillo" })).toBeInTheDocument();
+    const llegada = within(dialogo).getByLabelText(
+      "¿De dónde llegó el dinero?",
+    );
+    expect(
+      within(llegada).getByRole("option", { name: "Efectivo" }),
+    ).toBeInTheDocument();
+    expect(
+      within(llegada).getByRole("option", { name: "Bolsillo" }),
+    ).toBeInTheDocument();
   });
 
   it("ofrece cuentas bancarias como origen del dinero", async () => {
     const usuario = userEvent.setup();
-    renderModal({ tarjetas: [{ idTarjeta: "tarjeta-1", entidad: "Bancolombia", titular: "Luis" }] });
+    renderModal({
+      tarjetas: [
+        { idTarjeta: "tarjeta-1", entidad: "Bancolombia", titular: "Luis" },
+      ],
+    });
 
     const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
-    await usuario.selectOptions(within(dialogo).getByLabelText("Bolsillo"), "destino-gasto");
-    await usuario.selectOptions(within(dialogo).getByLabelText("¿De dónde salió el dinero?"), "CUENTA");
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("Bolsillo"),
+      "destino-gasto",
+    );
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("¿De dónde salió el dinero?"),
+      "CUENTA",
+    );
 
     const cuenta = within(dialogo).getByLabelText("Cuenta");
-    expect(within(cuenta).getByRole("option", { name: /Bancolombia/ })).toBeInTheDocument();
+    expect(
+      within(cuenta).getByRole("option", { name: /Bancolombia/ }),
+    ).toBeInTheDocument();
   });
 
   it("marca los bolsillos fijos en la lista y registra su tipo", async () => {
@@ -71,19 +143,96 @@ describe("ModalCrearMovimientoContable: origen del dinero", () => {
     const alGuardar = vi.fn().mockResolvedValue(undefined);
     renderModal({
       alGuardar,
-      bolsillos: [{ idBolsillo: "fijo-gasto", nombre: "Gastos", tipo: "GASTO", estado: true, saldoDisponible: 0 }],
+      bolsillos: [
+        {
+          idBolsillo: "fijo-gasto",
+          nombre: "Gastos",
+          tipo: "GASTO",
+          estado: true,
+          saldoDisponible: 0,
+        },
+      ],
     });
 
     const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
-    expect(within(dialogo).getByRole("option", { name: "Gastos · GASTO · Fijo" })).toBeInTheDocument();
-    await usuario.selectOptions(within(dialogo).getByLabelText("Bolsillo"), "fijo-gasto");
+    expect(
+      within(dialogo).getByRole("option", { name: "Gastos · GASTO · Fijo" }),
+    ).toBeInTheDocument();
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("Bolsillo"),
+      "fijo-gasto",
+    );
     await usuario.type(within(dialogo).getByLabelText(/Monto/), "5000");
     await usuario.type(within(dialogo).getByLabelText(/Categoría/), "Mercado");
-    await usuario.selectOptions(within(dialogo).getByLabelText("¿De dónde salió el dinero?"), "EFECTIVO");
-    await usuario.click(within(dialogo).getByRole("button", { name: "Guardar movimiento" }));
+    await usuario.selectOptions(
+      within(dialogo).getByLabelText("¿De dónde salió el dinero?"),
+      "EFECTIVO",
+    );
+    await usuario.click(
+      within(dialogo).getByRole("button", { name: "Guardar movimiento" }),
+    );
 
-    await waitFor(() => expect(alGuardar).toHaveBeenCalledWith(expect.objectContaining({
-      idBolsillo: "fijo-gasto", tipo: "GASTO", origenTipo: "EFECTIVO", monto: 5000,
-    })));
+    await waitFor(() =>
+      expect(alGuardar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          idBolsillo: "fijo-gasto",
+          tipo: "GASTO",
+          origenTipo: "EFECTIVO",
+          monto: 5000,
+        }),
+      ),
+    );
+  });
+
+  it("no ofrece el bolsillo «Por revisar» como destino del movimiento", () => {
+    renderModal({
+      bolsillos: [
+        ...bolsillos,
+        {
+          idBolsillo: "por-revisar",
+          nombre: "Por revisar",
+          tipo: "POR_REVISAR",
+          estado: true,
+          saldoDisponible: 0,
+        },
+      ],
+    });
+
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    const destino = within(dialogo).getByLabelText("Bolsillo");
+    expect(
+      within(destino).queryByRole("option", { name: /Por revisar/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(destino).getByRole("option", { name: /Gastos diarios/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("abre el calendario personalizado al pulsar el campo de fecha", async () => {
+    const usuario = userEvent.setup();
+    renderModal();
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    const fecha = within(dialogo).getByLabelText("Fecha");
+    await usuario.click(fecha);
+    expect(
+      within(dialogo).getByRole("dialog", { name: "Elegir fecha" }),
+    ).toBeInTheDocument();
+  });
+
+  it("Escape en el calendario lo cierra sin cerrar el modal y devuelve el foco al campo", async () => {
+    const usuario = userEvent.setup();
+    renderModal();
+    const dialogo = screen.getByRole("dialog", { name: "Nuevo movimiento" });
+    const fecha = within(dialogo).getByLabelText("Fecha");
+    await usuario.click(fecha);
+    const dia = within(dialogo).getByRole("button", {
+      name: /Miércoles, 18 de noviembre de 2026/i,
+    });
+    fireEvent.keyDown(dia, { key: "Escape" });
+    expect(
+      within(dialogo).queryByRole("dialog", { name: "Elegir fecha" }),
+    ).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Nuevo movimiento" })).toBeInTheDocument();
+    expect(fecha).toHaveFocus();
   });
 });

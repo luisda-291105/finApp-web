@@ -1,259 +1,522 @@
 /**
- * @uso        Modal de detalle, fuentes y conversación del grupo
+ * @uso        Modal de detalle del grupo (fuentes vinculadas y chat entre miembros)
  * @funciones  GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef, alGrupoActualizado })
- * @datos      Gestiona datos del grupo mediante servicios de dominio
- * @eventos    Cambios de pestaña, vinculación, edición y cierre
+ * @datos      Gestiona los datos del grupo mediante servicios de dominio
+ * @eventos    Cambios de pestaña, desvincular fuente, administrar integrantes, enviar mensaje y cierre
  * @estados    Estado local del detalle
  * @usadoPor   GruposPage
  */
-import { useEffect, useMemo, useState } from "react";
-import { Settings2 } from "lucide-react";
-import EditarGrupoForm from "../forms/EditarGrupoForm";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Search, UserRoundX } from "lucide-react";
 import ModalDetalleRegistro from "../../../../components/domain/modales/ModalDetalleRegistro";
 import { useUsuarioActivo } from "../../../../context/UsuarioActivoContext";
-import { crearFuente, obtenerFuentesPorUsuario } from "../../../../services/fuenteServicio";
-import { actualizarGrupo, eliminarGrupo, desvincularFuenteDeGrupo, vincularFuenteAGrupo } from "../../services/gruposService";
-import { crearEnlaceTelegram, desvincularTelegram, enviarMensajeTelegram, obtenerEstadoTelegram, obtenerMensajesTelegram } from "../../../../services/telegramServicio";
-import { AlertaGlobal } from "../../../../components/ui/alertas";
+import {
+  desvincularFuenteDeGrupo,
+  listarMensajesGrupo,
+  enviarMensajeGrupo,
+  listarMiembrosGrupo,
+  buscarUsuariosGrupo,
+  agregarMiembroGrupo,
+  eliminarMiembroGrupo,
+} from "../../services/gruposService";
+import { AlertaGlobal } from "../../../../features/error";
 
-const PESTANAS = ["Fuentes", "Chat grupal"];
-function fechaLocalISO() {
-  const fecha = new Date();
-  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
-}
-function generarId() {
-  return globalThis.crypto?.randomUUID?.() || `fuente-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
+const PESTANAS = ["Fuentes", "Chat"];
+const RETRASO_BUSQUEDA_MS = 300;
+
 function listaRespuesta(respuesta) {
   const datos = respuesta?.datos ?? respuesta?.data ?? respuesta?.content;
-  return Array.isArray(respuesta) ? respuesta : Array.isArray(datos) ? datos : [];
+  return Array.isArray(respuesta)
+    ? respuesta
+    : Array.isArray(datos)
+      ? datos
+      : [];
 }
 
-function datosRespuesta(respuesta) { return respuesta?.datos ?? respuesta?.data ?? respuesta ?? {}; }
-
-/** Presenta los detalles y permite gestionar fuentes vinculadas al grupo. */
-export default function GrupoDetalleModal({ grupo, abierto, alCerrar, triggerRef, alGrupoActualizado }) {
+/** Presenta los detalles, las fuentes vinculadas y el chat del grupo. */
+export default function GrupoDetalleModal({
+  grupo,
+  abierto,
+  alCerrar,
+  triggerRef,
+  alGrupoActualizado,
+}) {
   const { usuario } = useUsuarioActivo();
-  const [fuentes, setFuentes] = useState([]);
   const [pestana, setPestana] = useState("Fuentes");
-  const [fuenteSeleccionada, setFuenteSeleccionada] = useState("");
-  const [tipoNuevaFuente, setTipoNuevaFuente] = useState("CORREO");
-  const [contenidoNuevaFuente, setContenidoNuevaFuente] = useState("");
   const [mensajes, setMensajes] = useState([]);
-  const [estadoTelegram, setEstadoTelegram] = useState(null);
-  const [enlaceTelegram, setEnlaceTelegram] = useState("");
-  const [cargandoTelegram, setCargandoTelegram] = useState(false);
-  const [enviandoTelegram, setEnviandoTelegram] = useState(false);
+  const [miembros, setMiembros] = useState([]);
+  const [cargandoChat, setCargandoChat] = useState(false);
+  const [cargandoMiembros, setCargandoMiembros] = useState(false);
+  const [enviandoMensaje, setEnviandoMensaje] = useState(false);
   const [borrador, setBorrador] = useState("");
-  const [correoInvitacion, setCorreoInvitacion] = useState("");
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [editando, setEditando] = useState(false);
-  const [confirmarBorrado, setConfirmarBorrado] = useState(false);
-  const [nombreEditado, setNombreEditado] = useState("");
-  const [descripcionEditada, setDescripcionEditada] = useState("");
-  const [configuracionAbierta, setConfiguracionAbierta] = useState(false);
-  const fuentesVinculadas = useMemo(() => grupo?.fuentes || [], [grupo?.fuentes]);
-  const idsVinculados = useMemo(() => new Set(fuentesVinculadas.map((fuente) => fuente.idFuente)), [fuentesVinculadas]);
-  const fuentesDisponibles = useMemo(() => fuentes.filter((fuente) => !idsVinculados.has(fuente.idFuente)), [fuentes, idsVinculados]);
+  const [busquedaMiembro, setBusquedaMiembro] = useState("");
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [buscandoMiembro, setBuscandoMiembro] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState("");
+  const [agregandoMiembro, setAgregandoMiembro] = useState("");
+  const [quitarMiembroId, setQuitarMiembroId] = useState("");
+  const temporizadorRef = useRef(null);
+  const listaRef = useRef(null);
+
+  const fuentesVinculadas = useMemo(
+    () => grupo?.fuentes || [],
+    [grupo?.fuentes],
+  );
+  const esPropietario = useMemo(
+    () =>
+      Boolean(
+        usuario?.idUsuario &&
+          miembros.some(
+            (miembro) =>
+              String(miembro.idUsuario) === String(usuario.idUsuario) &&
+              String(miembro.rol).toUpperCase() === "DUENO",
+          ),
+      ),
+    [miembros, usuario?.idUsuario],
+  );
 
   useEffect(() => {
-    if (!abierto || !grupo?.id || !usuario?.idUsuario) return undefined;
-    let vigente = true;
+    if (!abierto) return undefined;
     setPestana("Fuentes");
-    setConfiguracionAbierta(false);
-    setEditando(false);
-    setConfirmarBorrado(false);
-    setNombreEditado(grupo.nombre || "");
-    setDescripcionEditada(grupo.descripcion || "");
-    setError("");
+    setMensajes([]);
+    setMiembros([]);
+    setBusquedaMiembro("");
+    setResultadosBusqueda([]);
+    setErrorBusqueda("");
     setAviso("");
-    obtenerFuentesPorUsuario(usuario.idUsuario).then((respuesta) => {
-      if (vigente) setFuentes(listaRespuesta(respuesta));
-    }).catch((fallo) => {
-      if (vigente) setError(fallo?.message || "No se pudieron cargar tus fuentes.");
-    });
-    return () => { vigente = false; };
-  }, [abierto, grupo?.id, usuario?.idUsuario]);
+    setError("");
+    return undefined;
+  }, [abierto, grupo?.id]);
 
   useEffect(() => {
-    if (!abierto || configuracionAbierta || pestana !== "Chat grupal" || !usuario?.idUsuario) return undefined;
+    if (!abierto || !grupo?.id) return undefined;
     let vigente = true;
-    let consultando = false;
-    const consultar = async () => {
-      if (consultando) return;
-      consultando = true;
-      try {
-        const [estado, conversacion] = await Promise.all([obtenerEstadoTelegram(), obtenerMensajesTelegram()]);
-        if (!vigente) return;
-        setEstadoTelegram(datosRespuesta(estado));
-        setMensajes(listaRespuesta(conversacion));
-        setError("");
-      } catch (fallo) {
-        if (vigente) setError(fallo?.message || "No se pudo consultar el chat de Telegram.");
-      } finally {
-        consultando = false;
-        if (vigente) setCargandoTelegram(false);
-      }
+    setCargandoMiembros(true);
+    listarMiembrosGrupo(grupo.id)
+      .then((respuesta) => {
+        if (vigente) setMiembros(listaRespuesta(respuesta));
+      })
+      .catch((fallo) => {
+        if (vigente)
+          setError(fallo?.message || "No se pudieron cargar los integrantes.");
+      })
+      .finally(() => {
+        if (vigente) setCargandoMiembros(false);
+      });
+    return () => {
+      vigente = false;
     };
-    setCargandoTelegram(true);
-    consultar();
-    const intervalo = window.setInterval(consultar, 3000);
-    return () => { vigente = false; window.clearInterval(intervalo); };
-  }, [abierto, configuracionAbierta, pestana, usuario?.idUsuario]);
+  }, [abierto, grupo?.id]);
+
+  useEffect(() => {
+    if (!abierto || pestana !== "Chat" || !grupo?.id || !usuario?.idUsuario)
+      return undefined;
+    let vigente = true;
+    setCargandoChat(true);
+    listarMensajesGrupo(grupo.id)
+      .then((respuesta) => {
+        if (vigente) setMensajes(listaRespuesta(respuesta));
+      })
+      .catch((fallo) => {
+        if (vigente)
+          setError(fallo?.message || "No se pudo cargar la conversación.");
+      })
+      .finally(() => {
+        if (vigente) setCargandoChat(false);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [abierto, pestana, grupo?.id, usuario?.idUsuario]);
+
+  // Baja la consulta de integrantes al final de la lista
+  useEffect(() => {
+    if (pestana === "Chat" && listaRef.current) {
+      listaRef.current.scrollTop = listaRef.current.scrollHeight;
+    }
+  }, [mensajes, pestana]);
+
+  // Busqueda de usuarios para añadir integrantes (con retaso)
+  useEffect(() => {
+    const consulta = busquedaMiembro.trim();
+    if (temporizadorRef.current) window.clearTimeout(temporizadorRef.current);
+    if (consulta.length < 2) {
+      setResultadosBusqueda([]);
+      setErrorBusqueda("");
+      setBuscandoMiembro(false);
+      return undefined;
+    }
+    setBuscandoMiembro(true);
+    setErrorBusqueda("");
+    temporizadorRef.current = window.setTimeout(() => {
+      buscarUsuariosGrupo(consulta)
+        .then((respuesta) => {
+          setResultadosBusqueda(listaRespuesta(respuesta));
+          setErrorBusqueda("");
+        })
+        .catch((fallo) =>
+          setErrorBusqueda(
+            fallo?.message || "No se pudo buscar usuarios.",
+          ),
+        )
+        .finally(() => setBuscandoMiembro(false));
+    }, RETRASO_BUSQUEDA_MS);
+    return () => {
+      if (temporizadorRef.current) window.clearTimeout(temporizadorRef.current);
+    };
+  }, [busquedaMiembro]);
 
   if (!abierto || !grupo) return null;
+
   const actualizarGrupoEnVista = (respuesta) => {
     const grupoActualizado = respuesta?.data || respuesta;
-    if (grupoActualizado?.idGrupo || grupoActualizado?.id) alGrupoActualizado?.(grupoActualizado);
+    if (grupoActualizado?.idGrupo || grupoActualizado?.id)
+      alGrupoActualizado?.(grupoActualizado);
   };
-  const guardarGrupo = async (evento) => {
-    evento.preventDefault();
-    const nombre = nombreEditado.trim();
-    const descripcion = descripcionEditada.trim();
-    if (!nombre || !descripcion || !usuario?.idUsuario) { setError("Nombre y descripción son obligatorios."); return; }
-    setCargando(true); setError("");
-    try {
-      const respuesta = await actualizarGrupo(grupo.id, { nombre, descripcion }, usuario.idUsuario);
-      actualizarGrupoEnVista(respuesta?.data || respuesta || { ...grupo, nombre, descripcion });
-      setEditando(false); setAviso("Grupo actualizado.");
-    } catch (fallo) { setError(fallo?.message || "No se pudo actualizar el grupo."); }
-    finally { setCargando(false); }
-  };
-  const borrarGrupo = async () => {
-    if (!usuario?.idUsuario || cargando) return;
-    setCargando(true); setError("");
-    try {
-      await eliminarGrupo(grupo.id, usuario.idUsuario);
-      alGrupoActualizado?.({ idGrupo: grupo.id, eliminado: true });
-      alCerrar();
-    } catch (fallo) { setError(fallo?.message || "No se pudo eliminar el grupo."); }
-    finally { setCargando(false); }
-  };
-  const vincular = async (fuente) => {
-    if (!usuario?.idUsuario || !fuente?.idFuente) return;
-    setCargando(true); setError(""); setAviso("");
-    try {
-      const respuesta = await vincularFuenteAGrupo(grupo.id, fuente.idFuente, usuario.idUsuario);
-      actualizarGrupoEnVista(respuesta);
-      setFuenteSeleccionada(""); setAviso(`“${fuente.contenido}” quedó vinculada al grupo.`);
-    } catch (fallo) { setError(fallo?.message || "No se pudo vincular la fuente."); }
-    finally { setCargando(false); }
-  };
+
   const desvincular = async (fuente) => {
     if (!usuario?.idUsuario || !fuente?.idFuente) return;
-    setCargando(true); setError(""); setAviso("");
+    setCargando(true);
+    setError("");
+    setAviso("");
     try {
-      const respuesta = await desvincularFuenteDeGrupo(grupo.id, fuente.idFuente, usuario.idUsuario);
+      const respuesta = await desvincularFuenteDeGrupo(
+        grupo.id,
+        fuente.idFuente,
+        usuario.idUsuario,
+      );
       actualizarGrupoEnVista(respuesta);
       setAviso(`“${fuente.contenido}” se desvinculó del grupo.`);
-    } catch (fallo) { setError(fallo?.message || "No se pudo desvincular la fuente."); }
-    finally { setCargando(false); }
+    } catch (fallo) {
+      setError(fallo?.message || "No se pudo desvincular la fuente.");
+    } finally {
+      setCargando(false);
+    }
   };
-  const registrarYVincular = async (evento) => {
-    evento.preventDefault();
-    if (!contenidoNuevaFuente.trim() || !usuario?.idUsuario) return;
-    setCargando(true); setError(""); setAviso("");
-    const fuente = { idFuente: generarId(), tipo: tipoNuevaFuente, contenido: contenidoNuevaFuente.trim(), fechaCreacion: fechaLocalISO(), usuario: { idUsuario: usuario.idUsuario } };
-    try {
-      const respuesta = await crearFuente(fuente);
-      const fuenteGuardada = respuesta?.data || respuesta || fuente;
-      await vincularFuenteAGrupo(grupo.id, fuenteGuardada.idFuente, usuario.idUsuario);
-      setFuentes((actuales) => [...actuales, fuenteGuardada]);
-      actualizarGrupoEnVista({ ...grupo, fuentes: [...fuentesVinculadas, fuenteGuardada] });
-      setContenidoNuevaFuente(""); setAviso("La fuente quedó registrada y vinculada al grupo.");
-    } catch (fallo) { setError(fallo?.message || "No se pudo registrar y vincular la fuente."); }
-    finally { setCargando(false); }
-  };
-  const vincularTelegram = async () => {
-    setCargandoTelegram(true); setError(""); setAviso("");
-    try {
-      const respuesta = await crearEnlaceTelegram();
-      const datos = datosRespuesta(respuesta);
-      if (!datos.enlace) throw new Error("No se recibió un enlace de Telegram válido.");
-      setEnlaceTelegram(datos.enlace);
-    } catch (fallo) { setError(fallo?.message || "No se pudo crear el enlace de Telegram."); }
-    finally { setCargandoTelegram(false); }
-  };
-  const quitarVinculoTelegram = async () => {
-    setCargandoTelegram(true); setError(""); setAviso("");
-    try {
-      await desvincularTelegram();
-      setEstadoTelegram((estado) => ({ ...estado, conectado: false, usuarioTelegram: "" }));
-      setEnlaceTelegram("");
-      setAviso("La cuenta de Telegram se desvinculó.");
-    } catch (fallo) { setError(fallo?.message || "No se pudo desvincular Telegram."); }
-    finally { setCargandoTelegram(false); }
-  };
+
   const enviarMensaje = async (evento) => {
     evento.preventDefault();
     const texto = borrador.trim();
-    if (!texto || enviandoTelegram || !estadoTelegram?.conectado) return;
-    setEnviandoTelegram(true); setError(""); setAviso("");
+    if (!texto || enviandoMensaje || !grupo?.id || !usuario?.idUsuario) return;
+    setEnviandoMensaje(true);
+    setError("");
+    setAviso("");
     try {
-      await enviarMensajeTelegram(texto, grupo.nombre);
+      const mensaje = await enviarMensajeGrupo(grupo.id, texto);
+      const nuevos = listaRespuesta([mensaje]);
+      setMensajes((actuales) => [...actuales, ...nuevos]);
       setBorrador("");
-      setAviso("Mensaje enviado al chat privado de Telegram.");
-      const respuesta = await obtenerMensajesTelegram();
-      setMensajes(listaRespuesta(respuesta));
-    } catch (fallo) { setError(fallo?.message || "No se pudo enviar el mensaje por Telegram."); }
-    finally { setEnviandoTelegram(false); }
+    } catch (fallo) {
+      setError(fallo?.message || "No se pudo enviar el mensaje.");
+    } finally {
+      setEnviandoMensaje(false);
+    }
   };
-  const prepararInvitacion = (evento) => {
-    evento.preventDefault();
-    if (!correoInvitacion.trim()) return;
-    setAviso(`Invitación preparada para ${correoInvitacion.trim()}. El envío estará disponible al conectar el servicio de grupos.`);
-    setCorreoInvitacion("");
+
+  const agregarMiembroDesdeResultados = async (candidato) => {
+    if (!grupo?.id || !candidato?.idUsuario) return;
+    setAgregandoMiembro(candidato.idUsuario);
+    setError("");
+    setAviso("");
+    try {
+      const respuesta = await agregarMiembroGrupo(grupo.id, candidato.idUsuario);
+      setMiembros(listaRespuesta(respuesta));
+      setResultadosBusqueda((actuales) =>
+        actuales.filter((item) => item.idUsuario !== candidato.idUsuario),
+      );
+      setAviso(`${candidato.nombre} se unió al grupo.`);
+    } catch (fallo) {
+      setError(fallo?.message || "No se pudo añadir el integrante.");
+    } finally {
+      setAgregandoMiembro("");
+    }
   };
-  const cerrar = () => { if (!cargando) alCerrar(); };
+
+  const quitarMiembro = async (miembro) => {
+    if (!grupo?.id || !miembro?.idUsuario) return;
+    setQuitarMiembroId(miembro.idUsuario);
+    setError("");
+    setAviso("");
+    try {
+      const respuesta = await eliminarMiembroGrupo(grupo.id, miembro.idUsuario);
+      setMiembros(listaRespuesta(respuesta));
+      setAviso(`${miembro.nombre} se quitó del grupo.`);
+    } catch (fallo) {
+      setError(fallo?.message || "No se pudo quitar el integrante.");
+    } finally {
+      setQuitarMiembroId("");
+    }
+  };
+
+  const cerrar = () => {
+    if (!cargando) alCerrar();
+  };
 
   return (
-    <ModalDetalleRegistro abierto={abierto} titulo={grupo.nombre} etiquetaCerrar={`Cerrar grupo ${grupo.nombre}`} alCerrar={cerrar} triggerRef={triggerRef}>
-      <div className="mb-4 flex items-center justify-between gap-3"><p className="min-w-0 text-sm text-slate-text">{grupo.descripcion}</p><button type="button" aria-pressed={configuracionAbierta} onClick={() => { setConfiguracionAbierta((actual) => !actual); setError(""); setAviso(""); }} className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${configuracionAbierta ? "border-emerald-primary bg-emerald-primary/10 text-emerald-primary" : "border-border-line/50 text-slate-text hover:bg-emerald-primary/5 hover:text-bg-dark"}`}><Settings2 className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Configuración</span></button></div>
-      {!configuracionAbierta && <div className="flex flex-wrap gap-2 border-b border-border-line/40" role="tablist" aria-label={`Secciones de ${grupo.nombre}`}>{PESTANAS.map((nombre) => <button key={nombre} type="button" role="tab" aria-selected={pestana === nombre} onClick={() => { setPestana(nombre); setError(""); setAviso(""); }} className={`min-h-10 rounded-t-lg border-b-2 px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${pestana === nombre ? "border-emerald-primary text-emerald-primary" : "border-transparent text-slate-text hover:text-bg-dark"}`}>{nombre}</button>)}</div>}
-      <AlertaGlobal tipo="error" mensaje={error} idBase="GrupoDetalleModal-error" />
-      {aviso && <p role="status" className="mt-4 rounded-xl border border-emerald-primary/20 bg-emerald-primary/10 p-3 text-sm text-bg-dark">{aviso}</p>}
-      {configuracionAbierta ? (
-        <div className="mt-5 space-y-5">
-          <section className="rounded-2xl border border-border-line/40 p-4"><h3 className="font-semibold">Datos del grupo</h3><p className="mt-1 text-sm text-slate-text">Actualiza el nombre y la descripción o elimina este grupo.</p><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={cargando} onClick={() => { setEditando((actual) => !actual); setNombreEditado(grupo.nombre || ""); setDescripcionEditada(grupo.descripcion || ""); setConfirmarBorrado(false); }} className="min-h-10 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/5">{editando ? "Cancelar edición" : "Editar grupo"}</button><button type="button" disabled={cargando} onClick={() => { setConfirmarBorrado(true); setEditando(false); }} className="min-h-10 rounded-xl border border-red-700/30 px-4 text-sm font-medium text-red-700 hover:bg-red-50">Eliminar grupo</button></div>
-            {editando && <EditarGrupoForm nombre={nombreEditado} descripcion={descripcionEditada} alCambiarNombre={setNombreEditado} alCambiarDescripcion={setDescripcionEditada} alGuardar={guardarGrupo} cargando={cargando} />}
-            {confirmarBorrado && <div role="alertdialog" aria-label="Confirmar eliminación de grupo" className="mt-4 rounded-xl border border-red-700/30 bg-red-50 p-4"><p className="text-sm text-red-900">¿Eliminar el grupo {grupo.nombre}? Las fuentes vinculadas seguirán registradas en tu cuenta.</p><div className="mt-3 flex gap-2"><button type="button" disabled={cargando} onClick={borrarGrupo} className="min-h-10 rounded-lg bg-red-700 px-4 text-sm font-medium text-white">Confirmar eliminación</button><button type="button" onClick={() => setConfirmarBorrado(false)} className="min-h-10 rounded-lg px-3 text-sm">Cancelar</button></div></div>}
+    <ModalDetalleRegistro
+      abierto={abierto}
+      titulo={grupo.nombre}
+      etiquetaCerrar={`Cerrar grupo ${grupo.nombre}`}
+      alCerrar={cerrar}
+      triggerRef={triggerRef}
+    >
+      <p className="mb-4 min-w-0 text-sm text-slate-text">
+        {grupo.descripcion}
+      </p>
+      <div
+        className="flex flex-wrap gap-2 border-b border-border-line/40"
+        role="tablist"
+        aria-label={`Secciones de ${grupo.nombre}`}
+      >
+        {PESTANAS.map((nombre) => (
+          <button
+            key={nombre}
+            type="button"
+            role="tab"
+            aria-selected={pestana === nombre}
+            onClick={() => {
+              setPestana(nombre);
+              setError("");
+              setAviso("");
+            }}
+            className={`min-h-10 rounded-t-lg border-b-2 px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent ${pestana === nombre ? "border-emerald-primary text-emerald-primary" : "border-transparent text-slate-text hover:text-bg-dark"}`}
+          >
+            {nombre}
+          </button>
+        ))}
+      </div>
+      <AlertaGlobal
+        tipo="error"
+        mensaje={error}
+        idBase="GrupoDetalleModal-error"
+      />
+      {aviso && (
+        <p
+          role="status"
+          className="mt-4 rounded-xl border border-emerald-primary/20 bg-emerald-primary/10 p-3 text-sm text-bg-dark"
+        >
+          {aviso}
+        </p>
+      )}
+      {pestana === "Fuentes" ? (
+        <div className="mt-5 space-y-6">
+          <section aria-labelledby="fuentes-vinculadas-titulo">
+            <h3 id="fuentes-vinculadas-titulo" className="font-semibold">
+              Fuentes vinculadas
+            </h3>
+            {fuentesVinculadas.length ? (
+              <ul className="mt-3 space-y-2">
+                {fuentesVinculadas.map((fuente) => (
+                  <li
+                    key={fuente.idFuente}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/50 bg-bg-cream/70 p-3"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-xs uppercase tracking-wide text-slate-text">
+                        {fuente.tipo}
+                      </span>
+                      <span className="break-all text-sm font-medium">
+                        {fuente.contenido}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      disabled={cargando}
+                      onClick={() => desvincular(fuente)}
+                      className="min-h-9 rounded-lg px-3 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50"
+                    >
+                      Desvincular
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-slate-text">
+                Este grupo aún no tiene fuentes vinculadas.
+              </p>
+            )}
           </section>
-          <section className="rounded-2xl border border-border-line/40 p-4"><h3 className="font-semibold">Invitaciones</h3><p className="mt-1 text-sm text-slate-text">El envío de invitaciones estará disponible al conectar el servicio de grupos.</p><form onSubmit={prepararInvitacion} className="mt-3 flex flex-col gap-2 sm:flex-row"><label className="sr-only" htmlFor="grupo-invitacion-correo">Correo de la persona</label><input id="grupo-invitacion-correo" type="email" required value={correoInvitacion} onChange={(evento) => setCorreoInvitacion(evento.target.value)} placeholder="persona@correo.com" className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /><button type="submit" className="min-h-11 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10">Preparar invitación</button></form></section>
-          <details className="rounded-2xl border border-border-line/40 p-4"><summary className="cursor-pointer font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent">Registrar una fuente nueva para este grupo</summary><form onSubmit={registrarYVincular} className="mt-4 grid gap-3 sm:grid-cols-[1fr_2fr_auto] sm:items-end"><div className="flex flex-col gap-1.5"><label htmlFor="grupo-nueva-fuente-tipo" className="text-sm font-medium">Tipo</label><select id="grupo-nueva-fuente-tipo" value={tipoNuevaFuente} onChange={(evento) => setTipoNuevaFuente(evento.target.value)} disabled={cargando} className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm"><option value="CORREO">Correo electrónico</option><option value="TELEFONO">Teléfono</option><option value="OTRO">Otro</option></select></div><div className="flex flex-col gap-1.5"><label htmlFor="grupo-nueva-fuente-contenido" className="text-sm font-medium">Contenido</label><input id="grupo-nueva-fuente-contenido" value={contenidoNuevaFuente} onChange={(evento) => setContenidoNuevaFuente(evento.target.value)} maxLength={255} required disabled={cargando} className="min-h-11 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary" /></div><button type="submit" disabled={cargando} className="min-h-11 rounded-xl border border-emerald-primary/40 px-4 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">{cargando ? "Guardando…" : "Registrar y vincular"}</button></form><p className="mt-2 text-xs text-slate-text">La fuente se registra a tu usuario y luego se asocia al grupo.</p></details>
         </div>
-      ) : pestana === "Fuentes" ? (
-        <div className="mt-5 space-y-6"><section aria-labelledby="fuentes-vinculadas-titulo"><h3 id="fuentes-vinculadas-titulo" className="font-semibold">Fuentes vinculadas</h3>{fuentesVinculadas.length ? <ul className="mt-3 space-y-2">{fuentesVinculadas.map((fuente) => <li key={fuente.idFuente} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/50 bg-bg-cream/70 p-3"><span className="min-w-0"><span className="block text-xs uppercase tracking-wide text-slate-text">{fuente.tipo}</span><span className="break-all text-sm font-medium">{fuente.contenido}</span></span><button type="button" disabled={cargando} onClick={() => desvincular(fuente)} className="min-h-9 rounded-lg px-3 text-sm font-medium text-emerald-primary hover:bg-emerald-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">Desvincular</button></li>)}</ul> : <p className="mt-2 text-sm text-slate-text">Este grupo aún no tiene fuentes vinculadas.</p>}</section>
-          <section aria-labelledby="vincular-fuente-titulo" className="rounded-2xl border border-border-line/50 p-4"><h3 id="vincular-fuente-titulo" className="font-semibold">Vincular una fuente registrada</h3>{fuentesDisponibles.length ? <div className="mt-3 flex flex-col gap-3 sm:flex-row"><label className="sr-only" htmlFor="grupo-fuente-existente">Fuente registrada</label><select id="grupo-fuente-existente" value={fuenteSeleccionada} onChange={(evento) => setFuenteSeleccionada(evento.target.value)} disabled={cargando} className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary"><option value="">Selecciona una fuente</option>{fuentesDisponibles.map((fuente) => <option key={fuente.idFuente} value={fuente.idFuente}>{fuente.tipo}: {fuente.contenido}</option>)}</select><button type="button" disabled={!fuenteSeleccionada || cargando} onClick={() => vincular(fuentesDisponibles.find((fuente) => fuente.idFuente === fuenteSeleccionada))} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:opacity-50">Vincular fuente</button></div> : <p className="mt-2 text-sm text-slate-text">No hay otras fuentes registradas para vincular.</p>}</section></div>
       ) : (
         <div className="mt-5 space-y-4">
-          <section aria-label="Vínculo de Telegram" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-line/50 bg-bg-cream/50 p-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">Chat privado de Telegram</p>
-              {estadoTelegram?.conectado
-                ? <p className="text-xs text-slate-text">Conectado{estadoTelegram.usuarioTelegram ? ` como @${estadoTelegram.usuarioTelegram}` : ""} · @{estadoTelegram.nombreBot}</p>
-                : <p className="text-xs text-slate-text">Vincula tu cuenta para enviar y recibir mensajes con el bot.</p>}
-            </div>
-            {estadoTelegram?.conectado
-              ? <button type="button" disabled={cargandoTelegram} onClick={quitarVinculoTelegram} className="min-h-9 rounded-lg border border-border-line/60 px-3 text-xs font-medium text-slate-text hover:bg-bg-cream disabled:opacity-50">Desvincular</button>
-              : <button type="button" disabled={cargandoTelegram || !estadoTelegram?.configurado} onClick={vincularTelegram} className="min-h-9 rounded-lg bg-emerald-primary px-3 text-xs font-semibold text-bg-cream hover:bg-emerald-hover disabled:opacity-50">{cargandoTelegram ? "Preparando…" : "Vincular Telegram"}</button>}
+          {/* Miembros del grupo */}
+          <section aria-labelledby="integrantes-titulo">
+            <h3 id="integrantes-titulo" className="font-semibold text-sm text-bg-dark">
+              Integrantes del grupo
+            </h3>
+            {cargandoMiembros && (
+              <p role="status" className="mt-2 text-xs text-slate-text">
+                Cargando integrantes…
+              </p>
+            )}
+            {!cargandoMiembros && (
+              <ul className="mt-2 flex flex-wrap gap-2" aria-label="Integrantes">
+                {miembros.map((miembro) => {
+                  const esDueno = String(miembro.rol).toUpperCase() === "DUENO";
+                  const esYo = String(miembro.idUsuario) === String(usuario?.idUsuario);
+                  return (
+                    <li
+                      key={miembro.idUsuario}
+                      className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border-line/40 bg-bg-cream/70 py-1 pl-3 pr-1.5 text-xs font-medium text-bg-dark"
+                    >
+                      <span className="max-w-44 truncate" title={miembro.correo || miembro.telefono || miembro.nombre}>
+                        {miembro.nombre}
+                        {esYo ? " (tú)" : ""}
+                      </span>
+                      <span className="rounded-full bg-emerald-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-primary">
+                        {esDueno ? "Propietario" : "Miembro"}
+                      </span>
+                      {esPropietario && !esDueno && (
+                        <button
+                          type="button"
+                          disabled={quitarMiembroId === miembro.idUsuario}
+                          aria-label={`Quitar a ${miembro.nombre} del grupo`}
+                          onClick={() => quitarMiembro(miembro)}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-text transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 disabled:opacity-50"
+                        >
+                          <UserRoundX className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {esPropietario && (
+              <div className="relative mt-3">
+                <label className="sr-only" htmlFor="buscar-integrante">
+                  Buscar usuario para agregar al grupo
+                </label>
+                <div className="flex items-center gap-2 rounded-xl border border-border-line bg-bg-cream px-3 py-2 focus-within:ring-2 focus-within:ring-emerald-primary">
+                  <Search className="h-4 w-4 shrink-0 text-slate-text" aria-hidden="true" />
+                  <input
+                    id="buscar-integrante"
+                    value={busquedaMiembro}
+                    onChange={(evento) => setBusquedaMiembro(evento.target.value)}
+                    placeholder="Buscar por nombre, correo, teléfono o identificación…"
+                    autoComplete="off"
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-text"
+                    aria-label="Buscar integrante"
+                  />
+                  {buscandoMiembro && (
+                    <span className="text-[11px] text-slate-text">Buscando…</span>
+                  )}
+                </div>
+                {resultadosBusqueda.length > 0 && (
+                  <ul
+                    role="listbox"
+                    aria-label="Usuarios encontrados"
+                    className="absolute z-10 mt-2 max-h-56 w-full overflow-y-auto rounded-xl border border-border-line/50 bg-white shadow-lg ring-1 ring-slate-900/10"
+                  >
+                    {resultadosBusqueda.map((candidato) => {
+                      const yaMiembro = miembros.some(
+                        (miembro) => String(miembro.idUsuario) === String(candidato.idUsuario),
+                      );
+                      return (
+                        <li key={candidato.idUsuario}>
+                          <button
+                            type="button"
+                            disabled={yaMiembro || agregandoMiembro === candidato.idUsuario}
+                            onClick={() => agregarMiembroDesdeResultados(candidato)}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-bg-cream disabled:opacity-60"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium text-bg-dark">
+                                {candidato.nombre}
+                              </span>
+                              <span className="block truncate text-xs text-slate-text">
+                                {candidato.correo || candidato.telefono || candidato.idUsuario}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-xs font-semibold text-emerald-primary">
+                              {yaMiembro ? "Ya miembro" : "Añadir"}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {errorBusqueda && (
+                  <p role="alert" className="mt-1 text-xs text-red-700">
+                    {errorBusqueda}
+                  </p>
+                )}
+              </div>
+            )}
+            {esPropietario && (
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-text">
+                Puedes añadir usuarios registrados: busca por nombre, correo,
+                teléfono o identificación. Solo tú (el propietario)
+                administra integrantes.
+              </p>
+            )}
           </section>
-          {estadoTelegram && !estadoTelegram.configurado && <p role="alert" className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900">Telegram no está configurado en el backend. Revisa TELEGRAM_BOT_TOKEN y NOMBRE_BOT_TELEGRAM.</p>}
-          {estadoTelegram?.errorRecepcion && <p role="alert" className="rounded-xl border border-amber-300/60 bg-amber-100/70 p-3 text-sm text-amber-900">{estadoTelegram.errorRecepcion}</p>}
-          {enlaceTelegram && !estadoTelegram?.conectado && <p className="text-sm text-slate-text">Abre el bot y pulsa <strong>Iniciar</strong> para completar el vínculo. <a href={enlaceTelegram} target="_blank" rel="noreferrer" className="font-semibold text-emerald-primary underline">Abrir @{estadoTelegram?.nombreBot || "bot"} en Telegram</a></p>}
 
-          <section aria-label="Mensajes del chat grupal" aria-busy={cargandoTelegram} className="max-h-72 min-h-36 space-y-2 overflow-y-auto rounded-2xl border border-border-line/50 bg-bg-cream/60 p-4">
-            {mensajes.length ? mensajes.map((mensaje) => <article key={mensaje.id} className={`w-fit max-w-[90%] break-words rounded-xl px-3 py-2 text-sm ${mensaje.rol === "assistant" ? "bg-white text-bg-dark" : "ml-auto bg-emerald-primary text-bg-cream"}`}>
-              {mensaje.grupo && <p className={`mb-1 text-[11px] font-semibold ${mensaje.rol === "assistant" ? "text-emerald-primary" : "text-bg-cream/80"}`}>{mensaje.grupo}</p>}
-              <p>{mensaje.texto}</p>
-              <time className={`mt-1 block text-right text-[10px] ${mensaje.rol === "assistant" ? "text-slate-text" : "text-bg-cream/70"}`} dateTime={mensaje.fecha}>{new Date(mensaje.fecha).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</time>
-            </article>) : <p className="text-sm text-slate-text">{cargandoTelegram ? "Conectando con Telegram…" : "Aún no hay mensajes en esta conversación."}</p>}
+          {/* Chat del grupo */}
+          <section
+            aria-label="Mensajes del grupo"
+            aria-busy={cargandoChat}
+            ref={listaRef}
+            className="max-h-72 min-h-36 space-y-2 overflow-y-auto rounded-2xl border border-border-line/50 bg-bg-cream/60 p-4"
+          >
+            {mensajes.length ? (
+              mensajes.map((mensaje) => {
+                const esMio = String(mensaje.idUsuario) === String(usuario?.idUsuario);
+                return (
+                  <article
+                    key={mensaje.idMensaje}
+                    className={`w-fit max-w-[90%] break-words rounded-xl px-3 py-2 text-sm ${esMio ? "ml-auto bg-emerald-primary text-bg-cream" : "bg-white text-bg-dark"}`}
+                  >
+                    <p
+                      className={`mb-0.5 text-[10px] font-semibold ${esMio ? "text-bg-cream/80" : "text-emerald-primary"}`}
+                    >
+                      {esMio ? "Tú" : mensaje.nombreAutor}
+                    </p>
+                    <p>{mensaje.texto}</p>
+                    <time
+                      className={`mt-1 block text-right text-[10px] ${esMio ? "text-bg-cream/70" : "text-slate-text"}`}
+                      dateTime={mensaje.fecha}
+                    >
+                      {new Date(mensaje.fecha).toLocaleTimeString("es-CO", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </article>
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-text">
+                {cargandoChat
+                  ? "Cargando la conversación…"
+                  : "Aún no hay mensajes. Escribe el primero."}
+              </p>
+            )}
           </section>
           <form onSubmit={enviarMensaje} className="flex gap-2">
-            <label className="sr-only" htmlFor="grupo-chat-mensaje">Mensaje</label>
-            <input id="grupo-chat-mensaje" value={borrador} onChange={(evento) => setBorrador(evento.target.value)} maxLength={3500} disabled={!estadoTelegram?.conectado || enviandoTelegram} placeholder={estadoTelegram?.conectado ? "Escribe un mensaje" : "Vincula Telegram para escribir"} className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60" />
-            <button type="submit" disabled={!estadoTelegram?.conectado || !borrador.trim() || enviandoTelegram} className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50">{enviandoTelegram ? "Enviando…" : "Enviar"}</button>
+            <label className="sr-only" htmlFor="grupo-chat-mensaje">
+              Mensaje
+            </label>
+            <input
+              id="grupo-chat-mensaje"
+              value={borrador}
+              onChange={(evento) => setBorrador(evento.target.value)}
+              maxLength={2000}
+              disabled={enviandoMensaje}
+              placeholder="Escribe un mensaje"
+              className="min-h-11 min-w-0 flex-1 rounded-xl border border-border-line bg-bg-cream px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-primary disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={!borrador.trim() || enviandoMensaje}
+              className="min-h-11 rounded-xl bg-emerald-primary px-4 text-sm font-medium text-bg-cream hover:bg-emerald-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {enviandoMensaje ? "Enviando…" : "Enviar"}
+            </button>
           </form>
         </div>
       )}

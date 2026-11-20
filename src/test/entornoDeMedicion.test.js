@@ -13,7 +13,10 @@ const QUERY_ANCHO_GRANDE = "(min-width: 1024px)";
 const QUERY_SIN_ANCHO = "(prefers-reduced-motion: reduce)";
 
 describe("stub global de matchMedia (vitest.setup.js)", () => {
-  const descriptorOriginalInnerWidth = Object.getOwnPropertyDescriptor(window, "innerWidth");
+  const descriptorOriginalInnerWidth = Object.getOwnPropertyDescriptor(
+    window,
+    "innerWidth",
+  );
 
   /** Fija el ancho de viewport simulado, como hacen las suites del inventario. */
   const fijarAncho = (ancho) => {
@@ -53,7 +56,11 @@ describe("stub global de matchMedia (vitest.setup.js)", () => {
 
   it("sigue siendo reemplazable por una suite y se restituye al stub global", () => {
     const stubGlobal = window.matchMedia;
-    const sustituto = vi.fn(() => ({ matches: false, media: "", onchange: null }));
+    const sustituto = vi.fn(() => ({
+      matches: false,
+      media: "",
+      onchange: null,
+    }));
 
     window.matchMedia = sustituto;
     expect(window.matchMedia(QUERY_PANTALLAS_GRANDES).matches).toBe(false);

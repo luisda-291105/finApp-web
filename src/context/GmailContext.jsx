@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useUsuarioActivo } from "./UsuarioActivoContext";
 import {
   canjearCodigoGmail,
@@ -11,10 +11,18 @@ import {
 } from "../services/gmailServicio";
 
 const GmailContext = createContext({
-  gmailConectado: false, cuentaGmail: "", cuentasGmail: [], cuentaSeleccionadaId: null,
-  gisListo: false, conexionCargando: false, errorGmail: "",
-  conectarGmail: async () => {}, desconectarGmail: async () => {},
-  seleccionarCuentaGmail: () => {}, limpiarErrorGmail: () => {},
+  gmailConectado: false,
+  cuentaGmail: "",
+  cuentasGmail: [],
+  cuentaSeleccionadaId: null,
+  gisListo: false,
+  conexionCargando: false,
+  errorGmail: "",
+  conectarGmail: async () => {},
+  desconectarGmail: async () => {},
+  recargarCuentasGmail: async () => [],
+  seleccionarCuentaGmail: () => {},
+  limpiarErrorGmail: () => {},
 });
 
 export function GmailProvider({ children }) {
@@ -30,7 +38,7 @@ export function GmailProvider({ children }) {
   useEffect(() => {
     if (!errorGmail) return undefined;
     const temporizador = window.setTimeout(() => {
-      setErrorGmail((actual) => actual === errorGmail ? "" : actual);
+      setErrorGmail((actual) => (actual === errorGmail ? "" : actual));
     }, 5000);
     return () => window.clearTimeout(temporizador);
   }, [errorGmail]);
@@ -39,9 +47,16 @@ export function GmailProvider({ children }) {
     let vigente = true;
     if (!GMAIL_CONFIGURADO) return undefined;
     prepararGoogleIdentityServices()
-      .catch((error) => { if (vigente) setErrorGmail(error?.message || "No se pudo cargar Google."); })
-      .finally(() => { if (vigente) setGisListo(true); });
-    return () => { vigente = false; };
+      .catch((error) => {
+        if (vigente)
+          setErrorGmail(error?.message || "No se pudo cargar Google.");
+      })
+      .finally(() => {
+        if (vigente) setGisListo(true);
+      });
+    return () => {
+      vigente = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -53,7 +68,9 @@ export function GmailProvider({ children }) {
     setErrorGmail("");
     if (!usuario?.idUsuario) {
       setConexionCargando(false);
-      return () => { vigente = false; };
+      return () => {
+        vigente = false;
+      };
     }
     setConexionCargando(true);
     listarCuentasGmail()
@@ -62,19 +79,32 @@ export function GmailProvider({ children }) {
         setCuentasGmail(cuentas);
         setCuentaSeleccionadaId(cuentas[0]?.id ?? null);
       })
-      .catch((error) => { if (vigente) setErrorGmail(error?.message || "No se pudieron cargar las cuentas Gmail."); })
-      .finally(() => { if (vigente) setConexionCargando(false); });
-    return () => { vigente = false; };
+      .catch((error) => {
+        if (vigente)
+          setErrorGmail(
+            error?.message || "No se pudieron cargar las cuentas Gmail.",
+          );
+      })
+      .finally(() => {
+        if (vigente) setConexionCargando(false);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [usuario?.idUsuario]);
 
   useEffect(() => {
     let vigente = true;
     setGmailConectado(false);
-    const cuenta = cuentasGmail.find((item) => String(item.id) === String(cuentaSeleccionadaId));
+    const cuenta = cuentasGmail.find(
+      (item) => String(item.id) === String(cuentaSeleccionadaId),
+    );
     setCuentaGmail(cuenta?.email || "");
     if (!usuario?.idUsuario || !cuentaSeleccionadaId) {
       setConexionCargando(false);
-      return () => { vigente = false; };
+      return () => {
+        vigente = false;
+      };
     }
     setConexionCargando(true);
     obtenerConexionCuentaGmail(cuentaSeleccionadaId)
@@ -83,21 +113,52 @@ export function GmailProvider({ children }) {
         setGmailConectado(conexion.connected === true);
         if (conexion.email) setCuentaGmail(conexion.email);
       })
-      .catch((error) => { if (vigente) setErrorGmail(error?.message || "No se pudo restaurar esta cuenta Gmail."); })
-      .finally(() => { if (vigente) setConexionCargando(false); });
-    return () => { vigente = false; };
+      .catch((error) => {
+        if (vigente)
+          setErrorGmail(
+            error?.message || "No se pudo restaurar esta cuenta Gmail.",
+          );
+      })
+      .finally(() => {
+        if (vigente) setConexionCargando(false);
+      });
+    return () => {
+      vigente = false;
+    };
   }, [usuario?.idUsuario, cuentasGmail, cuentaSeleccionadaId]);
 
-  const conectarGmail = async ({ incluirContactos = false, cuentaEsperadaId = cuentaSeleccionadaId } = {}) => {
+  const conectarGmail = async ({
+    incluirContactos = false,
+    incluirModificar = false,
+    cuentaEsperadaId = cuentaSeleccionadaId,
+  } = {}) => {
     setErrorGmail("");
     setConexionCargando(true);
     try {
-      const cuentaEsperada = incluirContactos ? cuentasGmail.find((cuenta) => String(cuenta.id) === String(cuentaEsperadaId)) : null;
-      if (incluirContactos && !cuentaEsperada) throw new Error("Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar Google Contacts.");
-      const code = await iniciarCodigoAutorizacionGmail({ incluirContactos, cuentaEsperada: cuentaEsperada?.email || "" });
-      const conexion = await canjearCodigoGmail(code, incluirContactos ? cuentaEsperadaId : "");
-      if (incluirContactos) {
-        // La autorización de un permiso adicional no debe reiniciar la cuenta Gmail activa.
+      // Un permiso adicional (Contactos o modificar correos) se pide sobre una
+      // cuenta ya registrada y no debe reiniciar la cuenta Gmail activa.
+      const requiereCuentaEspecifica = incluirContactos || incluirModificar;
+      const cuentaEsperada = requiereCuentaEspecifica
+        ? cuentasGmail.find(
+            (cuenta) => String(cuenta.id) === String(cuentaEsperadaId),
+          )
+        : null;
+      if (requiereCuentaEspecifica && !cuentaEsperada)
+        throw new Error(
+          incluirModificar
+            ? "Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar el permiso para modificar sus correos."
+            : "Selecciona una cuenta Gmail registrada en Fuentes antes de autorizar Google Contacts.",
+        );
+      const code = await iniciarCodigoAutorizacionGmail({
+        incluirContactos,
+        incluirModificar,
+        cuentaEsperada: cuentaEsperada?.email || "",
+      });
+      const conexion = await canjearCodigoGmail(
+        code,
+        requiereCuentaEspecifica ? cuentaEsperadaId : "",
+      );
+      if (requiereCuentaEspecifica) {
         // El backend actualiza la conexión de la fuente indicada.
         if (String(cuentaSeleccionadaId) === String(conexion.accountId)) {
           setGmailConectado(true);
@@ -113,7 +174,8 @@ export function GmailProvider({ children }) {
       if (conexion.pushWarning) setErrorGmail(conexion.pushWarning);
       return conexion;
     } catch (error) {
-      const mensaje = error?.message || "No se pudo iniciar la conexión con Gmail.";
+      const mensaje =
+        error?.message || "No se pudo iniciar la conexión con Gmail.";
       setErrorGmail(mensaje);
       throw error;
     } finally {
@@ -121,7 +183,27 @@ export function GmailProvider({ children }) {
     }
   };
 
-  const desconectarGmail = async (persistir = true, idCuenta = cuentaSeleccionadaId) => {
+  /** Vuelve a consultar en el backend las cuentas Gmail vinculadas. */
+  const recargarCuentasGmail = useCallback(async () => {
+    if (!usuario?.idUsuario) {
+      setCuentasGmail([]);
+      setCuentaSeleccionadaId(null);
+      return [];
+    }
+    const cuentas = await listarCuentasGmail();
+    setCuentasGmail(cuentas);
+    setCuentaSeleccionadaId((actual) =>
+      cuentas.some((cuenta) => String(cuenta.id) === String(actual))
+        ? actual
+        : (cuentas[0]?.id ?? null),
+    );
+    return cuentas;
+  }, [usuario?.idUsuario]);
+
+  const desconectarGmail = async (
+    persistir = true,
+    idCuenta = cuentaSeleccionadaId,
+  ) => {
     if (!persistir) {
       setGmailConectado(false);
       return;
@@ -129,16 +211,31 @@ export function GmailProvider({ children }) {
     if (!idCuenta) return;
     try {
       await eliminarCuentaGmail(idCuenta);
-      const restantes = cuentasGmail.filter((cuenta) => String(cuenta.id) !== String(idCuenta));
-      setCuentasGmail(restantes);
-      if (String(idCuenta) === String(cuentaSeleccionadaId)) {
-        setGmailConectado(false);
-        setCuentaGmail("");
-        setCuentaSeleccionadaId(restantes[0]?.id ?? null);
-      }
-      setErrorGmail("");
     } catch (error) {
-      setErrorGmail(error?.message || "No se pudo eliminar la conexión guardada de Gmail.");
+      // 404: la cuenta ya no existe en el backend (por ejemplo, porque la
+      // fuente se eliminó). Se trata como desconexión idempotente y se
+      // resincroniza la lista en lugar de dejar una cuenta fantasma.
+      if (error?.status !== 404) {
+        setErrorGmail(
+          error?.message || "No se pudo eliminar la conexión guardada de Gmail.",
+        );
+        return;
+      }
+    }
+    const restantes = cuentasGmail.filter(
+      (cuenta) => String(cuenta.id) !== String(idCuenta),
+    );
+    setCuentasGmail(restantes);
+    if (String(idCuenta) === String(cuentaSeleccionadaId)) {
+      setGmailConectado(false);
+      setCuentaGmail("");
+      setCuentaSeleccionadaId(restantes[0]?.id ?? null);
+    }
+    setErrorGmail("");
+    try {
+      await recargarCuentasGmail();
+    } catch {
+      /* Si falla la resincronización se conserva el estado local ya corregido. */
     }
   };
 
@@ -149,14 +246,27 @@ export function GmailProvider({ children }) {
   const limpiarErrorGmail = () => setErrorGmail("");
 
   return (
-    <GmailContext.Provider value={{
-      gmailConectado, cuentaGmail, cuentasGmail, cuentaSeleccionadaId, gisListo,
-      conexionCargando, errorGmail, conectarGmail, desconectarGmail,
-      seleccionarCuentaGmail, limpiarErrorGmail,
-    }}>
+    <GmailContext.Provider
+      value={{
+        gmailConectado,
+        cuentaGmail,
+        cuentasGmail,
+        cuentaSeleccionadaId,
+        gisListo,
+        conexionCargando,
+        errorGmail,
+        conectarGmail,
+        desconectarGmail,
+        recargarCuentasGmail,
+        seleccionarCuentaGmail,
+        limpiarErrorGmail,
+      }}
+    >
       {children}
     </GmailContext.Provider>
   );
 }
 
-export function useGmail() { return useContext(GmailContext); }
+export function useGmail() {
+  return useContext(GmailContext);
+}

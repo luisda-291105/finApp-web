@@ -8,7 +8,11 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useUsuarioActivo } from "../../../context/UsuarioActivoContext";
-import { actualizarTarjeta, eliminarTarjeta, obtenerTarjetasPorUsuario } from "../services/tarjetasService";
+import {
+  actualizarTarjeta,
+  eliminarTarjeta,
+  obtenerTarjetasPorUsuario,
+} from "../services/tarjetasService";
 
 function mostrarVencimiento(vencimiento) {
   const fecha = /^(\d{4})-(\d{2})(?:-\d{2})?$/.exec(vencimiento || "");
@@ -32,8 +36,15 @@ export function useTarjetas() {
       setCargando(true);
       setError("");
       const respuesta = await obtenerTarjetasPorUsuario(usuario.idUsuario);
-      const datos = Array.isArray(respuesta) ? respuesta : respuesta?.data || respuesta?.content || [];
-      setTarjetas((Array.isArray(datos) ? datos : []).map((tarjeta) => ({ ...tarjeta, expiracion: mostrarVencimiento(tarjeta.expiracion) })));
+      const datos = Array.isArray(respuesta)
+        ? respuesta
+        : respuesta?.data || respuesta?.content || [];
+      setTarjetas(
+        (Array.isArray(datos) ? datos : []).map((tarjeta) => ({
+          ...tarjeta,
+          expiracion: mostrarVencimiento(tarjeta.expiracion),
+        })),
+      );
     } catch (fallo) {
       setTarjetas([]);
       setError(fallo?.message || "No se pudieron cargar tus tarjetas.");
@@ -42,19 +53,38 @@ export function useTarjetas() {
     }
   }, [usuario?.idUsuario]);
 
-  useEffect(() => { cargarTarjetas(); }, [cargarTarjetas]);
+  useEffect(() => {
+    cargarTarjetas();
+  }, [cargarTarjetas]);
 
   const guardarTarjeta = useCallback(async (idTarjeta, cambios) => {
     const actualizada = await actualizarTarjeta(idTarjeta, cambios);
-    const tarjetaLista = { ...actualizada, expiracion: mostrarVencimiento(actualizada.expiracion) };
-    setTarjetas((actuales) => actuales.map((tarjeta) => tarjeta.idTarjeta === idTarjeta ? tarjetaLista : tarjeta));
+    const tarjetaLista = {
+      ...actualizada,
+      expiracion: mostrarVencimiento(actualizada.expiracion),
+    };
+    setTarjetas((actuales) =>
+      actuales.map((tarjeta) =>
+        tarjeta.idTarjeta === idTarjeta ? tarjetaLista : tarjeta,
+      ),
+    );
     return tarjetaLista;
   }, []);
 
   const borrarTarjeta = useCallback(async (idTarjeta) => {
     await eliminarTarjeta(idTarjeta);
-    setTarjetas((actuales) => actuales.filter((tarjeta) => tarjeta.idTarjeta !== idTarjeta));
+    setTarjetas((actuales) =>
+      actuales.filter((tarjeta) => tarjeta.idTarjeta !== idTarjeta),
+    );
   }, []);
 
-  return { usuario, tarjetas, cargando, error, cargarTarjetas, guardarTarjeta, borrarTarjeta };
+  return {
+    usuario,
+    tarjetas,
+    cargando,
+    error,
+    cargarTarjetas,
+    guardarTarjeta,
+    borrarTarjeta,
+  };
 }

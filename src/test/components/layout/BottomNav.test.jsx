@@ -54,7 +54,7 @@ describe("BottomNav", () => {
 
     // Verificar indicador (span absoluto con bg-mint-accent)
     const indicador = botonActivo.querySelector(
-      "span.absolute.top-0.left-1\\/2.-translate-x-1\\/2.w-8.h-0\\.5.bg-mint-accent.rounded-full"
+      "span.absolute.top-0.left-1\\/2.-translate-x-1\\/2.w-8.h-0\\.5.bg-mint-accent.rounded-full",
     );
     expect(indicador).not.toBeNull();
     expect(indicador).toHaveAttribute("aria-hidden", "true");
@@ -90,8 +90,25 @@ describe("BottomNav", () => {
     expect(botonMenu).toHaveClass("text-bg-cream");
   });
 
-  it("click en items 1-3 llama alNavegar con la ruta correcta", () => {
+  it("click en el ítem de la página actual vuelve arriba y no llama alNavegar", () => {
+    // `itemActivo="/dashboard"` y la pestaña está en Inicio por defecto
+    const scrollTo = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => {});
     render(<BottomNav {...propsBase} />);
+
+    fireEvent.click(screen.getByText("Inicio"));
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: expect.any(String),
+    });
+    expect(propsBase.alNavegar).not.toHaveBeenCalled();
+
+    scrollTo.mockRestore();
+  });
+
+  it("click en items 1-3 llama alNavegar con la ruta correcta", () => {
+    render(<BottomNav {...propsBase} itemActivo="/dashboard/tarjetas" />);
 
     fireEvent.click(screen.getByText("Inicio"));
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard");
@@ -100,7 +117,8 @@ describe("BottomNav", () => {
     expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/contabilidad");
 
     fireEvent.click(screen.getByText("Tarjetas"));
-    expect(propsBase.alNavegar).toHaveBeenCalledWith("/dashboard/tarjetas");
+    // Página actual: vuelve arriba en lugar de navegar
+    expect(propsBase.alNavegar).not.toHaveBeenCalledWith("/dashboard/tarjetas");
   });
 
   it("click en el botón Menú llama alAbrirMenu", () => {
@@ -136,7 +154,7 @@ describe("BottomNav", () => {
     expect(container.querySelectorAll("style")).toHaveLength(0);
   });
 
-  it("aplica clases de contenedor correctas (fixed, bottom-0, z-[1100], grid-cols-4)", () => {
+  it("aplica clases de contenedor correctas (fixed, bottom-0, z-[2100], grid-cols-4)", () => {
     render(<BottomNav {...propsBase} />);
 
     const nav = screen.getByRole("navigation");
@@ -144,7 +162,7 @@ describe("BottomNav", () => {
     expect(nav).toHaveClass("bottom-0");
     expect(nav).toHaveClass("left-0");
     expect(nav).toHaveClass("right-0");
-    expect(nav).toHaveClass("z-[1100]");
+    expect(nav).toHaveClass("z-[2100]");
     expect(nav).toHaveClass("grid");
     expect(nav).toHaveClass("grid-cols-4");
     expect(nav).toHaveClass("bg-bg-dark/80");

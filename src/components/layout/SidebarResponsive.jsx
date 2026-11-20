@@ -11,7 +11,7 @@ import logoOscuro from "../../assets/logo-oscuro.webp";
  * @eventos    click en enlaces, click en logo toggle, click en avatar
  * @estados    colapsada (boolean, controlada desde padre via useBreakpoint)
  * @usadoPor   DashboardLayout
- * 
+ *
  * Navegación lateral fija de pantallas grandes (≥768px), colapsable, con fondo dark glass y navegación compartida.
  * El estado colapsado/expandido se controla desde el padre (DashboardLayout via useBreakpoint).
  * El logo no navega: solo alterna colapso.
@@ -22,14 +22,20 @@ import logoOscuro from "../../assets/logo-oscuro.webp";
  * @param {() => void} props.alAbrirUserModal - Callback al click en el avatar de usuario
  */
 
-export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirUserModal }) {
+export default function SidebarResponsive({
+  colapsada,
+  alToggleColapso,
+  alAbrirUserModal,
+}) {
   const { tema } = useTema();
   const temaClaro = tema === "claro";
   return (
     <aside
       className={clsx(
         "fixed left-0 top-0 h-screen z-[1100] transition-all duration-300",
-        temaClaro ? "bg-bg-cream/95 glass-surface border-r border-border-line/70 shadow-lg" : "bg-bg-dark/80 glass-surface border-r border-border-line/20",
+        temaClaro
+          ? "bg-bg-cream/95 glass-surface border-r border-border-line/70 shadow-lg"
+          : "bg-bg-dark/80 glass-surface border-r border-border-line/20",
         "flex flex-col overflow-hidden",
         colapsada ? "w-[72px]" : "w-64",
       )}
@@ -38,7 +44,12 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
       data-collapsed={colapsada}
     >
       {/* Área del logo / toggle colapso */}
-      <div className={clsx("flex items-center px-3 py-4 border-b min-h-[64px] overflow-hidden", temaClaro ? "border-border-line/70" : "border-border-line/20")}>
+      <div
+        className={clsx(
+          "flex items-center px-3 py-4 border-b min-h-[64px] overflow-hidden",
+          temaClaro ? "border-border-line/70" : "border-border-line/20",
+        )}
+      >
         <button
           type="button"
           onClick={alToggleColapso}
@@ -46,19 +57,42 @@ export default function SidebarResponsive({ colapsada, alToggleColapso, alAbrirU
             "flex items-center w-full min-w-0 rounded-lg transition-colors",
             "hover:bg-emerald-primary/10 focus-visible:outline-none",
             "focus-visible:ring-2 focus-visible:ring-mint-accent/50 focus-visible:ring-offset-2",
-            temaClaro ? "focus-visible:ring-offset-bg-cream" : "focus-visible:ring-offset-bg-dark",
+            temaClaro
+              ? "focus-visible:ring-offset-bg-cream"
+              : "focus-visible:ring-offset-bg-dark",
             colapsada ? "justify-center" : "justify-start gap-2",
           )}
           aria-expanded={!colapsada}
           aria-label={colapsada ? "Expandir navegación" : "Colapsar navegación"}
         >
           <span className="shrink-0">
-            <img src={logoClaro} alt="" aria-hidden="true" className={clsx("logo-tema-claro rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
-            <img src={logoOscuro} alt="" aria-hidden="true" className={clsx("logo-tema-oscuro rounded-lg object-contain", colapsada ? "h-8 w-8" : "h-9 w-9")} />
+            <img
+              src={logoClaro}
+              alt=""
+              aria-hidden="true"
+              className={clsx(
+                "logo-tema-claro rounded-lg object-contain",
+                colapsada ? "h-8 w-8" : "h-9 w-9",
+              )}
+            />
+            <img
+              src={logoOscuro}
+              alt=""
+              aria-hidden="true"
+              className={clsx(
+                "logo-tema-oscuro rounded-lg object-contain",
+                colapsada ? "h-8 w-8" : "h-9 w-9",
+              )}
+            />
           </span>
           {!colapsada && (
-            <span className={clsx("truncate font-display text-xl font-medium", temaClaro ? "text-bg-dark" : "text-bg-cream")}>
-              FinApp
+            <span
+              className={clsx(
+                "truncate font-display text-xl font-medium",
+                temaClaro ? "text-bg-dark" : "text-bg-cream",
+              )}
+            >
+              <span className="text-emerald-primary">Fin</span>App
             </span>
           )}
         </button>

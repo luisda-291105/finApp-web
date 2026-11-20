@@ -10,7 +10,11 @@ import { useEffect } from "react";
 import { X } from "lucide-react";
 
 /** Muestra una notificación de error fija a la derecha con métodos de cierre. */
-export default function AlertaErrorLateral({ mensaje, alCerrar, visible = true }) {
+export default function AlertaErrorLateral({
+  mensaje,
+  alCerrar,
+  visible = true,
+}) {
   useEffect(() => {
     if (!visible || !mensaje) return undefined;
     const manejarTecla = (evento) => {

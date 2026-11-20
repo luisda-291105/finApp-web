@@ -23,7 +23,7 @@ export default function StatsBar() {
   const { ref, visible } = useReveal();
 
   return (
-    <section className="bg-[#1a7a5e] text-white py-12 px-6 border-y border-[#15634c]">
+    <section className="bg-[#1a7a5e] text-white py-12 pl-6 pr-16 sm:pr-24 border-y border-[#15634c]">
       <div
         ref={ref}
         className={`max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center reveal ${

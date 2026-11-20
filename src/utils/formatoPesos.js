@@ -20,17 +20,28 @@ export function formatearPesos(valor) {
 /** Quita separadores de miles para dejar el importe listo para edición. */
 export function desagruparPesos(valor) {
   const numero = parsearPesos(valor);
-  return numero === null ? "" : numero.toLocaleString("es-CO", { useGrouping: false, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return numero === null
+    ? ""
+    : numero.toLocaleString("es-CO", {
+        useGrouping: false,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
 }
 
 /** Convierte una cadena local colombiana a número o null si no es válida. */
 export function parsearPesos(valor) {
-  const texto = String(valor ?? "").trim().replace(/\s/g, "");
+  const texto = String(valor ?? "")
+    .trim()
+    .replace(/\s/g, "");
   if (!texto) return null;
   let normalizado = texto;
   if (normalizado.includes(",")) {
     normalizado = normalizado.replace(/\./g, "").replace(",", ".");
-  } else if ((normalizado.match(/\./g) || []).length > 1 || /\.\d{3}$/.test(normalizado)) {
+  } else if (
+    (normalizado.match(/\./g) || []).length > 1 ||
+    /\.\d{3}$/.test(normalizado)
+  ) {
     normalizado = normalizado.replace(/\./g, "");
   }
   const numero = Number(normalizado);
@@ -39,7 +50,9 @@ export function parsearPesos(valor) {
 
 /** Mantiene dígitos y una coma decimal durante la escritura. */
 export function limpiarEntradaPesos(valor) {
-  const texto = String(valor ?? "").replace(/\./g, "").replace(/[^\d,]/g, "");
+  const texto = String(valor ?? "")
+    .replace(/\./g, "")
+    .replace(/[^\d,]/g, "");
   const [entero, ...fracciones] = texto.split(",");
   const parteEntera = entero || "";
   if (fracciones.length === 0) return parteEntera;
@@ -51,5 +64,7 @@ export function agruparEntradaPesos(valor) {
   const limpio = limpiarEntradaPesos(valor);
   const [entero = "", ...fracciones] = limpio.split(",");
   const enteroAgrupado = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fracciones.length ? `${enteroAgrupado},${fracciones.join("")}` : enteroAgrupado;
+  return fracciones.length
+    ? `${enteroAgrupado},${fracciones.join("")}`
+    : enteroAgrupado;
 }

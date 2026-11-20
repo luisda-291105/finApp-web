@@ -18,7 +18,7 @@ function renderLayout(props = {}) {
       <TemaProvider>
         <LandingLayout alAbrirAuth={vi.fn()} {...props} />
       </TemaProvider>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -50,7 +50,9 @@ describe("LandingLayout", () => {
     expect(screen.getByText(/Para empezar/i)).toBeDefined();
 
     // Features - busca los 5 títulos de funcionalidades (usando role heading para ser específico)
-    expect(screen.getByRole("heading", { name: "Registro personal" })).toBeDefined();
+    expect(
+      screen.getByRole("heading", { name: "Registro personal" }),
+    ).toBeDefined();
     expect(screen.getByRole("heading", { name: "Ahorro" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Gastos" })).toBeDefined();
     expect(screen.getByRole("heading", { name: "Ingresos" })).toBeDefined();
@@ -62,7 +64,9 @@ describe("LandingLayout", () => {
     expect(screen.getByText("Toma el control financiero")).toBeDefined();
 
     // CtaSection - busca llamada a la acción
-    expect(screen.getByText(/empezar/i)).toBeDefined();
+    expect(
+      screen.getByRole("button", { name: /comenzar ahora gratis/i }),
+    ).toBeDefined();
 
     // Footer - busca copyright o marca
     expect(screen.getAllByText(/FinApp/i).length).toBeGreaterThan(0);
@@ -74,7 +78,7 @@ describe("LandingLayout", () => {
         <LandingLayout alAbrirAuth={mockAbrirAuth}>
           <div data-testid="contenido-extra">Contenido extra</div>
         </LandingLayout>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("contenido-extra")).toBeDefined();
@@ -100,5 +104,31 @@ describe("LandingLayout", () => {
     // Registrarse ya no está en el header (simplificado por diseño)
     // El registro se maneja desde el modal de autenticación
     expect(screen.queryByText("Registrarse")).not.toBeInTheDocument();
+  });
+
+  it("muestra la regla de secciones por defecto", () => {
+    renderLayout();
+
+    expect(
+      screen.getByRole("navigation", { name: "Secciones de la landing" }),
+    ).toBeDefined();
+    // La sección posicionada se oculta del riel; el resto sigue como botones de navegación
+    expect(
+      screen.getAllByRole("button", { name: /^Ir a / }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("oculta la regla mientras un modal de la landing está abierto", () => {
+    renderLayout({ ocultarRegla: true });
+
+    expect(
+      screen.queryByRole("navigation", { name: "Secciones de la landing" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryAllByRole("button", { name: /^Ir a / }).length,
+    ).toBe(0);
+
+    // El resto de la landing permanece montado
+    expect(screen.getByText(/Controla tu dinero/i)).toBeDefined();
   });
 });

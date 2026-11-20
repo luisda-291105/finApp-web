@@ -89,7 +89,16 @@ Object.defineProperty(window, "sessionStorage", {
 //
 // LO QUE ESTE STUB NO ES: no mockea `focus-trap-react` ni `tabbable` (se ejecutan reales) y no
 //      usa `displayCheck` en ninguna parte; solo aporta la geometría que el navegador daría.
-const rectConArea = { x: 0, y: 0, top: 0, right: 1, bottom: 1, left: 0, width: 1, height: 1 };
+const rectConArea = {
+  x: 0,
+  y: 0,
+  top: 0,
+  right: 1,
+  bottom: 1,
+  left: 0,
+  width: 1,
+  height: 1,
+};
 
 const getBoundingClientRectOriginal = Element.prototype.getBoundingClientRect;
 Element.prototype.getBoundingClientRect = function getBoundingClientRect() {

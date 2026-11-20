@@ -1,23 +1,30 @@
 /**
  * @uso        Autoriza Google y consulta Gmail/Contacts por medio del backend
- * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail
+ * @funciones  iniciarCodigoAutorizacionGmail, canjearCodigoGmail, obtenerCorreosGmail, obtenerEstadoCorreosGmail, listarPapeleraGmail, moverMensajeAPapeleraGmail, restaurarMensajeDePapeleraGmail, obtenerConfiguracionPapeleraGmail, guardarConfiguracionPapeleraGmail, generarVistaPreviaPapeleraGmail, iniciarLimpiezaPapeleraGmail, obtenerEstadoLimpiezaPapeleraGmail, listarListaBlancaGmail, agregarRemitenteListaBlancaGmail, eliminarRemitenteListaBlancaGmail
  * @datos      El backend conserva y usa las credenciales; el navegador solo recibe datos de consulta
  * @eventos    Abre el selector y consentimiento OAuth de Google
  * @estados    Ninguno
  * @usadoPor   GmailContext y features/configuracion, features/contactos, features/correos
  */
-import { getEndpoint } from "../config/api.config";
+import { getEndpoint, getEndpointConParametros } from "../config/api.config";
+import { renovarSesion } from "./httpServicio";
 
 const URL_BIBLIOTECA_GOOGLE = "https://accounts.google.com/gsi/client";
 const ALCANCE_GMAIL_LECTURA = "https://www.googleapis.com/auth/gmail.readonly";
-const ALCANCE_CONTACTOS_LECTURA = "https://www.googleapis.com/auth/contacts.readonly";
+export const ALCANCE_GMAIL_MODIFICAR =
+  "https://www.googleapis.com/auth/gmail.modify";
+const ALCANCE_CONTACTOS_LECTURA =
+  "https://www.googleapis.com/auth/contacts.readonly";
 const ID_CLIENTE_GOOGLE = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 export const GMAIL_CONFIGURADO = Boolean(ID_CLIENTE_GOOGLE);
 const MENSAJE_ACCESO_DENEGADO =
   "Google denegó el acceso (403 access_denied). Si la app está en modo de prueba, agrega tu cuenta a Usuarios de prueba en Google Cloud Console y vuelve a intentar.";
+const MENSAJE_PERMISO_MODIFICAR =
+  "Google no concedió el permiso para modificar tus correos (gmail.modify). Vuelve a autorizarlo desde la vista Papelera.";
 const CACHE_CONSULTA_MS = 45 * 1000;
 const CACHE_CONTENIDO_MS = 5 * 60 * 1000;
-export const REMITENTE_MOVIMIENTOS_BANCOLOMBIA = "alertasynotificaciones@ayn.notificacionesbancolombia.com";
+export const REMITENTE_MOVIMIENTOS_BANCOLOMBIA =
+  "alertasynotificaciones@ayn.notificacionesbancolombia.com";
 
 let cargaBiblioteca;
 const cacheConsultas = new Map();
@@ -28,13 +35,20 @@ function cargarBibliotecaGoogle() {
   if (cargaBiblioteca) return cargaBiblioteca;
 
   cargaBiblioteca = new Promise((resolver, rechazar) => {
-    const existente = document.querySelector(`script[src="${URL_BIBLIOTECA_GOOGLE}"]`);
+    const existente = document.querySelector(
+      `script[src="${URL_BIBLIOTECA_GOOGLE}"]`,
+    );
     const script = existente || document.createElement("script");
-    const alCargar = () => window.google?.accounts?.oauth2
-      ? resolver()
-      : rechazar(new Error("Google Identity Services no está disponible."));
+    const alCargar = () =>
+      window.google?.accounts?.oauth2
+        ? resolver()
+        : rechazar(new Error("Google Identity Services no está disponible."));
     script.addEventListener("load", alCargar, { once: true });
-    script.addEventListener("error", () => rechazar(new Error("No se pudo cargar la autorización de Google.")), { once: true });
+    script.addEventListener(
+      "error",
+      () => rechazar(new Error("No se pudo cargar la autorización de Google.")),
+      { once: true },
+    );
     if (!existente) {
       script.src = URL_BIBLIOTECA_GOOGLE;
       script.async = true;
@@ -51,48 +65,90 @@ function cargarBibliotecaGoogle() {
 
 /** Prepara GIS antes del gesto del usuario para que el popup no sea bloqueado. */
 export async function prepararGoogleIdentityServices() {
-  if (!ID_CLIENTE_GOOGLE) throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.");
+  if (!ID_CLIENTE_GOOGLE)
+    throw new Error(
+      "Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.",
+    );
   await cargarBibliotecaGoogle();
 }
 
+/** Compone el alcance OAuth solicitado según los permisos pedidos. */
+export function alcancesGmailSolicitados({
+  incluirContactos = false,
+  incluirModificar = false,
+} = {}) {
+  // `gmail.modify` incluye la lectura: no se piden ambos a la vez.
+  const alcances = [
+    incluirModificar ? ALCANCE_GMAIL_MODIFICAR : ALCANCE_GMAIL_LECTURA,
+  ];
+  if (incluirContactos) alcances.push(ALCANCE_CONTACTOS_LECTURA);
+  return alcances.join(" ");
+}
+
 /** Solicita un código OAuth con popup GIS; las llamadas a las APIs se hacen en el backend. */
-export async function iniciarCodigoAutorizacionGmail({ incluirContactos = false, cuentaEsperada = "" } = {}) {
+export async function iniciarCodigoAutorizacionGmail({
+  incluirContactos = false,
+  incluirModificar = false,
+  cuentaEsperada = "",
+} = {}) {
   if (!ID_CLIENTE_GOOGLE) {
-    throw new Error("Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.");
+    throw new Error(
+      "Falta configurar VITE_GOOGLE_CLIENT_ID para conectar Gmail.",
+    );
   }
   await prepararGoogleIdentityServices();
 
   return new Promise((resolver, rechazar) => {
     const cliente = window.google.accounts.oauth2.initCodeClient({
       client_id: ID_CLIENTE_GOOGLE,
-      scope: incluirContactos ? `${ALCANCE_GMAIL_LECTURA} ${ALCANCE_CONTACTOS_LECTURA}` : ALCANCE_GMAIL_LECTURA,
+      scope: alcancesGmailSolicitados({ incluirContactos, incluirModificar }),
       include_granted_scopes: true,
       ux_mode: "popup",
-      ...(!incluirContactos ? { prompt: "consent" } : {}),
+      ...(incluirModificar || !incluirContactos ? { prompt: "consent" } : {}),
       select_account: !cuentaEsperada,
       ...(cuentaEsperada ? { login_hint: cuentaEsperada } : {}),
       callback: (respuesta) => {
         if (respuesta.error || !respuesta.code) {
-          rechazar(new Error(
-            respuesta.error === "access_denied"
-              ? MENSAJE_ACCESO_DENEGADO
-              : respuesta.error_description || "Google no autorizó la lectura de Gmail."
-          ));
+          rechazar(
+            new Error(
+              respuesta.error === "access_denied"
+                ? MENSAJE_ACCESO_DENEGADO
+                : respuesta.error_description ||
+                    "Google no autorizó la lectura de Gmail.",
+            ),
+          );
           return;
         }
-        if (incluirContactos && respuesta.scope
-          && !respuesta.scope.split(/\s+/).includes(ALCANCE_CONTACTOS_LECTURA)) {
-          rechazar(new Error("Google no concedió el permiso de lectura de Contactos. Vuelve a autorizarlo desde el detalle de la fuente Gmail."));
+        const alcancesConcedidos = String(respuesta.scope || "").split(/\s+/);
+        if (
+          incluirModificar &&
+          !alcancesConcedidos.includes(ALCANCE_GMAIL_MODIFICAR)
+        ) {
+          // RF-24: no se da por hecho que Google concedió todo lo solicitado.
+          rechazar(new Error(MENSAJE_PERMISO_MODIFICAR));
+          return;
+        }
+        if (
+          incluirContactos &&
+          respuesta.scope &&
+          !alcancesConcedidos.includes(ALCANCE_CONTACTOS_LECTURA)
+        ) {
+          rechazar(
+            new Error(
+              "Google no concedió el permiso de lectura de Contactos. Vuelve a autorizarlo desde el detalle de la fuente Gmail.",
+            ),
+          );
           return;
         }
         resolver(respuesta.code);
       },
       error_callback: (respuesta) => {
-        const mensaje = respuesta.type === "popup_closed"
-          ? `La autorización de Google se cerró antes de terminar. ${MENSAJE_ACCESO_DENEGADO}`
-          : respuesta.type === "popup_failed_to_open"
-            ? "El navegador bloqueó la ventana de Google. Permite ventanas emergentes para localhost y vuelve a intentar."
-            : respuesta.message || "No se completó la autorización de Gmail.";
+        const mensaje =
+          respuesta.type === "popup_closed"
+            ? `La autorización de Google se cerró antes de terminar. ${MENSAJE_ACCESO_DENEGADO}`
+            : respuesta.type === "popup_failed_to_open"
+              ? "El navegador bloqueó la ventana de Google. Permite ventanas emergentes para localhost y vuelve a intentar."
+              : respuesta.message || "No se completó la autorización de Gmail.";
         rechazar(new Error(mensaje));
       },
     });
@@ -104,15 +160,45 @@ export async function iniciarCodigoAutorizacionGmail({ incluirContactos = false,
   });
 }
 
-async function solicitarBackend(url, opciones = {}) {
+async function solicitarBackend(url, opciones = {}, reintentada = false) {
   const respuesta = await fetch(url, { credentials: "include", ...opciones });
   const datos = await respuesta.json().catch(() => ({}));
+  let renovacionFallida = false;
+  // El access de FinApp dura 15 min: si venció, se renueva una sola vez y se
+  // reintenta. Un 401 con requires_reconnect viene de Google, no de la sesión,
+  // así que no se intenta renovar.
+  if (respuesta.status === 401 && !datos?.requires_reconnect && !reintentada) {
+    try {
+      await renovarSesion();
+      return await solicitarBackend(url, opciones, true);
+    } catch {
+      // `renovarSesion` ya avisó a la UI; aquí solo se limpia la caché.
+      renovacionFallida = true;
+    }
+  }
   if (respuesta.status === 401) {
     cacheConsultas.clear();
     cacheContenido.clear();
-    window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+    // Un 401 con requires_reconnect viene de Google, no de la sesión FinApp:
+    // se limpia la caché, pero no se cierra la sesión del usuario.
+    if (!datos?.requires_reconnect && !renovacionFallida) {
+      window.dispatchEvent(new CustomEvent("finapp:sesion-requerida"));
+    }
   }
-  if (!respuesta.ok) throw new Error(datos.message || "No se pudo completar la consulta de Google.");
+  if (!respuesta.ok) {
+    const error = new Error(
+      datos.message || "No se pudo completar la consulta de Google.",
+    );
+    error.status = respuesta.status;
+    // El backend añade flags de acción del usuario en el mismo cuerpo (patrón
+    // requires_reconnect): requires_scope_authorization, mail_unavailable,
+    // limpieza_en_curso, etc. Se propagan al Error para que la UI los distinga.
+    for (const [clave, valor] of Object.entries(datos || {})) {
+      if (clave === "message") continue;
+      error[clave] = valor;
+    }
+    throw error;
+  }
   return datos;
 }
 
@@ -123,7 +209,10 @@ function consultarConCache(cache, clave, duracionMs, consultar) {
   }
   const actual = cache.get(clave);
   if (actual) return actual.promesa;
-  const registro = { creadoEn: ahora, promesa: Promise.resolve().then(consultar) };
+  const registro = {
+    creadoEn: ahora,
+    promesa: Promise.resolve().then(consultar),
+  };
   cache.set(clave, registro);
   if (cache.size > 100) cache.delete(cache.keys().next().value);
   registro.promesa.catch(() => {
@@ -141,9 +230,13 @@ export async function canjearCodigoGmail(code, cuentaEsperadaId = "") {
       "Content-Type": "application/json",
       "X-Requested-With": "XmlHttpRequest",
     },
-    body: JSON.stringify({ code, expected_account_id: cuentaEsperadaId || undefined }),
+    body: JSON.stringify({
+      code,
+      expected_account_id: cuentaEsperadaId || undefined,
+    }),
   });
-  if (!datos.account_id) throw new Error("El servidor respondió sin identificar la cuenta Gmail.");
+  if (!datos.account_id)
+    throw new Error("El servidor respondió sin identificar la cuenta Gmail.");
   return {
     email: datos.email || "Cuenta de Gmail",
     accountId: datos.account_id,
@@ -162,8 +255,12 @@ export async function listarSuscripcionesGmail() {
 }
 
 /** Recupera los mensajes recientes guardados para el remitente de una suscripción activa. */
-export async function obtenerMensajesSuscripcionGmail(accountId, correoRemitente) {
-  if (!accountId || !correoRemitente) throw new Error("Selecciona una suscripción para consultar sus mensajes.");
+export async function obtenerMensajesSuscripcionGmail(
+  accountId,
+  correoRemitente,
+) {
+  if (!accountId || !correoRemitente)
+    throw new Error("Selecciona una suscripción para consultar sus mensajes.");
   const url = `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/mensajes?correo=${encodeURIComponent(correoRemitente)}`;
   const mensajes = await solicitarBackend(url);
   return (Array.isArray(mensajes) ? mensajes : []).map(clasificarCorreo);
@@ -171,16 +268,23 @@ export async function obtenerMensajesSuscripcionGmail(accountId, correoRemitente
 
 /** Inicia la importación asíncrona de mensajes del remitente oficial de movimientos. */
 export async function iniciarImportacionLoteGmail(accountId) {
-  if (!accountId) throw new Error("Selecciona una cuenta Gmail para importar mensajes.");
-  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/importar-lote`, {
-    method: "POST",
-  });
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para importar mensajes.");
+  return solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/importar-lote`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 /** Consulta el progreso y los resultados por mensaje de un lote Gmail. */
 export async function obtenerEstadoImportacionLoteGmail(accountId, loteId) {
-  if (!accountId || !loteId) throw new Error("Falta la cuenta o el identificador del lote Gmail.");
-  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/lotes/${encodeURIComponent(loteId)}`);
+  if (!accountId || !loteId)
+    throw new Error("Falta la cuenta o el identificador del lote Gmail.");
+  return solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/suscripciones/lotes/${encodeURIComponent(loteId)}`,
+  );
 }
 
 export async function listarNotificacionesMovimientosGmail() {
@@ -189,73 +293,314 @@ export async function listarNotificacionesMovimientosGmail() {
 
 export async function confirmarNotificacionesMovimientosGmail(ids) {
   if (!ids?.length) return;
-  await solicitarBackend(`${getEndpoint("gmail.movimientosNotificaciones")}/confirmar`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids }),
-  });
+  await solicitarBackend(
+    `${getEndpoint("gmail.movimientosNotificaciones")}/confirmar`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    },
+  );
 }
 
 export async function obtenerConexionCuentaGmail(accountId) {
-  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/conexion`);
+  return solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/conexion`,
+  );
+}
+
+/** Estado de sincronización y de la cola de correos entrantes de una cuenta Gmail. */
+export async function obtenerEstadoCorreosGmail(accountId) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para consultar su estado.");
+  return solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/estado`,
+  );
+}
+
+/** Lista la Papelera real de Gmail de una cuenta; admite paginación con `page_token`. */
+export async function listarPapeleraGmail(accountId, pageToken = "") {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para ver su papelera.");
+  const ruta = getEndpointConParametros("gmail.papelera", {
+    cuentaId: accountId,
+  });
+  const url = pageToken
+    ? `${ruta}?page_token=${encodeURIComponent(pageToken)}`
+    : ruta;
+  return solicitarBackend(url);
+}
+
+/** Mueve a la Papelera de Gmail un mensaje concreto (operación recuperable). */
+export async function moverMensajeAPapeleraGmail(accountId, messageId) {
+  if (!accountId || !messageId)
+    throw new Error("Falta la cuenta o el mensaje para mover a la papelera.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraMensaje", {
+      cuentaId: accountId,
+      mensajeId: messageId,
+    }),
+    { method: "POST" },
+  );
+}
+
+/** Restaura a la bandeja un mensaje que está en la Papelera de Gmail. */
+export async function restaurarMensajeDePapeleraGmail(accountId, messageId) {
+  if (!accountId || !messageId)
+    throw new Error("Falta la cuenta o el mensaje para restaurar.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.restaurarMensaje", {
+      cuentaId: accountId,
+      mensajeId: messageId,
+    }),
+    { method: "POST" },
+  );
+}
+
+/** Lee la configuración de la limpieza automática por categorías de una cuenta. */
+export async function obtenerConfiguracionPapeleraGmail(accountId) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para configurar su papelera.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraConfiguracion", {
+      cuentaId: accountId,
+    }),
+  );
+}
+
+/** Guarda las categorías activas, la antigüedad, el límite y la advertencia aceptada. */
+export async function guardarConfiguracionPapeleraGmail(
+  accountId,
+  configuracion = {},
+) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para configurar su papelera.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraConfiguracion", {
+      cuentaId: accountId,
+    }),
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categorias_activas: configuracion.categoriasActivas || [],
+        antiguedad_minima_dias: configuracion.antiguedadMinimaDias,
+        limite_por_ejecucion: configuracion.limitePorEjecucion,
+        advertencia_aceptada: configuracion.advertenciaAceptada === true,
+      }),
+    },
+  );
+}
+
+/** Genera una vista previa de la limpieza (cuántos correos y remitentes por categoría). */
+export async function generarVistaPreviaPapeleraGmail(
+  accountId,
+  { categorias = [], antiguedadMinimaDias } = {},
+) {
+  if (!accountId)
+    throw new Error(
+      "Selecciona una cuenta Gmail para previsualizar la limpieza.",
+    );
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraVistaPrevia", {
+      cuentaId: accountId,
+    }),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categorias,
+        antiguedad_minima_dias: antiguedadMinimaDias,
+      }),
+    },
+  );
+}
+
+/** Inicia la limpieza explícita de los correos ya recibidos según la vista previa confirmada. */
+export async function iniciarLimpiezaPapeleraGmail(
+  accountId,
+  { vistaPreviaId, totalEstimado } = {},
+) {
+  if (!accountId || !vistaPreviaId)
+    throw new Error("Falta la vista previa para ejecutar la limpieza.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraLimpieza", {
+      cuentaId: accountId,
+    }),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vista_previa_id: vistaPreviaId,
+        total_estimado: totalEstimado,
+        confirmado: true,
+      }),
+    },
+  );
+}
+
+/** Consulta el progreso de un lote de limpieza de la papelera. */
+export async function obtenerEstadoLimpiezaPapeleraGmail(accountId, loteId) {
+  if (!accountId || !loteId)
+    throw new Error("Falta la cuenta o el lote de limpieza.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.papeleraLimpiezaLote", {
+      cuentaId: accountId,
+      loteId,
+    }),
+  );
+}
+
+/** Lista los remitentes de la lista blanca de una cuenta. */
+export async function listarListaBlancaGmail(accountId) {
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para ver su lista blanca.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.listaBlanca", { cuentaId: accountId }),
+  );
+}
+
+/** Añade un remitente a la lista blanca de una cuenta. */
+export async function agregarRemitenteListaBlancaGmail(accountId, remitente) {
+  if (!accountId || !remitente)
+    throw new Error("Indica la cuenta y el remitente para la lista blanca.");
+  return solicitarBackend(
+    getEndpointConParametros("gmail.listaBlanca", { cuentaId: accountId }),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ remitente }),
+    },
+  );
+}
+
+/** Quita un remitente de la lista blanca de una cuenta. */
+export async function eliminarRemitenteListaBlancaGmail(accountId, remitenteId) {
+  if (!accountId || !remitenteId)
+    throw new Error("Falta la cuenta o el remitente para quitar.");
+  await solicitarBackend(
+    getEndpointConParametros("gmail.listaBlancaRemitente", {
+      cuentaId: accountId,
+      remitenteId,
+    }),
+    { method: "DELETE" },
+  );
+}
+
+/** Invalida la caché de mensajes para volver a pedirlos cuando llega correo nuevo. */
+export function invalidarCacheConsultasGmail() {
+  cacheConsultas.clear();
 }
 
 export async function eliminarCuentaGmail(accountId) {
-  await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}`, { method: "DELETE" });
+  await solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}`,
+    { method: "DELETE" },
+  );
 }
 
 /** Consulta los contactos de una cuenta Google vinculada por medio del backend. */
 export async function obtenerContactosGoogle(accountId) {
-  if (!accountId) throw new Error("Selecciona una cuenta Gmail para consultar sus contactos.");
-  return solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/contactos`);
+  if (!accountId)
+    throw new Error(
+      "Selecciona una cuenta Gmail para consultar sus contactos.",
+    );
+  return solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/contactos`,
+  );
 }
 
 export async function verificarPermisoContactosGoogle(accountId) {
   if (!accountId) return false;
-  const datos = await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/contactos/permiso`);
+  const datos = await solicitarBackend(
+    `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/contactos/permiso`,
+  );
   return datos.autorizado === true;
 }
 
 /** Recupera los mensajes destinados a fuentes propias, sin exponer el token al navegador. */
 export async function obtenerCorreosGmail(accountId, fuentes) {
-  if (!accountId) throw new Error("Selecciona una cuenta Gmail para consultar los mensajes.");
-  const fuentesIds = [...new Set((fuentes || []).map((fuente) => fuente.idFuente)
-    .filter((id) => id && !String(id).startsWith("gmail-")))];
+  if (!accountId)
+    throw new Error("Selecciona una cuenta Gmail para consultar los mensajes.");
+  const fuentesIds = [
+    ...new Set(
+      (fuentes || [])
+        .map((fuente) => fuente.idFuente)
+        .filter((id) => id && !String(id).startsWith("gmail-")),
+    ),
+  ];
   const clave = `${accountId}:${fuentesIds.slice().sort().join(",")}`;
-  return consultarConCache(cacheConsultas, clave, CACHE_CONSULTA_MS, async () => {
-    const mensajes = await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/mensajes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fuentes_ids: fuentesIds }),
-    });
-    return (Array.isArray(mensajes) ? mensajes : []).map(clasificarCorreo);
-  });
+  return consultarConCache(
+    cacheConsultas,
+    clave,
+    CACHE_CONSULTA_MS,
+    async () => {
+      const mensajes = await solicitarBackend(
+        `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/mensajes`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fuentes_ids: fuentesIds }),
+        },
+      );
+      return (Array.isArray(mensajes) ? mensajes : []).map(clasificarCorreo);
+    },
+  );
 }
 
 /** Recupera del backend el cuerpo de un correo de la cuenta seleccionada. */
 export async function obtenerContenidoCorreoGmail(accountId, messageId) {
   const clave = `${accountId}:${messageId}`;
-  return consultarConCache(cacheContenido, clave, CACHE_CONTENIDO_MS, async () => {
-    const datos = await solicitarBackend(`${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/mensajes/${encodeURIComponent(messageId)}/contenido`);
-    return datos.content || "";
-  });
+  return consultarConCache(
+    cacheContenido,
+    clave,
+    CACHE_CONTENIDO_MS,
+    async () => {
+      const datos = await solicitarBackend(
+        `${getEndpoint("gmail.cuentas")}/${encodeURIComponent(accountId)}/mensajes/${encodeURIComponent(messageId)}/contenido`,
+      );
+      return datos.content || "";
+    },
+  );
 }
 
 /** Lee en serie el cuerpo solo de los mensajes financieros candidatos. */
-export async function obtenerContenidoCorreosFinancierosGmail(accountId, correosCandidatos) {
+export async function obtenerContenidoCorreosFinancierosGmail(
+  accountId,
+  correosCandidatos,
+) {
   const resultados = [];
   for (const correo of (correosCandidatos || []).slice(0, 5)) {
-    resultados.push({ ...correo, contenido: await obtenerContenidoCorreoGmail(accountId, correo.id) });
+    resultados.push({
+      ...correo,
+      contenido: await obtenerContenidoCorreoGmail(accountId, correo.id),
+    });
   }
   return resultados;
 }
 
 function clasificarCorreo(correo) {
-  const texto = `${correo.remitente} ${correo.asunto} ${correo.fragmento}`.toLocaleLowerCase("es");
-  const esContable = /factura|recibo|extracto|estado de cuenta|pago|transacci[oó]n|compra|saldo|cobro|invoice|receipt|statement|payment|transaction/.test(texto);
-  const esEstudios = /estudio|estudios|universidad|colegio|escuela|academia|curso|curs[oó]s|capacitaci[oó]n|formaci[oó]n|lecci[oó]n|clase|educaci[oó]n|educativo|learning|education|course|class|lesson|training|school|university|academy|coursera|udemy|edx|platzi|codecademy/.test(texto);
-  const esEntretenimiento = /netflix|spotify|youtube|disney|prime video|hbo|cine|concierto|juego|gaming|entretenimiento|streaming|music|movie/.test(texto);
+  const texto =
+    `${correo.remitente} ${correo.asunto} ${correo.fragmento}`.toLocaleLowerCase(
+      "es",
+    );
+  const esContable =
+    /factura|recibo|extracto|estado de cuenta|pago|transacci[oó]n|compra|saldo|cobro|invoice|receipt|statement|payment|transaction/.test(
+      texto,
+    );
+  const esEstudios =
+    /estudio|estudios|universidad|colegio|escuela|academia|curso|curs[oó]s|capacitaci[oó]n|formaci[oó]n|lecci[oó]n|clase|educaci[oó]n|educativo|learning|education|course|class|lesson|training|school|university|academy|coursera|udemy|edx|platzi|codecademy/.test(
+      texto,
+    );
+  const esEntretenimiento =
+    /netflix|spotify|youtube|disney|prime video|hbo|cine|concierto|juego|gaming|entretenimiento|streaming|music|movie/.test(
+      texto,
+    );
   const etiquetas = Array.isArray(correo.etiquetas) ? correo.etiquetas : [];
-  const esImportante = etiquetas.includes("IMPORTANT") || /urgente|importante|acci[oó]n requerida|vencimiento|alerta de seguridad|verifica tu cuenta/.test(texto);
+  const esImportante =
+    etiquetas.includes("IMPORTANT") ||
+    /urgente|importante|acci[oó]n requerida|vencimiento|alerta de seguridad|verifica tu cuenta/.test(
+      texto,
+    );
   return { ...correo, esContable, esEstudios, esEntretenimiento, esImportante };
 }

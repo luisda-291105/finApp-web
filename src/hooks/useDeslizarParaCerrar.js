@@ -44,7 +44,11 @@ function hayDesplazamientoInterno(objetivo, panel) {
  * - No aplica `transform` ni transición alguna: no introduce movimiento nuevo, así
  *   que respeta `prefers-reduced-motion` por construcción (RF-21).
  */
-export function useDeslizarParaCerrar({ activo = true, refPanel, alCerrar } = {}) {
+export function useDeslizarParaCerrar({
+  activo = true,
+  refPanel,
+  alCerrar,
+} = {}) {
   const { isMobile } = useBreakpoint();
   const refAlCerrar = useRef(alCerrar);
 
@@ -90,12 +94,17 @@ export function useDeslizarParaCerrar({ activo = true, refPanel, alCerrar } = {}
       const desplazamientoX = x - inicioX;
       const desplazamientoY = y - inicioY;
       if (desplazamientoY < UMBRAL_DESLIZAMIENTO) return;
-      if (Math.abs(desplazamientoY) <= Math.abs(desplazamientoX) * FACTOR_DIRECCION_VERTICAL) return;
+      if (
+        Math.abs(desplazamientoY) <=
+        Math.abs(desplazamientoX) * FACTOR_DIRECCION_VERTICAL
+      )
+        return;
       refAlCerrar.current?.();
     };
 
     const alCancelarPuntero = (evento) => {
-      if (idPuntero !== null && evento.pointerId === idPuntero) idPuntero = null;
+      if (idPuntero !== null && evento.pointerId === idPuntero)
+        idPuntero = null;
     };
 
     panel.addEventListener("pointerdown", alPulsarPuntero);

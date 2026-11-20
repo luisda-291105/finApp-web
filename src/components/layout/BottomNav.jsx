@@ -1,13 +1,13 @@
 /**
  * @uso        Barra de navegación inferior para móvil (4 controles estándar; 5 entre 470px y 750px con Contactos)
- * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef })
- * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu (callback menú)
- * @eventos    click en ítems de navegación → alNavegar(ruta), click en «Menú» → alAbrirMenu()
+ * @funciones  BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef, menuAbierto, alCerrarMenu })
+ * @datos      Recibe itemActivo (ruta activa), alNavegar (callback navegación), alAbrirMenu/alCerrarMenu (callbacks menú), menuAbierto (estado)
+ * @eventos    click en ítems de navegación → alNavegar(ruta), click en «Menú» → alAbrirMenu() o alCerrarMenu() según menuAbierto
  * @estados    mostrarExtra (boolean, según ancho de pantalla 470px a 750px)
  * @usadoPor   DashboardLayout (navegación inferior de móvil)
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { clsx } from "clsx";
 import {
   Home,
@@ -47,11 +47,21 @@ function verificarRangoPantalla() {
  * @param {Object} props
  * @param {string} props.itemActivo - Ruta actualmente activa (ej: "/dashboard/contabilidad")
  * @param {(ruta: string) => void} props.alNavegar - Callback al hacer click en los ítems de navegación
- * @param {() => void} props.alAbrirMenu - Callback al hacer click en «Menú»
+ * @param {() => void} props.alAbrirMenu - Callback al hacer click en «Menú» para abrir
  * @param {React.RefObject<HTMLElement>} [props.menuTriggerRef] - Ref opcional para el botón «Menú», usado para focus trap return
+ * @param {boolean} [props.menuAbierto] - Indica si el menú superpuesto está abierto
+ * @param {() => void} [props.alCerrarMenu] - Callback para cerrar el menú cuando está abierto
  */
-export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTriggerRef }) {
+export default function BottomNav({
+  itemActivo,
+  alNavegar,
+  alAbrirMenu,
+  menuTriggerRef,
+  menuAbierto = false,
+  alCerrarMenu,
+}) {
   const [mostrarExtra, setMostrarExtra] = useState(verificarRangoPantalla);
+  const navRef = useRef(null);
 
   useEffect(() => {
     const alRedimensionar = () => {
@@ -66,56 +76,98 @@ export default function BottomNav({ itemActivo, alNavegar, alAbrirMenu, menuTrig
     };
   }, []);
 
-  const itemsVisibles = mostrarExtra ? [...itemsBase, itemSidebarExtra] : itemsBase;
+  /* Publica la altura real de la barra (incluye safe-bottom) para que los modales
+     móviles se anclen justo en su borde superior (var --bottom-nav-alto). */
+  useEffect(() => {
+    const publicarAlto = () => {
+      document.documentElement.style.setProperty(
+        "--bottom-nav-alto",
+        `${navRef.current?.offsetHeight ?? 0}px`,
+      );
+    };
+    publicarAlto();
+    window.addEventListener("resize", publicarAlto);
+    return () => {
+      window.removeEventListener("resize", publicarAlto);
+      document.documentElement.style.removeProperty("--bottom-nav-alto");
+    };
+  }, []);
+
+  const itemsVisibles = mostrarExtra
+    ? [...itemsBase, itemSidebarExtra]
+    : itemsBase;
 
   return (
     <nav
+      ref={navRef}
       className={clsx(
-        "fixed bottom-0 left-0 right-0 z-[1100] bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid",
-        mostrarExtra ? "grid-cols-5" : "grid-cols-4"
+        "fixed bottom-0 left-0 right-0 z-[2100] bg-bg-dark/80 glass-surface border-t border-border-line/20 safe-bottom grid",
+        mostrarExtra ? "grid-cols-5" : "grid-cols-4",
       )}
       role="navigation"
       aria-label="Navegación principal móvil"
     >
-      {itemsVisibles.map(({ ruta, etiqueta, icono: Icono }) => (
-        <button
-          key={ruta}
-          type="button"
-          onClick={() => alNavegar(ruta)}
-          className={clsx(
-            "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
-            ruta === itemActivo
-              ? "text-mint-accent"
-              : "text-bg-cream hover:text-mint-accent"
-          )}
-          aria-current={ruta === itemActivo ? "page" : undefined}
-        >
-          <Icono className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-          <span className="text-xs font-medium truncate bottom-nav-label">
-            {etiqueta}
-          </span>
-          {ruta === itemActivo && (
-            <span
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-mint-accent rounded-full"
-              aria-hidden="true"
-            />
-          )}
-        </button>
-      ))}
+      {itemsVisibles.map(({ ruta, etiqueta, icono: Icono }) => {
+        const esPaginaActual = ruta === itemActivo;
+        return (
+          <button
+            key={ruta}
+            type="button"
+            onClick={() => {
+              if (esPaginaActual) {
+                // Ítem de la página actual: al tocarlo, vuelve arriba de la página
+                const reducirMovimiento = window.matchMedia(
+                  "(prefers-reduced-motion: reduce)",
+                ).matches;
+                window.scrollTo({
+                  top: 0,
+                  behavior: reducirMovimiento ? "auto" : "smooth",
+                });
+                return;
+              }
+              alNavegar(ruta);
+            }}
+            className={clsx(
+              "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
+              esPaginaActual
+                ? "text-mint-accent"
+                : "text-bg-cream hover:text-mint-accent",
+            )}
+            aria-current={esPaginaActual ? "page" : undefined}
+            aria-label={
+              esPaginaActual ? `${etiqueta} (volver arriba)` : etiqueta
+            }
+          >
+            <Icono className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+            <span className="text-xs font-medium truncate bottom-nav-label">
+              {etiqueta}
+            </span>
+            {esPaginaActual && (
+              <span
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-mint-accent rounded-full"
+                aria-hidden="true"
+              />
+            )}
+          </button>
+        );
+      })}
 
       {/* Control: Menú */}
       <button
         type="button"
         ref={menuTriggerRef}
-        onClick={alAbrirMenu}
+        onClick={menuAbierto ? (alCerrarMenu ?? alAbrirMenu) : alAbrirMenu}
         className={clsx(
           "flex flex-col items-center gap-1 px-2 py-2 min-w-0 relative",
-          "text-bg-cream hover:text-mint-accent"
+          "text-bg-cream hover:text-mint-accent",
         )}
-        aria-label="Abrir menú"
+        aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={menuAbierto}
       >
         <MoreHorizontal className="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        <span className="text-xs font-medium truncate bottom-nav-label">Menú</span>
+        <span className="text-xs font-medium truncate bottom-nav-label">
+          {menuAbierto ? "Cerrar" : "Menú"}
+        </span>
       </button>
     </nav>
   );

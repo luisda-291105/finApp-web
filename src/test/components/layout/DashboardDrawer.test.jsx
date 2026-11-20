@@ -21,21 +21,49 @@ import SidebarNavContenido from "../../../components/layout/SidebarNavContenido"
 vi.mock("framer-motion", async () => {
   const React = await vi.importActual("react");
   const PROPS_DE_ANIMACION = new Set([
-    "initial", "animate", "exit", "transition", "variants", "custom",
-    "whileHover", "whileTap", "whileFocus", "whileDrag", "whileInView",
-    "layout", "layoutId", "layoutDependency", "layoutScroll",
-    "drag", "dragConstraints", "dragElastic", "dragMomentum", "dragPropagation",
-    "dragDirectionLock", "dragControls",
-    "onDragStart", "onDrag", "onDragEnd", "onAnimationStart", "onAnimationComplete",
-    "onUpdate", "transformTemplate", "viewport", "inherit",
+    "initial",
+    "animate",
+    "exit",
+    "transition",
+    "variants",
+    "custom",
+    "whileHover",
+    "whileTap",
+    "whileFocus",
+    "whileDrag",
+    "whileInView",
+    "layout",
+    "layoutId",
+    "layoutDependency",
+    "layoutScroll",
+    "drag",
+    "dragConstraints",
+    "dragElastic",
+    "dragMomentum",
+    "dragPropagation",
+    "dragDirectionLock",
+    "dragControls",
+    "onDragStart",
+    "onDrag",
+    "onDragEnd",
+    "onAnimationStart",
+    "onAnimationComplete",
+    "onUpdate",
+    "transformTemplate",
+    "viewport",
+    "inherit",
   ]);
   const propsDom = (props) =>
-    Object.fromEntries(Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)));
+    Object.fromEntries(
+      Object.entries(props).filter(([clave]) => !PROPS_DE_ANIMACION.has(clave)),
+    );
   return {
     __esModule: true,
     motion: {
       div: React.forwardRef(({ children, ...props }, ref) => (
-        <div ref={ref} {...propsDom(props)}>{children}</div>
+        <div ref={ref} {...propsDom(props)}>
+          {children}
+        </div>
       )),
     },
     AnimatePresence: ({ children }) => children,
@@ -57,9 +85,13 @@ const mockMatchMedia = (coincide) =>
 
 /** Fija el viewport; el menú superpuesto es la superficie de móvil (<768px). */
 const configurarViewport = (ancho) => {
-  Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: ancho });
+  Object.defineProperty(window, "innerWidth", {
+    writable: true,
+    configurable: true,
+    value: ancho,
+  });
   window.matchMedia = mockMatchMedia(
-    (query) => ancho >= 768 && query.includes("min-width: 768px")
+    (query) => ancho >= 768 && query.includes("min-width: 768px"),
   );
 };
 
@@ -73,23 +105,24 @@ const renderDrawer = (props = {}, initialEntries = ["/dashboard"]) => {
   const defaultProps = {
     abierto: true,
     alCerrar: vi.fn(),
-    children: (
-      <SidebarNavContenido alAbrirUserModal={vi.fn()} />
-    ),
+    children: <SidebarNavContenido alAbrirUserModal={vi.fn()} />,
     ...props,
   };
 
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <DashboardDrawer {...defaultProps} />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 };
 
-const obtenerPanel = () => document.body.querySelector("#dashboard-drawer-panel");
+const obtenerPanel = () =>
+  document.body.querySelector("#dashboard-drawer-panel");
 
 const obtenerBackdrop = () =>
-  document.body.querySelector('div.fixed.inset-0.bg-bg-dark\\/80[aria-hidden="true"]');
+  document.body.querySelector(
+    'div.fixed.inset-0.bg-bg-dark\\/80[aria-hidden="true"]',
+  );
 
 function RutaActual() {
   const ubicacion = useLocation();
@@ -106,7 +139,13 @@ const esperarFocoEnPanel = async (panel) => {
 /** Despacha un evento de puntero nativo con las propiedades que lee el gesto. */
 const dispararPuntero = (elemento, tipo, props = {}) => {
   const evento = new Event(tipo, { bubbles: true, cancelable: true });
-  Object.assign(evento, { isPrimary: true, pointerId: 5, clientX: 0, clientY: 0, ...props });
+  Object.assign(evento, {
+    isPrimary: true,
+    pointerId: 5,
+    clientX: 0,
+    clientY: 0,
+    ...props,
+  });
   elemento.dispatchEvent(evento);
 };
 
@@ -173,7 +212,10 @@ describe("DashboardDrawer", () => {
     it("panel: aria-label='Menú de navegación'", () => {
       renderDrawer({ abierto: true });
 
-      expect(obtenerPanel()).toHaveAttribute("aria-label", "Menú de navegación");
+      expect(obtenerPanel()).toHaveAttribute(
+        "aria-label",
+        "Menú de navegación",
+      );
     });
 
     it("la trampa REAL se crea con el hijo directo corregido (el panel es hijo directo de body)", async () => {
@@ -258,7 +300,9 @@ describe("DashboardDrawer", () => {
       await esperarFocoEnPanel(panel);
 
       expect(panel.getAttribute("tabindex")).toBe("-1");
-      expect(screen.getByRole("button", { name: "Cerrar menú" })).not.toBe(document.activeElement);
+      expect(screen.getByRole("button", { name: "Cerrar menú" })).not.toBe(
+        document.activeElement,
+      );
     });
 
     it("la trampa real confina el foco dentro del panel al tabular (no escapa)", async () => {
@@ -291,7 +335,7 @@ describe("DashboardDrawer", () => {
 
       const panel = obtenerPanel();
       const focusables = panel.querySelectorAll(
-        'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
 
       // Orden de tabulación: el cromo superior (la «X») precede al contenido del menú.
@@ -302,25 +346,33 @@ describe("DashboardDrawer", () => {
       expect(focusables[3].getAttribute("href")).toBe("/dashboard/grupos");
       expect(focusables[4].getAttribute("href")).toBe("/dashboard/contactos");
       expect(focusables[5].getAttribute("href")).toBe("/dashboard/correos");
-      expect(focusables[6].getAttribute("href")).toBe("/dashboard/contabilidad");
-      expect(focusables[7].getAttribute("href")).toBe("/dashboard/suscripciones");
-      expect(focusables[8].getAttribute("href")).toBe("/dashboard/almacenamiento");
+      expect(focusables[6].getAttribute("href")).toBe(
+        "/dashboard/contabilidad",
+      );
+      expect(focusables[7].getAttribute("href")).toBe(
+        "/dashboard/suscripciones",
+      );
+      expect(focusables[8].getAttribute("href")).toBe(
+        "/dashboard/almacenamiento",
+      );
       expect(focusables[9].tagName).toBe("BUTTON"); // Avatar
       expect(focusables[9].getAttribute("aria-label")).toContain("Cuenta de");
     });
 
-    it("mantiene el avatar después de los ocho enlaces y dentro del flujo del menú", () => {
+    it("ancla el avatar al fondo del menú, tras los ocho enlaces, dentro del nav", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
-      const nav = panel.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const nav = panel.querySelector(
+        "nav[aria-label='Navegación principal del dashboard']",
+      );
       const links = [...nav.querySelectorAll("a[href]")];
       const avatar = nav.querySelector("button[aria-label^='Cuenta de']");
 
       expect(links).toHaveLength(8);
       expect(nav.lastElementChild).toBe(avatar);
       expect(avatar).toBeTruthy();
-      expect(avatar.className).not.toMatch(/\b(?:fixed|sticky|absolute|bottom-0|mt-auto)\b/);
+      expect(avatar.className).toMatch(/\bmt-auto\b/);
       expect(nav.className).not.toMatch(/\b(?:min-h-full|h-full)\b/);
     });
 
@@ -329,7 +381,7 @@ describe("DashboardDrawer", () => {
 
       const panel = obtenerPanel();
       const focusables = panel.querySelectorAll(
-        '[tabindex]:not([tabindex="-1"])'
+        '[tabindex]:not([tabindex="-1"])',
       );
 
       expect([...focusables].includes(panel)).toBe(false);
@@ -360,7 +412,9 @@ describe("DashboardDrawer", () => {
       expect(panel.classList.contains("flex-col")).toBe(true);
 
       const filaCromo = panel.firstElementChild;
-      expect(filaCromo.contains(screen.getByRole("button", { name: "Cerrar menú" }))).toBe(true);
+      expect(
+        filaCromo.contains(screen.getByRole("button", { name: "Cerrar menú" })),
+      ).toBe(true);
 
       const envoltorio = filaCromo.nextElementSibling;
       expect(envoltorio.classList.contains("min-h-0")).toBe(true);
@@ -369,9 +423,13 @@ describe("DashboardDrawer", () => {
 
       // El contenido cuelga del envoltorio (más abajo que antes), no directamente del panel.
       expect(
-        envoltorio.querySelector("nav[aria-label='Navegación principal del dashboard']")
+        envoltorio.querySelector(
+          "nav[aria-label='Navegación principal del dashboard']",
+        ),
       ).toBeTruthy();
-      expect([...panel.children].some((hijo) => hijo.tagName === "NAV")).toBe(false);
+      expect([...panel.children].some((hijo) => hijo.tagName === "NAV")).toBe(
+        false,
+      );
     });
   });
 
@@ -382,13 +440,22 @@ describe("DashboardDrawer", () => {
       triggerRef.current.textContent = "Trigger";
       document.body.appendChild(triggerRef.current);
 
-      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+      const { rerender } = renderDrawer({
+        abierto: true,
+        alCerrar,
+        triggerRef,
+      });
 
       // Cerrar el drawer
       rerender(
         <MemoryRouter initialEntries={["/dashboard"]}>
-          <DashboardDrawer abierto={false} alCerrar={alCerrar} children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />} triggerRef={triggerRef} />
-        </MemoryRouter>
+          <DashboardDrawer
+            abierto={false}
+            alCerrar={alCerrar}
+            children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
+            triggerRef={triggerRef}
+          />
+        </MemoryRouter>,
       );
 
       // El foco debería estar en el trigger
@@ -409,8 +476,12 @@ describe("DashboardDrawer", () => {
       // Cerrar el drawer
       rerender(
         <MemoryRouter initialEntries={["/dashboard"]}>
-          <DashboardDrawer abierto={false} alCerrar={alCerrar} children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />} />
-        </MemoryRouter>
+          <DashboardDrawer
+            abierto={false}
+            alCerrar={alCerrar}
+            children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
+          />
+        </MemoryRouter>,
       );
 
       // El foco debería volver al elemento previo
@@ -425,7 +496,9 @@ describe("DashboardDrawer", () => {
       renderDrawer({ abierto: true });
 
       const panel = obtenerPanel();
-      const nav = panel.querySelector("nav[aria-label='Navegación principal del dashboard']");
+      const nav = panel.querySelector(
+        "nav[aria-label='Navegación principal del dashboard']",
+      );
       expect(nav).toBeTruthy();
 
       // Verificar los enlaces (NavLink renderiza <a> con href).
@@ -433,7 +506,9 @@ describe("DashboardDrawer", () => {
       expect(links.length).toBe(8);
 
       // Verificar avatar button
-      const avatarButton = panel.querySelector("button[aria-label*='Cuenta de']");
+      const avatarButton = panel.querySelector(
+        "button[aria-label*='Cuenta de']",
+      );
       expect(avatarButton).toBeTruthy();
     });
 
@@ -450,7 +525,7 @@ describe("DashboardDrawer", () => {
             children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
           />
           <RutaActual />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await esperarFocoEnPanel(obtenerPanel());
 
@@ -503,12 +578,13 @@ describe("DashboardDrawer", () => {
             children={<SidebarNavContenido alAbrirUserModal={vi.fn()} />}
             triggerRef={triggerRef}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
     beforeEach(() => {
       // Punto de partida estable: nada enfocado antes de cada caso.
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
     });
 
     afterEach(() => {
@@ -532,7 +608,11 @@ describe("DashboardDrawer", () => {
       const alCerrar = vi.fn();
       const triggerRef = { current: disparador };
 
-      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+      const { rerender } = renderDrawer({
+        abierto: true,
+        alCerrar,
+        triggerRef,
+      });
 
       rerenderCerrado(rerender, alCerrar, triggerRef);
 
@@ -562,7 +642,7 @@ describe("DashboardDrawer", () => {
               triggerRef={{ current: disparador }}
             />
           </MemoryRouter>
-        </StrictMode>
+        </StrictMode>,
       );
 
       expect(espiaFocus).not.toHaveBeenCalled();
@@ -578,7 +658,11 @@ describe("DashboardDrawer", () => {
 
       const alCerrar = vi.fn();
       const triggerRef = { current: disparador };
-      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+      const { rerender } = renderDrawer({
+        abierto: true,
+        alCerrar,
+        triggerRef,
+      });
 
       rerenderCerrado(rerender, alCerrar, triggerRef);
 
@@ -594,7 +678,11 @@ describe("DashboardDrawer", () => {
 
       const alCerrar = vi.fn();
       const triggerRef = { current: disparador };
-      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+      const { rerender } = renderDrawer({
+        abierto: true,
+        alCerrar,
+        triggerRef,
+      });
 
       rerenderCerrado(rerender, alCerrar, triggerRef);
 
@@ -610,7 +698,11 @@ describe("DashboardDrawer", () => {
 
       const alCerrar = vi.fn();
       const triggerRef = { current: disparadorDeshabilitado };
-      const { rerender } = renderDrawer({ abierto: true, alCerrar, triggerRef });
+      const { rerender } = renderDrawer({
+        abierto: true,
+        alCerrar,
+        triggerRef,
+      });
 
       rerenderCerrado(rerender, alCerrar, triggerRef);
 
